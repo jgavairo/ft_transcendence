@@ -19,7 +19,7 @@
 ## 🚀 Aperçu  
 ![Screenshot](https://via.placeholder.com/800x400?text=Aperçu+du+Projet)  
 
-> 🔗 **Wireframes & UI/UX** : [Miro Board](https://miro.com/app/board/uXjVIQuhdj8=/)  
+> 🔗 **Wireframes & UI/UX** : [Miro Board](https://miro.com/app/board/uXjVIQuhdj8=/?share_link_id=374059593609)  
 
 ---
 
