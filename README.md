@@ -1,11 +1,5 @@
 # 🏆 ft_transcendence  
 
-![ft_transcendence Banner](https://via.placeholder.com/1200x400?text=ft_transcendence+Banner)  
-
-[![forthebadge](https://forthebadge.com/images/badges/made-with-typescript.svg)](https://www.typescriptlang.org/)  
-[![forthebadge](https://forthebadge.com/images/badges/powered-by-nodejs.svg)](https://nodejs.org/)  
-[![forthebadge](https://forthebadge.com/images/badges/uses-html.svg)](https://developer.mozilla.org/en-US/docs/Web/HTML)  
-
 ## 🎮 Présentation  
 **ft_transcendence** est un projet de web app basé sur le célèbre jeu Pong, combiné avec des fonctionnalités modernes de réseau social et de sécurité.  
 
@@ -15,9 +9,6 @@
 🔹 **Déploiement** : Docker, CI/CD  
 
 ---
-
-## 🚀 Aperçu  
-![Screenshot](https://via.placeholder.com/800x400?text=Aperçu+du+Projet)  
 
 > 🔗 **Wireframes & UI/UX** : [Miro Board](https://miro.com/app/board/uXjVIQuhdj8=/?share_link_id=374059593609)  
 
