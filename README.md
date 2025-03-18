@@ -97,5 +97,8 @@ nvm install --lts
 # Définir la version installée comme version par défaut
 nvm alias default node
 
+# Lancer docker compose
+docker compose up --build -d
+
 
 YOOOUUUUPIIIIIIIIIII
