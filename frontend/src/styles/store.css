@@ -1,0 +1,16 @@
+.store-container
+{
+	max-width: 1440px;
+	margin: 0 auto;
+	padding: 24px;
+	width: 100%;
+}
+
+.games-grid
+{
+	display: grid;
+	background-color: rgba(105, 169, 224, 0.797);
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 20px;
+	padding: 20px 0;
+}

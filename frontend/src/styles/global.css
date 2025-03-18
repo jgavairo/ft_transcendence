@@ -1,0 +1,59 @@
+*{
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+}
+
+body
+{
+	background-color: #1b2838;
+	color: #ffffff;
+	font-family: -moz-system-font, Arial, sans-serif;
+}
+
+#app
+{
+	min-height: 100vh;
+	width: 100%;
+}
+
+.nav-header
+{
+	background: #171a21;
+	padding: 60px 48px;
+	display: flex;
+	gap: 56px;
+	position: sticky;
+	top: 0;
+	z-index: 100;
+}
+
+.nav-header a
+{
+	text-decoration: none;
+    transition: color 0.2s;
+	display: inline-block;     /* Permet de contrôler la largeur */
+    min-width: 100px;         /* Largeur minimale fixe */
+    text-align: center;       /* Centre le texte */
+    font-size: 32px; 
+}
+
+.nav-logo
+{
+	font-weight: bold;
+	color: #ffffff;
+}
+
+.nav-link
+{
+	font-weight: bold;
+	color: #c5c3c0;
+}
+
+.nav-link:hover
+{
+	color: #ffffff;
+}
+
+
