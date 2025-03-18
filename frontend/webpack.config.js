@@ -1,8 +1,9 @@
 const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  mode: 'development', // Assurez-vous que le mode est défini
-  entry: './src/main.ts', // Assurez-vous que ce chemin est correct
+  mode: 'development',
+  entry: './src/main.ts',
   module: {
     rules: [
       {
@@ -16,12 +17,17 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
-    filename: 'main.js',
+    filename: 'bundle.js',
     path: path.resolve(__dirname, 'dist'),
   },
   devServer: {
-    static: path.join(__dirname, 'dist'), // Utilisez 'static' au lieu de 'contentBase'
+    static: path.join(__dirname, 'dist'),
     compress: true,
     port: 8080,
   },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './src/index.html', // Chemin vers votre fichier HTML
+    }),
+  ],
 };
