@@ -53,5 +53,34 @@ git clone https://github.com/ton-repo/ft_transcendence.git
 cd ft_transcendence
 docker-compose up --build
 
+---
+
+my-pong-project/
+│
+├── backend/
+│   ├── Dockerfile
+│   ├── src/
+│   │   ├── index.js
+│   │   └── ...
+│   ├── package.json
+│   └── ...
+│
+├── frontend/
+│   ├── Dockerfile
+│   ├── src/
+│   │   ├── index.html
+│   │   ├── main.ts
+│   │   └── ...
+│   ├── package.json
+│   └── ...
+│
+├── db/
+│   ├── Dockerfile
+│   └── init-db.sql
+│
+├── docker-compose.yml
+└── README.md
+
+---
 
 YOOOUUUUPIIIIIIIIIII
