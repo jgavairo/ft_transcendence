@@ -83,4 +83,19 @@ my-pong-project/
 
 ---
 
+
+# Installation de nvm (vérifiez sur le dépôt officiel pour la dernière version)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+
+# Rechargement de l'environnement nvm
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+# Installation de la version LTS de Node.js
+nvm install --lts
+
+# Définir la version installée comme version par défaut
+nvm alias default node
+
+
 YOOOUUUUPIIIIIIIIIII
