@@ -1,23 +1,16 @@
 services:
-  backend:
-    build: ./backend
+  app:
+    build: .
     ports:
-      - "3000:3000"
-    depends_on:
-      - db
-  
-  frontend:
-    build: ./frontend
-    ports:
-      - "8080:80"
+      - "8080:8080"  # Frontend
+      - "3000:3000"  # Backend
     volumes:
-      - ./frontend/src:/usr/share/nginx/html
-
-
-  db:
-    build: ./db
-    volumes:
-      - db-data:/db
-
-volumes:
-  db-data:
+      - ./frontend:/app/frontend
+      - ./backend:/app/backend
+      - /app/frontend/node_modules
+      - /app/backend/node_modules
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=sqlite://./data/database.sqlite
+    command: sh -c "mkdir -p /app/data && /start.sh" 
