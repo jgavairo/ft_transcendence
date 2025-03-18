@@ -1,14 +1,11 @@
 # frontend/Dockerfile
-FROM node:14
+FROM nginx:alpine
 
-WORKDIR /usr/src/app
+# Optionnel : copier une configuration nginx personnalisée
+# COPY nginx.conf /etc/nginx/nginx.conf
 
-COPY package*.json ./
+# Copier le contenu du dossier src dans le répertoire statique de nginx
+COPY src/ /usr/share/nginx/html
 
-RUN npm install
-
-COPY . .
-
-EXPOSE 8080
-
-CMD ["npm", "start"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
