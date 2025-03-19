@@ -1,0 +1,20 @@
+.button {
+    cursor: pointer;
+    color:grey;
+    font-weight: bold;
+    font-size: 24px;
+    padding: 0.5rem 1rem;
+  }
+
+.activebutton {
+    font-weight: bold;
+    color:white;
+    font-size: 24px;
+    padding: 0.5rem 1rem;
+}
+  
+
+.button:hover {
+    color:white;
+    transition: 0,2s;
+}
