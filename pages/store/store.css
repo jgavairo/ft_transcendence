@@ -1,0 +1,121 @@
+.header 
+{
+	background-color: #171A21;
+	padding: 1rem;
+	height: 100px;
+	gap: 20px;
+}
+
+.header .activebutton
+{
+	font-size: 24px;
+	color: #ffffff;
+	padding: 10px 20px;
+	font-weight: bold;
+}
+
+.header .button
+{
+	font-size: 24px;
+	color: #c2c2c2;
+	padding: 10px 20px;
+	font-weight: bold;
+}
+
+.header .button:hover
+{
+	color: #ffffff;
+}
+
+.gamescontainer
+{
+	width: 75%;
+	height: 80vh;
+	padding: 20px 0;
+	color: #ffffff;
+	background-color: #171a21;
+	border-radius: 60px;
+	margin: 20px auto;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	overflow-y: auto;
+	scrollbar-width: none;
+
+}
+
+.gamecard
+{
+	width: 90%;
+	background-color: #1b2838;
+	border-radius: 60px;
+	margin: 20px auto;
+}
+
+.gamecard .gamecard-logo
+{
+	width: 600px;
+	height: 300px;
+	padding: 20px;
+	border-radius: 60px;
+	object-fit: cover;
+}
+
+.gamecard .gametitle
+{
+	font-size: 30px;
+	font-weight: bold;
+	padding-left: 80px;
+}
+
+.gamecard .buybutton
+{
+	background-color: #66C0F4;
+	border-radius: 10px;
+	padding: 10px 20px;
+	font-weight: bold;
+	margin-left: 85%;
+	position: relative;
+	top: -50px;
+}
+
+.gamecard .buybutton:hover
+{
+	background-color: #45a049;
+}
+
+.gamecard .gamedescription
+{
+	background-color: #0000002d;
+	border-radius: 20px;
+	height: fit-content;
+	max-height: 200px;
+	padding: 20px;
+	width: 40%;
+	margin-top: 20px;
+	margin-left: 90px;
+	margin-right: 10px;
+	overflow-y: auto;
+}
+
+.gamecard .textdescription
+{
+	display: -webkit-box;
+	-webkit-line-clamp: 12;
+	line-clamp: 12;
+	-webkit-box-orient: vertical;
+	font-size: 16px;
+	line-height: 1.5;
+	max-height: 300px;
+}
+
+.gamecard .price
+{
+	font-size: 20px;
+	font-weight: bold;
+	margin-left: 85%;
+	position: relative;
+	top: -55px;
+}
+
+
