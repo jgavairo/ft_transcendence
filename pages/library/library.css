@@ -1,15 +1,14 @@
 .button {
     cursor: pointer;
     color:grey;
-    font-weight: bold;
-    font-size: 24px;
+    font-size: 34px;
     padding: 0.5rem 1rem;
   }
 
 .activebutton {
     font-weight: bold;
     color:white;
-    font-size: 24px;
+    font-size: 34px;
     padding: 0.5rem 1rem;
 }
   
