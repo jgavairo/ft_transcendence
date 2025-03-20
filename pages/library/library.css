@@ -17,3 +17,10 @@
     color:white;
     transition: 0,2s;
 }
+
+.gamesidelist {
+    margin-bottom: 0.5rem;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+}
