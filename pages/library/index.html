@@ -6,21 +6,18 @@
   <title>library</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="library.css">
+  <link rel="stylesheet" href="../styles/global.css">
 </head>
 <body class="bg-[#1B2838]">
     
     <div class="flex flex-col h-screen">
-    
-    <header class="bg-[#171A21] p-4 flex flex-col min-h-[130px]">
-        <div>
-          <img src="logo.png" alt="Logo" class="w-8" />
-        </div>
-        <div class="flex space-x-3 mt-auto ml-8">
-          <button class="button">STORE</button>
-          <button class="activebutton">LIBRARY</button>
-          <button class="button">COMMUNITY</button>
-        </div>
-    </header>
+      
+      <header class="header">
+        <img src="../../assets/logo.png" alt="Logo" class="w-12" />
+        <button class="button" id="storebutton">STORE</button>
+        <button class="activebutton" id="librarybutton">LIBRARY</button>
+        <button class="button" id="communitybutton">COMMUNITY</button>
+      </header>
 
     <div class="flex flex-1">
         <aside class="w-1/4 bg-[#24282F] overflow-y-auto p-4">

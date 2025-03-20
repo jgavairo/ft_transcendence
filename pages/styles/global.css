@@ -1,0 +1,35 @@
+.header 
+{
+	display: flex;
+	align-items: center;
+	background-color: #171A21;
+	padding: 1rem;
+	gap: 20px;
+}
+
+.header .logo
+{
+	width: 120px;
+	height: 120px;
+}
+
+.header .activebutton
+{
+	font-size: 32px;
+	color: #ffffff;
+	padding: 10px 20px;
+	font-weight: bold;
+}
+
+.header .button
+{
+	font-size: 32px;
+	color: #c2c2c2;
+	padding: 10px 20px;
+	font-weight: bold;
+}
+
+.header .button:hover
+{
+	color: #ffffff;
+}
