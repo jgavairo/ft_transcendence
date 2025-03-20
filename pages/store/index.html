@@ -4,51 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Store</title>
-	<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" id="tailwind"></script>
 	<link rel="stylesheet" href="store.css">
+	<link rel="stylesheet" href="../../pages/library/library.css">
 	<link rel="stylesheet" href="../styles/global.css">
+	<script src="../../scripts/navigation.js"></script>
 </head>
-<body class = "bg-[#1B2838]">
+<body class = "bg-[#1B2838]" id="body">
 	<header class="header">
 		<img src="../../assets/logo.png" alt="Logo" class="w-12" />
 		<button class="activebutton" id="storebutton">STORE</button>
 		<button class="button" id="librarybutton">LIBRARY</button>
 		<button class="button" id="communitybutton">COMMUNITY</button>
 	</header>
-	<div class="gamescontainer">
-		<div class="gamecard" id="pongcard">
-			<div class="flex">
-				<img src="../../games/pong/pong.png" class="gamecard-logo" alt="pong-logo">
-				<div class="gamedescription">
-					<h4 class="textdescription" id="pongdescription">Rediscover the famous Pong game in a whole new light. With cutting-edge technologies, unlock the rarest skins to show off in game with your friends.</h4>	
+	<main class="main">
+		<div class="gamescontainer">
+			<div class="gamecard" id="pongcard">
+				<div class="flex">
+					<img src="../../games/pong/pong.png" class="gamecard-logo" alt="pong-logo">
+					<div class="gamedescription">
+						<h4 class="textdescription" id="pongdescription">Rediscover the famous Pong game in a whole new light. With cutting-edge technologies, unlock the rarest skins to show off in game with your friends.</h4>	
+					</div>
 				</div>
+				<h3 class="gametitle" id="pongtitle">King Pong</h3>
+				<h4 class="price" id="pongprice">Free</h4>
+				<button class="buybutton" id="pongbuybutton">Add to library</button>
 			</div>
-			<h3 class="gametitle" id="pongtitle">King Pong</h3>
-			<h4 class="price" id="pongprice">Free</h4>
-			<button class="buybutton" id="pongbuybutton">Add to library</button>
-		</div>
-		<div class="gamecard" id="valorantcard">
-			<div class="flex">
-				<img src="../../games/valorant/valorant.png" class="gamecard-logo" alt="valorant-logo">
-				<div class="gamedescription">
-					<h4 class="textdescription" id="valorantdescription">Valorant est un jeu de tir tactique 5v5 pas gratuit où des agents aux capacités uniques s'affrontent dans des combats intenses. Maîtrisez vos compétences, coordonnez-vous avec votre équipe et relevez le défi de la compétition.</h4>	
+			<div class="gamecard" id="valorantcard">
+				<div class="flex">
+					<img src="../../games/valorant/valorant.png" class="gamecard-logo" alt="valorant-logo">
+					<div class="gamedescription">
+						<h4 class="textdescription" id="valorantdescription">Valorant est un jeu de tir tactique 5v5 pas gratuit où des agents aux capacités uniques s'affrontent dans des combats intenses. Maîtrisez vos compétences, coordonnez-vous avec votre équipe et relevez le défi de la compétition.</h4>	
+					</div>
 				</div>
+				<h3 class="gametitle" id="valoranttitle">Valorant</h3>
+				<h4 class="price" id="valorantprice">29.99$</h4>
+				<button class="buybutton" id="valorantbuybutton">Add to library</button>
 			</div>
-			<h3 class="gametitle" id="valoranttitle">Valorant</h3>
-			<h4 class="price" id="valorantprice">29.99$</h4>
-			<button class="buybutton" id="valorantbuybutton">Add to library</button>
-		</div>
-		<div class="gamecard" id="snakecard">
-			<div class="flex">
-				<img src="../../games/snake/snake.png" class="gamecard-logo" alt="snake-logo">
-				<div class="gamedescription">
-					<h4 class="textdescription" id="snakedescription">Recevez une invitation mystérieuse à la soirée de Francis le Tordu (YOUPiiIIII). Dans ce jeu psychologique troublant, naviguez à travers une demeure victorienne où les règles changent constamment et où vos choix ont des conséquences... imprévisibles. Les autres invités semblent connaître les règles, mais personne ne veut les partager. Évitez les regards tordus de Francis, découvrez pourquoi certains invités disparaissent après avoir bu le cocktail du chef, et tentez de survivre jusqu'au matin. Mais attention : Francis déteste quand on refuse de danser la valse inversée</h4>	
+			<div class="gamecard" id="snakecard">
+				<div class="flex">
+					<img src="../../games/snake/snake.png" class="gamecard-logo" alt="snake-logo">
+					<div class="gamedescription">
+						<h4 class="textdescription" id="snakedescription">Recevez une invitation mystérieuse à la soirée de Francis le Tordu (YOUPiiIIII). Dans ce jeu psychologique troublant, naviguez à travers une demeure victorienne où les règles changent constamment et où vos choix ont des conséquences... imprévisibles. Les autres invités semblent connaître les règles, mais personne ne veut les partager. Évitez les regards tordus de Francis, découvrez pourquoi certains invités disparaissent après avoir bu le cocktail du chef, et tentez de survivre jusqu'au matin. Mais attention : Francis déteste quand on refuse de danser la valse inversée</h4>	
+					</div>
 				</div>
+				<h3 class="gametitle" id="snaketitle">Francis le Tordu</h3>
+				<h4 class="price" id="snakeprice">Allez viens</h4>
+				<button class="buybutton" id="snakebuybutton">Add to library</button>
 			</div>
-			<h3 class="gametitle" id="snaketitle">Francis le Tordu</h3>
-			<h4 class="price" id="snakeprice">Allez viens</h4>
-			<button class="buybutton" id="snakebuybutton">Add to library</button>
 		</div>
-	</div>
+	</main>
 </body>
 </html>
