@@ -1,4 +1,5 @@
 import { libraryPage, storePage, communityPage } from './sourcepage.js';
+import { setupStore } from './store.js';
 function attachNavigationListeners() {
     const navigationButtons = document.querySelectorAll('.header .button');
     navigationButtons.forEach(button => {
@@ -11,6 +12,7 @@ function attachNavigationListeners() {
                 case 'storebutton':
                     document.body.innerHTML = storePage;
                     attachNavigationListeners();
+                    setupStore();
                     break;
                 case 'communitybutton':
                     document.body.innerHTML = communityPage;
