@@ -8,16 +8,16 @@ export const gameList = [
     },
     {
         id: 2,
-        name: "Snake",
+        name: "Francis the Loony",
         price: 299.99,
-        description: "Snake is a two-dimensional game where the player controls a snake on a game board. The player can move the snake around the board, and the snake can eat food to grow longer. The goal is to manoeuvre the snake around the board and eat as much food as possible without hitting the edges of the board or the snake's own body.",
+        description: "Recevez une invitation mystérieuse à la soirée de Francis le Tordu (YOUPiiIIII). Dans ce jeu psychologique troublant, naviguez à travers une demeure victorienne où les règles changent constamment et où vos choix ont des conséquences... imprévisibles. Les autres invités semblent connaître les règles, mais personne ne veut les partager. Évitez les regards tordus de Francis, découvrez pourquoi certains invités disparaissent après avoir bu le cocktail du chef, et tentez de survivre jusqu'au matin. Mais attention : Francis déteste quand on refuse de danser la valse inversée",
         image: "../../games/snake/snake.png",
     },
     {
         id: 3,
         name: "Valorant",
         price: 29.99,
-        description: "Valorant is a two-dimensional game where the player controls a snake on a game board. The player can move the snake around the board, and the snake can eat food to grow longer. The goal is to manoeuvre the snake around the board and eat as much food as possible without hitting the edges of the board or the snake's own body.",
+        description: "Une pale copie de Counter-Strike, mais avec des personnages de la série Rick and Morty",
         image: "../../games/valorant/valorant.png",
     }
 ];
