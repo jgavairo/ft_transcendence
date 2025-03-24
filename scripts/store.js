@@ -1,11 +1,19 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
+import { LoginManager } from "./loginModal.js";
 export function setupStore() {
     const storeContainer = document.querySelector('.gamescontainer');
     if (!storeContainer) {
         console.error('Store container not found');
         return;
     }
+    if (!LoginManager.isLoggedIn()) {
+        console.log("Not logged in, showing login modal");
+        LoginManager.showLoginModal();
+        return;
+    }
+    else
+        console.log("Logged in, showing store");
     gameList.forEach(game => {
         const inLibrary = UserLibraryManager.hasGame(game.id);
         const gamesHTML = `
@@ -33,7 +41,6 @@ export function setupStore() {
         `;
         storeContainer.innerHTML += gamesHTML;
     });
-    // Ajoute les écouteurs d'événements pour les boutons d'achat
     setupBuyButtons();
 }
 function setupBuyButtons() {
