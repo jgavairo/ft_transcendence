@@ -37,7 +37,7 @@ const libraryPage = `
         </div>
           <ul class="library-games-list"></ul>
         </aside>
-        <section class="w-3/4 p-4">
+        <section class="w-full">
           <div class="library-details">
           <div class="flex items-center mb-4">
              <h2 class="mt-2 text-xl font-bold text-[#8F8F8F]">All games (0)</h2>
