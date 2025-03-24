@@ -1,5 +1,3 @@
-import { setupStore } from "./store";
-
 const loginModalHTML = `
     <div class="modal-overlay">
         <div class="login-modal">
@@ -16,46 +14,33 @@ const loginModalHTML = `
         </div>
     </div>
 `;
-
-export class LoginManager
-{
-    private static readonly AUTH_KEY = "isauthed";
-
-    static isLoggedIn(): boolean
-    {
+export class LoginManager {
+    static isLoggedIn() {
         return localStorage.getItem(this.AUTH_KEY) !== null;
     }
-
-    static showLoginModal(): void
-    {
-        if (!this.isLoggedIn())
-        {
+    static showLoginModal() {
+        if (!this.isLoggedIn()) {
             document.body.insertAdjacentHTML('beforeend', loginModalHTML);
             this.setupLoginModal();
         }
     }
-
-    private static setupLoginModal(): void
-    {
+    static setupLoginModal() {
         console.log("Setting up login modal");
         const loginbutton = document.getElementById('loginButton');
         if (!loginbutton)
             return;
         loginbutton.addEventListener('click', () => {
             localStorage.setItem(this.AUTH_KEY, "isauthed");
-            if (localStorage.getItem(this.AUTH_KEY) === "isauthed")
-            {
+            if (localStorage.getItem(this.AUTH_KEY) === "isauthed") {
                 this.removeLoginModal();
                 window.location.reload();
             }
         });
     }
-
-    private static removeLoginModal(): void
-    {
+    static removeLoginModal() {
         const modal = document.querySelector('.modal-overlay');
         if (modal)
             modal.remove();
     }
-
 }
+LoginManager.AUTH_KEY = "isauthed";

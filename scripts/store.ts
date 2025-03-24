@@ -1,5 +1,6 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
+import { LoginManager } from "./loginModal.js";
 
 export function setupStore() 
 {
@@ -9,6 +10,15 @@ export function setupStore()
         console.error('Store container not found');
         return;
     }
+
+    if(!LoginManager.isLoggedIn())
+    {
+        console.log("Not logged in, showing login modal");
+        LoginManager.showLoginModal();
+        return;
+    }
+    else 
+        console.log("Logged in, showing store");
 
     gameList.forEach(game => {
         const inLibrary = UserLibraryManager.hasGame(game.id);
@@ -76,5 +86,6 @@ function showNotification(message: string)
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 3000);
 }
+
 
 document.addEventListener('DOMContentLoaded', setupStore);
