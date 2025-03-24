@@ -47,6 +47,9 @@ export class UserLibraryManager
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
         }
     }
-}
+    public static getLibraryGames(): number[] {
+        return this.getUser().library;
+    }
+}      
 
     

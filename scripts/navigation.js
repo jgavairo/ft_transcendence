@@ -1,3 +1,4 @@
+import { setupLibrary } from './library.js';
 import { libraryPage, storePage, communityPage } from './sourcepage.js';
 import { setupStore } from './store.js';
 function attachNavigationListeners() {
@@ -8,6 +9,7 @@ function attachNavigationListeners() {
                 case 'librarybutton':
                     document.body.innerHTML = libraryPage;
                     attachNavigationListeners();
+                    setupLibrary();
                     break;
                 case 'storebutton':
                     document.body.innerHTML = storePage;
