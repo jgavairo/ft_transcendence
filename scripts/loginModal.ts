@@ -41,7 +41,17 @@ export class LoginManager
         const loginbutton = document.getElementById('loginButton');
         if (!loginbutton)
             return;
-        loginbutton.addEventListener('click', () => {
+        loginbutton.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            const username = (document.getElementById('username') as HTMLInputElement).value;
+            const password = (document.getElementById('password') as HTMLInputElement).value;
+
+            if (username === "" || password === "")
+            {
+                alert("Please enter a username and password");
+                return;
+            }
             localStorage.setItem(this.AUTH_KEY, "isauthed");
             if (localStorage.getItem(this.AUTH_KEY) === "isauthed")
             {
