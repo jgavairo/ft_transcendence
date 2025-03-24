@@ -1,4 +1,5 @@
 import { gameList } from "./gameStoreList.js";
+import { setupLibrary } from "./library.js";
 import { UserLibraryManager } from "./userLibrary.js";
 
 export function setupStore() 

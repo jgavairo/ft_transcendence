@@ -27,5 +27,8 @@ export class UserLibraryManager {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
         }
     }
+    static getLibraryGames() {
+        return this.getUser().library;
+    }
 }
 UserLibraryManager.STORAGE_KEY = 'userLibrary';
