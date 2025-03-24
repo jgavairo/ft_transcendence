@@ -1,8 +1,8 @@
 import { setupStore } from "./store";
 
 const loginModalHTML = `
-    <div class="modal-overlay">
-        <div class="login-modal">
+    <div class="modal-overlay" id="modalWindow">
+        <div class="login-modal" id="login-modal">
             <h2>ft_transcendence</h2>
             <form id="loginForm" class = "login-form">
                 <input type="text" id="username" placeholder="Username" required>
@@ -21,6 +21,19 @@ const loginModalHTML = `
     </div>
 `;
 
+const registerModalHTML = `
+            <div class="registerModalTitle">
+                <button id="cancelButton" class="cancelButton">Cancel</button>
+                <h2>Sign up</h2>
+            </div>
+            <form id="registerForm" class = "register-form">
+                <input type="text" id="Rusername" placeholder="Username" required>
+                <input type="password" id="Rpassword" placeholder="Password" required>
+                <input type="password" id="RconfirmPassword" placeholder="confirm password" required>
+                <input type="email" id="Remail" placeholder="Email" required>
+            </form>
+            <button id="registerButton" class="signupButton">Sign up</button>
+`;
 export class LoginManager
 {
     private static readonly AUTH_KEY = "isauthed";
@@ -56,11 +69,6 @@ export class LoginManager
                 alert("Please enter a username and password");
                 return;
             }
-            if (username === "francisletordu")
-            {
-                alert("Francis, tu n'as pas le droit d'etre ici. tu as ete condamne pour avoir tripoter tes potes!");
-                return;
-            }
             localStorage.setItem(this.AUTH_KEY, "isauthed");
             if (localStorage.getItem(this.AUTH_KEY) === "isauthed")
             {
@@ -73,7 +81,17 @@ export class LoginManager
             return;
         registerButton.addEventListener('click', (e) => {
             e.preventDefault();
-            alert("register is not available yet");
+            const modal = document.getElementById('login-modal');
+            if (!modal)
+                return;
+            modal.innerHTML = registerModalHTML;
+            const cancelButton = document.getElementById('cancelButton');
+            if (!cancelButton)
+                return;
+            cancelButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.reload();
+            });
         });
         const googleButton = document.getElementById('googleSignIn');
         if (!googleButton)
