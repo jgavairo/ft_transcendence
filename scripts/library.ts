@@ -10,13 +10,21 @@ export function setupLibrary(): void {
     return;
   }
 
+  libraryList.innerHTML = '';
+
   const libraryGameIds: number[] = UserLibraryManager.getLibraryGames();
 
   if (libraryGameIds.length === 0) {
     libraryList.innerHTML = `<p class="text-white">Your library is empty.</p>`;
+    detailsContainer.innerHTML = `
+      <div class="flex items-center mb-4">
+         <h2 class="mt-2 text-xl font-bold text-[#8F8F8F]">All games (0)</h2>
+         <div class="mt-2 flex-1 border-t border-gray-500 ml-4"></div>
+      </div>
+    `;
     return;
   }
- 
+
   libraryGameIds.forEach((id: number) => {
     const game = gameList.find(g => g.id === id);
     if (!game) return;
@@ -42,35 +50,31 @@ export function setupLibrary(): void {
   }).join("");
 
   detailsContainer.innerHTML = `
-      <div class="library-details">
+    <div class="library-details-header">
       <div class="flex items-center mb-4">
         <h2 class="mt-2 text-xl font-bold text-[#8F8F8F]">All games (${libraryGameIds.length})</h2>
         <div class="mt-2 flex-1 border-t border-gray-500 ml-4"></div>
       </div>
-      </div>
-      <div class="flex flex-wrap gap-4">
-         ${gamesHTML}
-      </div>
+    </div>
+    <div class="library-games flex flex-wrap gap-4">
+      ${gamesHTML}
+    </div>
   `;
 }
-
-
 
 function showGameDetails(game: any): void {
   const detailsContainer: HTMLElement | null = document.querySelector('.library-details');
   if (!detailsContainer) return;
 
   detailsContainer.innerHTML = `
-    <section>
-      <div class="relative">
-        <img src="${game.image}" alt="${game.name}" class="w-full h-[350px]">
-        <div class="bannerGameSelect">
-          <button class="text-white bg-[#195887] hover:bg-blue-500 px-4 py-2 rounded w-[150px] h-[70px]">
-            PLAY
-          </button>
-        </div>
+    <div class="relative w-full rounded overflow-hidden">
+      <img src="${game.image}" alt="${game.name}" class="imgGameSelect">
+      <div class="bannerGameSelect">
+        <button class="text-white bg-[#195887] hover:bg-blue-500 px-4 py-2 rounded">
+          PLAY
+        </button>
       </div>
-    </section>
+    </div>
   `;
 }
 
