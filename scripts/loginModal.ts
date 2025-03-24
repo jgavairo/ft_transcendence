@@ -8,11 +8,15 @@ const loginModalHTML = `
                 <input type="text" id="username" placeholder="Username" required>
                 <input type="password" id="password" placeholder="Password" required>
                 </form>
-            <button type="submit" id="loginButton" class="loginButton">Sign in</button>
-            <button type="googleSignIn" id="googleSignIn" class="googleButton">
+            <button id="loginButton" class="loginButton">Sign in</button>
+            <button id="googleSignIn" class="googleButton">
                     <img src="../../assets/google.png" class="googleLogo" alt="Google logo">
                     Sign in with Google
             </button>
+            <div class="registerContainer">
+                you don't have an account? 
+                <button id="registerButton" class="registerButton">Sign up</button>
+            </div>
         </div>
     </div>
 `;
@@ -63,6 +67,20 @@ export class LoginManager
                 this.removeLoginModal();
                 window.location.reload();
             }
+        });
+        const registerButton = document.getElementById('registerButton');
+        if (!registerButton)
+            return;
+        registerButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert("register is not available yet");
+        });
+        const googleButton = document.getElementById('googleSignIn');
+        if (!googleButton)
+            return;
+        googleButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert("google is not available yet");
         });
     }
 

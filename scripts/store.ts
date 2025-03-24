@@ -48,7 +48,6 @@ export function setupStore()
         storeContainer.innerHTML += gamesHTML;
     });
 
-    // Ajoute les écouteurs d'événements pour les boutons d'achat
     setupBuyButtons();
 }
 
