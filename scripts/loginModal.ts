@@ -47,9 +47,14 @@ export class LoginManager
             const username = (document.getElementById('username') as HTMLInputElement).value;
             const password = (document.getElementById('password') as HTMLInputElement).value;
 
-            if (username === "" || password === "")
+            if (!username || !password)
             {
                 alert("Please enter a username and password");
+                return;
+            }
+            if (username === "francisletordu")
+            {
+                alert("Francis, tu n'as pas le droit d'etre ici. tu as ete condamne pour avoir tripoter tes potes!");
                 return;
             }
             localStorage.setItem(this.AUTH_KEY, "isauthed");
