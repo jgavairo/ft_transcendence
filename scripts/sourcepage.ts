@@ -13,14 +13,15 @@ const storePage = `
 `;
 
 const libraryPage = `
-  <div class="flex flex-col h-screen">
-    <header class="header">
-      <img src="../../assets/logo.png" alt="Logo" class="w-12" />
-      <button class="button" id="storebutton">STORE</button>
-      <button class="activebutton" id="librarybutton">LIBRARY</button>
-      <button class="button" id="communitybutton">COMMUNITY</button>
-    </header> 
-    <main class="flex flex-1">
+   <body class="bg-[#1B2838]">
+    <div class="flex flex-col h-screen">
+      <header class="header p-4 flex items-center">
+        <img src="../../assets/logo.png" alt="Logo" class="w-12">
+        <button class="button" id="storebutton">STORE</button>
+        <button class="activebutton" id="librarybutton">LIBRARY</button>
+        <button class="button" id="communitybutton">COMMUNITY</button>
+      </header>
+      <main class="flex flex-1">
       <aside class="w-1/4 bg-[#24282F] overflow-y-auto p-4">
         <div class="mb-4 relative">
           <input 
@@ -34,31 +35,19 @@ const libraryPage = `
             </svg>
           </div>
         </div>
-        <ul>
-          <li class="gamesidelist" id="pongsidelist">
-            <img src="../../games/pong/pong.png" alt="Pong" class="w-4 h-4 mr-2">
-            Classic pong game
-          </li>
-          <li class="gamesidelist" id="snakesidelist">
-            <img src="../../games/snake/snake.png" alt="Snake" class="w-4 h-4 mr-2">
-            Call of Francis
-          </li>
-        </ul>
-      </aside>
-      
-      <section class="w-3/4 p-4 flex flex-col">
-        <div class="flex items-center mb-4">
-          <h2 class="mt-2 text-xl font-bold text-[#8F8F8F]">All games (2)</h2>
+          <ul class="library-games-list"></ul>
+        </aside>
+        <section class="w-3/4 p-4">
+          <div class="library-details">
+          <div class="flex items-center mb-4">
+             <h2 class="mt-2 text-xl font-bold text-[#8F8F8F]">All games (0)</h2>
           <div class="mt-2 flex-1 border-t border-gray-500 ml-4"></div>
-        </div>
-        <div class="flex flex-1 gap-4">
-          <img src="../../games/pong/pong.png" alt="Pong" class="w-60 h-60 object-cover rounded">
-          <img src="../../games/snake/snake.png" alt="Snake" class="w-60 h-60 object-cover rounded">
-        </div>
-      </div>
-    </section>
-  </main>
-</div>
+          </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
 `;
 
 const communityPage = `
