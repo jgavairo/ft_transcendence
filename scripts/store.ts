@@ -42,7 +42,8 @@ export function setupStore()
     setupBuyButtons();
 }
 
-function setupBuyButtons() {
+function setupBuyButtons() 
+{
     const buyButtons = document.querySelectorAll('.buybutton');
     buyButtons.forEach(button => {
         button.addEventListener('click', (e) => {
@@ -67,7 +68,8 @@ function setupBuyButtons() {
     });
 }
 
-function showNotification(message: string) {
+function showNotification(message: string) 
+{
     const notification = document.createElement('div');
     notification.className = 'notification';
     notification.textContent = message;
