@@ -20,7 +20,7 @@ export class UserLibraryManager
         const newLibrary: UserLibrary = {
             id: 0,
             userName: 'jgavairo',
-            profilePicture: '',
+            profilePicture: '../../assets/profilePicture.jpeg',
             library: [],
         };
 

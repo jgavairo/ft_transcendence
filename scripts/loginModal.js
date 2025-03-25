@@ -37,7 +37,10 @@ export class LoginManager {
     }
     static showLoginModal() {
         if (!this.isLoggedIn()) {
-            document.body.insertAdjacentHTML('beforeend', loginModalHTML);
+            const optionnalModal = document.getElementById('optionnalModal');
+            if (!optionnalModal)
+                return;
+            optionnalModal.innerHTML = loginModalHTML;
             this.setupLoginModal();
         }
     }
@@ -74,7 +77,11 @@ export class LoginManager {
                 return;
             cancelButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                window.location.reload();
+                const modal = document.getElementById('optionnalModal');
+                if (!modal)
+                    return;
+                modal.innerHTML = loginModalHTML;
+                this.setupLoginModal();
             });
         });
         const googleButton = document.getElementById('googleSignIn');

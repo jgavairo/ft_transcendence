@@ -1,26 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Store</title>
-		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" id="tailwind"></script>
-		<link rel="stylesheet" href="store.css">
-		<link rel="stylesheet" href="../../pages/library/library.css">
-		<link rel="stylesheet" href="../styles/global.css">
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>ft_transcendence</title>
+		<script src="../../scripts/main.js" type="module"></script>
 		<script src="../../scripts/navigation.js" type="module"></script>
-</head>
-<body class = "bg-[#1B2838]" id="body">
-	<header class="header">
-		<img src="../../assets/logo.png" alt="Logo" class="w-12" />
-		<button class="activebutton" id="storebutton">STORE</button>
-		<button class="button" id="librarybutton">LIBRARY</button>
-		<button class="button" id="communitybutton">COMMUNITY</button>
-	</header>
-	<main class="main">
-		<div class="gamescontainer">
+		<script src="../../scripts/store.js" type="module"></script>
+		<link rel="stylesheet" href="store.css" />
+		<link rel="stylesheet" href="../../pages/library/library.css" />
+		<link rel="stylesheet" href="../styles/global.css" />
+		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer></script>
+	</head>
+	<body class="bg-[#1B2838]" id="body">
+		<header class="header" id="header">
+		</header>
+		<main class="main" id="main">
+			<div class="gamescontainer" id="gamescontainer">
+			</div>
+		</main>
+		<div id="optionnalModal">
 		</div>
-	</main>
-	<script src="../../scripts/store.js" type="module"></script>
-</body>
+	</body>
 </html>

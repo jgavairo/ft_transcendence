@@ -1,18 +1,21 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
 
-export function setupLibrary(): void {
+export function setupLibrary(): void 
+{
   const libraryList: HTMLElement | null = document.querySelector('.library-games-list');
   const detailsContainer: HTMLElement | null = document.querySelector('.library-details');
 
-  if (!libraryList || !detailsContainer) {
+  if (!libraryList || !detailsContainer) 
+  {
     console.error('Library containers not found');
     return;
   }
 
   const libraryGameIds: number[] = UserLibraryManager.getLibraryGames();
 
-  if (libraryGameIds.length === 0) {
+  if (libraryGameIds.length === 0) 
+  {
     libraryList.innerHTML = `<p class="text-white">Your library is empty.</p>`;
     return;
   }

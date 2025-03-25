@@ -15,17 +15,17 @@ export const gameList: Game[] = [
         image: "../../games/pong/pong.png",
     },
     {
-        id: 2,
-        name: "Francis the Loony",
-        price: 299.99,
-        description: "Recevez une invitation mystérieuse à la soirée de Francis le Tordu (YOUPiiIIII). Dans ce jeu psychologique troublant, naviguez à travers une demeure victorienne où les règles changent constamment et où vos choix ont des conséquences... imprévisibles. Les autres invités semblent connaître les règles, mais personne ne veut les partager. Évitez les regards tordus de Francis, découvrez pourquoi certains invités disparaissent après avoir bu le cocktail du chef, et tentez de survivre jusqu'au matin. Mais attention : Francis déteste quand on refuse de danser la valse inversée",
-        image: "../../games/snake/snake.png",
-    },
-    {
         id: 3,
         name: "Valorant",
         price: 29.99,
         description: "Une pale copie de Counter-Strike, mais avec des personnages de la série Rick and Morty",
         image: "../../games/valorant/valorant.png",
+    },
+    {
+        id: 2,
+        name: "Francis the Loony",
+        price: 299.99,
+        description: "Recevez une invitation mystérieuse à la soirée de Francis le Tordu (YOUPiiIIII). Dans ce jeu psychologique troublant, naviguez à travers une demeure victorienne où les règles changent constamment et où vos choix ont des conséquences... imprévisibles. Les autres invités semblent connaître les règles, mais personne ne veut les partager. Évitez les regards tordus de Francis, découvrez pourquoi certains invités disparaissent après avoir bu le cocktail du chef, et tentez de survivre jusqu'au matin. Mais attention : Francis déteste quand on refuse de danser la valse inversée",
+        image: "../../games/snake/snake.png",
     }
 ]

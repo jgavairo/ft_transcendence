@@ -7,7 +7,7 @@ export class UserLibraryManager {
         const newLibrary = {
             id: 0,
             userName: 'jgavairo',
-            profilePicture: '',
+            profilePicture: '../../assets/profilePicture.jpeg',
             library: [],
         };
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newLibrary));
