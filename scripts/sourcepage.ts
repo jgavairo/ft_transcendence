@@ -9,6 +9,17 @@ const header = `
 			</div>
 `;
 
+const profileWindow = `
+		<ul class="profilewindow">
+			<li class="profilewindow-item">
+				<button id="profileSettings">Profile settings</button>
+			</li>
+			<li class="profilewindow-item">
+				<button id="logoutButton">Log out</button>
+			</li>
+		</ul>
+`;
+
 const storePage = `
 		<div class="gamescontainer">
 		</div>
@@ -44,4 +55,4 @@ const libraryPage = `
 const communityPage = `
 `;
 
-export { storePage, libraryPage, communityPage, header };
+export { storePage, libraryPage, communityPage, header, profileWindow };
