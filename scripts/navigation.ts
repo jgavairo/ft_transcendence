@@ -1,11 +1,17 @@
 import { setupLibrary } from './library.js';
-import { libraryPage, storePage, communityPage } from './sourcepage.js';
+import { libraryPage, storePage, communityPage, profileWindow } from './sourcepage.js';
 import { setupStore } from './store.js';
 
 function changeActiveButton(newButton: HTMLElement, newActiveButton: HTMLElement)
 {
 	newButton.classList.replace('activebutton', 'button');
 	newActiveButton.classList.replace('button', 'activebutton');
+}
+
+function setupHeader()
+{
+	attachNavigationListeners();
+	setupProfileButton()
 }
 
 
@@ -25,7 +31,7 @@ function attachNavigationListeners()
 	if (!mainElement)
 		return;
 
-
+	
 	navigationButtons.forEach(button => {
 		button.addEventListener('click', () => {
 			let currentActiveButton = document.querySelector('.header .activebutton') as HTMLElement;
@@ -39,10 +45,10 @@ function attachNavigationListeners()
                     mainElement.innerHTML = libraryPage;
 					setupLibrary();
                     break;
-				case 'storebutton':
-					if (currentActiveButton.id === 'storebutton')
-						return;
-					changeActiveButton(currentActiveButton, storeButton);
+					case 'storebutton':
+						if (currentActiveButton.id === 'storebutton')
+							return;
+						changeActiveButton(currentActiveButton, storeButton);
 					mainElement.innerHTML = storePage;
 					setupStore();
                     break;
@@ -57,6 +63,23 @@ function attachNavigationListeners()
 	});
 }
 
+function setupProfileButton()
+{
+	const profilePicture = document.getElementById('profilePicture');
+	if (!profilePicture)
+		return;
+	profilePicture.addEventListener('click', () => {
+		console.log("profile button clicked");
+		const profilewindow = document.getElementById('profileMenu');
+		if (!profilewindow)
+		{
+			console.log("profile window not found");
+			return;
+		}
+		profilewindow.innerHTML = profileWindow;
+	});
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-	attachNavigationListeners();
+	setupHeader();
 });

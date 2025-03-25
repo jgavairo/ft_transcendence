@@ -36,7 +36,6 @@
 
 .header .profile
 {
-	background-color: #ffffff;
 	width: 3rem;
 	height: 3rem;
 	display: flex;
@@ -52,6 +51,14 @@
 	height: 3rem;
 	object-fit: cover;
 	border-radius: 50%;
+	border: 0.3rem solid #113d5e;
+}
+
+.header .profilePicture:hover
+{
+	cursor: pointer;
+	border: 0.2rem solid #ffffff;
+	transition: 0.3s;
 }
 
 .modal-overlay {
@@ -219,4 +226,26 @@
 {
 	transition: 0.3s;
 	cursor: pointer;
+}
+
+.profileMenu
+{
+
+}
+
+.profilewindow
+{
+	margin-top: -44.5%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-left: auto;
+	margin-right: 4.5rem;
+	width: fit-content;
+	height: fit-content;
+	padding: 10px;
+	background-color: #263549;
+	border: 2px solid #a3a3a3;
+	border-radius: 10px;
+	color: #ffffff;
 }

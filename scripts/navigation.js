@@ -1,9 +1,13 @@
 import { setupLibrary } from './library.js';
-import { libraryPage, storePage, communityPage } from './sourcepage.js';
+import { libraryPage, storePage, communityPage, profileWindow } from './sourcepage.js';
 import { setupStore } from './store.js';
 function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');
     newActiveButton.classList.replace('button', 'activebutton');
+}
+function setupHeader() {
+    attachNavigationListeners();
+    setupProfileButton();
 }
 function attachNavigationListeners() {
     const navigationButtons = document.querySelectorAll('.header button');
@@ -49,6 +53,20 @@ function attachNavigationListeners() {
         });
     });
 }
+function setupProfileButton() {
+    const profilePicture = document.getElementById('profilePicture');
+    if (!profilePicture)
+        return;
+    profilePicture.addEventListener('click', () => {
+        console.log("profile button clicked");
+        const profilewindow = document.getElementById('profileMenu');
+        if (!profilewindow) {
+            console.log("profile window not found");
+            return;
+        }
+        profilewindow.innerHTML = profileWindow;
+    });
+}
 document.addEventListener('DOMContentLoaded', () => {
-    attachNavigationListeners();
+    setupHeader();
 });
