@@ -1,32 +1,155 @@
-.button {
-    cursor: pointer;
-    color:grey;
+  .button {
+      cursor: pointer;
+      color: grey;
+      font-size: 34px;
+      padding: 0.5rem 1rem;
+  }
+
+  .activebutton {
+    font-weight: bold;
+    color: white;
     font-size: 34px;
     padding: 0.5rem 1rem;
   }
 
-.activebutton {
-    font-weight: bold;
-    color:white;
-    font-size: 34px;
-    padding: 0.5rem 1rem;
-}
+  .button:hover {
+    color: white;
+    transition: 0.2s;
+  }
   
-
-.button:hover {
-    color:white;
-    transition: 0,2s;
-}
-
-.gamesidelist {
+  .gamesidelist {
     margin-bottom: 0.5rem;
     color: #ffffff;
     display: flex;
     align-items: center;
-}
+  }
+    
+  .library-details-header {
+    width: 100%;
+    padding-bottom: 1rem;
+  }
+  
+  .library-games {
+    width: 100%;
+    padding-top: 1rem;
+    padding-left: 2rem;
+  }
+  
+  .imgGameSelect {
+    width: 100%;
+    height: 350px;
+    object-fit: cover;
+  }
+  
+  .bannerGameSelect {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    padding-left: 1rem;
+  }
+  
+  .playButton {
+    background-color: #195887;
+    border-radius: 8%;
+    width: 5%;
+    height: 35%;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .playButton:hover {
+    background-color: #1570a6;
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
 
-.bannerGameSelect {
-    backdrop-filter:blur(5px);
-    margin-top: -110px;
-    height: 120px;
-}
+  .containerGameSelect {
+    display: flex;
+    margin-top: 1rem;
+    gap: 1rem;
+  }
+  
+  .rankingContainer {
+    width: 65%;
+    min-height: 450px;
+    margin: 1% 1% 1% 4%;
+    background-color: #2d3748;
+    border-radius: 8px;    
+    padding: 1rem;
+  }
+
+  .friendsContainer {
+    width: 25%;
+    padding: 1rem;
+    margin-top: 1%;
+    margin-bottom: 1%;
+    background-color: #1a202c;
+    border-radius: 8px;
+  }
+  
+  .sectionTitle {
+    font-size: 1.125rem;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #4a5568;
+    padding-bottom: 0.5rem;
+  }
+
+  .rankingList,
+  .friendsList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .rankingItem,
+  .friendItem {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    background-color: #2a2f37;
+  }
+
+  .profilePic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 0.75rem;
+    border: 2px solid #ffffff;
+    object-fit: cover;
+  }
+
+  .playerInfo {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .playerName,
+  .friendName {
+    color: #ffffff;
+    font-weight: bold;
+  }
+  
+  .playerWins {
+    color: #cbd5e0;
+    font-size: 0.9rem;
+  }
+
+  .playerRank {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #ffffff;
+    margin-right: 1rem;
+  }
