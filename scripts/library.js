@@ -55,7 +55,7 @@ function showGameDetails(game) {
     <section>
       <div class="relative">
         <img src="${game.image}" alt="${game.name}" class="w-full h-[350px]">
-        <div class="bannerGameSelect border-gray-500">
+        <div class="bannerGameSelect">
           <button class="text-white bg-[#195887] hover:bg-blue-500 px-4 py-2 rounded w-[150px] h-[70px]">
             PLAY
           </button>
