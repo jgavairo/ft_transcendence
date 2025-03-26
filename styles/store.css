@@ -1,14 +1,17 @@
+@import './colors.css';
+
 .gamescontainer
 {
 	width: 75%;
-	height: 80vh;
+	height: 75vh;
 	padding: 20px 0;
 	color: #ffffff;
-	background-color: #171a21;
+	background-color: var(--bleu-fonce);
 	border-width: 4px;
-	border-color: #171a2100;
-	border-radius: 60px;
+	border-color: var(--bleu-fonce);
+	border-radius: 5px;
 	margin: 20px auto;
+	margin-top: 2%;
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
@@ -20,17 +23,17 @@
 .gamecard
 {
 	width: 90%;
-	background-color: #1b2838;
-	border-radius: 60px;
+	background-color: var(--anthracite);
+	border-radius: 5px;
 	margin: 20px auto;
 }
 
 .gamecard .gamecard-logo
 {
-	width: 600px;
-	height: 300px;
+	width: 400px;
+	height: 200px;
 	padding: 20px;
-	border-radius: 60px;
+	border-radius: 5px;
 	object-fit: cover;
 }
 
@@ -38,65 +41,72 @@
 {
 	font-size: 30px;
 	font-weight: bold;
-	padding-left: 80px;
+	padding-left: 20px;
+	padding-top: -20px;
+	padding-bottom: -20px;
+	margin-bottom: -40px;
 }
 
 .gamecard .buybutton
 {
-	background-color: #66C0F4;
-	border-radius: 10px;
+	width: 11rem;
+	height: 4rem;
+	background-color: var(--bleu-clair);
+	border-radius: 5px;
 	padding: 10px 20px;
 	font-weight: bold;
-	margin-left: 85%;
-	margin-right: 10px;
 	position: relative;
-	top: -50px;
+	bottom: 10%;
+	left: 80%;
 }
 
 .gamecard .buybutton:hover
 {
-	background-color: #45a049;
+	background-color: var(--vert);
 }
 
 .gamecard .owned-button
 {
-	background-color: #00000027;
-	color: #666666;
-	border-radius: 10px;
+	width: 11rem;
+	height: 3rem;
+	background-color: var(--anthracite-fonce);
+	color: var(--gris-police);
+	border-radius: 5px;
 	padding: 10px 20px;
 	font-weight: bold;
 	font-style: italic;
-	margin-left: 85%;
-	margin-right: 10px;
 	position: relative;
-	top: -50px;
+	bottom: 10%;
+	left: 80%;
 }
 
 .gamecard .gamedescription
 {
-	background-color: #0000002d;
-	border-radius: 20px;
+	background-color: var(--anthracite-fonce);
+	border-radius: 5px;
 	height: fit-content;
-	max-height: 200px;
 	padding: 20px;
-	width: 40%;
-	margin-top: 20px;
-	margin-left: 90px;
-	margin-right: 10px;
+	width: 60%;
+	position: relative;
+	top: 20px;
+	left: 40px;
 	overflow-y: auto;
 	scrollbar-width: none;
 }
 
 .gamecard .textdescription
 {
-	display: -webkit-box;
-	-webkit-line-clamp: 12;
-	line-clamp: 12;
-	-webkit-box-orient: vertical;
+	min-height: 1.5em;
+	max-height: 4.5em;
+	overflow-y: auto;
 	font-size: 16px;
 	line-height: 1.5;
 	color: #a3a3a3;
-	max-height: 300px;
+	scrollbar-width: none;
+}
+
+.gamecard .textdescription::-webkit-scrollbar {
+	display: none;  /* Pour Chrome, Safari et Opera */
 }
 
 .gamecard .price
@@ -105,14 +115,16 @@
 	font-weight: bold;
 	margin-left: 85%;
 	position: relative;
-	top: -55px;
+	bottom: 15%;
+	left: 3%;
+
 }
 
 .notification {
     position: fixed;
     top: 20px;
     right: 20px;
-    background-color: #66C0F4;
+    background-color: var(--bleu-clair);
     color: white;
     padding: 15px 25px;
     border-radius: 5px;
