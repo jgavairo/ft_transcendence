@@ -1,6 +1,7 @@
 import { setupLibrary } from './library.js';
 import { libraryPage, storePage, communityPage, profileWindow } from './sourcepage.js';
 import { setupStore } from './store.js';
+let boolprofileMenu = false;
 
 function changeActiveButton(newButton: HTMLElement, newActiveButton: HTMLElement)
 {
@@ -17,6 +18,7 @@ function setupHeader()
 
 function attachNavigationListeners() 
 {
+	const profilewindow = document.getElementById('profileMenu');
 	const navigationButtons = document.querySelectorAll('.header button');
 	const storeButton = document.getElementById('storebutton');
 	if (!storeButton)
@@ -30,6 +32,8 @@ function attachNavigationListeners()
 	const mainElement = document.getElementById('main');
 	if (!mainElement)
 		return;
+	if (!profilewindow)
+		return;
 
 	
 	navigationButtons.forEach(button => {
@@ -41,6 +45,11 @@ function attachNavigationListeners()
                 case 'librarybutton':
 					if (currentActiveButton.id === 'librarybutton')
 						return;
+					if (boolprofileMenu)
+					{
+						profilewindow.innerHTML = "";
+						boolprofileMenu = false;
+					}
 					changeActiveButton(currentActiveButton, libraryButton);
                     mainElement.innerHTML = libraryPage;
 					setupLibrary();
@@ -48,6 +57,11 @@ function attachNavigationListeners()
 					case 'storebutton':
 						if (currentActiveButton.id === 'storebutton')
 							return;
+						if (boolprofileMenu)
+						{
+							profilewindow.innerHTML = "";
+							boolprofileMenu = false;
+						}
 						changeActiveButton(currentActiveButton, storeButton);
 					mainElement.innerHTML = storePage;
 					setupStore();
@@ -55,6 +69,11 @@ function attachNavigationListeners()
 				case 'communitybutton':
 					if (currentActiveButton.id === 'communitybutton')
 						return;
+					if (boolprofileMenu)
+					{
+						profilewindow.innerHTML = "";
+						boolprofileMenu = false;
+					}
 					changeActiveButton(currentActiveButton, communityButton);
 					mainElement.innerHTML = communityPage;
 					break;
@@ -63,20 +82,30 @@ function attachNavigationListeners()
 	});
 }
 
+
 function setupProfileButton()
 {
+	const profilewindow = document.getElementById('profileMenu');
 	const profilePicture = document.getElementById('profilePicture');
 	if (!profilePicture)
 		return;
 	profilePicture.addEventListener('click', () => {
 		console.log("profile button clicked");
-		const profilewindow = document.getElementById('profileMenu');
 		if (!profilewindow)
 		{
 			console.log("profile window not found");
 			return;
 		}
-		profilewindow.innerHTML = profileWindow;
+		if (!boolprofileMenu)
+		{
+			profilewindow.innerHTML = profileWindow
+			boolprofileMenu = true;
+		}
+		else if (boolprofileMenu)
+		{
+			profilewindow.innerHTML = "";
+			boolprofileMenu = false;
+		}
 	});
 }
 
