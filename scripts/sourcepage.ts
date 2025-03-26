@@ -28,13 +28,9 @@ const storePage = `
 `;
 
 const libraryPage = `
-    <div class="container">
     <aside class="sidebar">
-      <div class="search-container flex">
-        <input 
-          type="text" 
-          placeholder="Search" 
-          class="search-input">
+      <div class="search-container">
+        <input type="text" placeholder="Search" class="search-input">
         <div class="search-icon">
           <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -44,16 +40,9 @@ const libraryPage = `
       </div>
       <ul class="library-games-list"></ul>
     </aside>
-
     <section class="main-section">
-      <div class="library-details">
-        <div class="header-section flex">
-          <h2>All games (0)</h2>
-          <div class="divider"></div>
-        </div>
-      </div>
+      <div class="library-details"></div>
     </section>
-  </div>
 `;
 
 const communityPage = `
