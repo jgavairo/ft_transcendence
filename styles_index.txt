@@ -1,0 +1,5 @@
+Colors:
+	voir colors.css
+
+border radius: 5px
+

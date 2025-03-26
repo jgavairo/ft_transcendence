@@ -1,14 +1,38 @@
+@import './colors.css';
+
+body 
+{
+	background-color: var(--anthracite);
+	margin: 0;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
 .main
 {
 	max-height: 100%;
+}
+
+.footer {
+	height: 3rem;
+	width: 100%;
+	background-color: var(--bleu-fonce);
+	position: absolute;
+	bottom: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #ffffff;
+	font-size: 1rem;
 }
 
 .header 
 {
 	display: flex;
 	align-items: center;
-	background-color: #171A21;
-	padding: 2rem;
+	background-color: var(--bleu-fonce);
+	padding: 1.2rem;
 	gap: 20px;
 }
 
@@ -41,29 +65,43 @@
 
 .header .profile
 {
-	width: 3rem;
-	height: 3rem;
 	display: flex;
 	align-items: center;
-	justify-content: center;
-	margin-left: auto;
-	border-radius: 50%;
+	background-color: var(--anthracite);
+	border-radius: 2px;
+	padding: 0.5rem;
+	cursor: pointer;
+	position: absolute;
+	right: 12.5%;
+	top: 0;
+}
+
+.header .profile:hover
+{
+	background-color: var(--anthracite-fonce);
 }
 
 .header .profilePicture
 {
-	width: 3rem;
-	height: 3rem;
+	width: 2rem;
+	height: 2rem;
 	object-fit: cover;
-	border-radius: 50%;
-	border: 0.3rem solid #113d5e;
+	border-radius: 2px;
+	margin-right: 0.5rem;
 }
 
-.header .profilePicture:hover
+.header .profileName
 {
-	cursor: pointer;
-	border: 0.2rem solid #ffffff;
-	transition: 0.3s;
+	color: #ffffff;
+	font-size: 0.9rem;
+	margin-right: 0.5rem;
+}
+
+.header .profileArrow
+{
+	width: 1rem;
+	height: 1rem;
+	color: #c2c2c2;
 }
 
 .modal-overlay {
@@ -166,7 +204,8 @@
 {
 	color: #b1b1b1;
 	margin-top: 110px;
-	margin-left: 62%;
+	position: relative;
+	left: 60%;
 }
 
 .login-modal .registerButton
@@ -236,52 +275,42 @@
 .profileMenu
 {
 	position: absolute;
-	top: 10%;
-	left: 90%;
-	width: fit-content;
-	height: fit-content;
+	top: 100%;
+	right: 0;
+	width: 200px;
+	border-radius: 2px;
+	margin-top: 0.5rem;
 	pointer-events: none;
+	z-index: 1000;
 }
 
 .profilewindow {
 	pointer-events: auto;
-	height: auto;
-	width: auto;
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
 	justify-content: center;
-	background-color: #174d9353;
-	border: 2px solid #113d5e;
-	border-radius: 5px;
 	color: #ffffff;
-}
-
-.profilewindow button:hover
-{
-	background-color: #174d93aa;
-	transition: 0.3s;
-}
-.profilewindow button:last-child 
-{
-	border-bottom: none;
 }
 
 .profilewindow button 
 {
 	width: 100%;
 	text-align: left;
-	padding: 4px 6px;
+	padding: 0.5rem 1rem;
 	background: none;
-	border-bottom: 2px solid #113d5e;
+	border: none;
 	color: #ffffff;
 	cursor: pointer;
+	background-color: var(--anthracite);
+	border: 2px solid var(--bleu-fonce);
+	font-size: 0.9rem;
 }
 
 .profilewindow button:hover 
 {
-
-	border-radius: 3px;
+	background-color: var(--gris-police);
+	transition: 0.3s;
 }
 
 .profilewindow-item

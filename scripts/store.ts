@@ -33,15 +33,12 @@ export function setupStore()
                     </div>
                 </div>
                 <h3 class="gametitle" id="${game.name}title">${game.name}</h3>
-                <h4 class="price" id="${game.name}price">
-                    ${game.price === 0 ? 'Free' : `${game.price}$`}
-                </h4>
                 <button 
                     class="${inLibrary ? 'owned-button' : 'buybutton'}" 
                     id="${game.name}buybutton"
                     ${inLibrary ? 'disabled' : ''}
                 >
-                    ${inLibrary ? 'Already in library' : 'Add to library'}
+                    ${inLibrary ? 'Already in library' : `Add to library ${game.price === 0 ? 'Free' : `${game.price}$`}`}
                 </button>
             </div>
         `;

@@ -72,7 +72,7 @@ function attachNavigationListeners() {
 }
 function setupProfileButton() {
     const profilewindow = document.getElementById('profileMenu');
-    const profilePicture = document.getElementById('profilePicture');
+    const profilePicture = document.getElementById('profilea');
     if (!profilePicture)
         return;
     profilePicture.addEventListener('click', () => {
