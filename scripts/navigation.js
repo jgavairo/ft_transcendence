@@ -1,6 +1,7 @@
 import { setupLibrary } from './library.js';
 import { libraryPage, storePage, communityPage, profileWindow } from './sourcepage.js';
 import { setupStore } from './store.js';
+import { setupProfileModal } from './profileModal.js';
 let boolprofileMenu = false;
 function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');
@@ -83,6 +84,21 @@ function setupProfileButton() {
         if (!boolprofileMenu) {
             profilewindow.innerHTML = profileWindow;
             boolprofileMenu = true;
+            const logoutButton = document.getElementById('logoutButton');
+            if (!logoutButton)
+                return;
+            logoutButton.addEventListener('click', () => {
+                console.log("logout button clicked");
+                localStorage.removeItem('isauthed');
+                window.location.reload();
+            });
+            const profileSettingsButton = document.getElementById('profileSettings');
+            if (!profileSettingsButton)
+                return;
+            profileSettingsButton.addEventListener('click', () => {
+                console.log("profile settings button clicked");
+                setupProfileModal();
+            });
         }
         else if (boolprofileMenu) {
             profilewindow.innerHTML = "";

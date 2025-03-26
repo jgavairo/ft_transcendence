@@ -1,6 +1,7 @@
 export interface UserLibrary {
     id: number;
     userName: string;
+    email: string;
     profilePicture: string;
     library: number[];
 }
@@ -8,6 +9,14 @@ export interface UserLibrary {
 export class UserLibraryManager 
 {
     private static readonly STORAGE_KEY = 'userLibrary';
+
+    static getCurrentUser(): UserLibrary | null {
+        const stored = localStorage.getItem(this.STORAGE_KEY);
+        if (stored) {
+            return JSON.parse(stored);
+        }
+        return null;
+    }
 
     static getUser(): UserLibrary
     {
@@ -20,6 +29,7 @@ export class UserLibraryManager
         const newLibrary: UserLibrary = {
             id: 0,
             userName: 'jgavairo',
+            email: 'jgavairo@student.42.fr',
             profilePicture: '../../assets/profilePicture.jpeg',
             library: [],
         };
