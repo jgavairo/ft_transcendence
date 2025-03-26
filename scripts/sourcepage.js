@@ -1,3 +1,5 @@
+var _a, _b, _c;
+import { UserLibraryManager } from '../scripts/userLibrary.js';
 const header = `
 			<img src="../../assets/logo.png" alt="Logo" class="w-12" />
 			<button class="activebutton" id="storebutton">STORE</button>
@@ -15,7 +17,7 @@ const profileWindow = `
 				<button id="profileSettings">
         Profile settings
 				</button>
-				<button class="logoutbutton" id="logoutButton">
+				<button id="logoutButton">
         Log out
 				</button>
 		</div>
@@ -52,4 +54,23 @@ const libraryPage = `
 `;
 const communityPage = `
 `;
-export { storePage, libraryPage, communityPage, header, profileWindow };
+const profileModalHTML = `
+    <div class="modal-overlay" id="modalWindow">
+        <div class="login-modal" id="profile-modal">
+          <div class="profile-modal-content">
+            <button class="closeProfileModal" id="closeProfileModal">X</button>
+            <h2>Profile settings</h2>
+            <img src="${(_a = UserLibraryManager.getCurrentUser()) === null || _a === void 0 ? void 0 : _a.profilePicture}" class="pictureProfileModal" alt="Profile Picture" />
+            <div class="profile-modal-content-info">
+              <div id="username">
+                <h3>Username: ${(_b = UserLibraryManager.getCurrentUser()) === null || _b === void 0 ? void 0 : _b.userName}</h3>
+              </div>
+              <div id="email">
+                <h3>Email: ${(_c = UserLibraryManager.getCurrentUser()) === null || _c === void 0 ? void 0 : _c.email}</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+`;
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML };

@@ -1,4 +1,11 @@
 export class UserLibraryManager {
+    static getCurrentUser() {
+        const stored = localStorage.getItem(this.STORAGE_KEY);
+        if (stored) {
+            return JSON.parse(stored);
+        }
+        return null;
+    }
     static getUser() {
         const stored = localStorage.getItem(this.STORAGE_KEY);
         if (stored) {
@@ -7,6 +14,7 @@ export class UserLibraryManager {
         const newLibrary = {
             id: 0,
             userName: 'jgavairo',
+            email: 'jgavairo@student.42.fr',
             profilePicture: '../../assets/profilePicture.jpeg',
             library: [],
         };

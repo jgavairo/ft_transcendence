@@ -246,21 +246,16 @@
 	flex-direction: column;
 	align-items: flex-start;
 	justify-content: center;
-	background-color: #263549;
-	border: 2px solid #a3a3a3;
+	background-color: #174d9353;
+	border: 2px solid #113d5e;
 	border-radius: 5px;
 	color: #ffffff;
 }
 
-.profilewindow-item button:hover
-{
-	cursor: pointer;
-	background-color: #364c69;
-}
-
 .profilewindow button:hover
 {
-	background-color: #364c69;
+	background-color: #174d93aa;
+	transition: 0.3s;
 }
 .profilewindow button:last-child 
 {
@@ -273,14 +268,14 @@
 	text-align: left;
 	padding: 4px 6px;
 	background: none;
-	border-bottom: 1px solid #ffffff3b;
+	border-bottom: 2px solid #113d5e;
 	color: #ffffff;
 	cursor: pointer;
 }
 
 .profilewindow button:hover 
 {
-	background-color: #364c69;
+
 	border-radius: 3px;
 }
 
@@ -289,8 +284,54 @@
 	width: 100%;
 }
 
-.logoutbutton
-{
-	color: #ff0000;
+#logoutButton {
+	background-color: #ff00003c;
 	width: 100%;
 }
+
+#logoutButton:hover
+{
+	background-color: #ff000069;
+	transition: 0.3s;
+}
+
+.pictureProfileModal
+{
+	width: 10rem;
+	height: 10rem;
+	object-fit: cover;
+	border-radius: 50%;
+	border: 0.3rem solid #113d5e;
+}
+
+.profile-modal-content-info
+{
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	align-items: center;
+	justify-content: center;
+	margin-top: -15%;
+}
+
+.profile-modal-content-info div {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+}
+
+.profile-modal-content-info h3 {
+    color: #ffffff;
+}
+
+.profile-modal-content-info p {
+    color: #ffffff;
+}
+
+.closeProfileModal
+{
+	font-weight: bold;
+	color: #8d8d8d;
+	cursor: pointer;
+}
+
