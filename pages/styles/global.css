@@ -230,22 +230,67 @@
 
 .profileMenu
 {
-
-}
-
-.profilewindow
-{
-	margin-top: -44.5%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	margin-left: auto;
-	margin-right: 4.5rem;
+	position: absolute;
+	top: 10%;
+	left: 90%;
 	width: fit-content;
 	height: fit-content;
-	padding: 10px;
+	pointer-events: none;
+}
+
+.profilewindow {
+	pointer-events: auto;
+	height: auto;
+	width: auto;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
 	background-color: #263549;
 	border: 2px solid #a3a3a3;
-	border-radius: 10px;
+	border-radius: 5px;
 	color: #ffffff;
+}
+
+.profilewindow-item button:hover
+{
+	cursor: pointer;
+	background-color: #364c69;
+}
+
+.profilewindow button:hover
+{
+	background-color: #364c69;
+}
+.profilewindow button:last-child 
+{
+	border-bottom: none;
+}
+
+.profilewindow button 
+{
+	width: 100%;
+	text-align: left;
+	padding: 4px 6px;
+	background: none;
+	border-bottom: 1px solid #ffffff3b;
+	color: #ffffff;
+	cursor: pointer;
+}
+
+.profilewindow button:hover 
+{
+	background-color: #364c69;
+	border-radius: 3px;
+}
+
+.profilewindow-item
+{
+	width: 100%;
+}
+
+.logoutbutton
+{
+	color: #ff0000;
+	width: 100%;
 }
