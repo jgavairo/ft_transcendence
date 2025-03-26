@@ -5,18 +5,20 @@ const header = `
 			<button class="button" id="communitybutton">COMMUNITY</button>
 			<div class="profile">
 				<img class="profilePicture" id="profilePicture" src="../../assets/profilePicture.jpeg" alt="Profile Picture" />
+        <div id="profileMenu" class="profileMenu">
+        </div>
 				<button class="profilebutton" id="profilebutton"></button>
 			</div>
 `;
 const profileWindow = `
-		<ul class="profilewindow">
-			<li class="profilewindow-item">
-				<button id="profileSettings">Profile settings</button>
-			</li>
-			<li class="profilewindow-item">
-				<button id="logoutButton">Log out</button>
-			</li>
-		</ul>
+		<div class="profilewindow">
+				<button id="profileSettings">
+        Profile settings
+				</button>
+				<button class="logoutbutton" id="logoutButton">
+        Log out
+				</button>
+		</div>
 `;
 const storePage = `
 		<div class="gamescontainer">
