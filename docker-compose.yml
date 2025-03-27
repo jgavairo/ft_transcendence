@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  nginx:
+    build: services/nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public:/usr/share/nginx/html
+      - ./styles:/usr/share/nginx/html/styles
+      - ./scripts:/usr/share/nginx/html/scripts
+      - ./assets:/usr/share/nginx/html/assets
+      - ./games:/usr/share/nginx/html/games
+    restart: unless-stopped 
