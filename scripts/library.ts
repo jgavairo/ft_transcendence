@@ -1,5 +1,8 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
+import { gameModalHTML } from "../scripts/sourcepage.js"
+
+let activedinlist = false;
 
 export function setupLibrary(): void {
   const libraryList = document.querySelector('.library-games-list') as HTMLElement;
@@ -28,13 +31,19 @@ export function setupLibrary(): void {
     if (!game) return;
     const li = document.createElement('li');
     li.className = 'gamesidelist';
+    li.id = `${game.name.replace(/\s+/g, '_')}line`;
     li.innerHTML = `<img src="${game.image}" alt="${game.name}" class="sidebar-game-icon"> ${game.name}`;
     li.addEventListener('click', () => {
       showGameDetails(game);
+      const actived = document.getElementsByClassName('activegamesidelist');
+      for (let i = 0; i < actived.length; i++) {
+        (actived[i] as HTMLElement).classList.remove('activegamesidelist');
+      }
+      li.classList.add('activegamesidelist');
     });
     libraryList.appendChild(li);
   });
-
+  
   let gamesHTML = "";
   libraryGameIds.forEach((id: number) => {
     const game = gameList.find(g => g.id === id);
@@ -61,6 +70,14 @@ export function setupLibrary(): void {
       const game = gameList.find(g => g.id === Number(gameId));
       if (game) {
         showGameDetails(game);
+        const actived = document.getElementsByClassName('activegamesidelist');
+        for (let i = 0; i < actived.length; i++) {
+          (actived[i] as HTMLElement).classList.remove('activegamesidelist');
+        }
+        const gameline = document.getElementById(`${game.name}line`);
+        if (gameline) {
+          gameline.classList.add('activegamesidelist');
+        }
       }
     });
   });
@@ -76,7 +93,7 @@ function showGameDetails(game: any): void {
         <button class="close-button">&times;</button>
         <img src="${game.image}" alt="${game.name}">
         <div class="bannerGameSelect">
-          <button class="playButton">PLAY</button>
+          <button id="launchGameButton" class="playButton">PLAY</button>
         </div>
       </div>
       <div class="detail-info">
@@ -84,6 +101,7 @@ function showGameDetails(game: any): void {
           <h3 class="sectionTitle">Player Ranking</h3>
           <ul class="rankingList">
             <li class="rankingItem">
+              <span class="numberRank"> 1 </span>
               <img src="/assets/pp.png" class="profilePic">
               <div class="playerInfo">
                 <span class="playerName">Jordan</span>
@@ -108,6 +126,16 @@ function showGameDetails(game: any): void {
       </div>
     </div>
   `;
+
+  const playButton = document.getElementById('launchGameButton');
+  if (!playButton)
+      return;
+  playButton.addEventListener('click', () => {
+    const target = document.getElementById('optionnalModal')
+    if (!target)
+      return;
+    target.innerHTML = gameModalHTML;
+  });
 
   const closeButton = detailsContainer.querySelector('.close-button') as HTMLButtonElement;
   closeButton.addEventListener('click', () => {

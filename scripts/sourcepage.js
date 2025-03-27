@@ -68,4 +68,11 @@ const profileModalHTML = `
         </div>
     </div>
 `;
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML };
+const gameModalHTML = `
+    <div class="modal-overlay" id="modalWindow">
+        <div class="login-modal" id="profile-modal">
+
+        </div>
+    </div>
+`;
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML };
