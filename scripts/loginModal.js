@@ -57,11 +57,25 @@ export class LoginManager {
                 alert("Please enter a username and password");
                 return;
             }
-            localStorage.setItem(this.AUTH_KEY, "isauthed");
-            if (localStorage.getItem(this.AUTH_KEY) === "isauthed") {
-                this.removeLoginModal();
-                window.location.reload();
-            }
+            fetch('http://localhost:3000/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+                .then(response => response.json())
+                .then(data => {
+                console.log('backend response:', data);
+                if (data.success) {
+                    localStorage.setItem(this.AUTH_KEY, "isauthed");
+                    const modal = document.getElementById('optionnalModal');
+                    if (!modal)
+                        return;
+                    modal.innerHTML = "";
+                    window.location.reload();
+                }
+            });
         });
         const registerButton = document.getElementById('registerButton');
         if (!registerButton)
