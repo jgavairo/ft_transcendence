@@ -1,5 +1,6 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
+import { gameModalHTML } from "../scripts/sourcepage.js";
 let activedinlist = false;
 export function setupLibrary() {
     const libraryList = document.querySelector('.library-games-list');
@@ -26,17 +27,14 @@ export function setupLibrary() {
             return;
         const li = document.createElement('li');
         li.className = 'gamesidelist';
-        // Assignez l'ID au li et non à l'image
         li.id = `${game.name.replace(/\s+/g, '_')}line`;
         li.innerHTML = `<img src="${game.image}" alt="${game.name}" class="sidebar-game-icon"> ${game.name}`;
         li.addEventListener('click', () => {
             showGameDetails(game);
-            // Retire la classe active de tous les éléments de la sidebar
             const actived = document.getElementsByClassName('activegamesidelist');
             for (let i = 0; i < actived.length; i++) {
                 actived[i].classList.remove('activegamesidelist');
             }
-            // Ajoute la classe active sur le li cliqué (pas sur l'image)
             li.classList.add('activegamesidelist');
         });
         libraryList.appendChild(li);
@@ -88,7 +86,7 @@ function showGameDetails(game) {
         <button class="close-button">&times;</button>
         <img src="${game.image}" alt="${game.name}">
         <div class="bannerGameSelect">
-          <button class="playButton">PLAY</button>
+          <button id="launchGameButton" class="playButton">PLAY</button>
         </div>
       </div>
       <div class="detail-info">
@@ -121,6 +119,15 @@ function showGameDetails(game) {
       </div>
     </div>
   `;
+    const playButton = document.getElementById('launchGameButton');
+    if (!playButton)
+        return;
+    playButton.addEventListener('click', () => {
+        const target = document.getElementById('optionnalModal');
+        if (!target)
+            return;
+        target.innerHTML = gameModalHTML;
+    });
     const closeButton = detailsContainer.querySelector('.close-button');
     closeButton.addEventListener('click', () => {
         setupLibrary();
