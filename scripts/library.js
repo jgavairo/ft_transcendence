@@ -1,5 +1,7 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
+import { gameModalHTML } from "../scripts/sourcepage.js";
+let activedinlist = false;
 export function setupLibrary() {
     const libraryList = document.querySelector('.library-games-list');
     const detailsContainer = document.querySelector('.library-details');
@@ -25,9 +27,15 @@ export function setupLibrary() {
             return;
         const li = document.createElement('li');
         li.className = 'gamesidelist';
+        li.id = `${game.name.replace(/\s+/g, '_')}line`;
         li.innerHTML = `<img src="${game.image}" alt="${game.name}" class="sidebar-game-icon"> ${game.name}`;
         li.addEventListener('click', () => {
             showGameDetails(game);
+            const actived = document.getElementsByClassName('activegamesidelist');
+            for (let i = 0; i < actived.length; i++) {
+                actived[i].classList.remove('activegamesidelist');
+            }
+            li.classList.add('activegamesidelist');
         });
         libraryList.appendChild(li);
     });
@@ -56,6 +64,14 @@ export function setupLibrary() {
             const game = gameList.find(g => g.id === Number(gameId));
             if (game) {
                 showGameDetails(game);
+                const actived = document.getElementsByClassName('activegamesidelist');
+                for (let i = 0; i < actived.length; i++) {
+                    actived[i].classList.remove('activegamesidelist');
+                }
+                const gameline = document.getElementById(`${game.name}line`);
+                if (gameline) {
+                    gameline.classList.add('activegamesidelist');
+                }
             }
         });
     });
@@ -70,7 +86,7 @@ function showGameDetails(game) {
         <button class="close-button">&times;</button>
         <img src="${game.image}" alt="${game.name}">
         <div class="bannerGameSelect">
-          <button class="playButton">PLAY</button>
+          <button id="launchGameButton" class="playButton">PLAY</button>
         </div>
       </div>
       <div class="detail-info">
@@ -78,6 +94,7 @@ function showGameDetails(game) {
           <h3 class="sectionTitle">Player Ranking</h3>
           <ul class="rankingList">
             <li class="rankingItem">
+              <span class="numberRank"> 1 </span>
               <img src="/assets/pp.png" class="profilePic">
               <div class="playerInfo">
                 <span class="playerName">Jordan</span>
@@ -102,6 +119,15 @@ function showGameDetails(game) {
       </div>
     </div>
   `;
+    const playButton = document.getElementById('launchGameButton');
+    if (!playButton)
+        return;
+    playButton.addEventListener('click', () => {
+        const target = document.getElementById('optionnalModal');
+        if (!target)
+            return;
+        target.innerHTML = gameModalHTML;
+    });
     const closeButton = detailsContainer.querySelector('.close-button');
     closeButton.addEventListener('click', () => {
         setupLibrary();
