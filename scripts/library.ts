@@ -1,5 +1,6 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
+import { gameModalHTML } from "../scripts/sourcepage.js"
 
 let activedinlist = false;
 
@@ -92,7 +93,7 @@ function showGameDetails(game: any): void {
         <button class="close-button">&times;</button>
         <img src="${game.image}" alt="${game.name}">
         <div class="bannerGameSelect">
-          <button class="playButton">PLAY</button>
+          <button id="launchGameButton" class="playButton">PLAY</button>
         </div>
       </div>
       <div class="detail-info">
@@ -125,6 +126,16 @@ function showGameDetails(game: any): void {
       </div>
     </div>
   `;
+
+  const playButton = document.getElementById('launchGameButton');
+  if (!playButton)
+      return;
+  playButton.addEventListener('click', () => {
+    const target = document.getElementById('optionnalModal')
+    if (!target)
+      return;
+    target.innerHTML = gameModalHTML;
+  });
 
   const closeButton = detailsContainer.querySelector('.close-button') as HTMLButtonElement;
   closeButton.addEventListener('click', () => {
