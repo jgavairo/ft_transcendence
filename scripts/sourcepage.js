@@ -70,7 +70,7 @@ const profileModalHTML = `
 `;
 const gameModalHTML = `
     <div class="modal-overlay" id="modalWindow">
-        <div class="login-modal" id="profile-modal">
+        <div class="game-modal" id="games-modal">
 
         </div>
     </div>
