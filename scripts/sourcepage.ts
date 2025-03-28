@@ -5,7 +5,7 @@ const header = `
 			<button class="button" id="librarybutton">LIBRARY</button>
 			<button class="button" id="communitybutton">COMMUNITY</button>
 			<div class="profile" id="profilea">
-				<img class="profilePicture" id="profilePicture" src="../../assets/profilePicture.jpeg" alt="Profile Picture" />
+				<img class="profilePicture" id="profilePicture" src="../../assets/profile_pictures/rael.png" alt="Profile Picture" />
 				<span class="profileName">jgavairo</span>
 				<svg class="profileArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path d="M6 9l6 6 6-6"/>
