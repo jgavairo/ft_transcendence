@@ -312,7 +312,7 @@ body
 
 .profilewindow button:hover 
 {
-	background-color: var(--gris-police);
+	background-color: var(--bleu-clair);
 	transition: 0.3s;
 }
 

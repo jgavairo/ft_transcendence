@@ -32,7 +32,7 @@ const registerModalHTML = `
                 <input type="password" id="RconfirmPassword" placeholder="confirm password" required>
                 <input type="email" id="Remail" placeholder="Email" required>
             </form>
-            <button id="registerButton" class="signupButton">Sign up</button>
+            <button id="registerRequestButton" class="signupButton">Sign up</button>
 `;
 export class LoginManager
 {
@@ -77,6 +77,7 @@ export class LoginManager
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'include',
                 body: JSON.stringify({ username, password })
             })
             .then(response => response.json())
@@ -84,11 +85,13 @@ export class LoginManager
                 console.log('backend response:', data);
                 if (data.success) {
                     localStorage.setItem(this.AUTH_KEY, "isauthed");
-                    const modal = document.getElementById('optionnalModal');
-                    if (!modal)
-                        return;
-                    modal.innerHTML = "";
+                    alert(data.message);
+                    this.removeLoginModal();
                     window.location.reload();
+                }
+                else
+                {
+                    alert(data.message);
                 }
             });
         });
@@ -112,13 +115,58 @@ export class LoginManager
                 modal.innerHTML = loginModalHTML;
                 this.setupLoginModal();
             });
-        });
-        const googleButton = document.getElementById('googleSignIn');
-        if (!googleButton)
-            return;
-        googleButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            alert("google is not available yet");
+            const registerRequestButton = document.getElementById('registerRequestButton');
+            if (!registerRequestButton)
+                return;
+            registerRequestButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                const username = (document.getElementById('Rusername') as HTMLInputElement).value;
+                const password = (document.getElementById('Rpassword') as HTMLInputElement).value;
+                const confirmPassword = (document.getElementById('RconfirmPassword') as HTMLInputElement).value;
+                const email = (document.getElementById('Remail') as HTMLInputElement).value;
+                if (!username || !password || !confirmPassword || !email)
+                {
+                    alert("Please enter a username, password and email");
+                    return;
+                }
+                if (password !== confirmPassword)
+                {
+                    alert("Passwords do not match");
+                    return;
+                }
+                fetch('http://localhost:3000/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password, email })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('backend response:', data);
+                    if (data.success)
+                    {
+                        alert("User registered successfully");
+                        const modal = document.getElementById('optionnalModal');
+                        if (!modal)
+                            return;
+                        modal.innerHTML = loginModalHTML;
+                        this.setupLoginModal();
+                    }
+                    else
+                    {
+                        alert(data.message);
+                    }
+                });
+            });
+            const googleButton = document.getElementById('googleSignIn');
+            if (!googleButton)
+                return;
+            googleButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert("google is not available yet");
+            });
         });
     }
 
@@ -126,6 +174,6 @@ export class LoginManager
     {
         const modal = document.querySelector('.modal-overlay');
         if (modal)
-            modal.remove();
+            modal.innerHTML = "";
     }
 }
