@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
+import jwt from 'jsonwebtoken';
 import { dbManager } from "./database/database";
+
+const JWT_SECRET = process.env.JWT_SECRET || 'votre_clé_secrète_par_défaut';
 const app = express();
 const port = 3000;
 
@@ -64,6 +67,19 @@ app.post("/api/login", async (req, res) => {
             }
             else
             {
+                const token = jwt.sign(
+                    { userId: user.id },
+                    JWT_SECRET,
+                    { expiresIn: '1h' }
+                );
+
+                res.cookie('token', token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'strict',
+                    maxAge: 24 * 60 * 60 * 1000
+                });
+
                 res.json({
                     success: true,
                     message: "Login successful",
