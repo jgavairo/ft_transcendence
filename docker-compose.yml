@@ -28,6 +28,10 @@ services:
       - sqlite_data:/app/data
     ports:
       - "3000:3000"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+    env_file:
+      - ./backend/.env
     restart: unless-stopped
     depends_on:
       - database

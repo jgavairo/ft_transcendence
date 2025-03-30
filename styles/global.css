@@ -302,6 +302,7 @@ body
 	text-align: left;
 	padding: 0.5rem 1rem;
 	background: none;
+	transition: 0.3s;
 	border: none;
 	color: #ffffff;
 	cursor: pointer;

@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY package.json ./
 RUN npm install
+RUN npm install jsonwebtoken cookie-parser
+RUN npm install jsonwebtoken @types/jsonwebtoken
 
 COPY . .
 
