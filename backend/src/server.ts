@@ -5,7 +5,7 @@ const app = express();
 const port = 3000;
 
 app.use(cors({
-    origin: true,  // Accepte toutes les origines en développement
+    origin: 'http://127.0.0.1:8080',  // Accepte toutes les origines en développement
     credentials: true,
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type']

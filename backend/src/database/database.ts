@@ -35,7 +35,7 @@ class DatabaseManager
         try
         {
             this.db = await open({
-                filename: path.join(__dirname, 'database.db'),
+                filename: '/app/data/database.db',
                 driver: sqlite3.Database
             });
 
