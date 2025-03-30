@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   nginx:
-    build: services/nginx
+    build: docker/nginx
     ports:
       - "8080:80"
     volumes:
@@ -11,4 +11,27 @@ services:
       - ./scripts:/usr/share/nginx/html/scripts
       - ./assets:/usr/share/nginx/html/assets
       - ./games:/usr/share/nginx/html/games
-    restart: unless-stopped 
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  database:
+    image: alpine:latest
+    volumes:
+      - sqlite_data:/data
+    command: tail -f /dev/null
+    restart: unless-stopped
+
+  backend:
+    build: backend
+    volumes:
+      - sqlite_data:/app/data
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      - database
+
+volumes:
+  sqlite_data:
+    name: ft_transcendence_db
