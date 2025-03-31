@@ -1,3 +1,4 @@
+import api from "./api.js";
 const loginModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="login-modal" id="login-modal">
@@ -57,14 +58,7 @@ export class LoginManager {
                 alert("Please enter a username and password");
                 return;
             }
-            fetch('http://localhost:3000/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({ username, password })
-            })
+            api.post('http://127.0.0.1:3000/api/login', { username, password })
                 .then(response => response.json())
                 .then(data => {
                 console.log('backend response:', data);
@@ -116,14 +110,7 @@ export class LoginManager {
                     alert("Passwords do not match");
                     return;
                 }
-                fetch('http://localhost:3000/api/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ username, password, email })
-                })
+                api.post('http://127.0.0.1:3000/api/register', { username, password, email })
                     .then(response => response.json())
                     .then(data => {
                     console.log('backend response:', data);

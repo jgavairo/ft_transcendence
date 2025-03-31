@@ -30,7 +30,7 @@ export class UserLibraryManager
             id: 0,
             userName: 'jgavairo',
             email: 'jgavairo@student.42.fr',
-            profilePicture: '../assets/profile_pictures/rael.png',
+            profilePicture: '../assets/profile_pictures/default.png',
             library: [],
         };
 

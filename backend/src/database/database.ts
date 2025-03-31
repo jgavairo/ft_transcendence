@@ -9,6 +9,7 @@ export interface User
     username: string;
     email: string;
     password_hash: string;
+    profile_picture: string;
     created_at?: number;
 }
 
@@ -56,8 +57,8 @@ class DatabaseManager
             throw new Error('Database not initialized');
 
         const result = await this.db.run(
-            'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
-            [user.username, user.email, user.password_hash]);
+            'INSERT INTO users (username, email, password_hash, profile_picture) VALUES (?, ?, ?, ?)',
+            [user.username, user.email, user.password_hash, user.profile_picture]);
         if (!result.lastID)
             throw new Error('Failed to create new user');
         return result.lastID;
@@ -71,6 +72,19 @@ class DatabaseManager
         const result = await this.db.get(
             'SELECT * FROM users WHERE username = ?',
             [username]);
+        return result;
+    }
+    
+    public async getUserById(id: number): Promise<User | null>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+
+        const result = await this.db.get
+        (
+            'SELECT * FROM users WHERE id = ?',
+            [id]
+        );
         return result;
     }
 }
