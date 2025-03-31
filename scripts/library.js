@@ -133,9 +133,8 @@ function showGameDetails(game) {
             return;
         target.innerHTML = gameModalHTML;
         startPong();
-        // const closeModal = target.querySelector('.close-modal') as HTMLButtonElement;
         window.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') { // 'Escape' est la valeur pour la touche Échap
+            if (event.key === 'Escape') {
                 const target = document.getElementById('optionnalModal');
                 if (target) {
                     target.innerHTML = '';
