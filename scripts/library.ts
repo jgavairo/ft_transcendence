@@ -1,6 +1,7 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
 import { gameModalHTML } from "../scripts/sourcepage.js"
+import { displayMenu, startPong } from './pongGame.js';
 
 let activedinlist = false;
 
@@ -126,6 +127,10 @@ function showGameDetails(game: any): void {
       </div>
     </div>
   `;
+  const closeButton = detailsContainer.querySelector('.close-button') as HTMLButtonElement;
+  closeButton.addEventListener('click', () => {
+    setupLibrary();
+  });
 
   const playButton = document.getElementById('launchGameButton');
   if (!playButton)
@@ -135,10 +140,16 @@ function showGameDetails(game: any): void {
     if (!target)
       return;
     target.innerHTML = gameModalHTML;
+    displayMenu();
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        const target = document.getElementById('optionnalModal');
+        if (target) {
+          target.innerHTML = '';
+        }
+      }
+    });    
   });
 
-  const closeButton = detailsContainer.querySelector('.close-button') as HTMLButtonElement;
-  closeButton.addEventListener('click', () => {
-    setupLibrary();
-  });
 }
+
