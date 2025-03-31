@@ -1,6 +1,7 @@
 import { storePage, libraryPage, communityPage, header } from "./sourcepage.js";
+import { setupHeader } from "./navigation.js";
 import { setupStore } from "./store.js";
-import { setupLibrary } from "./library.js";
+import api from "./api.js";
 
 class MainApp
 {
@@ -13,7 +14,24 @@ class MainApp
         });
     }
 
-    static setupHeader()
+    static getUserInfo = async () => {
+        try {
+            const response = await api.get('http://127.0.0.1:3000/api/header');
+            console.log('Response status:', response.status);
+            const text = await response.text();
+            console.log('Response text:', text);
+            const data = JSON.parse(text);
+            console.log('Data après parsing:', data);
+            if (data.success) {
+                console.log('Profile picture:', data.profile_picture);
+                return data;
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+        }
+    };
+
+    static async setupHeader()
     {
         console.log("setupHeader");
         const headerElement = document.getElementById('header');
@@ -22,7 +40,16 @@ class MainApp
             console.error('Header element not found');
             return;
         }
-        headerElement.innerHTML = header;
+        const userInfos = await this.getUserInfo();
+        console.log('User infos:', userInfos);
+        if (!userInfos)
+        {
+            console.error('User infos not found');
+            return;
+        }
+        headerElement.innerHTML = header(userInfos.username, userInfos.profile_picture);
+        setupHeader()
+
     }
 
     static setupCurrentPage()

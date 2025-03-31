@@ -7,7 +7,7 @@ function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');
     newActiveButton.classList.replace('button', 'activebutton');
 }
-function setupHeader() {
+export function setupHeader() {
     attachNavigationListeners();
     setupProfileButton();
 }

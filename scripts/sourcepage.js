@@ -1,13 +1,13 @@
 var _a, _b, _c;
 import { UserLibraryManager } from '../scripts/userLibrary.js';
-const header = `
+const header = (username, profilePicture) => `
 			<img src="../../assets/logo.png" alt="Logo" class="w-12" />
 			<button class="activebutton" id="storebutton">STORE</button>
 			<button class="button" id="librarybutton">LIBRARY</button>
 			<button class="button" id="communitybutton">COMMUNITY</button>
 			<div class="profile" id="profilea">
-				<img class="profilePicture" id="profilePicture" src="../../assets/profile_pictures/rael.png" alt="Profile Picture" />
-				<span class="profileName">jgavairo</span>
+				<img class="profilePicture" id="profilePicture" src="${profilePicture}" alt="Profile Picture" />
+				<span class="profileName">${username}</span>
 				<svg class="profileArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path d="M6 9l6 6 6-6"/>
 				</svg>
@@ -71,7 +71,7 @@ const profileModalHTML = `
 const gameModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="game-modal" id="games-modal">
-
+          
         </div>
     </div>
 `;
