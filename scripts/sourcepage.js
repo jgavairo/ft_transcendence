@@ -71,7 +71,7 @@ const profileModalHTML = `
 const gameModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="game-modal" id="games-modal">
-          
+          <canvas id="pongCanvas" width="1184" height="784"></canvas>
         </div>
     </div>
 `;
