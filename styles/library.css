@@ -261,3 +261,16 @@
   cursor: pointer;
   z-index: 10;
 }
+
+
+.close-modal {
+  position: absolute;
+  top: -8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  font-size: 30px;
+  color: #ffffff;
+  cursor: pointer;
+  z-index: 10;
+}
