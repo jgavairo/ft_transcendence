@@ -1,6 +1,7 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
 import { gameModalHTML } from "../scripts/sourcepage.js";
+import { startPong } from './pongGame.js';
 let activedinlist = false;
 export function setupLibrary() {
     const libraryList = document.querySelector('.library-games-list');
@@ -119,6 +120,10 @@ function showGameDetails(game) {
       </div>
     </div>
   `;
+    const closeButton = detailsContainer.querySelector('.close-button');
+    closeButton.addEventListener('click', () => {
+        setupLibrary();
+    });
     const playButton = document.getElementById('launchGameButton');
     if (!playButton)
         return;
@@ -127,9 +132,15 @@ function showGameDetails(game) {
         if (!target)
             return;
         target.innerHTML = gameModalHTML;
-    });
-    const closeButton = detailsContainer.querySelector('.close-button');
-    closeButton.addEventListener('click', () => {
-        setupLibrary();
+        startPong();
+        // const closeModal = target.querySelector('.close-modal') as HTMLButtonElement;
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') { // 'Escape' est la valeur pour la touche Échap
+                const target = document.getElementById('optionnalModal');
+                if (target) {
+                    target.innerHTML = '';
+                }
+            }
+        });
     });
 }
