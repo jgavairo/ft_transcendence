@@ -1,7 +1,7 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
 import { gameModalHTML } from "../scripts/sourcepage.js";
-import { startPong } from './pongGame.js';
+import { displayMenu } from './pongGame.js';
 let activedinlist = false;
 export function setupLibrary() {
     const libraryList = document.querySelector('.library-games-list');
@@ -132,7 +132,7 @@ function showGameDetails(game) {
         if (!target)
             return;
         target.innerHTML = gameModalHTML;
-        startPong();
+        displayMenu();
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 const target = document.getElementById('optionnalModal');
