@@ -1,6 +1,6 @@
 import { setupStore } from "./store";
 import api from "./api.js";
-
+import { MainApp } from "./main.js";
 const loginModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="login-modal" id="login-modal">
@@ -39,14 +39,16 @@ export class LoginManager
 {
     private static readonly AUTH_KEY = "isauthed";
 
-    static isLoggedIn(): boolean
+    static async isLoggedIn(): Promise<boolean>
     {
-        return localStorage.getItem(this.AUTH_KEY) !== null;
+        const data = await MainApp.checkAuth();
+        console.log('data:', data);
+        return data.success;
     }
 
-    static showLoginModal(): void
+    static async showLoginModal(): Promise<void>
     {
-        if (!this.isLoggedIn())
+        if (!await this.isLoggedIn())
         {
             const optionnalModal = document.getElementById('optionnalModal');
             if (!optionnalModal)

@@ -12,12 +12,15 @@ import { storePage, header } from "./sourcepage.js";
 import { setupHeader } from "./navigation.js";
 import { setupStore } from "./store.js";
 import api from "./api.js";
-class MainApp {
+import { LoginManager } from "./loginModal.js";
+export class MainApp {
     static init() {
-        console.log("init");
-        document.addEventListener('DOMContentLoaded', () => {
-            this.setupHeader();
-            this.setupCurrentPage();
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log("init");
+            document.addEventListener('DOMContentLoaded', () => __awaiter(this, void 0, void 0, function* () {
+                yield this.setupHeader();
+                this.setupCurrentPage();
+            }));
         });
     }
     static setupHeader() {
@@ -28,14 +31,20 @@ class MainApp {
                 console.error('Header element not found');
                 return;
             }
-            const userInfos = yield this.getUserInfo();
-            console.log('User infos:', userInfos);
-            if (!userInfos) {
-                console.error('User infos not found');
-                return;
+            if (yield LoginManager.isLoggedIn()) {
+                const userInfos = yield this.getUserInfo();
+                console.log('User infos:', userInfos);
+                if (!userInfos) {
+                    console.error('User infos not found');
+                    return;
+                }
+                headerElement.innerHTML = header(userInfos.username, userInfos.profile_picture);
+                setupHeader();
             }
-            headerElement.innerHTML = header(userInfos.username, userInfos.profile_picture);
-            setupHeader();
+            else {
+                console.error('User not logged in');
+                LoginManager.showLoginModal();
+            }
         });
     }
     static setupCurrentPage() {
@@ -45,22 +54,23 @@ class MainApp {
             console.error('Main element not found');
             return;
         }
-        console.log("setupCurrentPage");
         mainElement.innerHTML = storePage;
         setupStore();
     }
 }
 _a = MainApp;
+MainApp.checkAuth = () => __awaiter(void 0, void 0, void 0, function* () {
+    const response = yield api.get('http://127.0.0.1:3000/api/auth/check');
+    const text = yield response.text();
+    const data = JSON.parse(text);
+    return data;
+});
 MainApp.getUserInfo = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const response = yield api.get('http://127.0.0.1:3000/api/header');
-        console.log('Response status:', response.status);
         const text = yield response.text();
-        console.log('Response text:', text);
         const data = JSON.parse(text);
-        console.log('Data après parsing:', data);
         if (data.success) {
-            console.log('Profile picture:', data.profile_picture);
             return data;
         }
     }

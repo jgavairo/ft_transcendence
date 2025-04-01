@@ -2,7 +2,7 @@ import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
 import { LoginManager } from "./loginModal.js";
 
-export function setupStore() 
+export async function setupStore() 
 {
     const storeContainer = document.querySelector('.gamescontainer');
 
@@ -10,8 +10,7 @@ export function setupStore()
         console.error('Store container not found');
         return;
     }
-
-    if(!LoginManager.isLoggedIn())
+    if(!await LoginManager.isLoggedIn())
     {
         console.log("Not logged in, showing login modal");
         LoginManager.showLoginModal();

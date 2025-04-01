@@ -2,28 +2,32 @@ import { storePage, libraryPage, communityPage, header } from "./sourcepage.js";
 import { setupHeader } from "./navigation.js";
 import { setupStore } from "./store.js";
 import api from "./api.js";
+import { LoginManager } from "./loginModal.js";
 
-class MainApp
+export class MainApp
 {
-    static init()
+    static async init()
     {
         console.log("init");
-        document.addEventListener('DOMContentLoaded', () => {
-            this.setupHeader();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await this.setupHeader();
             this.setupCurrentPage();
         });
+    }
+
+    static checkAuth = async () => {
+        const response = await api.get('http://127.0.0.1:3000/api/auth/check');
+        const text = await response.text();
+        const data = JSON.parse(text);
+        return data;
     }
 
     static getUserInfo = async () => {
         try {
             const response = await api.get('http://127.0.0.1:3000/api/header');
-            console.log('Response status:', response.status);
             const text = await response.text();
-            console.log('Response text:', text);
             const data = JSON.parse(text);
-            console.log('Data après parsing:', data);
             if (data.success) {
-                console.log('Profile picture:', data.profile_picture);
                 return data;
             }
         } catch (error) {
@@ -40,16 +44,23 @@ class MainApp
             console.error('Header element not found');
             return;
         }
-        const userInfos = await this.getUserInfo();
-        console.log('User infos:', userInfos);
-        if (!userInfos)
+        if (await LoginManager.isLoggedIn())
         {
-            console.error('User infos not found');
-            return;
+            const userInfos = await this.getUserInfo();
+            console.log('User infos:', userInfos);
+            if (!userInfos)
+            {
+                console.error('User infos not found');
+                return;
+            }
+            headerElement.innerHTML = header(userInfos.username, userInfos.profile_picture);
+            setupHeader()
         }
-        headerElement.innerHTML = header(userInfos.username, userInfos.profile_picture);
-        setupHeader()
-
+        else
+        {
+            console.error('User not logged in');
+            LoginManager.showLoginModal();
+        }
     }
 
     static setupCurrentPage()
@@ -61,10 +72,8 @@ class MainApp
             console.error('Main element not found');
             return;
         }
-        console.log("setupCurrentPage");
         mainElement.innerHTML = storePage;
         setupStore();
-        
     }
 }
 console.log("MainApp");

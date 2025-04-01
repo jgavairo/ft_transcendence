@@ -1,4 +1,14 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import api from "./api.js";
+import { MainApp } from "./main.js";
 const loginModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="login-modal" id="login-modal">
@@ -34,16 +44,22 @@ const registerModalHTML = `
 `;
 export class LoginManager {
     static isLoggedIn() {
-        return localStorage.getItem(this.AUTH_KEY) !== null;
+        return __awaiter(this, void 0, void 0, function* () {
+            const data = yield MainApp.checkAuth();
+            console.log('data:', data);
+            return data.success;
+        });
     }
     static showLoginModal() {
-        if (!this.isLoggedIn()) {
-            const optionnalModal = document.getElementById('optionnalModal');
-            if (!optionnalModal)
-                return;
-            optionnalModal.innerHTML = loginModalHTML;
-            this.setupLoginModal();
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!(yield this.isLoggedIn())) {
+                const optionnalModal = document.getElementById('optionnalModal');
+                if (!optionnalModal)
+                    return;
+                optionnalModal.innerHTML = loginModalHTML;
+                this.setupLoginModal();
+            }
+        });
     }
     static setupLoginModal() {
         console.log("Setting up login modal");
