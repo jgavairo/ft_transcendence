@@ -1,3 +1,4 @@
+let selectedPaddleColor = 'white';
 export function displayMenu() {
     const canvas = document.getElementById('pongCanvas');
     if (!canvas)
@@ -7,29 +8,109 @@ export function displayMenu() {
     canvas.height = canvas.clientHeight;
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const squareSize = 150;
-    const squareX = (canvas.width - squareSize) / 2;
-    const squareY = (canvas.height - squareSize) / 2;
+    const buttonWidth = 150;
+    const buttonHeight = 50;
+    const playButtonY = canvas.height / 2 - 100;
+    const shopButtonY = canvas.height / 2;
+    const centerX = (canvas.width - buttonWidth) / 2;
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
-    ctx.strokeRect(squareX, squareY, squareSize, squareSize);
+    ctx.strokeRect(centerX, playButtonY, buttonWidth, buttonHeight);
     ctx.fillStyle = 'white';
-    ctx.font = '24px Arial';
+    ctx.font = '20px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Play', squareX + squareSize / 2, squareY + squareSize / 2);
-    canvas.addEventListener('click', function onClick(event) {
+    ctx.fillText('Play', centerX + buttonWidth / 2, playButtonY + buttonHeight / 2);
+    ctx.strokeRect(centerX, shopButtonY, buttonWidth, buttonHeight);
+    ctx.fillText('Shop', centerX + buttonWidth / 2, shopButtonY + buttonHeight / 2);
+    const onClick = (event) => {
         const rect = canvas.getBoundingClientRect();
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
-        if (mouseX >= squareX &&
-            mouseX <= squareX + squareSize &&
-            mouseY >= squareY &&
-            mouseY <= squareY + squareSize) {
+        if (mouseX >= centerX &&
+            mouseX <= centerX + buttonWidth &&
+            mouseY >= playButtonY &&
+            mouseY <= playButtonY + buttonHeight) {
             canvas.removeEventListener('click', onClick);
             startPong();
+            return;
         }
+        if (mouseX >= centerX &&
+            mouseX <= centerX + buttonWidth &&
+            mouseY >= shopButtonY &&
+            mouseY <= shopButtonY + buttonHeight) {
+            canvas.removeEventListener('click', onClick);
+            displayShopMenu();
+            return;
+        }
+    };
+    canvas.addEventListener('click', onClick);
+}
+export function displayShopMenu() {
+    const canvas = document.getElementById('pongCanvas');
+    if (!canvas)
+        return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const options = [
+        { name: 'Blue', color: 'blue' },
+        { name: 'Red', color: 'red' },
+        { name: 'Green', color: 'green' }
+    ];
+    const buttonSize = 100;
+    const spacing = 20;
+    const totalWidth = options.length * buttonSize + (options.length - 1) * spacing;
+    const startX = (canvas.width - totalWidth) / 2;
+    const buttonY = canvas.height / 2 - buttonSize / 2;
+    options.forEach((option, index) => {
+        const x = startX + index * (buttonSize + spacing);
+        ctx.fillStyle = option.color;
+        ctx.fillRect(x, buttonY, buttonSize, buttonSize);
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, buttonY, buttonSize, buttonSize);
+        ctx.fillStyle = 'white';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(option.name, x + buttonSize / 2, buttonY + buttonSize / 2);
     });
+    const backWidth = 100;
+    const backHeight = 40;
+    const backX = 20;
+    const backY = canvas.height - backHeight - 20;
+    ctx.strokeStyle = 'white';
+    ctx.strokeRect(backX, backY, backWidth, backHeight);
+    ctx.fillStyle = 'white';
+    ctx.font = '16px Arial';
+    ctx.fillText('Back', backX + backWidth / 2, backY + backHeight / 2);
+    const onClick = (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        options.forEach((option, index) => {
+            const x = startX + index * (buttonSize + spacing);
+            if (mouseX >= x &&
+                mouseX <= x + buttonSize &&
+                mouseY >= buttonY &&
+                mouseY <= buttonY + buttonSize) {
+                selectedPaddleColor = option.color;
+                canvas.removeEventListener('click', onClick);
+                displayMenu();
+            }
+        });
+        if (mouseX >= backX &&
+            mouseX <= backX + backWidth &&
+            mouseY >= backY &&
+            mouseY <= backY + backHeight) {
+            canvas.removeEventListener('click', onClick);
+            displayMenu();
+        }
+    };
+    canvas.addEventListener('click', onClick);
 }
 export function startPong() {
     const canvas = document.getElementById('pongCanvas');
@@ -48,8 +129,8 @@ export function startPong() {
     let rightPaddleY = canvas.height / 2 - paddleHeight / 2;
     let ballX = canvas.width / 2;
     let ballY = canvas.height / 2;
-    let ballSpeedX = 5;
-    let ballSpeedY = 3;
+    let ballSpeedX = 4;
+    let ballSpeedY = 2;
     let leftScore = 0;
     let rightScore = 0;
     const keys = {};
@@ -109,7 +190,7 @@ export function startPong() {
         ballSpeedY = 3;
     }
     function drawPaddles() {
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = selectedPaddleColor;
         ctx.fillRect(leftPaddleX, leftPaddleY, paddleWidth, paddleHeight);
         ctx.fillRect(rightPaddleX, rightPaddleY, paddleWidth, paddleHeight);
     }
