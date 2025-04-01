@@ -1,7 +1,7 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
 import { gameModalHTML } from "../scripts/sourcepage.js";
-import { displayMenu } from './games/pong/pongGame.js';
+import { displayMenu } from '../games/pong/pongGame.js';
 let activedinlist = false;
 export function setupLibrary() {
     const libraryList = document.querySelector('.library-games-list');
