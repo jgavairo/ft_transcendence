@@ -1,8 +1,9 @@
-import express, { RequestHandler } from "express";
+import express from "express";
 import cors from "cors";
-import jwt from 'jsonwebtoken';
 import { dbManager } from "./database/database";
 import cookieParser from 'cookie-parser';
+import { userRoutes } from "./routes/user";
+import { authRoutes } from "./routes/authentification";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'votre_clé_secrète_par_défaut';
 const app = express();
@@ -22,10 +23,6 @@ app.use(cookieParser());
 //           Start of the server              //
 ////////////////////////////////////////////////
 
-app.get("/", (req, res) => {
-    res.json({ message: "API ft_transcendence" });
-});
-
 app.listen(port, async () => {
     try
     {
@@ -38,176 +35,16 @@ app.listen(port, async () => {
     console.log(`Server is running on port ${port}`);
 });
 
-////////////////////////////////////////////////
-//           List of the routes               //
-////////////////////////////////////////////////
+////////////////////////////////////////////
+//           List of routes               //
+////////////////////////////////////////////
+    
+    //auth routes
+    app.get("/api/auth/check", authRoutes.checkAuth);
+    app.post('/api/auth/register', authRoutes.register);
+    app.post('/api/auth/login', authRoutes.login);
+    app.get("/api/auth/logout", authRoutes.logout);
 
-app.post("/api/login", async (req, res) => {
-    try
-    {
 
-        const { username, password } = req.body;
-        console.log('connection tentative -');
-        console.log("username: " + username, "password: " + password);
-        
-        const user = await dbManager.getUserByUsername(username);
-        
-        if (!user)
-        {
-            res.json({
-                success: false,
-                message: "User not found"
-            });
-        }
-        else
-        {
-            if (user.password_hash !== password)
-            {
-                res.json({
-                    success: false,
-                    message: "Invalid password"
-                });
-            }
-            else
-            {
-                const token = jwt.sign(
-                    { userId: user.id },
-                    JWT_SECRET,
-                    { expiresIn: '1h' }
-                );
-
-                res.cookie('token', token, {
-                    httpOnly: true,
-                    secure: true,
-                    sameSite: 'strict',
-                    maxAge: 24 * 60 * 60 * 1000
-                });
-
-                res.json({
-                    success: true,
-                    message: "Login successful",
-                    user: user.id
-                });
-            }
-        }
-    }
-    catch (error)
-    {
-        res.json({
-            success: false,
-            message: "Login failed"
-        });
-    }
-});
-
-app.post('/api/register', async (req, res) => {
-    console.log("Registering user");
-    const {username, password, email} = req.body;
-    try
-    {
-        const userID = await dbManager.registerUser({
-            username: username,
-            email: email,
-            password_hash: password,
-            profile_picture: '../assets/profile_pictures/default.png'
-        });
-        res.json({
-            success: true,
-            message: "User registered successfully",
-            userID: userID
-        });
-    }
-    catch (error)
-    {
-        res.json({
-            success: false,
-            message: "User registration failed",
-            error: error
-        });
-    }
-});
-
-const checkAuthHandler: RequestHandler = async (req, res) => {
-    try
-    {
-        const token = req.cookies.token;
-        if (!token)
-        {
-            res.json({
-                success: false,
-                message: "User non authenified"
-            });
-            return;
-        }
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-            res.json({
-            success: true,
-            message: "User authenified"
-        });
-    }
-    catch (error)
-    {
-            res.json({
-            success: false,
-            message: "Invalid token"
-        });
-    }
-};
-
-const headerHandler: RequestHandler = async (req, res) => {
-    try {
-        const token = req.cookies.token;
-        if (!token) {
-            res.json({
-                success: false,
-                message: "User non authenified"
-            });
-        }
-        
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-        const user = await dbManager.getUserById(decoded.userId);
-        
-        if (!user) {
-            res.json({
-                success: false,
-                message: "User not found"
-            });
-            return;
-        }
-        else
-        {
-            console.log('User complet:', JSON.stringify(user, null, 2));
-            res.json({
-                success: true,
-                message: "User found",
-                username: user.username,
-                email: user.email,
-                profile_picture: user.profile_picture
-            });
-        }
-    } catch (error) {
-        console.error('Erreur détaillée:', error);
-        res.json({
-            success: false,
-            message: "Error while getting user"
-        });
-    }
-};
-
-const logoutHandler: RequestHandler = async (req, res) => {
-    res.clearCookie('token', {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        path: '/'
-    });
-    res.json({
-        success: true,
-        message: "User logged out"
-    });
-}
-
-app.get("/api/auth/logout", logoutHandler);
-app.get("/api/auth/check", checkAuthHandler);
-app.get('/api/header', headerHandler);
-//npx ts-node src/server.ts
+    //user routes
+    app.get('/api/header', userRoutes.getInfos);
