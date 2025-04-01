@@ -3,6 +3,7 @@ import { libraryPage, storePage, communityPage, profileWindow, profileModalHTML 
 import { setupStore } from './store.js';
 import { setupProfileModal } from './profileModal.js';
 let boolprofileMenu = false;
+import api from './api.js';
 
 function changeActiveButton(newButton: HTMLElement, newActiveButton: HTMLElement)
 {
@@ -104,11 +105,11 @@ function setupProfileButton()
 			const logoutButton = document.getElementById('logoutButton');
 			if (!logoutButton)
 				return;
-			logoutButton.addEventListener('click', () => {
+			logoutButton.addEventListener('click', async () => {
 				console.log("logout button clicked");
-				localStorage.removeItem('isauthed');
+				const response = await api.get('http://127.0.0.1:3000/api/auth/logout');
+				console.log('response:', response);
 				window.location.reload();
-			
 			});
 			const profileSettingsButton = document.getElementById('profileSettings');
 			if (!profileSettingsButton)

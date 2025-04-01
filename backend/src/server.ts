@@ -12,7 +12,8 @@ app.use(cors({
     origin: 'http://127.0.0.1:8080',  // Accepte toutes les origines en développement
     credentials: true,
     methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type']
+    allowedHeaders: ['Content-Type', 'Cookie'],
+    exposedHeaders: ['Set-Cookie']
 }));
 app.use(express.json());
 app.use(cookieParser());
@@ -126,6 +127,33 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+const checkAuthHandler: RequestHandler = async (req, res) => {
+    try
+    {
+        const token = req.cookies.token;
+        if (!token)
+        {
+            res.json({
+                success: false,
+                message: "User non authenified"
+            });
+            return;
+        }
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+            res.json({
+            success: true,
+            message: "User authenified"
+        });
+    }
+    catch (error)
+    {
+            res.json({
+            success: false,
+            message: "Invalid token"
+        });
+    }
+};
+
 const headerHandler: RequestHandler = async (req, res) => {
     try {
         const token = req.cookies.token;
@@ -135,7 +163,7 @@ const headerHandler: RequestHandler = async (req, res) => {
                 message: "User non authenified"
             });
         }
-            
+        
         const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
         const user = await dbManager.getUserById(decoded.userId);
         
@@ -152,8 +180,8 @@ const headerHandler: RequestHandler = async (req, res) => {
             res.json({
                 success: true,
                 message: "User found",
-            username: user.username,
-            email: user.email,
+                username: user.username,
+                email: user.email,
                 profile_picture: user.profile_picture
             });
         }
@@ -166,5 +194,20 @@ const headerHandler: RequestHandler = async (req, res) => {
     }
 };
 
+const logoutHandler: RequestHandler = async (req, res) => {
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        path: '/'
+    });
+    res.json({
+        success: true,
+        message: "User logged out"
+    });
+}
+
+app.get("/api/auth/logout", logoutHandler);
+app.get("/api/auth/check", checkAuthHandler);
 app.get('/api/header', headerHandler);
 //npx ts-node src/server.ts

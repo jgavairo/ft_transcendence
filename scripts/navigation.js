@@ -1,8 +1,18 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import { setupLibrary } from './library.js';
 import { libraryPage, storePage, communityPage, profileWindow } from './sourcepage.js';
 import { setupStore } from './store.js';
 import { setupProfileModal } from './profileModal.js';
 let boolprofileMenu = false;
+import api from './api.js';
 function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');
     newActiveButton.classList.replace('button', 'activebutton');
@@ -87,11 +97,12 @@ function setupProfileButton() {
             const logoutButton = document.getElementById('logoutButton');
             if (!logoutButton)
                 return;
-            logoutButton.addEventListener('click', () => {
+            logoutButton.addEventListener('click', () => __awaiter(this, void 0, void 0, function* () {
                 console.log("logout button clicked");
-                localStorage.removeItem('isauthed');
+                const response = yield api.get('http://127.0.0.1:3000/api/auth/logout');
+                console.log('response:', response);
                 window.location.reload();
-            });
+            }));
             const profileSettingsButton = document.getElementById('profileSettings');
             if (!profileSettingsButton)
                 return;

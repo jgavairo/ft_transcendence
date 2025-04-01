@@ -55,19 +55,19 @@ const libraryPage = `
 const communityPage = `
 `;
 
-const profileModalHTML = `
+const profileModalHTML = (username: string, email: string, profilePicture: string) => `
     <div class="modal-overlay" id="modalWindow">
         <div class="login-modal" id="profile-modal">
           <div class="profile-modal-content">
             <button class="closeProfileModal" id="closeProfileModal">X</button>
             <h2>Profile settings</h2>
-            <img src="${UserLibraryManager.getCurrentUser()?.profilePicture}" class="pictureProfileModal" alt="Profile Picture" />
+            <img src="${profilePicture}" class="pictureProfileModal" alt="Profile Picture" />
             <div class="profile-modal-content-info">
               <div id="username">
-                <h3>Username: ${UserLibraryManager.getCurrentUser()?.userName}</h3>
+                <h3>Username: ${username}</h3>
               </div>
               <div id="email">
-                <h3>Email: ${UserLibraryManager.getCurrentUser()?.email}</h3>
+                <h3>Email: ${email}</h3>
               </div>
             </div>
           </div>
