@@ -75,7 +75,7 @@ export class LoginManager
                 alert("Please enter a username and password");
                 return;
             }
-            api.post('http://127.0.0.1:3000/api/login', { username, password })
+            api.post('http://127.0.0.1:3000/api/auth/login', { username, password })
             .then(response => response.json())
             .then(data => {
                 console.log('backend response:', data);
@@ -130,7 +130,7 @@ export class LoginManager
                     alert("Passwords do not match");
                     return;
                 }
-                api.post('http://127.0.0.1:3000/api/register', { username, password, email })
+                api.post('http://127.0.0.1:3000/api/auth/register', { username, password, email })
                 .then(response => response.json())
                 .then(data => {
                     console.log('backend response:', data);
