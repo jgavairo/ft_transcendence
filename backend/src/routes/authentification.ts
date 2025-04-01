@@ -1,9 +1,7 @@
 import express, { RequestHandler } from "express";
 import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database";
-
-
-const JWT_SECRET = process.env.JWT_SECRET || 'votre_clé_secrète_par_défaut';
+import { JWT_SECRET } from "../server";
 
 const loginHandler: RequestHandler = async (req, res) => {
     try
@@ -73,7 +71,7 @@ const registerHandler: RequestHandler = async (req, res) => {
             username: username,
             email: email,
             password_hash: password,
-            profile_picture: '../assets/profile_pictures/default.png'
+            profile_picture: '../assets/profile_pictures/default.png',
         });
         res.json({
             success: true,

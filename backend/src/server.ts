@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import { userRoutes } from "./routes/user";
 import { authRoutes } from "./routes/authentification";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'votre_clé_secrète_par_défaut';
+export const JWT_SECRET = process.env.JWT_SECRET || '6d239a75c7b0219b01411336aec34a4c10e9ff3e43d5382100eba4268c5bfa0572e90558e5367cb169de6d43a2e8542cd3643a5d0494c8ac192566a40e86d44c';
 const app = express();
 const port = 3000;
 
@@ -48,3 +48,4 @@ app.listen(port, async () => {
 
     //user routes
     app.get('/api/header', userRoutes.getInfos);
+    app.get('/api/getLibrary', userRoutes.getUserLibrary);
