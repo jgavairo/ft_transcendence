@@ -1,7 +1,7 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
-import { gameModalHTML } from "./sourcepage.js"
-import { displayMenu, startPong } from './pongGame.js';
+import { gameModalHTML } from "../scripts/sourcepage.js"
+import { displayMenu, startPong } from './games/pong/pongGame.js';
 
 let activedinlist = false;
 
