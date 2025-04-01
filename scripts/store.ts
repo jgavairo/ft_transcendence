@@ -19,8 +19,10 @@ export async function setupStore()
     else 
         console.log("Logged in, showing store");
 
-    gameList.forEach(game => {
-        const inLibrary = UserLibraryManager.hasGame(game.id);
+    gameList.forEach(async (game) => {
+        console.log("Game id:", game.id);
+        const inLibrary = await UserLibraryManager.hasGame(game.id);
+        console.log("Game in library:", inLibrary);
         const gamesHTML = `
             <div class="gamecard" id="${game.name}card">
                 <div class="flex">
