@@ -1,8 +1,8 @@
 import { RequestHandler } from "express";
 import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database";
+import { JWT_SECRET } from "../server";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'votre_clé_secrète_par_défaut';
 
 const getInfosHandler: RequestHandler = async (req, res) => {
 	try {
@@ -44,7 +44,52 @@ const getInfosHandler: RequestHandler = async (req, res) => {
 	}
 };
 
+const getUserLibraryHandler: RequestHandler = async (req, res) =>
+{
+	try {
+		const token = req.cookies.token;
+		if (!token) {
+			console.log("No token");
+			res.json({
+				success: false,
+				message: "User non authenified"
+			});
+		}
+		
+		const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+		const user = await dbManager.getUserById(decoded.userId);
+
+		if (!user) {
+			console.log("NO USER");
+			res.json({
+				success: false,
+				message: "User not found"
+			});
+			return;
+		}
+		else
+		{
+			console.log("USER FOUND");
+			const userGameLibrary = await dbManager.getUserLibrary(decoded.userId);
+			console.log('Library before sending:', userGameLibrary);
+			res.json({
+				success: true,
+				message: "User found",
+				library: userGameLibrary
+			});
+		}
+	} catch (error) {
+		console.log("ERROR");
+		console.error('Erreur détaillée:', error);
+		res.json({
+			success: false,
+			message: "Error while getting user"
+		});
+	}
+}
+
 export const userRoutes = 
 {
-	getInfos: getInfosHandler
+	getInfos: getInfosHandler,
+	getUserLibrary: getUserLibraryHandler
 }

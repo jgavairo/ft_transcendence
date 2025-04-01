@@ -31,7 +31,7 @@ services:
     environment:
       - JWT_SECRET=${JWT_SECRET}
     env_file:
-      - ./backend/.env
+      - .env
     restart: unless-stopped
     depends_on:
       - database

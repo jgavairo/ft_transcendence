@@ -24,8 +24,10 @@ export function setupStore() {
         }
         else
             console.log("Logged in, showing store");
-        gameList.forEach(game => {
-            const inLibrary = UserLibraryManager.hasGame(game.id);
+        gameList.forEach((game) => __awaiter(this, void 0, void 0, function* () {
+            console.log("Game id:", game.id);
+            const inLibrary = yield UserLibraryManager.hasGame(game.id);
+            console.log("Game in library:", inLibrary);
             const gamesHTML = `
             <div class="gamecard" id="${game.name}card">
                 <div class="flex">
@@ -47,7 +49,7 @@ export function setupStore() {
             </div>
         `;
             storeContainer.innerHTML += gamesHTML;
-        });
+        }));
         setupBuyButtons();
     });
 }

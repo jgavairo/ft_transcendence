@@ -11,8 +11,8 @@ export interface User
     password_hash: string;
     profile_picture: string;
     created_at?: number;
+    library?: number[];
 }
-
 
 class DatabaseManager
 {
@@ -55,10 +55,9 @@ class DatabaseManager
     {
         if (!this.db)
             throw new Error('Database not initialized');
-
         const result = await this.db.run(
-            'INSERT INTO users (username, email, password_hash, profile_picture) VALUES (?, ?, ?, ?)',
-            [user.username, user.email, user.password_hash, user.profile_picture]);
+            'INSERT INTO users (username, email, password_hash, profile_picture, library) VALUES (?, ?, ?, ?, ?)',
+            [user.username, user.email, user.password_hash, user.profile_picture, JSON.stringify([])]);
         if (!result.lastID)
             throw new Error('Failed to create new user');
         return result.lastID;
@@ -79,13 +78,42 @@ class DatabaseManager
     {
         if (!this.db)
             throw new Error('Database not initialized');
-
         const result = await this.db.get
         (
             'SELECT * FROM users WHERE id = ?',
             [id]
         );
         return result;
+    }
+
+    public async getUserLibrary(userId: number): Promise<number[]>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const result = await this.db.get
+        (
+            'SELECT library FROM users WHERE id = ?',
+            [userId]
+        );
+        console.log("Raw library result:", result);
+        if (!result || !result?.library)
+        {
+            await this.db.run
+            (
+                'UPDATE users SET library = ? WHERE id = ?',
+                [JSON.stringify([]), userId]
+            )
+            return [];
+        }
+        try {
+            const libraryStr = result.library.startsWith('"') ? 
+            result.library.slice(1, -1) : result.library;
+            console.log("Library string to parse:", libraryStr);
+            return JSON.parse(libraryStr);  // Reconvertir en tableau
+        } catch (error) {
+            console.error('Erreur lors de la conversion:', error);
+            return [];
+        }
     }
 }
 
