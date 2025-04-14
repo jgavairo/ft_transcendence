@@ -41,7 +41,7 @@ function renderLibrary(query: string): void {
 
   libraryList.innerHTML = "";
   if (filteredIds.length === 0) {
-    libraryList.innerHTML = `<p class="empty-message">Aucun jeu trouvé.</p>`;
+    libraryList.innerHTML = `<p class="empty-message">No games found.</p>`;
     detailsContainer.innerHTML = `
       <div class="header-section">
         <h2 class="header-title">All games (0)</h2>
