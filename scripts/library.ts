@@ -23,7 +23,7 @@ export async function setupLibrary(): Promise<void> {
   renderLibrary("");
 }
 
-function renderLibrary(query: string): void {
+async function renderLibrary(query: string): Promise<void> {
   const libraryList = document.querySelector('.library-games-list') as HTMLElement;
   const detailsContainer = document.querySelector('.library-details') as HTMLElement;
   if (!libraryList || !detailsContainer) return;
