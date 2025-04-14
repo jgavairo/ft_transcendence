@@ -278,7 +278,7 @@ export function startPong(): void {
       ballY > leftPaddleY &&
       ballY < leftPaddleY + paddleHeight
     ) {
-      ballSpeedX = -ballSpeedX;
+      ballSpeedX = -ballSpeedX * 1.1;
       ballSpeedY += 1;
     }
     if (
@@ -286,7 +286,7 @@ export function startPong(): void {
       ballY > rightPaddleY &&
       ballY < rightPaddleY + paddleHeight
     ) {
-      ballSpeedX = -ballSpeedX;
+      ballSpeedX = -ballSpeedX * 1.1;
       ballSpeedY += 1;
     }
     if (ballX - ballRadius < 0) {
@@ -306,7 +306,7 @@ export function startPong(): void {
   function resetBall(): void {
     ballX = canvas.width / 2;
     ballY = canvas.height / 2;
-    ballSpeedX = -ballSpeedX;
+    ballSpeedX = -6;
     ballSpeedY = 3;
   }
 

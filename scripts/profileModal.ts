@@ -1,4 +1,4 @@
-import {profileModalHTML} from '../scripts/sourcepage.js'
+import {profileModalHTML, uploadPictureFormHTML} from '../scripts/sourcepage.js'
 import { MainApp } from './main.js'
 
 export async function setupProfileModal()
