@@ -13,11 +13,35 @@ export function setupLibrary(): void {
     return;
   }
   
-  libraryList.innerHTML = '';
+  let searchBar = document.getElementById("searchBar") as HTMLInputElement;
+
+  searchBar.addEventListener("input", () => {
+    const query = searchBar.value.toLowerCase();
+    renderLibrary(query);
+  });
+
+  renderLibrary("");
+}
+
+function renderLibrary(query: string): void {
+  const libraryList = document.querySelector('.library-games-list') as HTMLElement;
+  const detailsContainer = document.querySelector('.library-details') as HTMLElement;
+  if (!libraryList || !detailsContainer) return;
+
   const libraryGameIds: number[] = UserLibraryManager.getLibraryGames();
 
-  if (libraryGameIds.length === 0) {
-    libraryList.innerHTML = `<p class="empty-message">Your library is empty.</p>`;
+  let filteredIds: number[] = libraryGameIds;
+  if(query) {
+    filteredIds = libraryGameIds.filter((id: number) => {
+      const game = gameList.find(g => g.id === id);
+      if (!game) return false;
+      return game.name.toLowerCase().includes(query);
+    });
+  }
+
+  libraryList.innerHTML = "";
+  if (filteredIds.length === 0) {
+    libraryList.innerHTML = `<p class="empty-message">Aucun jeu trouvé.</p>`;
     detailsContainer.innerHTML = `
       <div class="header-section">
         <h2 class="header-title">All games (0)</h2>
@@ -27,7 +51,7 @@ export function setupLibrary(): void {
     return;
   }
 
-  libraryGameIds.forEach((id: number) => {
+  filteredIds.forEach((id: number) => {
     const game = gameList.find(g => g.id === id);
     if (!game) return;
     const li = document.createElement('li');
@@ -44,9 +68,9 @@ export function setupLibrary(): void {
     });
     libraryList.appendChild(li);
   });
-  
+
   let gamesHTML = "";
-  libraryGameIds.forEach((id: number) => {
+  filteredIds.forEach((id: number) => {
     const game = gameList.find(g => g.id === id);
     if (!game) return;
     gamesHTML += `
@@ -55,10 +79,9 @@ export function setupLibrary(): void {
       </div>
     `;
   });
-
   detailsContainer.innerHTML = `
     <div class="header-section">
-      <h2 class="header-title">All games (${libraryGameIds.length})</h2>
+      <h2 class="header-title">All games (${filteredIds.length})</h2>
       <div class="divider"></div>
     </div>
     <div class="library-games">${gamesHTML}</div>
@@ -75,7 +98,7 @@ export function setupLibrary(): void {
         for (let i = 0; i < actived.length; i++) {
           (actived[i] as HTMLElement).classList.remove('activegamesidelist');
         }
-        const gameline = document.getElementById(`${game.name}line`);
+        const gameline = document.getElementById(`${game.name.replace(/\s+/g, '_')}line`);
         if (gameline) {
           gameline.classList.add('activegamesidelist');
         }
@@ -133,12 +156,10 @@ function showGameDetails(game: any): void {
   });
 
   const playButton = document.getElementById('launchGameButton');
-  if (!playButton)
-      return;
+  if (!playButton) return;
   playButton.addEventListener('click', () => {
-    const target = document.getElementById('optionnalModal')
-    if (!target)
-      return;
+    const target = document.getElementById('optionnalModal');
+    if (!target) return;
     target.innerHTML = gameModalHTML;
     displayMenu();
     window.addEventListener('keydown', (event) => {
@@ -148,8 +169,6 @@ function showGameDetails(game: any): void {
           target.innerHTML = '';
         }
       }
-    });    
+    });
   });
-
 }
-
