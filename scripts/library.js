@@ -1,9 +1,30 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
 import { gameModalHTML } from "../scripts/sourcepage.js";
 import { displayMenu } from './games/pong/pongGame.js';
 let activedinlist = false;
 export function setupLibrary() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const libraryList = document.querySelector('.library-games-list');
+        const detailsContainer = document.querySelector('.library-details');
+        if (!libraryList || !detailsContainer) {
+            console.error('Library containers not found');
+            return;
+        }
+        libraryList.innerHTML = '';
+        const libraryGameIds = yield UserLibraryManager.getLibraryGames();
+        if (libraryGameIds.length === 0) {
+            libraryList.innerHTML = `<p class="empty-message">Your library is empty.</p>`;
+            detailsContainer.innerHTML = `
     const libraryList = document.querySelector('.library-games-list');
     const detailsContainer = document.querySelector('.library-details');
     if (!libraryList || !detailsContainer) {
@@ -41,6 +62,32 @@ function renderLibrary(query) {
         <div class="divider"></div>
       </div>
     `;
+            return;
+        }
+        libraryGameIds.forEach((id) => {
+            const game = gameList.find(g => g.id === id);
+            if (!game)
+                return;
+            const li = document.createElement('li');
+            li.className = 'gamesidelist';
+            li.id = `${game.name.replace(/\s+/g, '_')}line`;
+            li.innerHTML = `<img src="${game.image}" alt="${game.name}" class="sidebar-game-icon"> ${game.name}`;
+            li.addEventListener('click', () => {
+                showGameDetails(game);
+                const actived = document.getElementsByClassName('activegamesidelist');
+                for (let i = 0; i < actived.length; i++) {
+                    actived[i].classList.remove('activegamesidelist');
+                }
+                li.classList.add('activegamesidelist');
+            });
+            libraryList.appendChild(li);
+        });
+        let gamesHTML = "";
+        libraryGameIds.forEach((id) => {
+            const game = gameList.find(g => g.id === id);
+            if (!game)
+                return;
+            gamesHTML += `
         return;
     }
     filteredIds.forEach((id) => {
@@ -71,14 +118,31 @@ function renderLibrary(query) {
         <img src="${game.image}" alt="${game.name}" class="game-image">
       </div>
     `;
-    });
-    detailsContainer.innerHTML = `
+        });
+        detailsContainer.innerHTML = `
     <div class="header-section">
       <h2 class="header-title">All games (${filteredIds.length})</h2>
       <div class="divider"></div>
     </div>
     <div class="library-games">${gamesHTML}</div>
   `;
+        const gameCards = detailsContainer.querySelectorAll('.game-card');
+        gameCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const gameId = card.getAttribute('data-game-id');
+                const game = gameList.find(g => g.id === Number(gameId));
+                if (game) {
+                    showGameDetails(game);
+                    const actived = document.getElementsByClassName('activegamesidelist');
+                    for (let i = 0; i < actived.length; i++) {
+                        actived[i].classList.remove('activegamesidelist');
+                    }
+                    const gameline = document.getElementById(`${game.name}line`);
+                    if (gameline) {
+                        gameline.classList.add('activegamesidelist');
+                    }
+                }
+            });
     const gameCards = detailsContainer.querySelectorAll('.game-card');
     gameCards.forEach(card => {
         card.addEventListener('click', () => {
