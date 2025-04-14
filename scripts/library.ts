@@ -5,7 +5,7 @@ import { displayMenu, startPong } from './games/pong/pongGame.js';
 
 let activedinlist = false;
 
-export function setupLibrary(): void {
+export async function setupLibrary(): Promise<void> {
   const libraryList = document.querySelector('.library-games-list') as HTMLElement;
   const detailsContainer = document.querySelector('.library-details') as HTMLElement;
   if (!libraryList || !detailsContainer) {
@@ -14,7 +14,7 @@ export function setupLibrary(): void {
   }
   
   libraryList.innerHTML = '';
-  const libraryGameIds: number[] = UserLibraryManager.getLibraryGames();
+  const libraryGameIds: number[] = await UserLibraryManager.getLibraryGames();
 
   if (libraryGameIds.length === 0) {
     libraryList.innerHTML = `<p class="empty-message">Your library is empty.</p>`;

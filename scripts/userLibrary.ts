@@ -50,24 +50,35 @@ export class UserLibraryManager
         console.log("API data:", data);
         if (data.success)
         {
-            console.log("if SUCCESSGame id:", gameId);
-            console.log("if SUCCESSLibrary:", data.library);
             if (data.library.includes(gameId))
                 return true;
         }
         return false;
     }
     
-    static addGame(gameId: number): void
+    static async addGame(gameId: number): Promise<void>
     {
-        const user = this.getUser();
-        if (!user.library.includes(gameId)) {
-            user.library.push(gameId);
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+        console.log("Adding game to library:", gameId);
+        const response = await api.post('http://127.0.0.1:3000/api/addGame', { gameId });
+        console.log("API response:", response);
+        const data = await response.json();
+        if (data.success)
+        {
+            console.log("Game added to library:", gameId);
+        }
+        else
+        {
+            console.log("Game not added to library:", gameId);
         }
     }
-    public static getLibraryGames(): number[] {
-        return this.getUser().library;
+    public static async getLibraryGames(): Promise<number[]> 
+    {
+        const response = await api.get('http://127.0.0.1:3000/api/getLibrary');
+        const data = await response.json();
+        if (data.success)
+            return data.library;
+        else
+            return [];
     }
 }      
 
