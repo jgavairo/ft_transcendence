@@ -112,6 +112,79 @@ export function displayShopMenu() {
     };
     canvas.addEventListener('click', onClick);
 }
+function drawHeart(ctx, x, y, size, filled) {
+    ctx.save();
+    ctx.beginPath();
+    const topCurveHeight = size * 0.3;
+    ctx.moveTo(x, y + topCurveHeight);
+    ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + topCurveHeight);
+    ctx.bezierCurveTo(x - size / 2, y + (size + topCurveHeight) / 2, x, y + (size + topCurveHeight) / 2, x, y + size);
+    ctx.bezierCurveTo(x, y + (size + topCurveHeight) / 2, x + size / 2, y + (size + topCurveHeight) / 2, x + size / 2, y + topCurveHeight);
+    ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + topCurveHeight);
+    ctx.closePath();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'white';
+    ctx.stroke();
+    if (filled) {
+        ctx.fillStyle = 'red';
+        ctx.fill();
+    }
+    ctx.restore();
+}
+function drawLives(ctx, canvas, leftLives, rightLives) {
+    const heartSize = 20;
+    const gap = 10;
+    const leftStartX = 20;
+    const leftY = 20;
+    for (let i = 0; i < 5; i++) {
+        const filled = i < leftLives;
+        drawHeart(ctx, leftStartX + i * (heartSize + gap) + heartSize / 2, leftY, heartSize, filled);
+    }
+    const rightY = 20;
+    const rightStartX = canvas.width - 20 - 5 * (heartSize + gap) + gap;
+    for (let i = 0; i < 5; i++) {
+        const filled = i < rightLives;
+        drawHeart(ctx, rightStartX + i * (heartSize + gap) + heartSize / 2, rightY, heartSize, filled);
+    }
+}
+function displayWinScreen(winner) {
+    const canvas = document.getElementById('pongCanvas');
+    if (!canvas)
+        return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.font = '40px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${winner} Wins!`, canvas.width / 2, canvas.height / 2);
+    const buttonWidth = 150;
+    const buttonHeight = 50;
+    const centerX = (canvas.width - buttonWidth) / 2;
+    const menuButtonY = canvas.height / 2 + 60;
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(centerX, menuButtonY, buttonWidth, buttonHeight);
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.fillText('Menu', centerX + buttonWidth / 2, menuButtonY + buttonHeight / 2);
+    const onClick = (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        if (mouseX >= centerX &&
+            mouseX <= centerX + buttonWidth &&
+            mouseY >= menuButtonY &&
+            mouseY <= menuButtonY + buttonHeight) {
+            canvas.removeEventListener('click', onClick);
+            displayMenu();
+        }
+    };
+    canvas.addEventListener('click', onClick);
+}
 export function startPong() {
     const canvas = document.getElementById('pongCanvas');
     if (!canvas)
@@ -129,39 +202,32 @@ export function startPong() {
     let rightPaddleY = canvas.height / 2 - paddleHeight / 2;
     let ballX = canvas.width / 2;
     let ballY = canvas.height / 2;
-    let ballSpeedX = 4;
-    let ballSpeedY = 2;
-    let leftScore = 0;
-    let rightScore = 0;
+    let ballSpeedX = 6;
+    let ballSpeedY = 3;
+    let leftLives = 5;
+    let rightLives = 5;
+    let gameOver = false;
+    let winner = '';
     const keys = {};
-    window.addEventListener('keydown', (event) => {
-        keys[event.key] = true;
-    });
-    window.addEventListener('keyup', (event) => {
-        keys[event.key] = false;
-    });
+    window.addEventListener('keydown', (event) => { keys[event.key] = true; });
+    window.addEventListener('keyup', (event) => { keys[event.key] = false; });
     function updatePaddles() {
-        if (keys['w'] || keys['W']) {
+        if (keys['w'] || keys['W'])
             leftPaddleY -= paddleSpeed;
-        }
-        if (keys['s'] || keys['S']) {
+        if (keys['s'] || keys['S'])
             leftPaddleY += paddleSpeed;
-        }
-        if (keys['ArrowUp']) {
+        if (keys['ArrowUp'])
             rightPaddleY -= paddleSpeed;
-        }
-        if (keys['ArrowDown']) {
+        if (keys['ArrowDown'])
             rightPaddleY += paddleSpeed;
-        }
         leftPaddleY = Math.max(0, Math.min(canvas.height - paddleHeight, leftPaddleY));
         rightPaddleY = Math.max(0, Math.min(canvas.height - paddleHeight, rightPaddleY));
     }
     function updateBall() {
         ballX += ballSpeedX;
         ballY += ballSpeedY;
-        if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
+        if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0)
             ballSpeedY = -ballSpeedY;
-        }
         if (ballX - ballRadius < leftPaddleX + paddleWidth &&
             ballY > leftPaddleY &&
             ballY < leftPaddleY + paddleHeight) {
@@ -175,12 +241,16 @@ export function startPong() {
             ballSpeedY += 1;
         }
         if (ballX - ballRadius < 0) {
-            rightScore++;
+            leftLives--;
             resetBall();
         }
         else if (ballX + ballRadius > canvas.width) {
-            leftScore++;
+            rightLives--;
             resetBall();
+        }
+        if (leftLives <= 0 || rightLives <= 0) {
+            gameOver = true;
+            winner = leftLives <= 0 ? 'Right Player' : 'Left Player';
         }
     }
     function resetBall() {
@@ -195,22 +265,26 @@ export function startPong() {
         ctx.fillRect(rightPaddleX, rightPaddleY, paddleWidth, paddleHeight);
     }
     function drawBall() {
+        ctx.fillStyle = 'white';
         ctx.beginPath();
         ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
         ctx.fill();
     }
-    function drawScore() {
-        ctx.font = '40px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${leftScore} - ${rightScore}`, canvas.width / 2, 40);
+    function drawLivesWrapper() {
+        drawLives(ctx, canvas, leftLives, rightLives);
     }
     function draw() {
         updatePaddles();
         updateBall();
+        if (gameOver) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            displayWinScreen(winner);
+            return;
+        }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawPaddles();
         drawBall();
-        drawScore();
+        drawLivesWrapper();
         requestAnimationFrame(draw);
     }
     draw();
