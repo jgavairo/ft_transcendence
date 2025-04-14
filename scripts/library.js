@@ -20,43 +20,34 @@ export function setupLibrary() {
             console.error('Library containers not found');
             return;
         }
-        libraryList.innerHTML = '';
-        const libraryGameIds = yield UserLibraryManager.getLibraryGames();
-        if (libraryGameIds.length === 0) {
-            libraryList.innerHTML = `<p class="empty-message">Your library is empty.</p>`;
-            detailsContainer.innerHTML = `
-    const libraryList = document.querySelector('.library-games-list');
-    const detailsContainer = document.querySelector('.library-details');
-    if (!libraryList || !detailsContainer) {
-        console.error('Library containers not found');
-        return;
-    }
-    let searchBar = document.getElementById("searchBar");
-    searchBar.addEventListener("input", () => {
-        const query = searchBar.value.toLowerCase();
-        renderLibrary(query);
+        let searchBar = document.getElementById("searchBar");
+        searchBar.addEventListener("input", () => {
+            const query = searchBar.value.toLowerCase();
+            renderLibrary(query);
+        });
+        renderLibrary("");
     });
-    renderLibrary("");
 }
 function renderLibrary(query) {
-    const libraryList = document.querySelector('.library-games-list');
-    const detailsContainer = document.querySelector('.library-details');
-    if (!libraryList || !detailsContainer)
-        return;
-    const libraryGameIds = UserLibraryManager.getLibraryGames();
-    let filteredIds = libraryGameIds;
-    if (query) {
-        filteredIds = libraryGameIds.filter((id) => {
-            const game = gameList.find(g => g.id === id);
-            if (!game)
-                return false;
-            return game.name.toLowerCase().includes(query);
-        });
-    }
-    libraryList.innerHTML = "";
-    if (filteredIds.length === 0) {
-        libraryList.innerHTML = `<p class="empty-message">Aucun jeu trouvé.</p>`;
-        detailsContainer.innerHTML = `
+    return __awaiter(this, void 0, void 0, function* () {
+        const libraryList = document.querySelector('.library-games-list');
+        const detailsContainer = document.querySelector('.library-details');
+        if (!libraryList || !detailsContainer)
+            return;
+        const libraryGameIds = yield UserLibraryManager.getLibraryGames();
+        let filteredIds = libraryGameIds;
+        if (query) {
+            filteredIds = libraryGameIds.filter((id) => {
+                const game = gameList.find(g => g.id === id);
+                if (!game)
+                    return false;
+                return game.name.toLowerCase().includes(query);
+            });
+        }
+        libraryList.innerHTML = "";
+        if (filteredIds.length === 0) {
+            libraryList.innerHTML = `<p class="empty-message">No games found.</p>`;
+            detailsContainer.innerHTML = `
       <div class="header-section">
         <h2 class="header-title">All games (0)</h2>
         <div class="divider"></div>
@@ -64,7 +55,7 @@ function renderLibrary(query) {
     `;
             return;
         }
-        libraryGameIds.forEach((id) => {
+        filteredIds.forEach((id) => {
             const game = gameList.find(g => g.id === id);
             if (!game)
                 return;
@@ -83,37 +74,11 @@ function renderLibrary(query) {
             libraryList.appendChild(li);
         });
         let gamesHTML = "";
-        libraryGameIds.forEach((id) => {
+        filteredIds.forEach((id) => {
             const game = gameList.find(g => g.id === id);
             if (!game)
                 return;
             gamesHTML += `
-        return;
-    }
-    filteredIds.forEach((id) => {
-        const game = gameList.find(g => g.id === id);
-        if (!game)
-            return;
-        const li = document.createElement('li');
-        li.className = 'gamesidelist';
-        li.id = `${game.name.replace(/\s+/g, '_')}line`;
-        li.innerHTML = `<img src="${game.image}" alt="${game.name}" class="sidebar-game-icon"> ${game.name}`;
-        li.addEventListener('click', () => {
-            showGameDetails(game);
-            const actived = document.getElementsByClassName('activegamesidelist');
-            for (let i = 0; i < actived.length; i++) {
-                actived[i].classList.remove('activegamesidelist');
-            }
-            li.classList.add('activegamesidelist');
-        });
-        libraryList.appendChild(li);
-    });
-    let gamesHTML = "";
-    filteredIds.forEach((id) => {
-        const game = gameList.find(g => g.id === id);
-        if (!game)
-            return;
-        gamesHTML += `
       <div class="game-card" data-game-id="${game.id}">
         <img src="${game.image}" alt="${game.name}" class="game-image">
       </div>
@@ -137,28 +102,12 @@ function renderLibrary(query) {
                     for (let i = 0; i < actived.length; i++) {
                         actived[i].classList.remove('activegamesidelist');
                     }
-                    const gameline = document.getElementById(`${game.name}line`);
+                    const gameline = document.getElementById(`${game.name.replace(/\s+/g, '_')}line`);
                     if (gameline) {
                         gameline.classList.add('activegamesidelist');
                     }
                 }
             });
-    const gameCards = detailsContainer.querySelectorAll('.game-card');
-    gameCards.forEach(card => {
-        card.addEventListener('click', () => {
-            const gameId = card.getAttribute('data-game-id');
-            const game = gameList.find(g => g.id === Number(gameId));
-            if (game) {
-                showGameDetails(game);
-                const actived = document.getElementsByClassName('activegamesidelist');
-                for (let i = 0; i < actived.length; i++) {
-                    actived[i].classList.remove('activegamesidelist');
-                }
-                const gameline = document.getElementById(`${game.name.replace(/\s+/g, '_')}line`);
-                if (gameline) {
-                    gameline.classList.add('activegamesidelist');
-                }
-            }
         });
     });
 }
