@@ -19,7 +19,7 @@ export async function setupStore()
     else 
         console.log("Logged in, showing store");
 
-    gameList.forEach(async (game) => {
+    await Promise.all(gameList.map(async (game) => {
         console.log("Game id:", game.id);
         const inLibrary = await UserLibraryManager.hasGame(game.id);
         console.log("Game in library:", inLibrary);
@@ -44,7 +44,7 @@ export async function setupStore()
             </div>
         `;
         storeContainer.innerHTML += gamesHTML;
-    });
+        }));
 
     setupBuyButtons();
 }
@@ -52,16 +52,17 @@ export async function setupStore()
 function setupBuyButtons() 
 {
     const buyButtons = document.querySelectorAll('.buybutton');
-    buyButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
+    buyButtons.forEach(async (button) => {
+        button.addEventListener('click', async (e) => {
             const gameCard = (e.target as HTMLElement).closest('.gamecard');
             if (!gameCard) return;
-
+            
             const gameId = gameList.find(g => g.name + 'card' === gameCard.id)?.id;
             if (gameId === undefined) return;
-
+            
             // Ajoute le jeu à la bibliothèque
-            UserLibraryManager.addGame(gameId);
+            await UserLibraryManager.addGame(gameId);
+            console.log("IN SETUP BUY BUTTON CLICKED");
 
             // Met à jour l'apparence du bouton
             const button = e.target as HTMLButtonElement;

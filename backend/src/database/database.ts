@@ -115,6 +115,26 @@ class DatabaseManager
             return [];
         }
     }
+
+    public async addGameToLibrary(userId: number, gameId: number): Promise<void>
+{
+    if (!this.db)
+        throw new Error('Database not initialized');
+    
+    const library = await this.getUserLibrary(userId);
+    console.log("Library before adding game:", library);
+    
+    if (!library.includes(gameId)) {  // Éviter les doublons
+        library.push(gameId);
+        console.log("Library after adding game:", library);
+        
+        // Ajouter cette ligne pour sauvegarder dans la base de données
+        await this.db.run(
+            'UPDATE users SET library = ? WHERE id = ?',
+            [JSON.stringify(library), userId]
+        );
+    }
+}
 }
 
 export const dbManager = DatabaseManager.getInstance();

@@ -88,8 +88,51 @@ const getUserLibraryHandler: RequestHandler = async (req, res) =>
 	}
 }
 
+const addGameHandler: RequestHandler = async (req, res) =>
+{
+	console.log("IN ADD GAME HANDLER");
+	const { gameId } = req.body;
+	try 
+	{
+		const token = req.cookies.token;
+		if (!token) {
+			res.json({
+				success: false,
+				message: "User non authenified"
+			});
+		}
+		const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+		const user = await dbManager.getUserById(decoded.userId);
+		if (!user) {
+			res.json({
+				success: false,
+				message: "User not found"
+			});
+			return;
+		}
+		else
+		{
+			console.log("USER FOUND");
+			await dbManager.addGameToLibrary(decoded.userId, gameId);
+			console.log("Game added to library");
+			res.json({
+				success: true,
+				message: "Game added to library"
+			});
+		}
+	}
+	catch (error) {
+		console.error('Erreur détaillée:', error);
+		res.json({
+			success: false,
+			message: "Error while adding game"
+		});
+	}
+}
+
 export const userRoutes = 
 {
 	getInfos: getInfosHandler,
-	getUserLibrary: getUserLibraryHandler
+	getUserLibrary: getUserLibraryHandler,
+	addGame: addGameHandler
 }

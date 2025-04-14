@@ -49,3 +49,4 @@ app.listen(port, async () => {
     //user routes
     app.get('/api/header', userRoutes.getInfos);
     app.get('/api/getLibrary', userRoutes.getUserLibrary);
+    app.post('/api/addGame', userRoutes.addGame);
