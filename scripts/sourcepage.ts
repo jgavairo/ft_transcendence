@@ -1,6 +1,5 @@
 import { UserLibraryManager } from '../scripts/userLibrary.js';
 
-
 const header = (username: string, profilePicture: string) => `
 			<img src="../../assets/logo.png" alt="Logo" class="w-12" />
 			<button class="activebutton" id="storebutton">STORE</button>
@@ -53,6 +52,25 @@ const libraryPage = `
 `;
 
 const communityPage = `
+  <div class="community-wrapper">
+    <section class="chat-section">
+      <h2>CHAT</h2>
+      <div class="chat-container" id="chatContainer">
+        <!-- Messages s'afficheront ici -->
+      </div>
+      <div class="chat-input-wrapper">
+        <input type="text" id="chatInput" placeholder="Écris ton message ici..." />
+        <button id="sendMessage">Envoyer</button>
+      </div>
+    </section>
+
+    <section class="friends-section">
+      <h2>PEOPLE</h2>
+      <input type="text" id="friendSearch" placeholder="find someone" class="friend-input" autocomplete="off" />
+      <div class="dropdown" id="friendDropdown"></div> <!-- menu déroulant ici -->
+      <div class="friend-list" id="friendList"></div>
+    </section>
+  </div>
 `;
 
 const profileModalHTML = (username: string, email: string, profilePicture: string) => `
