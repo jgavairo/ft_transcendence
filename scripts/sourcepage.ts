@@ -82,7 +82,7 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
             <h2>Profile settings</h2>
             <div class="profile-picture-container">
               <img src="${profilePicture}" class="pictureProfileModal" alt="Profile Picture" />
-              <div class="profile-picture-overlay">
+              <div class="profile-picture-overlay" id="changeProfilePictureButton">
                 Edit
               </div>
             </div>
@@ -99,6 +99,15 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
     </div>
 `;
 
+const uploadPictureFormHTML = `
+        <div class="picture-upload">
+            <form id="picture-upload-form">
+                <input type="file" id="profile-picture" accept="image/*">
+                <button type="submit">Change for this picture</button>
+            </form>
+        </div>
+    `;
+
 const gameModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="game-modal" id="games-modal">
@@ -107,4 +116,4 @@ const gameModalHTML = `
     </div>
 `;
 
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML };
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML };

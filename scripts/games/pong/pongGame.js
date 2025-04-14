@@ -231,13 +231,13 @@ export function startPong() {
         if (ballX - ballRadius < leftPaddleX + paddleWidth &&
             ballY > leftPaddleY &&
             ballY < leftPaddleY + paddleHeight) {
-            ballSpeedX = -ballSpeedX;
+            ballSpeedX = -ballSpeedX * 1.1;
             ballSpeedY += 1;
         }
         if (ballX + ballRadius > rightPaddleX &&
             ballY > rightPaddleY &&
             ballY < rightPaddleY + paddleHeight) {
-            ballSpeedX = -ballSpeedX;
+            ballSpeedX = -ballSpeedX * 1.1;
             ballSpeedY += 1;
         }
         if (ballX - ballRadius < 0) {
@@ -256,7 +256,7 @@ export function startPong() {
     function resetBall() {
         ballX = canvas.width / 2;
         ballY = canvas.height / 2;
-        ballSpeedX = -ballSpeedX;
+        ballSpeedX = -6;
         ballSpeedY = 3;
     }
     function drawPaddles() {
