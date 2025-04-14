@@ -5,7 +5,7 @@ import { displayMenu, startPong } from './games/pong/pongGame.js';
 
 let activedinlist = false;
 
-export function setupLibrary(): void {
+export async function setupLibrary(): Promise<void> {
   const libraryList = document.querySelector('.library-games-list') as HTMLElement;
   const detailsContainer = document.querySelector('.library-details') as HTMLElement;
   if (!libraryList || !detailsContainer) {
@@ -23,12 +23,12 @@ export function setupLibrary(): void {
   renderLibrary("");
 }
 
-function renderLibrary(query: string): void {
+async function renderLibrary(query: string): Promise<void> {
   const libraryList = document.querySelector('.library-games-list') as HTMLElement;
   const detailsContainer = document.querySelector('.library-details') as HTMLElement;
   if (!libraryList || !detailsContainer) return;
 
-  const libraryGameIds: number[] = UserLibraryManager.getLibraryGames();
+  const libraryGameIds: number[] = await UserLibraryManager.getLibraryGames();
 
   let filteredIds: number[] = libraryGameIds;
   if(query) {
