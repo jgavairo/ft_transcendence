@@ -2,6 +2,7 @@ import { setupLibrary } from './library.js';
 import { libraryPage, storePage, communityPage, profileWindow, profileModalHTML } from './sourcepage.js';
 import { setupStore } from './store.js';
 import { setupProfileModal } from './profileModal.js';
+import { showCommunityPage } from './community.js';
 let boolprofileMenu = false;
 import api from './api.js';
 
@@ -78,6 +79,7 @@ function attachNavigationListeners()
 					}
 					changeActiveButton(currentActiveButton, communityButton);
 					mainElement.innerHTML = communityPage;
+					showCommunityPage();
 					break;
 			}
 		});
