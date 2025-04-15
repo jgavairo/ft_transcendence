@@ -110,27 +110,47 @@ function getPeopleFromStorage() {
 function getFriendsFromStorage() {
     return JSON.parse(localStorage.getItem("friends") || "[]");
 }
+// Récupérer le nom d'utilisateur actuel depuis le localStorage
+function getCurrentUserName() {
+    const userData = localStorage.getItem("userLibrary");
+    if (!userData)
+        return null;
+    try {
+        const parsed = JSON.parse(userData);
+        return parsed.userName;
+    }
+    catch (err) {
+        console.error("Erreur parsing userLibrary :", err);
+        return null;
+    }
+}
 function setupChat() {
     const input = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendMessage");
     const chatContainer = document.getElementById("chatContainer");
     if (!input || !sendBtn || !chatContainer)
         return;
-    const addMessage = (content, self = true) => {
-        const msg = document.createElement("div");
-        msg.className = `chat-message ${self ? 'right' : 'left'}`;
-        msg.textContent = content;
-        chatContainer.appendChild(msg);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+    const addMessage = (content, author, self = true) => {
+        const msgWrapper = document.createElement("div");
+        msgWrapper.className = `chat-message ${self ? "right" : "left"}`;
+        // Créer le texte complet avec @nom + message
+        const fullMessage = document.createElement("div");
+        fullMessage.innerHTML = `<span style="font-weight:bold; margin-right: 0.5rem; color:#ccc;">@${author} :</span>${content}`;
+        msgWrapper.appendChild(fullMessage);
+        const chatContainer = document.getElementById("chatContainer");
+        if (chatContainer) {
+            chatContainer.appendChild(msgWrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
     };
     sendBtn.addEventListener("click", () => {
         const text = input.value.trim();
+        const author = getCurrentUserName() || "Utilisateur";
         if (text) {
-            addMessage(text);
+            addMessage(text, author, true);
             input.value = "";
         }
     });
-    // Bonus : envoi avec la touche Entrée
     input.addEventListener("keydown", e => {
         if (e.key === "Enter") {
             sendBtn.click();
