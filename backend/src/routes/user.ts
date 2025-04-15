@@ -4,6 +4,7 @@ import { dbManager } from "../database/database";
 import { JWT_SECRET } from "../server";
 
 
+
 const getInfosHandler: RequestHandler = async (req, res) => {
 	try {
 		const token = req.cookies.token;
@@ -130,9 +131,64 @@ const addGameHandler: RequestHandler = async (req, res) =>
 	}
 }
 
+const changePictureHandler: RequestHandler = async (req, res) =>
+{
+	try
+	{
+		const token = req.cookies.token;
+		if (!token) {
+			res.json({
+				success: false,
+				message: "User non authenified"
+			});
+			return;
+		}
+		const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+		const user = await dbManager.getUserById(decoded.userId);
+		if (!user)
+		{
+			res.json({
+				success: false,
+				message: "User not found"
+			});
+			return;
+		}
+		else
+		{
+			console.log("USER FOUND for change picture");
+			const newPicture = req.file;
+			if (!newPicture)
+			{
+				res.json({
+					success: false,
+					message: "No picture selected"
+				});
+				return;
+			}
+			console.log("PICTURE FOUND");
+			const filePath = `http://127.0.0.1:3000/uploads/profile_pictures/${user.id}.jpg`;
+			await dbManager.changeUserPicture(decoded.userId, filePath);
+			res.json({
+				success: true,
+				message: "Picture changed",
+				profile_picture: filePath
+			});
+		}
+	}
+	catch (error)
+	{
+		console.error('Error:', error);
+		res.json({
+			success: false,
+			message: "Error while changing picture"
+		});
+	}
+}
+
 export const userRoutes = 
 {
 	getInfos: getInfosHandler,
 	getUserLibrary: getUserLibraryHandler,
-	addGame: addGameHandler
+	addGame: addGameHandler,
+	changePicture: changePictureHandler
 }

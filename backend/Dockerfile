@@ -10,7 +10,7 @@ RUN npm install
 RUN npm install jsonwebtoken cookie-parser
 RUN npm install jsonwebtoken @types/jsonwebtoken
 RUN npm install cookie-parser @types/cookie-parser
-
+RUN npm install multer @types/multer
 COPY . .
 
 # Conversion des fins de ligne et compilation
