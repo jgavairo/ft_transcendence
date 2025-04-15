@@ -68,7 +68,7 @@ const communityPage = `
 `;
 const profileModalHTML = (username, email, profilePicture) => `
     <div class="modal-overlay" id="modalWindow">
-        <div class="login-modal" id="profile-modal">
+        <div class="profile-modal" id="profile-modal">
           <div class="profile-modal-content">
             <button class="closeProfileModal" id="closeProfileModal">X</button>
             <h2>Profile settings</h2>
@@ -91,11 +91,13 @@ const profileModalHTML = (username, email, profilePicture) => `
     </div>
 `;
 const uploadPictureFormHTML = `
+      <button class="closeProfileModal" id="closeModal">X</button>
+      <h2>Choose a new profile picture</h2>
         <div class="picture-upload">
-            <form id="picture-upload-form">
-                <input type="file" id="profile-picture" accept="image/*">
-                <button type="submit">Change for this picture</button>
-            </form>
+                <div class="upload-container">
+                    <input type="file" class="inputPictureForm" id="pictureUploader" accept="image/*">
+                    <button type="submit" class="submitPictureForm" id="sendPictureButton">Send</button>
+                </div>
         </div>
     `;
 const gameModalHTML = `
