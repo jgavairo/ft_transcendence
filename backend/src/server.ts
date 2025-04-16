@@ -77,4 +77,5 @@ app.listen(port, async () => {
     app.get('/api/getLibrary', userRoutes.getUserLibrary);
     app.post('/api/addGame', userRoutes.addGame);
     app.post('/api/profile/changePicture', upload.single('newPicture'), userRoutes.changePicture);
+
     // Servir les fichiers statiques

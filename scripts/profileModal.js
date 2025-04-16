@@ -16,7 +16,8 @@ export function setupProfileModal() {
         if (!modal)
             return;
         const userInfos = yield MainApp.getUserInfo();
-        modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, userInfos.profile_picture);
+        const profilePictureWithTimestamp = `${userInfos.profile_picture}?t=${Date.now()}`;
+        modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, profilePictureWithTimestamp);
         const closeButton = document.getElementById('closeProfileModal');
         if (!closeButton)
             return;
@@ -61,6 +62,11 @@ function setupChangeProfilePictureModal() {
             if (data.success) {
                 console.log('Picture changed');
                 alert('Picture changed');
+                const headerPP = document.getElementById('profilePicture');
+                if (!headerPP)
+                    return;
+                headerPP.src = `${data.profile_picture}?t=${Date.now()}`;
+                ;
                 yield setupProfileModal();
             }
             else {

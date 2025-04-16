@@ -13,15 +13,18 @@ const getInfosHandler: RequestHandler = async (req, res) => {
 				success: false,
 				message: "User non authenified"
 			});
+			return;
 		}
 		
 		const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
 		const user = await dbManager.getUserById(decoded.userId);
 		
 		if (!user) {
+			res.clearCookie('token');
 			res.json({
 				success: false,
-				message: "User not found"
+				message: "User not found in database",
+				clearToken: true
 			});
 			return;
 		}

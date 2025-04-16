@@ -104,9 +104,19 @@ const checkAuthHandler: RequestHandler = async (req, res) =>
                 return;
             }
             const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+            const user = await dbManager.getUserById(decoded.userId);
+            if (!user)
+            {
+                res.json({
+                    success: false,
+                    message: "User not found"
+                });
+                return;
+            }
             res.json({
                 success: true,
-                message: "User authenified"
+                message: "User authenified",
+                user: user
             });
         }
         catch (error)

@@ -27,7 +27,8 @@ export class MainApp
             const response = await api.get('http://127.0.0.1:3000/api/header');
             const text = await response.text();
             const data = JSON.parse(text);
-            if (data.success) {
+            if (data.success) 
+            {
                 return data;
             }
         } catch (error) {
