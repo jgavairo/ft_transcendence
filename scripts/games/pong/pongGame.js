@@ -1,18 +1,21 @@
 import io from 'socket.io-client';
 console.log("Début de l'exécution du fichier pongGame.ts");
 const socket = io('http://127.0.0.1:3000');
-// Lorsque le serveur détecte un match (startMatch a été lancé)
 socket.on("matchFound", (data) => {
     console.log("Match found!", data);
-    // On peut laisser l'écran d'attente afficher un message, ou
-    // le remplacer par une transition vers le mode jeu
 });
-// Le client écoute ensuite les mises à jour de jeu envoyées par le serveur
 socket.on("gameState", (matchState) => {
-    // Appelle une fonction de rendu pour mettre à jour l'affichage du jeu
     renderGame(matchState);
 });
 let selectedPaddleColor = 'white';
+const paddleSkinImages = {
+    Skin1: new Image(),
+    Skin2: new Image(),
+    Skin3: new Image()
+};
+paddleSkinImages.Skin1.src = '/scripts/games/pong/assets/skin1.png';
+paddleSkinImages.Skin2.src = '/scripts/games/pong/assets/skin2.png';
+paddleSkinImages.Skin3.src = '/scripts/games/pong/assets/skin3.png';
 function renderGame(matchState) {
     const canvas = document.getElementById('pongCanvas');
     if (!canvas)
@@ -20,19 +23,30 @@ function renderGame(matchState) {
     const ctx = canvas.getContext('2d');
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Dessin de la balle
+    const cw = canvas.clientWidth;
+    const ch = canvas.clientHeight;
+    canvas.width = cw;
+    canvas.height = ch;
+    // Effacer le canvas
+    ctx.clearRect(0, 0, cw, ch);
+    // (Facultatif) Dessiner un fond noir
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, cw, ch);
     ctx.fillStyle = 'white';
     ctx.beginPath();
     ctx.arc(matchState.ballX, matchState.ballY, 10, 0, Math.PI * 2);
     ctx.fill();
-    // Dessin des paddles
     const paddleWidth = 10;
     const paddleHeight = 100;
-    ctx.fillStyle = selectedPaddleColor;
-    ctx.fillRect(30, matchState.leftPaddleY, paddleWidth, paddleHeight);
-    ctx.fillRect(canvas.width - 30 - paddleWidth, matchState.rightPaddleY, paddleWidth, paddleHeight);
-    // Affichage des scores (optionnel)
+    if (selectedPaddleColor.startsWith("Skin") && paddleSkinImages[selectedPaddleColor]) {
+        ctx.drawImage(paddleSkinImages[selectedPaddleColor], 30, matchState.leftPaddleY, paddleWidth, paddleHeight);
+        ctx.drawImage(paddleSkinImages[selectedPaddleColor], canvas.width - 30 - paddleWidth, matchState.rightPaddleY, paddleWidth, paddleHeight);
+    }
+    else {
+        ctx.fillStyle = selectedPaddleColor;
+        ctx.fillRect(30, matchState.leftPaddleY, paddleWidth, paddleHeight);
+        ctx.fillRect(canvas.width - 30 - paddleWidth, matchState.rightPaddleY, paddleWidth, paddleHeight);
+    }
     ctx.fillStyle = 'white';
     ctx.font = '20px Arial';
     ctx.textAlign = 'center';
@@ -86,7 +100,6 @@ export function displayMenu() {
             mouseY >= playButtonY &&
             mouseY <= playButtonY + buttonHeight) {
             canvas.removeEventListener('click', onClick);
-            // Envoie l'événement "joinQueue" et affiche l'écran d'attente
             socket.emit("joinQueue", { playerId: socket.id, username: "Player1" });
             displayWaitingScreen();
             return;
@@ -103,7 +116,71 @@ export function displayMenu() {
     canvas.addEventListener('click', onClick);
 }
 export function displayShopMenu() {
-    // Ton code existant pour afficher le menu "Shop"
+    const canvas = document.getElementById('pongCanvas');
+    if (!canvas)
+        return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const options = [
+        { name: 'Skin1', image: '/scripts/games/pong/assets/skin1.png' },
+        { name: 'Skin2', image: '/scripts/games/pong/assets/skin2.png' },
+        { name: 'Skin3', image: '/scripts/games/pong/assets/skin3.png' }
+    ];
+    const buttonSize = 100;
+    const spacing = 20;
+    const totalWidth = options.length * buttonSize + (options.length - 1) * spacing;
+    const startX = (canvas.width - totalWidth) / 2;
+    const buttonY = canvas.height / 2 - buttonSize / 2;
+    options.forEach((option, index) => {
+        const x = startX + index * (buttonSize + spacing);
+        const img = new Image();
+        img.src = option.image;
+        img.onload = () => {
+            ctx.drawImage(img, x, buttonY, buttonSize, buttonSize);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, buttonY, buttonSize, buttonSize);
+        };
+    });
+    const backWidth = 100;
+    const backHeight = 40;
+    const backX = 20;
+    const backY = canvas.height - backHeight - 20;
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(backX, backY, backWidth, backHeight);
+    ctx.fillStyle = 'white';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Back', backX + backWidth / 2, backY + backHeight / 2);
+    const onClick = (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        options.forEach((option, index) => {
+            const x = startX + index * (buttonSize + spacing);
+            if (mouseX >= x &&
+                mouseX <= x + buttonSize &&
+                mouseY >= buttonY &&
+                mouseY <= buttonY + buttonSize) {
+                selectedPaddleColor = option.name;
+                canvas.removeEventListener('click', onClick);
+                displayMenu();
+            }
+        });
+        if (mouseX >= backX &&
+            mouseX <= backX + backWidth &&
+            mouseY >= backY &&
+            mouseY <= backY + backHeight) {
+            canvas.removeEventListener('click', onClick);
+            displayMenu();
+        }
+    };
+    canvas.addEventListener('click', onClick);
 }
 document.addEventListener('DOMContentLoaded', () => {
     displayMenu();
