@@ -275,6 +275,82 @@ body
 	cursor: pointer;
 }
 
+.profile-modal {
+    background-color: #171A21;
+	border: 8px solid #263549;
+    padding: 30px;
+    border-radius: 10px;
+    width: 740px;
+	height: 600px;
+    color: white;
+}
+
+.profile-modal h2 
+{
+    text-align: center;
+    margin-bottom: 20px;
+	font-weight: bold;
+	font-size: 28px;
+    color: #ffffff;
+}
+
+.profile-modal .inputPictureForm
+{
+	background-color: var(--anthracite-fonce);
+	border-radius: 5px;
+	margin-top: -20%;
+	padding: 10px;	
+	text-align: center;
+	transition: 0.3s;
+}
+
+.profile-modal .submitPictureForm
+{
+    width: 20%;
+    padding: 10px;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+	transition: 0.3s;
+    cursor: pointer;
+}
+
+.profile-modal .submitPictureForm:hover
+{
+	background-color: var(--bleu-clair);
+	transition: 0.3s;
+}
+
+.profile-modal .inputPictureForm:hover
+{
+	background-color: var(--anthracite);
+	transition: 0.3s;
+	cursor: pointer;
+}
+
+.upload-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.profile-modal .submitPictureForm {
+    width: 100%;
+    max-width: 200px;
+}
+
+.picture-upload
+{
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	margin-top: 30%;
+}
+
 .profileMenu
 {
 	position: absolute;
@@ -408,4 +484,3 @@ body
 	color: #8d8d8d;
 	cursor: pointer;
 }
-
