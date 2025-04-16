@@ -1,13 +1,15 @@
 import {profileModalHTML, uploadPictureFormHTML} from '../scripts/sourcepage.js'
 import { MainApp } from './main.js'
 import api from './api.js'
+import { setupHeader, setupProfileButton} from './navigation.js';
 export async function setupProfileModal()
 {
     const modal = document.getElementById('optionnalModal');
     if (!modal)
         return;
     const userInfos = await MainApp.getUserInfo();
-    modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, userInfos.profile_picture);
+    const profilePictureWithTimestamp = `${userInfos.profile_picture}?t=${Date.now()}`;
+    modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, profilePictureWithTimestamp);
     const closeButton = document.getElementById('closeProfileModal');
     if (!closeButton)
         return;
@@ -56,6 +58,10 @@ function setupChangeProfilePictureModal()
             {
                 console.log('Picture changed');
                 alert('Picture changed');
+                const headerPP = document.getElementById('profilePicture') as HTMLImageElement;
+                if (!headerPP)
+                    return;
+                headerPP.src = `${data.profile_picture}?t=${Date.now()}`;;
                 await setupProfileModal();
             }
             else

@@ -87,7 +87,7 @@ function attachNavigationListeners()
 }
 
 
-function setupProfileButton()
+export function setupProfileButton()
 {
 	const profilewindow = document.getElementById('profileMenu');
 	const profilePicture = document.getElementById('profilea');
