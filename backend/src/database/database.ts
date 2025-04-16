@@ -117,24 +117,40 @@ class DatabaseManager
     }
 
     public async addGameToLibrary(userId: number, gameId: number): Promise<void>
-{
-    if (!this.db)
-        throw new Error('Database not initialized');
-    
-    const library = await this.getUserLibrary(userId);
-    console.log("Library before adding game:", library);
-    
-    if (!library.includes(gameId)) {  // Éviter les doublons
-        library.push(gameId);
-        console.log("Library after adding game:", library);
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
         
-        // Ajouter cette ligne pour sauvegarder dans la base de données
+        const library = await this.getUserLibrary(userId);
+        console.log("Library before adding game:", library);
+        
+        if (!library.includes(gameId)) 
+        {  // Éviter les doublons
+            library.push(gameId);
+            console.log("Library after adding game:", library);
+            
+            // Ajouter cette ligne pour sauvegarder dans la base de données
+            await this.db.run(
+                'UPDATE users SET library = ? WHERE id = ?',
+                [JSON.stringify(library), userId]
+            );
+        }
+    }
+
+    public async changeUserPicture(userId: number, newPicture: string): Promise<void>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        
+        const user = await this.getUserById(userId);
+        if (!user)
+            throw new Error('User not found');
+        user.profile_picture = newPicture;
         await this.db.run(
-            'UPDATE users SET library = ? WHERE id = ?',
-            [JSON.stringify(library), userId]
+            'UPDATE users SET profile_picture = ? WHERE id = ?',
+            [newPicture, userId]
         );
     }
-}
 }
 
 export const dbManager = DatabaseManager.getInstance();
