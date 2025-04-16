@@ -4,6 +4,10 @@ import { dbManager } from "./database/database";
 import cookieParser from 'cookie-parser';
 import { userRoutes } from "./routes/user";
 import { authRoutes } from "./routes/authentification";
+import http from "http";
+import { Server as SocketIOServer, Socket} from "socket.io";
+import { startMatch } from "./games/pong/gameSimulation";
+
 import fs from 'fs';
 import multer from 'multer';
 import jwt from 'jsonwebtoken';
@@ -39,17 +43,94 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static('uploads'));
 
-////////////////////////////////////////////////
-//           Start of the server              //
-////////////////////////////////////////////////
-
 // Créer le dossier pour les uploads s'il n'existe pas
 const uploadDir = 'uploads/profile_pictures';
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-app.listen(port, async () => {
+
+
+////////////////////////////////////////////
+//           List of routes               //
+////////////////////////////////////////////
+
+//auth routes
+app.get("/api/auth/check", authRoutes.checkAuth);
+app.post('/api/auth/register', authRoutes.register);
+app.post('/api/auth/login', authRoutes.login);
+app.get("/api/auth/logout", authRoutes.logout);
+
+//community routes
+app.get('/api/users', userRoutes.getAllUsernames);
+
+//user routes
+app.get('/api/header', userRoutes.getInfos);
+app.get('/api/getLibrary', userRoutes.getUserLibrary);
+app.post('/api/addGame', userRoutes.addGame);
+app.post('/api/profile/changePicture', upload.single('newPicture'), userRoutes.changePicture);
+// Servir les fichiers statiques
+
+////////////////////////////////////////////////
+//                Matchmaking                 //
+////////////////////////////////////////////////
+
+//Création du serveur HTTP et intégration de Socket.IO
+const server = http.createServer(app);
+
+
+const io = new SocketIOServer(server, {
+    cors: {
+        origin: 'http://127.0.0.1:8080',
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
+
+// Interface pour représenter un joueur
+interface PlayerData {
+    username: string;
+  }
+  interface Player {
+    id: string;
+    username: string;
+  }
+
+// File d'attente des joueurs pour le matchmaking
+let matchmakingQueue: Player[] = [];
+
+// Gestion des connexions Socket.IO
+io.on("connection", (socket: Socket) => {
+    console.log(`Client connected: ${socket.id}`);
+
+    socket.on("joinQueue", (playerData) => {
+        console.log(`Player ${socket.id} joined matchmaking.`, playerData);
+        matchmakingQueue.push({ id: socket.id, username: playerData.username });
+        attemptMatch();
+    });
+  
+    socket.on("disconnect", () => {
+        console.log(`Client disconnected: ${socket.id}`);
+        matchmakingQueue = matchmakingQueue.filter(player => player.id !== socket.id);
+    });
+});
+  
+//connecter deux joueurs
+function attemptMatch(): void {
+    if (matchmakingQueue.length >= 2) {
+        const player1 = matchmakingQueue.shift();
+        const player2 = matchmakingQueue.shift();
+        if (player1 && player2) {
+            console.log(`Match found: ${player1.id} vs ${player2.id}`);
+            startMatch(player1, player2, io);
+        }
+    }
+}
+////////////////////////////////////////////////
+//           Start of the server              //
+////////////////////////////////////////////////
+
+server.listen(port, async () => {
     try
     {
         await dbManager.initialize();
@@ -60,22 +141,3 @@ app.listen(port, async () => {
     }
     console.log(`Server is running on port ${port}`);
 });
-
-////////////////////////////////////////////
-//           List of routes               //
-////////////////////////////////////////////
-    
-    //auth routes
-    app.get("/api/auth/check", authRoutes.checkAuth);
-    app.post('/api/auth/register', authRoutes.register);
-    app.post('/api/auth/login', authRoutes.login);
-    app.get("/api/auth/logout", authRoutes.logout);
-
-
-    //user routes
-    app.get('/api/header', userRoutes.getInfos);
-    app.get('/api/getLibrary', userRoutes.getUserLibrary);
-    app.post('/api/addGame', userRoutes.addGame);
-    app.post('/api/profile/changePicture', upload.single('newPicture'), userRoutes.changePicture);
-
-    // Servir les fichiers statiques
