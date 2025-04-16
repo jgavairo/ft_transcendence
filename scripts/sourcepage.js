@@ -53,14 +53,14 @@ const communityPage = `
         <!-- Messages s'afficheront ici -->
       </div>
       <div class="chat-input-wrapper">
-        <input type="text" id="chatInput" placeholder="Écris ton message ici..." />
+        <input type="text" id="chatInput" placeholder="Écris ton message ici..." maxlength="280" />
         <button id="sendMessage">Envoyer</button>
       </div>
     </section>
 
     <section class="friends-section">
       <h2>PEOPLE</h2>
-      <input type="text" id="friendSearch" placeholder="find someone" class="friend-input" autocomplete="off" />
+      <input type="text" id="friendSearch" placeholder="find someone" maxlength="20" class="friend-input" autocomplete="off" />
       <div class="dropdown" id="friendDropdown"></div> <!-- menu déroulant ici -->
       <div class="friend-list" id="friendList"></div>
     </section>

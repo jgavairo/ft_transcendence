@@ -55,7 +55,7 @@ export class MainApp
                 return;
             }
             headerElement.innerHTML = header(userInfos.username, userInfos.profile_picture);
-            setupHeader()
+            setupHeader();
         }
         else
         {

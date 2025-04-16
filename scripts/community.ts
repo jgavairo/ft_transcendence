@@ -14,6 +14,23 @@ export function showCommunityPage() {
 	setupChat();
 }
 
+async function fetchUsernames(): Promise<string[]> {
+    try {
+        const response = await fetch('http://127.0.0.1:3000/api/users', {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        if (data.success) {
+            return data.usernames;
+        } else {
+            console.error('Failed to fetch usernames:', data.message);
+            return [];
+        }
+    } catch (error) {
+        console.error('Error fetching usernames:', error);
+        return [];
+    }
+}
 /**
  * Initialise la liste "people" dans localStorage si elle n'existe pas
  */
@@ -36,60 +53,58 @@ function initPeopleList() {
 /**
  * Affiche la liste filtrée dans #friendList
  */
-function renderPeopleList(filter: string = "") {
-	const container = document.getElementById("friendList");
-	if (!container) {
-		console.error("❌ #friendList introuvable");
-		return;
-	}
+async function renderPeopleList(filter: string = "") {
+    const container = document.getElementById("friendList");
+    if (!container) {
+        console.error("❌ #friendList introuvable");
+        return;
+    }
 
-	const friends = getFriendsFromStorage();
-	const people = getPeopleFromStorage();
+    const friends = getFriendsFromStorage();
+    const people = await fetchUsernames(); // Récupère les usernames depuis l'API
 
-	const filtered = people.filter(name =>
-		name.toLowerCase().includes(filter.toLowerCase())
-	);
+    const filtered = people.filter(name =>
+        name.toLowerCase().includes(filter.toLowerCase())
+    );
 
-	// 🔁 On nettoie tout avant de réafficher
-	container.innerHTML = "";
+    container.innerHTML = "";
 
-	// 💡 On n’utilise pas innerHTML en concat, mais createElement à chaque fois
-	filtered.forEach(name => {
-		const isFriend = friends.includes(name);
+    filtered.forEach(name => {
+        const isFriend = friends.includes(name);
 
-		const div = document.createElement("div");
-		div.className = "friend-item";
+        const div = document.createElement("div");
+        div.className = "friend-item";
 
-		const label = document.createElement("span");
-		label.className = "friend-name";
-		label.textContent = name;
+        const label = document.createElement("span");
+        label.className = "friend-name";
+        label.textContent = name;
 
-		const button = document.createElement("button");
-		button.className = `toggle-button ${isFriend ? "added" : ""}`;
-		button.setAttribute("data-name", name);
-		button.title = isFriend ? "Supprimer des amis" : "Ajouter comme ami";
-		button.textContent = isFriend ? "✖" : "＋";
+        const button = document.createElement("button");
+        button.className = `toggle-button ${isFriend ? "added" : ""}`;
+        button.setAttribute("data-name", name);
+        button.title = isFriend ? "Supprimer des amis" : "Ajouter comme ami";
+        button.textContent = isFriend ? "✖" : "＋";
 
-		button.addEventListener("click", () => {
-			const updatedFriends = getFriendsFromStorage();
-			if (updatedFriends.includes(name)) {
-				removeFriend(name);
-				button.textContent = "＋";
-				button.classList.remove("added");
-				button.title = "Ajouter comme ami";
-			} else {
-				addFriend(name);
-				button.textContent = "✖";
-				button.classList.add("added");
-				button.title = "Supprimer des amis";
-			}
-		});
+        button.addEventListener("click", () => {
+            const updatedFriends = getFriendsFromStorage();
+            if (updatedFriends.includes(name)) {
+                removeFriend(name);
+                button.textContent = "＋";
+                button.classList.remove("added");
+                button.title = "Ajouter comme ami";
+            } else {
+                addFriend(name);
+                button.textContent = "✖";
+                button.classList.add("added");
+                button.title = "Supprimer des amis";
+            }
+        });
 
-		div.appendChild(document.createElement("span")).textContent = "👤";
-		div.appendChild(label);
-		div.appendChild(button);
-		container.appendChild(div);
-	});
+        div.appendChild(document.createElement("span")).textContent = "👤";
+        div.appendChild(label);
+        div.appendChild(button);
+        container.appendChild(div);
+    });
 }
 
 function removeFriend(name: string) {
