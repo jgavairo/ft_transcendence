@@ -61,6 +61,8 @@ app.post('/api/auth/register', authRoutes.register);
 app.post('/api/auth/login', authRoutes.login);
 app.get("/api/auth/logout", authRoutes.logout);
 
+//community routes
+app.get('/api/users', userRoutes.getAllUsernames);
 
 //user routes
 app.get('/api/header', userRoutes.getInfos);

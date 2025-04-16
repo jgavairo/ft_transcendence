@@ -1,3 +1,12 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import { communityPage } from './sourcepage.js'; // Chemin à adapter si besoin
 const STORAGE_KEY = "people";
 export function showCommunityPage() {
@@ -9,6 +18,27 @@ export function showCommunityPage() {
     renderPeopleList();
     setupSearchInput();
     setupChat();
+}
+function fetchUsernames() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const response = yield fetch('http://127.0.0.1:3000/api/users', {
+                credentials: 'include'
+            });
+            const data = yield response.json();
+            if (data.success) {
+                return data.usernames;
+            }
+            else {
+                console.error('Failed to fetch usernames:', data.message);
+                return [];
+            }
+        }
+        catch (error) {
+            console.error('Error fetching usernames:', error);
+            return [];
+        }
+    });
 }
 /**
  * Initialise la liste "people" dans localStorage si elle n'existe pas
@@ -31,49 +61,49 @@ function initPeopleList() {
 /**
  * Affiche la liste filtrée dans #friendList
  */
-function renderPeopleList(filter = "") {
-    const container = document.getElementById("friendList");
-    if (!container) {
-        console.error("❌ #friendList introuvable");
-        return;
-    }
-    const friends = getFriendsFromStorage();
-    const people = getPeopleFromStorage();
-    const filtered = people.filter(name => name.toLowerCase().includes(filter.toLowerCase()));
-    // 🔁 On nettoie tout avant de réafficher
-    container.innerHTML = "";
-    // 💡 On n’utilise pas innerHTML en concat, mais createElement à chaque fois
-    filtered.forEach(name => {
-        const isFriend = friends.includes(name);
-        const div = document.createElement("div");
-        div.className = "friend-item";
-        const label = document.createElement("span");
-        label.className = "friend-name";
-        label.textContent = name;
-        const button = document.createElement("button");
-        button.className = `toggle-button ${isFriend ? "added" : ""}`;
-        button.setAttribute("data-name", name);
-        button.title = isFriend ? "Supprimer des amis" : "Ajouter comme ami";
-        button.textContent = isFriend ? "✖" : "＋";
-        button.addEventListener("click", () => {
-            const updatedFriends = getFriendsFromStorage();
-            if (updatedFriends.includes(name)) {
-                removeFriend(name);
-                button.textContent = "＋";
-                button.classList.remove("added");
-                button.title = "Ajouter comme ami";
-            }
-            else {
-                addFriend(name);
-                button.textContent = "✖";
-                button.classList.add("added");
-                button.title = "Supprimer des amis";
-            }
+function renderPeopleList() {
+    return __awaiter(this, arguments, void 0, function* (filter = "") {
+        const container = document.getElementById("friendList");
+        if (!container) {
+            console.error("❌ #friendList introuvable");
+            return;
+        }
+        const friends = getFriendsFromStorage();
+        const people = yield fetchUsernames(); // Récupère les usernames depuis l'API
+        const filtered = people.filter(name => name.toLowerCase().includes(filter.toLowerCase()));
+        container.innerHTML = "";
+        filtered.forEach(name => {
+            const isFriend = friends.includes(name);
+            const div = document.createElement("div");
+            div.className = "friend-item";
+            const label = document.createElement("span");
+            label.className = "friend-name";
+            label.textContent = name;
+            const button = document.createElement("button");
+            button.className = `toggle-button ${isFriend ? "added" : ""}`;
+            button.setAttribute("data-name", name);
+            button.title = isFriend ? "Supprimer des amis" : "Ajouter comme ami";
+            button.textContent = isFriend ? "✖" : "＋";
+            button.addEventListener("click", () => {
+                const updatedFriends = getFriendsFromStorage();
+                if (updatedFriends.includes(name)) {
+                    removeFriend(name);
+                    button.textContent = "＋";
+                    button.classList.remove("added");
+                    button.title = "Ajouter comme ami";
+                }
+                else {
+                    addFriend(name);
+                    button.textContent = "✖";
+                    button.classList.add("added");
+                    button.title = "Supprimer des amis";
+                }
+            });
+            div.appendChild(document.createElement("span")).textContent = "👤";
+            div.appendChild(label);
+            div.appendChild(button);
+            container.appendChild(div);
         });
-        div.appendChild(document.createElement("span")).textContent = "👤";
-        div.appendChild(label);
-        div.appendChild(button);
-        container.appendChild(div);
     });
 }
 function removeFriend(name) {
@@ -101,12 +131,7 @@ function setupSearchInput() {
         renderPeopleList(input.value);
     });
 }
-/**
- * Récupère la liste depuis localStorage
-*/
-function getPeopleFromStorage() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-}
+
 function getFriendsFromStorage() {
     return JSON.parse(localStorage.getItem("friends") || "[]");
 }

@@ -73,7 +73,15 @@ class DatabaseManager
             [username]);
         return result;
     }
-    
+
+    public async getAllUsernames(): Promise<string[]>
+    {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const result = await this.db.all('SELECT username FROM users');
+        return result.map((row: { username: string }) => row.username);
+    }
+
     public async getUserById(id: number): Promise<User | null>
     {
         if (!this.db)
