@@ -131,6 +131,22 @@ const addGameHandler: RequestHandler = async (req, res) =>
 	}
 }
 
+const getAllUsernamesHandler: RequestHandler = async (req, res) => {
+    try {
+        const usernames = await dbManager.getAllUsernames();
+        res.json({
+            success: true,
+            usernames
+        });
+    } catch (error) {
+        console.error('Error fetching usernames:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching usernames'
+        });
+    }
+};
+
 const changePictureHandler: RequestHandler = async (req, res) =>
 {
 	try
@@ -190,5 +206,6 @@ export const userRoutes =
 	getInfos: getInfosHandler,
 	getUserLibrary: getUserLibraryHandler,
 	addGame: addGameHandler,
-	changePicture: changePictureHandler
+	changePicture: changePictureHandler,
+	getAllUsernames: getAllUsernamesHandler
 }
