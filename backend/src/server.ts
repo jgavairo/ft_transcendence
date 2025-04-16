@@ -6,7 +6,7 @@ import { userRoutes } from "./routes/user";
 import { authRoutes } from "./routes/authentification";
 import http from "http";
 import { Server as SocketIOServer, Socket} from "socket.io";
-import { startMatch } from "./games/pong/gameSimulation";
+import { startMatch, MatchState } from "./games/pong/gameSimulation";
 
 import fs from 'fs';
 import multer from 'multer';
@@ -78,7 +78,6 @@ app.post('/api/profile/changePicture', upload.single('newPicture'), userRoutes.c
 //Création du serveur HTTP et intégration de Socket.IO
 const server = http.createServer(app);
 
-
 const io = new SocketIOServer(server, {
     cors: {
         origin: 'http://127.0.0.1:8080',
@@ -87,10 +86,15 @@ const io = new SocketIOServer(server, {
     }
 });
 
+
+// Global map pour stocker l'état de chaque match par roomId
+const matchStates: Map<string, MatchState> = new Map();
+
 // Interface pour représenter un joueur
 interface PlayerData {
     username: string;
   }
+
   interface Player {
     id: string;
     username: string;
@@ -108,7 +112,20 @@ io.on("connection", (socket: Socket) => {
         matchmakingQueue.push({ id: socket.id, username: playerData.username });
         attemptMatch();
     });
-  
+    socket.on("movePaddle", (data: { paddle: "left" | "right"; direction: "up" | "down" | null }) => {
+        const rooms = Array.from(socket.rooms);
+        const roomId = rooms.find(r => r !== socket.id);
+        if (!roomId) return;
+    
+        const matchState = matchStates.get(roomId);
+        if (!matchState) return;
+    
+        if (data.paddle === "left") {
+          matchState.leftPaddleDirection = data.direction;
+        } else if (data.paddle === "right") {
+          matchState.rightPaddleDirection = data.direction;
+        }
+      })
     socket.on("disconnect", () => {
         console.log(`Client disconnected: ${socket.id}`);
         matchmakingQueue = matchmakingQueue.filter(player => player.id !== socket.id);
@@ -118,14 +135,15 @@ io.on("connection", (socket: Socket) => {
 //connecter deux joueurs
 function attemptMatch(): void {
     if (matchmakingQueue.length >= 2) {
-        const player1 = matchmakingQueue.shift();
-        const player2 = matchmakingQueue.shift();
-        if (player1 && player2) {
-            console.log(`Match found: ${player1.id} vs ${player2.id}`);
-            startMatch(player1, player2, io);
-        }
+      const player1 = matchmakingQueue.shift();
+      const player2 = matchmakingQueue.shift();
+      if (player1 && player2) {
+        console.log(`Match found: ${player1.id} vs ${player2.id}`);
+        const matchState = startMatch(player1, player2, io);
+        matchStates.set(matchState.roomId, matchState);
+      }
     }
-}
+  }
 ////////////////////////////////////////////////
 //           Start of the server              //
 ////////////////////////////////////////////////
