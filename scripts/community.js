@@ -131,7 +131,12 @@ function setupSearchInput() {
         renderPeopleList(input.value);
     });
 }
-
+/**
+ * Récupère la liste depuis localStorage
+*/
+function getPeopleFromStorage() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+}
 function getFriendsFromStorage() {
     return JSON.parse(localStorage.getItem("friends") || "[]");
 }
