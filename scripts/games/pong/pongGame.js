@@ -16,6 +16,10 @@ const paddleSkinImages = {
 paddleSkinImages.Skin1.src = '/scripts/games/pong/assets/skin1.png';
 paddleSkinImages.Skin2.src = '/scripts/games/pong/assets/skin2.png';
 paddleSkinImages.Skin3.src = '/scripts/games/pong/assets/skin3.png';
+const bgImage = new Image();
+bgImage.src = '/scripts/games/pong/assets/background.png';
+let loadingAngle = 0;
+let loadingReqId = null;
 function drawHeart(ctx, x, y, size, filled) {
     ctx.save();
     ctx.beginPath();
@@ -39,6 +43,8 @@ function drawLives(ctx, canvas, leftLives, rightLives) {
     const heartSize = 20; // Taille du cœur
     const gap = 10; // Espace entre les cœurs
     const totalLives = 5; // Nombre total de vies initiales
+    if (loadingReqId !== null)
+        cancelAnimationFrame(loadingReqId);
     // Cœurs pour le joueur gauche (positionnés en haut à gauche)
     const leftStartX = 20;
     const leftY = 20;
@@ -67,8 +73,14 @@ function renderGame(matchState) {
     canvas.width = cw;
     canvas.height = ch;
     ctx.clearRect(0, 0, cw, ch);
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, cw, ch);
+    if (bgImage.complete) {
+        ctx.drawImage(bgImage, 0, 0, cw, ch);
+    }
+    else {
+        bgImage.onload = () => {
+            ctx.drawImage(bgImage, 0, 0, cw, ch);
+        };
+    }
     ctx.fillStyle = 'white';
     ctx.beginPath();
     ctx.arc(matchState.ballX, matchState.ballY, 10, 0, Math.PI * 2);
@@ -122,10 +134,31 @@ function displayWaitingScreen() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'white';
-    ctx.font = '30px Arial';
+    ctx.font = '24px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Waiting for opponent...', canvas.width / 2, canvas.height / 2);
+    ctx.fillText('Waiting for opponent...', canvas.width / 2, canvas.height / 2 - 40);
+    animateSpinner();
+}
+function animateSpinner() {
+    const canvas = document.getElementById('pongCanvas');
+    const ctx = canvas.getContext('2d');
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2 + 20;
+    const radius = 20;
+    ctx.clearRect(cx - radius - 5, cy - radius - 5, radius * 2 + 10, radius * 2 + 10);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(loadingAngle);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 1.2);
+    ctx.lineWidth = 4;
+    ctx.fillStyle = 'black';
+    ctx.strokeStyle = 'white';
+    ctx.stroke();
+    ctx.restore();
+    loadingAngle += 0.1;
+    loadingReqId = requestAnimationFrame(animateSpinner);
 }
 export function displayMenu() {
     const canvas = document.getElementById('pongCanvas');
