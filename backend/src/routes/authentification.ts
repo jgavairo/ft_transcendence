@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database";
 import { JWT_SECRET } from "../server";
+import passport from 'passport';
 
 const loginHandler: RequestHandler = async (req, res) => {
     try
@@ -143,10 +144,45 @@ const logoutHandler: RequestHandler = async (req, res) =>
 	});
 }
 
+// Gestionnaires pour l'authentification Google
+const googleAuthHandler: RequestHandler = (req, res, next) => {
+    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+};
+
+const googleCallbackHandler: RequestHandler = (req, res) => {
+    passport.authenticate('google', { failureRedirect: '/login' })(req, res, () => {
+        // Vérifier si l'utilisateur existe
+        if (!req.user) {
+            res.status(401).json({ success: false, message: "Utilisateur non authentifié" });
+            return;
+        }
+
+        // Créer un token JWT pour l'utilisateur
+        const token = jwt.sign(
+            { userId: (req.user as any).id },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        // Définir le cookie JWT
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: false, // Mettre à false pour le développement sans HTTPS
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000
+        });
+
+        // Redirection après authentification réussie
+        res.redirect('http://127.0.0.1:8080');
+    });
+};
+
 export const authRoutes = 
 {
 	login: loginHandler,
 	register: registerHandler,
 	checkAuth: checkAuthHandler,
-	logout: logoutHandler
+	logout: logoutHandler,
+    google: googleAuthHandler,
+    googleCallback: googleCallbackHandler
 }

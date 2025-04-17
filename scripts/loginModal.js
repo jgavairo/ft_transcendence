@@ -45,7 +45,7 @@ const registerModalHTML = `
 function googleSignInHandler() {
     return __awaiter(this, void 0, void 0, function* () {
         console.log("google sign in handler");
-        const response = yield fetch('http://127.0.0.1:3000/api/auth/google');
+        window.location.href = 'http://127.0.0.1:3000/api/auth/google';
     });
 }
 export class LoginManager {
