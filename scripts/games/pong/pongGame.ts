@@ -27,6 +27,13 @@ paddleSkinImages.Skin3.src = '/scripts/games/pong/assets/skin3.png';
 const bgImage = new Image();
 bgImage.src = '/scripts/games/pong/assets/background.png';
 
+const menuBg = new Image();
+menuBg.src = '/scripts/games/pong/assets/menuBg.png';
+
+const shopBg = new Image();
+shopBg.src = '/scripts/games/pong/assets/shopBg.png';
+
+
 let loadingAngle = 0;
 let loadingReqId: number | null = null;
 
@@ -193,7 +200,6 @@ function animateSpinner(): void {
   ctx.beginPath();
   ctx.arc(0, 0, radius, 0, Math.PI * 1.2);
   ctx.lineWidth = 4;
-  ctx.fillStyle = 'black';
   ctx.strokeStyle = 'white';
   ctx.stroke();
   ctx.restore();
@@ -206,57 +212,41 @@ export function displayMenu(): void {
   const canvas = document.getElementById('pongCanvas') as HTMLCanvasElement;
   if (!canvas) return;
   const ctx = canvas.getContext('2d')!;
-  canvas.width = canvas.clientWidth;
-  canvas.height = canvas.clientHeight;
-  
-  ctx.fillStyle = 'black';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  const buttonWidth = 150;
-  const buttonHeight = 50;
-  const playButtonY = canvas.height / 2 - 100;
-  const shopButtonY = canvas.height / 2;
-  const centerX = (canvas.width - buttonWidth) / 2;
-  
-  ctx.strokeStyle = 'white';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(centerX, playButtonY, buttonWidth, buttonHeight);
-  ctx.fillStyle = 'white';
-  ctx.font = '20px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('Play', centerX + buttonWidth / 2, playButtonY + buttonHeight / 2);
-  
-  ctx.strokeRect(centerX, shopButtonY, buttonWidth, buttonHeight);
-  ctx.fillText('Shop', centerX + buttonWidth / 2, shopButtonY + buttonHeight / 2);
-  
-  const onClick = (event: MouseEvent) => {
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-    if (
-      mouseX >= centerX &&
-      mouseX <= centerX + buttonWidth &&
-      mouseY >= playButtonY &&
-      mouseY <= playButtonY + buttonHeight
-    ) {
-      canvas.removeEventListener('click', onClick);
-      socket.emit("joinQueue", { playerId: socket.id, username: "Player1" });
-      displayWaitingScreen();
-      return;
-    }
-    if (
-      mouseX >= centerX &&
-      mouseX <= centerX + buttonWidth &&
-      mouseY >= shopButtonY &&
-      mouseY <= shopButtonY + buttonHeight
-    ) {
-      canvas.removeEventListener('click', onClick);
-      displayShopMenu();
-      return;
+  const cw = canvas.clientWidth;
+  const ch = canvas.clientHeight;
+  canvas.width = cw;
+  canvas.height = ch;
+
+  if (menuBg.complete) {
+    ctx.drawImage(menuBg, 0, 0, cw, ch);
+  } else {
+    menuBg.onload = () => {
+      ctx.drawImage(menuBg, 0, 0, cw, ch);
+    };
+  }
+
+  const buttonWidth = 300;
+  const buttonHeight = 100;
+  const playY = ch / 2 - 60;
+  const shopY = ch / 2 + 90;
+  const centerX = (cw - buttonWidth) / 2 - 10;
+
+  const handler = (e: MouseEvent) => {
+    const { left, top } = canvas.getBoundingClientRect();
+    const x = e.clientX - left;
+    const y = e.clientY - top;
+    if (x >= centerX && x <= centerX+buttonWidth) {
+      if (y >= playY && y <= playY+buttonHeight) {
+        canvas.removeEventListener('click', handler);
+        socket.emit('joinQueue', { playerId: socket.id, username: 'Player1' });
+        displayWaitingScreen();
+      } else if (y >= shopY && y <= shopY+buttonHeight) {
+        canvas.removeEventListener('click', handler);
+        displayShopMenu();
+      }
     }
   };
-  canvas.addEventListener('click', onClick);
+  canvas.addEventListener('click', handler);
 }
 
 export function displayShopMenu(): void {
@@ -266,8 +256,6 @@ export function displayShopMenu(): void {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
 
-  ctx.fillStyle = 'black';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
   
   interface SkinOption {
     name: string;
@@ -280,11 +268,19 @@ export function displayShopMenu(): void {
     { name: 'Skin3', image: '/scripts/games/pong/assets/skin3.png' }
   ];
   
-  const buttonSize = 100;
-  const spacing = 20;
+  const buttonSize = 150;
+  const spacing = 90;
   const totalWidth = options.length * buttonSize + (options.length - 1) * spacing;
-  const startX = (canvas.width - totalWidth) / 2;
-  const buttonY = canvas.height / 2 - buttonSize / 2;
+  const startX = (canvas.width - totalWidth) / 2 - 20;
+  const buttonY = canvas.height / 2 - buttonSize / 2 - 40;
+  
+  if (shopBg.complete) {
+    ctx.drawImage(shopBg, 0, 0, canvas.width, canvas.height);
+  } else {
+    shopBg.onload = () => {
+      ctx.drawImage(shopBg, 0, 0, canvas.width, canvas.height);
+    };
+  }
 
   options.forEach((option, index) => {
     const x = startX + index * (buttonSize + spacing);
@@ -292,24 +288,13 @@ export function displayShopMenu(): void {
     img.src = option.image;
     img.onload = () => {
       ctx.drawImage(img, x, buttonY, buttonSize, buttonSize);
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x, buttonY, buttonSize, buttonSize);
     };
   });
-
-  const backWidth = 100;
+  
+  const backWidth = 120;
   const backHeight = 40;
-  const backX = 20;
-  const backY = canvas.height - backHeight - 20;
-  ctx.strokeStyle = 'white';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(backX, backY, backWidth, backHeight);
-  ctx.fillStyle = 'white';
-  ctx.font = '16px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('Back', backX + backWidth / 2, backY + backHeight / 2);
+  const backX = 175;
+  const backY = canvas.height - backHeight - 100;
 
   const onClick = (event: MouseEvent) => {
     const rect = canvas.getBoundingClientRect();
