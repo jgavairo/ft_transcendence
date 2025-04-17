@@ -34,9 +34,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 app.use(cors({
-    origin: [ 'http://127.0.0.1:8080'
-      , 'http://localhost:8080'
-      , 'http://[::1]:8080'],
+    origin: 'http://127.0.0.1:8080',
     credentials: true,
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Cookie'],
@@ -162,7 +160,7 @@ function attemptMatch(): void {
 //           Start of the server              //
 ////////////////////////////////////////////////
 
-server.listen(port, '0.0.0.0', async () => {
+server.listen(port, async () => {
     try
     {
         await dbManager.initialize();
