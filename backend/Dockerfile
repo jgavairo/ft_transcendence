@@ -11,6 +11,9 @@ RUN npm install jsonwebtoken cookie-parser
 RUN npm install jsonwebtoken @types/jsonwebtoken
 RUN npm install cookie-parser @types/cookie-parser
 RUN npm install multer @types/multer
+# Installation des dépendances pour l'authentification Google
+RUN npm install passport passport-google-oauth20
+RUN npm install @types/passport @types/passport-google-oauth20
 COPY . .
 
 # Conversion des fins de ligne et compilation
@@ -26,26 +29,3 @@ COPY src/database/schema.sql dist/database/schema.sql
 EXPOSE 3000
 
 CMD ["node", "dist/server.js"]
-
-
-
-#  dockerfile work on linux
-# FROM node:20
-
-# WORKDIR /app
-
-# COPY package.json ./
-# RUN npm install
-# RUN npm install jsonwebtoken cookie-parser
-# RUN npm install jsonwebtoken @types/jsonwebtoken
-# RUN npm install cookie-parser @types/cookie-parser
-
-# COPY . .
-
-# RUN npx tsc
-
-# COPY src/database/schema.sql dist/database/schema.sql
-
-# EXPOSE 3000
-
-# CMD ["node", "dist/server.js"]

@@ -35,6 +35,12 @@ const registerModalHTML = `
             </form>
             <button id="registerRequestButton" class="signupButton">Sign up</button>
 `;
+
+async function googleSignInHandler()
+{
+    console.log("google sign in handler");
+    const response = await fetch('http://127.0.0.1:3000/api/auth/google');
+}
 export class LoginManager
 {
     private static readonly AUTH_KEY = "isauthed";
@@ -58,7 +64,7 @@ export class LoginManager
         }
     }
 
-    private static setupLoginModal(): void
+    private static async setupLoginModal(): Promise<void>
     {
         console.log("Setting up login modal");
         const loginbutton = document.getElementById('loginButton');
@@ -91,6 +97,15 @@ export class LoginManager
                 }
             });
         });
+
+        const googleButton = document.getElementById('googleSignIn');
+        if (!googleButton)
+            return;
+        googleButton.addEventListener('click', async (e) => {
+            console.log("google button clicked");
+            await googleSignInHandler();
+        });
+
         const registerButton = document.getElementById('registerButton');
         if (!registerButton)
             return;
@@ -144,17 +159,8 @@ export class LoginManager
                         this.setupLoginModal();
                     }
                     else
-                    {
                         alert(data.message);
-                    }
                 });
-            });
-            const googleButton = document.getElementById('googleSignIn');
-            if (!googleButton)
-                return;
-            googleButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                alert("google is not available yet");
             });
         });
     }

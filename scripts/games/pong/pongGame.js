@@ -27,9 +27,7 @@ function renderGame(matchState) {
     const ch = canvas.clientHeight;
     canvas.width = cw;
     canvas.height = ch;
-    // Effacer le canvas
     ctx.clearRect(0, 0, cw, ch);
-    // (Facultatif) Dessiner un fond noir
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, cw, ch);
     ctx.fillStyle = 'white';

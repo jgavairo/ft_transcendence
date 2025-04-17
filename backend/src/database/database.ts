@@ -14,7 +14,7 @@ export interface User
     library?: number[];
 }
 
-class DatabaseManager
+export class DatabaseManager
 {
     private static instance: DatabaseManager;
     private db: Database | null = null;
@@ -90,6 +90,18 @@ class DatabaseManager
         (
             'SELECT * FROM users WHERE id = ?',
             [id]
+        );
+        return result;
+    }
+
+    public async getUserByEmail(email: string): Promise<User | null>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const result = await this.db.get
+        (
+            'SELECT * FROM users WHERE email = ?',
+            [email]
         );
         return result;
     }

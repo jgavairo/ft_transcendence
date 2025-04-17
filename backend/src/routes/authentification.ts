@@ -1,4 +1,4 @@
-import express, { RequestHandler } from "express";
+import { RequestHandler } from "express";
 import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database";
 import { JWT_SECRET } from "../server";

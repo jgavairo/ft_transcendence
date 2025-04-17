@@ -30,6 +30,8 @@ services:
       - "3000:3000"
     environment:
       - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     env_file:
       - .env
     restart: unless-stopped
