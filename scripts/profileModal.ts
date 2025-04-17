@@ -1,8 +1,8 @@
-import {profileModalHTML, uploadPictureFormHTML} from '../scripts/sourcepage.js'
+import {profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML} from '../scripts/sourcepage.js'
 import { MainApp } from './main.js'
 import api from './api.js'
-import { setupHeader, setupProfileButton} from './navigation.js';
 import { showErrorNotification, showNotification } from './notifications.js';
+import { UserLibraryManager } from './userLibrary.js';
 export async function setupProfileModal()
 {
     const modal = document.getElementById('optionnalModal');
@@ -23,6 +23,35 @@ export async function setupProfileModal()
         return;
     changeProfilePictureButton.addEventListener('click', () => {
         setupChangeProfilePictureModal();
+    });
+
+    const changePasswordButton = document.getElementById('changePasswordButton');
+    if (!changePasswordButton)
+        return;
+    changePasswordButton.addEventListener('click', () => {
+        changePassword();
+    });
+}
+
+function changePassword()
+{
+    console.log('changePassword');
+    const modal = document.getElementById('profile-modal');
+    if (!modal)
+        return;
+    modal.innerHTML = changePasswordModalHTML;
+    const closeButton = document.getElementById('closeModal');
+    if (!closeButton)
+        return;
+    closeButton.addEventListener('click', () => {
+        setupProfileModal();
+    });
+
+    const sendNewPasswordButton = document.getElementById('changePasswordButton');
+    if (!sendNewPasswordButton)
+        return;
+    sendNewPasswordButton.addEventListener('click', () => {
+        console.log('sendNewPasswordButton clicked');
     });
 }
 

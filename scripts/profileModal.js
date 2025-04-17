@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { profileModalHTML, uploadPictureFormHTML } from '../scripts/sourcepage.js';
+import { profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML } from '../scripts/sourcepage.js';
 import { MainApp } from './main.js';
 import api from './api.js';
 import { showErrorNotification, showNotification } from './notifications.js';
@@ -31,6 +31,31 @@ export function setupProfileModal() {
         changeProfilePictureButton.addEventListener('click', () => {
             setupChangeProfilePictureModal();
         });
+        const changePasswordButton = document.getElementById('changePasswordButton');
+        if (!changePasswordButton)
+            return;
+        changePasswordButton.addEventListener('click', () => {
+            changePassword();
+        });
+    });
+}
+function changePassword() {
+    console.log('changePassword');
+    const modal = document.getElementById('profile-modal');
+    if (!modal)
+        return;
+    modal.innerHTML = changePasswordModalHTML;
+    const closeButton = document.getElementById('closeModal');
+    if (!closeButton)
+        return;
+    closeButton.addEventListener('click', () => {
+        setupProfileModal();
+    });
+    const sendNewPasswordButton = document.getElementById('changePasswordButton');
+    if (!sendNewPasswordButton)
+        return;
+    sendNewPasswordButton.addEventListener('click', () => {
+        console.log('sendNewPasswordButton clicked');
     });
 }
 function setupChangeProfilePictureModal() {

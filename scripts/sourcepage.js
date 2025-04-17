@@ -85,6 +85,9 @@ const profileModalHTML = (username, email, profilePicture) => `
               <div id="email">
                 <h3>Email: ${email}</h3>
               </div>
+              <div id="changePassword">
+                <button id="changePasswordButton">Change password</button>
+              </div>
             </div>
           </div>
         </div>
@@ -100,6 +103,18 @@ const uploadPictureFormHTML = `
                 </div>
         </div>
     `;
+const changePasswordModalHTML = `
+        <button class="closeProfileModal" id="closeModal">X</button>
+        <div class="changePassword-modal" id="changePassword-modal">
+            <h2>Change password</h2>
+            <div class="changePassword-modal-content">
+                <input type="password" id="oldPassword" placeholder="Old password" />
+                <input type="password" id="newPassword" placeholder="New password" />
+                <input type="password" id="confirmNewPassword" placeholder="Confirm new password" />
+                <button id="changePasswordButton">Change password</button>
+            </div>
+        </div>
+`;
 const gameModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="game-modal" id="games-modal">
@@ -107,4 +122,4 @@ const gameModalHTML = `
         </div>
     </div>
 `;
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML };
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML };

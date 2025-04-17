@@ -64,6 +64,8 @@ body
 .header .button:hover
 {
 	color: #ffffff;
+	transition: 0.3s;
+	cursor: pointer;
 }
 
 .header .profile
@@ -479,9 +481,56 @@ body
     color: #ffffff;
 }
 
+.profile-modal #changePasswordButton
+{
+    padding: 10px;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+	transition: 0.3s;
+    cursor: pointer;
+}
+
+.profile-modal #changePasswordButton:hover
+{
+	background-color: #113d5e;
+	transition: 0.3s;
+}
+
 .closeProfileModal
 {
 	font-weight: bold;
 	color: #8d8d8d;
 	cursor: pointer;
+}
+
+.changePassword-modal
+{
+	border-radius: 10px;
+    padding: 20px;
+    width: 300px;
+    margin: 0 auto;
+}
+
+.changePassword-modal h2 {
+	text-align: center;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.changePassword-modal-content {
+	padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.changePassword-modal-content input {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #444;
+
+    color: #fff;
 }
