@@ -11,10 +11,7 @@ services:
       - ./scripts:/usr/share/nginx/html/scripts
       - ./assets:/usr/share/nginx/html/assets
       - ./games:/usr/share/nginx/html/games
-<<<<<<< HEAD
-=======
       - uploads_data:/usr/share/nginx/html/uploads
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
     restart: unless-stopped
     depends_on:
       - backend
@@ -30,19 +27,13 @@ services:
     build: backend
     volumes:
       - sqlite_data:/app/data
-<<<<<<< HEAD
-=======
       - uploads_data:/app/uploads
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
     ports:
       - "3000:3000"
     environment:
       - JWT_SECRET=${JWT_SECRET}
-<<<<<<< HEAD
-=======
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
     env_file:
       - .env
     restart: unless-stopped
@@ -51,10 +42,6 @@ services:
 
 volumes:
   sqlite_data:
-<<<<<<< HEAD
-    name: ft_transcendence_db
-=======
     name: ft_transcendence_db
   uploads_data:
     name: ft_transcendence_uploads
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4

@@ -1,15 +1,8 @@
-<<<<<<< HEAD
-import express, { RequestHandler } from "express";
-import jwt from 'jsonwebtoken';
-import { dbManager } from "../database/database";
-import { JWT_SECRET } from "../server";
-=======
 import { RequestHandler } from "express";
 import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database";
 import { JWT_SECRET } from "../server";
 import passport from 'passport';
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
 
 const loginHandler: RequestHandler = async (req, res) => {
     try
@@ -151,8 +144,6 @@ const logoutHandler: RequestHandler = async (req, res) =>
 	});
 }
 
-<<<<<<< HEAD
-=======
 // Gestionnaires pour l'authentification Google
 const googleAuthHandler: RequestHandler = (req, res, next) => {
     passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
@@ -186,17 +177,12 @@ const googleCallbackHandler: RequestHandler = (req, res) => {
     });
 };
 
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
 export const authRoutes = 
 {
 	login: loginHandler,
 	register: registerHandler,
 	checkAuth: checkAuthHandler,
-<<<<<<< HEAD
-	logout: logoutHandler
-=======
 	logout: logoutHandler,
     google: googleAuthHandler,
     googleCallback: googleCallbackHandler
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
 }

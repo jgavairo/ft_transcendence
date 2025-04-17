@@ -35,15 +35,12 @@ const registerModalHTML = `
             </form>
             <button id="registerRequestButton" class="signupButton">Sign up</button>
 `;
-<<<<<<< HEAD
-=======
 
 async function googleSignInHandler()
 {
     console.log("google sign in handler");
     window.location.href = 'http://127.0.0.1:3000/api/auth/google';
 }
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
 export class LoginManager
 {
     private static readonly AUTH_KEY = "isauthed";
@@ -67,11 +64,7 @@ export class LoginManager
         }
     }
 
-<<<<<<< HEAD
-    private static setupLoginModal(): void
-=======
     private static async setupLoginModal(): Promise<void>
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
     {
         console.log("Setting up login modal");
         const loginbutton = document.getElementById('loginButton');
@@ -104,8 +97,6 @@ export class LoginManager
                 }
             });
         });
-<<<<<<< HEAD
-=======
 
         const googleButton = document.getElementById('googleSignIn');
         if (!googleButton)
@@ -115,7 +106,6 @@ export class LoginManager
             await googleSignInHandler();
         });
 
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
         const registerButton = document.getElementById('registerButton');
         if (!registerButton)
             return;
@@ -169,24 +159,9 @@ export class LoginManager
                         this.setupLoginModal();
                     }
                     else
-<<<<<<< HEAD
-                    {
-                        alert(data.message);
-                    }
-                });
-            });
-            const googleButton = document.getElementById('googleSignIn');
-            if (!googleButton)
-                return;
-            googleButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                alert("google is not available yet");
-            });
-=======
                         alert(data.message);
                 });
             });
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
         });
     }
 
