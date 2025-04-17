@@ -7,17 +7,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import { LoginManager } from './loginModal.js';
 import { communityPage } from './sourcepage.js'; // Chemin à adapter si besoin
 const STORAGE_KEY = "people";
 export function showCommunityPage() {
-    const main = document.getElementById("main");
-    if (!main)
-        return;
-    main.innerHTML = communityPage;
-    initPeopleList();
-    renderPeopleList();
-    setupSearchInput();
-    setupChat();
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!(yield LoginManager.isLoggedIn())) {
+            console.log("Not logged in, showing login modal");
+            LoginManager.showLoginModal();
+            return;
+        }
+        else
+            console.log("Logged in, showing community");
+        const main = document.getElementById("main");
+        if (!main)
+            return;
+        main.innerHTML = communityPage;
+        initPeopleList();
+        renderPeopleList();
+        setupSearchInput();
+        setupChat();
+    });
 }
 function fetchUsernames() {
     return __awaiter(this, void 0, void 0, function* () {
