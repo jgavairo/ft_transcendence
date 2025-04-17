@@ -20,6 +20,17 @@ const bgImage = new Image();
 bgImage.src = '/scripts/games/pong/assets/background.png';
 let loadingAngle = 0;
 let loadingReqId = null;
+let lastState = null;
+socket.on('gameState', (state) => {
+    lastState = state;
+});
+function renderLoop() {
+    requestAnimationFrame(renderLoop);
+    if (!lastState)
+        return;
+    renderGame(lastState);
+}
+renderLoop();
 function drawHeart(ctx, x, y, size, filled) {
     ctx.save();
     ctx.beginPath();
@@ -40,17 +51,20 @@ function drawHeart(ctx, x, y, size, filled) {
     ctx.restore();
 }
 function drawLives(ctx, canvas, leftLives, rightLives) {
-    const heartSize = 20;
-    const gap = 10;
-    const totalLives = 5;
+    const heartSize = 20; // Taille du cœur
+    const gap = 10; // Espace entre les cœurs
+    const totalLives = 5; // Nombre total de vies initiales
     if (loadingReqId !== null)
         cancelAnimationFrame(loadingReqId);
+    // Cœurs pour le joueur gauche (positionnés en haut à gauche)
     const leftStartX = 20;
     const leftY = 20;
     for (let i = 0; i < totalLives; i++) {
         const filled = i < leftLives;
+        // Ajuste la position horizontale pour espacer les cœurs
         drawHeart(ctx, leftStartX + i * (heartSize + gap) + heartSize / 2, leftY, heartSize, filled);
     }
+    // Cœurs pour le joueur droit (positionnés en haut à droite)
     const rightStartX = canvas.width - 20 - totalLives * (heartSize + gap) + gap;
     const rightY = 20;
     for (let i = 0; i < totalLives; i++) {
