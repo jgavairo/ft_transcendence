@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import { dbManager } from "./database/database";
 import cookieParser from 'cookie-parser';
@@ -11,6 +11,8 @@ import { startMatch, MatchState } from "./games/pong/gameSimulation";
 import fs from 'fs';
 import multer from 'multer';
 import jwt from 'jsonwebtoken';
+import session from 'express-session';
+import passport from './config/passport';
 
 export const JWT_SECRET = process.env.JWT_SECRET || '6d239a75c7b0219b01411336aec34a4c10e9ff3e43d5382100eba4268c5bfa0572e90558e5367cb169de6d43a2e8542cd3643a5d0494c8ac192566a40e86d44c';
 const app = express();
@@ -31,7 +33,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-
 app.use(cors({
     origin: 'http://127.0.0.1:8080',
     credentials: true,
@@ -43,13 +44,20 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static('uploads'));
 
+app.use(session({
+    secret: JWT_SECRET,
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Créer le dossier pour les uploads s'il n'existe pas
 const uploadDir = 'uploads/profile_pictures';
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
-
-
 
 ////////////////////////////////////////////
 //           List of routes               //
@@ -60,6 +68,10 @@ app.get("/api/auth/check", authRoutes.checkAuth);
 app.post('/api/auth/register', authRoutes.register);
 app.post('/api/auth/login', authRoutes.login);
 app.get("/api/auth/logout", authRoutes.logout);
+
+// Routes d'authentification Google
+app.get('/api/auth/google', authRoutes.google);
+app.get('/api/auth/google/callback', authRoutes.googleCallback);
 
 //community routes
 app.get('/api/users', userRoutes.getAllUsernames);

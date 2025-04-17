@@ -42,6 +42,15 @@ const registerModalHTML = `
             </form>
             <button id="registerRequestButton" class="signupButton">Sign up</button>
 `;
+<<<<<<< HEAD
+=======
+function googleSignInHandler() {
+    return __awaiter(this, void 0, void 0, function* () {
+        console.log("google sign in handler");
+        window.location.href = 'http://127.0.0.1:3000/api/auth/google';
+    });
+}
+>>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
 export class LoginManager {
     static isLoggedIn() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -62,6 +71,7 @@ export class LoginManager {
         });
     }
     static setupLoginModal() {
+<<<<<<< HEAD
         console.log("Setting up login modal");
         const loginbutton = document.getElementById('loginButton');
         if (!loginbutton)
@@ -127,16 +137,39 @@ export class LoginManager {
                     return;
                 }
                 api.post('http://127.0.0.1:3000/api/auth/register', { username, password, email })
+=======
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log("Setting up login modal");
+            const loginbutton = document.getElementById('loginButton');
+            if (!loginbutton)
+                return;
+            loginbutton.addEventListener('click', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                if (!username || !password) {
+                    alert("Please enter a username and password");
+                    return;
+                }
+                api.post('http://127.0.0.1:3000/api/auth/login', { username, password })
+>>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
                     .then(response => response.json())
                     .then(data => {
                     console.log('backend response:', data);
                     if (data.success) {
+<<<<<<< HEAD
                         alert("User registered successfully");
                         const modal = document.getElementById('optionnalModal');
                         if (!modal)
                             return;
                         modal.innerHTML = loginModalHTML;
                         this.setupLoginModal();
+=======
+                        localStorage.setItem(this.AUTH_KEY, "isauthed");
+                        alert(data.message);
+                        this.removeLoginModal();
+                        window.location.reload();
+>>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
                     }
                     else {
                         alert(data.message);
@@ -146,9 +179,69 @@ export class LoginManager {
             const googleButton = document.getElementById('googleSignIn');
             if (!googleButton)
                 return;
+<<<<<<< HEAD
             googleButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 alert("google is not available yet");
+=======
+            googleButton.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+                console.log("google button clicked");
+                yield googleSignInHandler();
+            }));
+            const registerButton = document.getElementById('registerButton');
+            if (!registerButton)
+                return;
+            registerButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modal = document.getElementById('login-modal');
+                if (!modal)
+                    return;
+                modal.innerHTML = registerModalHTML;
+                const cancelButton = document.getElementById('cancelButton');
+                if (!cancelButton)
+                    return;
+                cancelButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const modal = document.getElementById('optionnalModal');
+                    if (!modal)
+                        return;
+                    modal.innerHTML = loginModalHTML;
+                    this.setupLoginModal();
+                });
+                const registerRequestButton = document.getElementById('registerRequestButton');
+                if (!registerRequestButton)
+                    return;
+                registerRequestButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const username = document.getElementById('Rusername').value;
+                    const password = document.getElementById('Rpassword').value;
+                    const confirmPassword = document.getElementById('RconfirmPassword').value;
+                    const email = document.getElementById('Remail').value;
+                    if (!username || !password || !confirmPassword || !email) {
+                        alert("Please enter a username, password and email");
+                        return;
+                    }
+                    if (password !== confirmPassword) {
+                        alert("Passwords do not match");
+                        return;
+                    }
+                    api.post('http://127.0.0.1:3000/api/auth/register', { username, password, email })
+                        .then(response => response.json())
+                        .then(data => {
+                        console.log('backend response:', data);
+                        if (data.success) {
+                            alert("User registered successfully");
+                            const modal = document.getElementById('optionnalModal');
+                            if (!modal)
+                                return;
+                            modal.innerHTML = loginModalHTML;
+                            this.setupLoginModal();
+                        }
+                        else
+                            alert(data.message);
+                    });
+                });
+>>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
             });
         });
     }

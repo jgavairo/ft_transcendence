@@ -1,4 +1,3 @@
-
 export interface MatchState {
   roomId: string;
   leftPaddleY: number;
@@ -16,7 +15,7 @@ export interface MatchState {
   gameOver?: boolean;
 }
 
-const TICK_RATE = 30; // FPS
+const TICK_RATE = 45; // FPS
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 800;
 const BALL_RADIUS = 10;
