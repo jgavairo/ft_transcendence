@@ -129,9 +129,9 @@
     padding: 15px 25px;
     border-radius: 5px;
     font-weight: bold;
-    z-index: 1000;
+    z-index: 2000;
     animation: slideIn 0.3s ease-out;
-    box-shadow: 0 2px 5px rgba(248, 228, 228, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .notification-error {
@@ -143,9 +143,9 @@
     padding: 15px 25px;
     border-radius: 5px;
     font-weight: bold;
-    z-index: 1000;
+    z-index: 2000;
     animation: slideIn 0.3s ease-out;
-    box-shadow: 0 2px 5px rgba(248, 228, 228, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes slideIn {

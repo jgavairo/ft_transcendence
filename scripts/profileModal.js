@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { profileModalHTML, uploadPictureFormHTML } from '../scripts/sourcepage.js';
 import { MainApp } from './main.js';
 import api from './api.js';
+import { showErrorNotification, showNotification } from './notifications.js';
 export function setupProfileModal() {
     return __awaiter(this, void 0, void 0, function* () {
         const modal = document.getElementById('optionnalModal');
@@ -61,7 +62,7 @@ function setupChangeProfilePictureModal() {
             const data = yield response.json();
             if (data.success) {
                 console.log('Picture changed');
-                alert('Picture changed');
+                showNotification('Picture changed');
                 const headerPP = document.getElementById('profilePicture');
                 if (!headerPP)
                     return;
@@ -72,12 +73,12 @@ function setupChangeProfilePictureModal() {
             else {
                 console.error('Failed to change picture');
                 console.error(data.message);
-                alert('Failed to change picture');
+                showErrorNotification('Failed to change picture');
             }
         }
         catch (error) {
             console.error('Error changing picture:', error);
-            alert('Error changing picture');
+            showErrorNotification('Error changing picture');
         }
     }));
 }
