@@ -14,7 +14,11 @@ export interface User
     library?: number[];
 }
 
+<<<<<<< HEAD
 class DatabaseManager
+=======
+export class DatabaseManager
+>>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
 {
     private static instance: DatabaseManager;
     private db: Database | null = null;
@@ -94,6 +98,21 @@ class DatabaseManager
         return result;
     }
 
+<<<<<<< HEAD
+=======
+    public async getUserByEmail(email: string): Promise<User | null>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const result = await this.db.get
+        (
+            'SELECT * FROM users WHERE email = ?',
+            [email]
+        );
+        return result;
+    }
+
+>>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
     public async getUserLibrary(userId: number): Promise<number[]>
     {
         if (!this.db)
