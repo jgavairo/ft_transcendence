@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import api from "./api.js";
 import { MainApp } from "./main.js";
 import { showNotification, showErrorNotification } from "./notifications.js";
+import { setupProfileButton } from "./navigation.js";
 const loginModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="login-modal" id="login-modal">
@@ -74,7 +75,7 @@ export class LoginManager {
             const loginbutton = document.getElementById('loginButton');
             if (!loginbutton)
                 return;
-            loginbutton.addEventListener('click', (e) => {
+            loginbutton.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
                 e.preventDefault();
                 const username = document.getElementById('username').value;
                 const password = document.getElementById('password').value;
@@ -87,16 +88,17 @@ export class LoginManager {
                     .then(data => {
                     console.log('backend response:', data);
                     if (data.success) {
-                        localStorage.setItem(this.AUTH_KEY, "isauthed");
-                        showNotification(data.message);
+                        console.log(data.message);
                         this.removeLoginModal();
-                        window.location.reload();
+                        MainApp.setupHeader();
+                        MainApp.setupCurrentPage();
+                        setupProfileButton();
                     }
                     else {
                         showErrorNotification(data.message);
                     }
                 });
-            });
+            }));
             const googleButton = document.getElementById('googleSignIn');
             if (!googleButton)
                 return;
@@ -161,7 +163,7 @@ export class LoginManager {
         });
     }
     static removeLoginModal() {
-        const modal = document.querySelector('.modal-overlay');
+        const modal = document.getElementById('optionnalModal');
         if (modal)
             modal.innerHTML = "";
         showNotification("Logged in successfully");

@@ -23,7 +23,8 @@ export class MainApp
     }
 
     static getUserInfo = async () => {
-        try {
+        try 
+        {
             const response = await api.get('http://127.0.0.1:3000/api/header');
             const text = await response.text();
             const data = JSON.parse(text);
@@ -31,7 +32,9 @@ export class MainApp
             {
                 return data;
             }
-        } catch (error) {
+        } 
+        catch (error) 
+        {
             console.error('Erreur:', error);
         }
     };

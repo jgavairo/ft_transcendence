@@ -11,9 +11,17 @@ import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
 import { gameModalHTML } from "../scripts/sourcepage.js";
 import { displayMenu } from './games/pong/pongGame.js';
+import { LoginManager } from "./loginModal.js";
 let activedinlist = false;
 export function setupLibrary() {
     return __awaiter(this, void 0, void 0, function* () {
+        if (!(yield LoginManager.isLoggedIn())) {
+            console.log("Not logged in, showing login modal");
+            LoginManager.showLoginModal();
+            return;
+        }
+        else
+            console.log("Logged in, showing library");
         const libraryList = document.querySelector('.library-games-list');
         const detailsContainer = document.querySelector('.library-details');
         if (!libraryList || !detailsContainer) {
