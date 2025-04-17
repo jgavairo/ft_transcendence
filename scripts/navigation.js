@@ -7,13 +7,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { setupLibrary } from './library.js';
 import { libraryPage, storePage, communityPage, profileWindow } from './sourcepage.js';
+import { setupLibrary } from './library.js';
 import { setupStore } from './store.js';
-import { setupProfileModal } from './profileModal.js';
 import { showCommunityPage } from './community.js';
-let boolprofileMenu = false;
+import { showNotification } from './notifications.js';
+import { LoginManager } from './loginModal.js';
+import { setupProfileModal } from './profileModal.js';
 import api from './api.js';
+let boolprofileMenu = false;
 function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');
     newActiveButton.classList.replace('button', 'activebutton');
@@ -103,7 +105,13 @@ export function setupProfileButton() {
                 console.log("logout button clicked");
                 const response = yield api.get('http://127.0.0.1:3000/api/auth/logout');
                 console.log('response:', response);
-                window.location.reload();
+                showNotification("Logged out successfully");
+                const main = document.getElementById('main');
+                if (!main)
+                    return;
+                main.innerHTML = "";
+                LoginManager.showLoginModal();
+                return;
             }));
             const profileSettingsButton = document.getElementById('profileSettings');
             if (!profileSettingsButton)
