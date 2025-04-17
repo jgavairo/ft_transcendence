@@ -15,15 +15,15 @@ export interface MatchState {
   gameOver?: boolean;
 }
 
-const TICK_RATE = 30; // FPS
+const TICK_RATE = 120; // FPS
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 800;
 const BALL_RADIUS = 10;
-const INITIAL_BALL_SPEED_X = 6;
-const INITIAL_BALL_SPEED_Y = 3;
+const INITIAL_BALL_SPEED_X = 4;
+const INITIAL_BALL_SPEED_Y = 2;
 const PADDLE_WIDTH = 10;
 const PADDLE_HEIGHT = 100;
-const PADDLE_SPEED = 5;
+const PADDLE_SPEED = 4;
 const INITIAL_LIVES = 5;
 
 /**
@@ -68,7 +68,7 @@ export function startMatch(
       return;
     }
     updateGameState(matchState);
-    io.to(roomId).emit('gameState', matchState);
+    io.to(roomId).volatile.emit('gameState', matchState)
   }, 1000 / TICK_RATE);
 
   return matchState;

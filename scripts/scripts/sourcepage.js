@@ -29,31 +29,55 @@ const storePage = `
 		</div>
 `;
 const libraryPage = `
-    <aside class="sidebar">
-      <div class="search-container">
-        <input type="text" placeholder="Search" class="search-input">
-        <div class="search-icon">
-          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-              d="M21 21l-4.35-4.35M9.5 17a7.5 7.5 0 100-15 7.5 7.5 0 000 15z"/>
-          </svg>
-        </div>
+  <aside class="sidebar">
+    <div class="search-container">
+      <input type="text" placeholder="Search" class="search-input" id="searchBar" >
+      <div class="search-icon">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+          d="M21 21l-4.35-4.35M9.5 17a7.5 7.5 0 100-15 7.5 7.5 0 000 15z"/>
+        </svg>
       </div>
-      <ul class="library-games-list"></ul>
-    </aside>
-    <section class="main-section">
-      <div class="library-details"></div>
-    </section>
+    </div>
+    <ul class="library-games-list"></ul>
+  </aside>
+  <section class="main-section">
+    <div class="library-details"></div>
+  </section>
 `;
 const communityPage = `
+  <div class="community-wrapper">
+    <section class="chat-section">
+      <h2>CHAT</h2>
+      <div class="chat-container" id="chatContainer">
+        <!-- Messages s'afficheront ici -->
+      </div>
+      <div class="chat-input-wrapper">
+        <input type="text" id="chatInput" placeholder="Écris ton message ici..." maxlength="280" />
+        <button id="sendMessage">Envoyer</button>
+      </div>
+    </section>
+
+    <section class="friends-section">
+      <h2>PEOPLE</h2>
+      <input type="text" id="friendSearch" placeholder="find someone" maxlength="20" class="friend-input" autocomplete="off" />
+      <div class="dropdown" id="friendDropdown"></div> <!-- menu déroulant ici -->
+      <div class="friend-list" id="friendList"></div>
+    </section>
+  </div>
 `;
 const profileModalHTML = (username, email, profilePicture) => `
     <div class="modal-overlay" id="modalWindow">
-        <div class="login-modal" id="profile-modal">
+        <div class="profile-modal" id="profile-modal">
           <div class="profile-modal-content">
             <button class="closeProfileModal" id="closeProfileModal">X</button>
             <h2>Profile settings</h2>
-            <img src="${profilePicture}" class="pictureProfileModal" alt="Profile Picture" />
+            <div class="profile-picture-container">
+              <img src="${profilePicture}" class="pictureProfileModal" alt="Profile Picture" />
+              <div class="profile-picture-overlay" id="changeProfilePictureButton">
+                Edit
+              </div>
+            </div>
             <div class="profile-modal-content-info">
               <div id="username">
                 <h3>Username: ${username}</h3>
@@ -66,6 +90,16 @@ const profileModalHTML = (username, email, profilePicture) => `
         </div>
     </div>
 `;
+const uploadPictureFormHTML = `
+      <button class="closeProfileModal" id="closeModal">X</button>
+      <h2>Choose a new profile picture</h2>
+        <div class="picture-upload">
+                <div class="upload-container">
+                    <input type="file" class="inputPictureForm" id="pictureUploader" accept="image/*">
+                    <button type="submit" class="submitPictureForm" id="sendPictureButton">Send</button>
+                </div>
+        </div>
+    `;
 const gameModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="game-modal" id="games-modal">
@@ -73,4 +107,4 @@ const gameModalHTML = `
         </div>
     </div>
 `;
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML };
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML };

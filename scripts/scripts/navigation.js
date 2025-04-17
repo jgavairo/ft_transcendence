@@ -11,6 +11,7 @@ import { setupLibrary } from './library.js';
 import { libraryPage, storePage, communityPage, profileWindow } from './sourcepage.js';
 import { setupStore } from './store.js';
 import { setupProfileModal } from './profileModal.js';
+import { showCommunityPage } from './community.js';
 let boolprofileMenu = false;
 import api from './api.js';
 function changeActiveButton(newButton, newActiveButton) {
@@ -75,12 +76,13 @@ function attachNavigationListeners() {
                     }
                     changeActiveButton(currentActiveButton, communityButton);
                     mainElement.innerHTML = communityPage;
+                    showCommunityPage();
                     break;
             }
         });
     });
 }
-function setupProfileButton() {
+export function setupProfileButton() {
     const profilewindow = document.getElementById('profileMenu');
     const profilePicture = document.getElementById('profilea');
     if (!profilePicture)

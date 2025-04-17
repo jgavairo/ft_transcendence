@@ -24,8 +24,10 @@ export function setupStore() {
         }
         else
             console.log("Logged in, showing store");
-        gameList.forEach(game => {
-            const inLibrary = UserLibraryManager.hasGame(game.id);
+        yield Promise.all(gameList.map((game) => __awaiter(this, void 0, void 0, function* () {
+            console.log("Game id:", game.id);
+            const inLibrary = yield UserLibraryManager.hasGame(game.id);
+            console.log("Game in library:", inLibrary);
             const gamesHTML = `
             <div class="gamecard" id="${game.name}card">
                 <div class="flex">
@@ -47,14 +49,14 @@ export function setupStore() {
             </div>
         `;
             storeContainer.innerHTML += gamesHTML;
-        });
+        })));
         setupBuyButtons();
     });
 }
 function setupBuyButtons() {
     const buyButtons = document.querySelectorAll('.buybutton');
-    buyButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
+    buyButtons.forEach((button) => __awaiter(this, void 0, void 0, function* () {
+        button.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
             var _a;
             const gameCard = e.target.closest('.gamecard');
             if (!gameCard)
@@ -63,7 +65,8 @@ function setupBuyButtons() {
             if (gameId === undefined)
                 return;
             // Ajoute le jeu à la bibliothèque
-            UserLibraryManager.addGame(gameId);
+            yield UserLibraryManager.addGame(gameId);
+            console.log("IN SETUP BUY BUTTON CLICKED");
             // Met à jour l'apparence du bouton
             const button = e.target;
             button.textContent = 'Already in library';
@@ -71,8 +74,8 @@ function setupBuyButtons() {
             button.disabled = true;
             // Affiche une notification
             showNotification('Game added to your library!');
-        });
-    });
+        }));
+    }));
 }
 function showNotification(message) {
     const notification = document.createElement('div');

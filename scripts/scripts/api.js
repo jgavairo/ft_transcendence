@@ -12,6 +12,11 @@ const api = {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
+    }),
+    postFormData: (url, data) => fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        body: data,
     })
 };
 export default api;
