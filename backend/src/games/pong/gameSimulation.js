@@ -1,68 +1,101 @@
-// backend/src/games/pong/gameSimulation.ts
-const TICK_RATE = 30; // 30 mises à jour par seconde
-const CANVAS_WIDTH = 600; // Exemple : largeur du canvas
-const CANVAS_HEIGHT = 600; // Exemple : hauteur du canvas
-const BALL_RADIUS = 10; // Rayon de la balle
+const TICK_RATE = 30; // FPS
+const CANVAS_WIDTH = 1200;
+const CANVAS_HEIGHT = 800;
+const BALL_RADIUS = 10;
 const INITIAL_BALL_SPEED_X = 6;
 const INITIAL_BALL_SPEED_Y = 3;
-const PADDLE_WIDTH = 10; // Pour collision avec les paddles (à implémenter ultérieurement)
-const PADDLE_HEIGHT = 100; // Hauteur des paddles
+const PADDLE_WIDTH = 10;
+const PADDLE_HEIGHT = 100;
+const PADDLE_SPEED = 5;
+const INITIAL_LIVES = 5;
+/**
+ * Démarre le match entre deux joueurs et lance la boucle de simulation.
+ * Retourne l'état initial du match pour pouvoir le stocker.
+ */
 export function startMatch(player1, player2, io) {
     var _a, _b;
-    // Créer une room unique pour ce match
+    // Créer une room unique
     const roomId = `${player1.id}_${player2.id}`;
-    // Faire rejoindre la room aux joueurs
     (_a = io.sockets.sockets.get(player1.id)) === null || _a === void 0 ? void 0 : _a.join(roomId);
     (_b = io.sockets.sockets.get(player2.id)) === null || _b === void 0 ? void 0 : _b.join(roomId);
     // Initialiser l'état du match
     const matchState = {
         roomId,
-        // Pour les paddles, on les centre verticalement
         leftPaddleY: (CANVAS_HEIGHT - PADDLE_HEIGHT) / 2,
         rightPaddleY: (CANVAS_HEIGHT - PADDLE_HEIGHT) / 2,
-        // La balle démarre au centre
         ballX: CANVAS_WIDTH / 2,
         ballY: CANVAS_HEIGHT / 2,
         ballSpeedX: INITIAL_BALL_SPEED_X,
         ballSpeedY: INITIAL_BALL_SPEED_Y,
         leftScore: 0,
-        rightScore: 0
+        rightScore: 0,
+        leftLives: INITIAL_LIVES,
+        rightLives: INITIAL_LIVES,
+        leftPaddleDirection: null,
+        rightPaddleDirection: null,
     };
     // Lancer la boucle de jeu côté serveur
-    setInterval(() => {
+    const intervalId = setInterval(() => {
+        if (matchState.gameOver) {
+            clearInterval(intervalId);
+            io.to(roomId).emit('gameOver', {
+                winner: (matchState.leftLives <= 0 ? player2.username : player1.username)
+            });
+            return;
+        }
         updateGameState(matchState);
-        // Diffuser l'état mis à jour dans la room
-        io.to(roomId).emit('gameState', matchState);
+        io.to(roomId).volatile.emit('gameState', matchState);
     }, 1000 / TICK_RATE);
+    return matchState;
 }
+/**
+ * Met à jour l'état du match.
+ */
 function updateGameState(matchState) {
-    // Mettre à jour la position de la balle
+    // Mise à jour des positions des paddles (basée sur la direction reçue)
+    if (matchState.leftPaddleDirection === "up") {
+        matchState.leftPaddleY = Math.max(0, matchState.leftPaddleY - PADDLE_SPEED);
+    }
+    else if (matchState.leftPaddleDirection === "down") {
+        matchState.leftPaddleY = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, matchState.leftPaddleY + PADDLE_SPEED);
+    }
+    if (matchState.rightPaddleDirection === "up") {
+        matchState.rightPaddleY = Math.max(0, matchState.rightPaddleY - PADDLE_SPEED);
+    }
+    else if (matchState.rightPaddleDirection === "down") {
+        matchState.rightPaddleY = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, matchState.rightPaddleY + PADDLE_SPEED);
+    }
+    // Mise à jour de la position de la balle
     matchState.ballX += matchState.ballSpeedX;
     matchState.ballY += matchState.ballSpeedY;
-    // Collision avec le haut et le bas du canvas
+    // Collision avec le haut et le bas
     if (matchState.ballY - BALL_RADIUS <= 0 || matchState.ballY + BALL_RADIUS >= CANVAS_HEIGHT) {
         matchState.ballSpeedY = -matchState.ballSpeedY;
     }
-    // Si la balle sort à gauche : score pour le joueur droit
+    if (matchState.ballX - BALL_RADIUS <= 30 + PADDLE_WIDTH &&
+        matchState.ballY >= matchState.leftPaddleY &&
+        matchState.ballY <= matchState.leftPaddleY + PADDLE_HEIGHT) {
+        matchState.ballSpeedX = -matchState.ballSpeedX * 1.1;
+    }
+    if (matchState.ballX + BALL_RADIUS >= CANVAS_WIDTH - 50 - PADDLE_WIDTH &&
+        matchState.ballY >= matchState.rightPaddleY &&
+        matchState.ballY <= matchState.rightPaddleY + PADDLE_HEIGHT) {
+        matchState.ballSpeedX = -matchState.ballSpeedX * 1.1;
+    }
+    // Score et réinitialisation de la balle
     if (matchState.ballX - BALL_RADIUS <= 0) {
-        matchState.rightScore += 1;
-        resetBall(matchState, 1); // La balle reprend avec une direction positive
+        matchState.leftLives--;
+        resetBall(matchState, 1);
     }
-    // Si la balle sort à droite : score pour le joueur gauche
     else if (matchState.ballX + BALL_RADIUS >= CANVAS_WIDTH) {
-        matchState.leftScore += 1;
-        resetBall(matchState, -1); // La balle reprend avec une direction négative
+        matchState.rightLives--;
+        resetBall(matchState, -1);
     }
-    // Ici, vous pouvez ajouter la détection des collisions avec les paddles
-    // (par exemple, si la balle touche le paddle gauche ou droit, inverser la direction)
+    // Vérification de la fin du match
+    if (matchState.leftLives <= 0 || matchState.rightLives <= 0) {
+        matchState.gameOver = true;
+    }
 }
-/**
- * Réinitialise la position et la vitesse de la balle au centre du canvas,
- * en donnant une direction à la balle en fonction du paramètre fourni.
- *
- * @param matchState L'état actuel du match.
- * @param direction Un nombre (+1 ou -1) indiquant la direction horizontale initiale.
- */
 function resetBall(matchState, direction) {
     matchState.ballX = CANVAS_WIDTH / 2;
     matchState.ballY = CANVAS_HEIGHT / 2;
