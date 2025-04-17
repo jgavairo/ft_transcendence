@@ -2,10 +2,7 @@
   "dependencies": {
     "@types/cookie-parser": "^1.4.8",
     "cookie-parser": "^1.4.7",
-<<<<<<< HEAD
-=======
     "express-session": "^1.18.1",
->>>>>>> 028ad59c6a8c74fca564bd04b39fd270d4e9a8f4
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1"
   },
