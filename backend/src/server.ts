@@ -162,7 +162,7 @@ function attemptMatch(): void {
 //           Start of the server              //
 ////////////////////////////////////////////////
 
-server.listen(port, async () => {
+server.listen(port, '0.0.0.0', async () => {
     try
     {
         await dbManager.initialize();
