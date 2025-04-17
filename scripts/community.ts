@@ -1,8 +1,18 @@
+import { LoginManager } from './loginModal.js';
 import { communityPage } from './sourcepage.js'; // Chemin à adapter si besoin
 
 const STORAGE_KEY = "people";
 
-export function showCommunityPage() {
+export async function showCommunityPage() 
+{
+	if(!await LoginManager.isLoggedIn())
+		{
+			console.log("Not logged in, showing login modal");
+			LoginManager.showLoginModal();
+			return;
+		}
+		else 
+			console.log("Logged in, showing community");
 	const main = document.getElementById("main");
 	if (!main) return;
 

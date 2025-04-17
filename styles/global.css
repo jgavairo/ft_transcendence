@@ -376,6 +376,7 @@ body
 {
 	width: 100%;
 	text-align: left;
+	font-weight: bold;
 	padding: 0.5rem 1rem;
 	background: none;
 	transition: 0.3s;
@@ -399,13 +400,13 @@ body
 }
 
 #logoutButton {
-	background-color: #ff00003c;
+	background-color: var(--rouge);
 	width: 100%;
 }
 
 #logoutButton:hover
 {
-	background-color: #ff000069;
+	background-color: #c70202;
 	transition: 0.3s;
 }
 

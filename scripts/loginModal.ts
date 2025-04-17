@@ -2,6 +2,7 @@ import { setupStore } from "./store";
 import api from "./api.js";
 import { MainApp } from "./main.js";
 import { showNotification, showErrorNotification } from "./notifications.js";
+import { setupHeader, setupProfileButton } from "./navigation.js";
 
 const loginModalHTML = `
     <div class="modal-overlay" id="modalWindow">
@@ -72,7 +73,7 @@ export class LoginManager
         const loginbutton = document.getElementById('loginButton');
         if (!loginbutton)
             return;
-        loginbutton.addEventListener('click', (e) => {
+        loginbutton.addEventListener('click', async (e) => {
             e.preventDefault();
 
             const username = (document.getElementById('username') as HTMLInputElement).value;
@@ -88,10 +89,11 @@ export class LoginManager
             .then(data => {
                 console.log('backend response:', data);
                 if (data.success) {
-                    localStorage.setItem(this.AUTH_KEY, "isauthed");
-                    showNotification(data.message);
+                    console.log(data.message);
                     this.removeLoginModal();
-                    window.location.reload();
+                    MainApp.setupHeader();
+                    MainApp.setupCurrentPage();
+                    setupProfileButton();
                 }
                 else
                 {
@@ -169,7 +171,7 @@ export class LoginManager
 
     private static removeLoginModal(): void
     {
-        const modal = document.querySelector('.modal-overlay');
+        const modal = document.getElementById('optionnalModal');
         if (modal)
             modal.innerHTML = "";
         showNotification("Logged in successfully");
