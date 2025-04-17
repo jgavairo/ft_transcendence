@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
 import { LoginManager } from "./loginModal.js";
+import { showNotification } from "./notifications.js";
 export function setupStore() {
     return __awaiter(this, void 0, void 0, function* () {
         const storeContainer = document.querySelector('.gamescontainer');
@@ -76,12 +77,5 @@ function setupBuyButtons() {
             showNotification('Game added to your library!');
         }));
     }));
-}
-function showNotification(message) {
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
 }
 document.addEventListener('DOMContentLoaded', setupStore);

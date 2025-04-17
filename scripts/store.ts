@@ -1,6 +1,7 @@
 import { gameList } from "./gameStoreList.js";
 import { UserLibraryManager } from "./userLibrary.js";
 import { LoginManager } from "./loginModal.js";
+import { showNotification, showErrorNotification } from "./notifications.js";
 
 export async function setupStore() 
 {
@@ -75,15 +76,5 @@ function setupBuyButtons()
         });
     });
 }
-
-function showNotification(message: string) 
-{
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}
-
 
 document.addEventListener('DOMContentLoaded', setupStore);

@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import api from "./api.js";
 import { MainApp } from "./main.js";
+import { showNotification, showErrorNotification } from "./notifications.js";
 const loginModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="login-modal" id="login-modal">
@@ -78,7 +79,7 @@ export class LoginManager {
                 const username = document.getElementById('username').value;
                 const password = document.getElementById('password').value;
                 if (!username || !password) {
-                    alert("Please enter a username and password");
+                    showErrorNotification("Please enter a username and password");
                     return;
                 }
                 api.post('http://127.0.0.1:3000/api/auth/login', { username, password })
@@ -87,12 +88,12 @@ export class LoginManager {
                     console.log('backend response:', data);
                     if (data.success) {
                         localStorage.setItem(this.AUTH_KEY, "isauthed");
-                        alert(data.message);
+                        showNotification(data.message);
                         this.removeLoginModal();
                         window.location.reload();
                     }
                     else {
-                        alert(data.message);
+                        showErrorNotification(data.message);
                     }
                 });
             });
@@ -133,11 +134,11 @@ export class LoginManager {
                     const confirmPassword = document.getElementById('RconfirmPassword').value;
                     const email = document.getElementById('Remail').value;
                     if (!username || !password || !confirmPassword || !email) {
-                        alert("Please enter a username, password and email");
+                        showErrorNotification("Please enter a username, password and email");
                         return;
                     }
                     if (password !== confirmPassword) {
-                        alert("Passwords do not match");
+                        showErrorNotification("Passwords do not match");
                         return;
                     }
                     api.post('http://127.0.0.1:3000/api/auth/register', { username, password, email })
@@ -145,7 +146,7 @@ export class LoginManager {
                         .then(data => {
                         console.log('backend response:', data);
                         if (data.success) {
-                            alert("User registered successfully");
+                            showNotification("User registered successfully");
                             const modal = document.getElementById('optionnalModal');
                             if (!modal)
                                 return;
@@ -153,7 +154,7 @@ export class LoginManager {
                             this.setupLoginModal();
                         }
                         else
-                            alert(data.message);
+                            showErrorNotification(data.message);
                     });
                 });
             });
@@ -163,6 +164,7 @@ export class LoginManager {
         const modal = document.querySelector('.modal-overlay');
         if (modal)
             modal.innerHTML = "";
+        showNotification("Logged in successfully");
     }
 }
 LoginManager.AUTH_KEY = "isauthed";

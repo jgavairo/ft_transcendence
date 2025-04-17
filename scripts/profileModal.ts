@@ -2,6 +2,7 @@ import {profileModalHTML, uploadPictureFormHTML} from '../scripts/sourcepage.js'
 import { MainApp } from './main.js'
 import api from './api.js'
 import { setupHeader, setupProfileButton} from './navigation.js';
+import { showErrorNotification, showNotification } from './notifications.js';
 export async function setupProfileModal()
 {
     const modal = document.getElementById('optionnalModal');
@@ -57,7 +58,7 @@ function setupChangeProfilePictureModal()
             if (data.success)
             {
                 console.log('Picture changed');
-                alert('Picture changed');
+                showNotification('Picture changed');
                 const headerPP = document.getElementById('profilePicture') as HTMLImageElement;
                 if (!headerPP)
                     return;
@@ -68,13 +69,13 @@ function setupChangeProfilePictureModal()
             {
                 console.error('Failed to change picture');
                 console.error(data.message);
-                alert('Failed to change picture');
+                showErrorNotification('Failed to change picture');
             }
         }
         catch (error)
         {
             console.error('Error changing picture:', error);
-            alert('Error changing picture');
+            showErrorNotification('Error changing picture');
         }
     });
 }
