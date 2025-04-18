@@ -278,6 +278,21 @@ body
 	cursor: pointer;
 }
 
+/* Overlay pour la modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(10px); /* Ajoute un effet de flou */
+    background-color: rgba(0, 0, 0, 0.5); /* Couleur semi-transparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
 .profile-modal {
     background-color: #171A21;
     border: 8px solid #263549;
@@ -286,11 +301,28 @@ body
     width: 740px; /* Largeur fixe */
     max-width: 90%; /* Largeur maximale pour les petits écrans */
     color: white;
-    overflow: visible; /* Permet au contenu de dépasser si nécessaire */
     display: flex;
     flex-direction: column;
     justify-content: space-between; /* Espace entre les sections */
     box-sizing: border-box; /* Inclut le padding dans la taille totale */
+    z-index: 3000; /* Assure que la modal est au-dessus de l'overlay */
+}
+
+.closeProfileModal {
+    font-weight: bold;
+    color: #8d8d8d;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.closeProfileModal:hover {
+    color: #ffffff;
+    transition: 0.3s;
 }
 
 .profile-modal h2 

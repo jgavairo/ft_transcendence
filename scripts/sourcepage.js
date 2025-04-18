@@ -67,7 +67,7 @@ const communityPage = `
   </div>
 `;
 const profileModalHTML = (username, email, profilePicture, bio) => `
-    <div class="modal-overlay" id="modalWindow">
+    <div class="modal-overlay" id="modalOverlay">
         <div class="profile-modal" id="profile-modal">
           <div class="profile-modal-content">
             <button class="closeProfileModal" id="closeProfileModal">X</button>

@@ -25,6 +25,14 @@ export function setupProfileModal() {
                 modal.innerHTML = '';
             });
         }
+        const overlay = document.getElementById('modalOverlay');
+        if (overlay) {
+            overlay.addEventListener('click', (event) => {
+                if (event.target === overlay) { // Vérifie que le clic est sur l'overlay
+                    modal.innerHTML = '';
+                }
+            });
+        }
         const changeProfilePictureButton = document.getElementById('changeProfilePictureButton');
         if (changeProfilePictureButton) {
             changeProfilePictureButton.addEventListener('click', () => {
