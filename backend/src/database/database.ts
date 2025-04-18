@@ -174,9 +174,9 @@ export class DatabaseManager
         return result.map((row: { username: string }) => row.username);
     }
 
-    public async getAllUsernamesWithIds(): Promise<{ id: number, username: string, profile_picture: string }[]> {
+    public async getAllUsernamesWithIds(): Promise<{ id: number, username: string, profile_picture: string, email: string }[]> {
         if (!this.db) throw new Error('Database not initialized');
-        const result = await this.db.all('SELECT id, username, profile_picture FROM users');
+        const result = await this.db.all('SELECT id, username, profile_picture, email FROM users');
         return result;
     }
 }

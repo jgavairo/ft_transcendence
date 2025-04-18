@@ -1,0 +1,129 @@
+/* Section des amis */
+.friends-section {
+    background-color: #1e2a38;
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 45%;
+    min-width: 300px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    height: 500px; /* fixe une hauteur max */
+}
+
+.friends-section h2 {
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.friend-input {
+    background-color: #101820;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: white;
+    margin-bottom: 1rem;
+    width: 100%;
+    font-size: 1rem;
+}
+
+.friend-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-right: 10px;
+}
+
+.friend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.profile-picture {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    object-fit: cover;
+}
+
+.toggle-button {
+    background-color: #294162;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    margin-left: 10px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.toggle-button:hover {
+    background-color: #3a5b87;
+}
+
+.toggle-button.added {
+    background-color: #692f2f;
+}
+
+/* Styles pour la carte "profil" */
+.profile-card {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #1e2a38;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    z-index: 1000;
+    width: 300px;
+    color: white;
+}
+
+.profile-card-picture {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #3a5b87;
+}
+
+.profile-card-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.profile-card-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.profile-card-close:hover {
+    color: #ff4d4d;
+}
+
+.profile-card-email {
+    font-size: 1rem;
+    color: #ccc;
+    text-align: center;
+    margin-top: 0.5rem;
+}
