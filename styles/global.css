@@ -308,6 +308,7 @@ body
     z-index: 3000; /* Assure que la modal est au-dessus de l'overlay */
 }
 
+/* Bouton "Close" */
 .closeProfileModal {
     font-weight: bold;
     color: #8d8d8d;
@@ -315,9 +316,8 @@ body
     background: none;
     border: none;
     font-size: 1.5rem;
-    position: absolute;
-    top: 10px;
-    right: 10px;
+    transition: color 0.3s ease;
+    margin-right: 10px; /* Ajoute un espace à droite */
 }
 
 .closeProfileModal:hover {
@@ -495,6 +495,33 @@ body
 	cursor: pointer;
 }
 
+/* Conteneur pour la flèche "Back" et la croix "Close" */
+.profile-modal-header {
+    display: flex;
+    justify-content: space-between; /* Place la flèche à gauche et la croix à droite */
+    align-items: center;
+    width: 100%;
+    position: relative; /* Position relative pour que les éléments soient dans le conteneur */
+    margin-bottom: 20px; /* Ajoute un espace sous le header */
+}
+
+/* Flèche "Back" */
+.backArrow {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #8d8d8d;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    margin-left: 10px; /* Ajoute un espace à gauche */
+}
+
+.backArrow:hover {
+    color: #ffffff;
+    transition: 0.3s;
+}
+
 .profile-modal-content-info {
     display: flex;
     flex-direction: column;
@@ -513,12 +540,13 @@ body
     gap: 5px; /* Ajoute un espacement entre les sous-éléments */
     width: 100%; /* Assure que chaque section prend toute la largeur */
     box-sizing: border-box; /* Inclut le padding dans la taille totale */
+	margin-top: 1.5rem;
 }
 
 .profile-modal-content-info h3 {
     color: #ffffff;
     font-size: 1.2rem;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
 .profile-modal-content-info p,
@@ -549,11 +577,15 @@ body
 	transition: 0.3s;
 }
 
-.closeProfileModal
-{
-	font-weight: bold;
-	color: #8d8d8d;
-	cursor: pointer;
+/* Bouton "Close" */
+.closeProfileModal {
+    font-weight: bold;
+    color: #8d8d8d;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    transition: color 0.3s ease;
 }
 
 .changePassword-modal

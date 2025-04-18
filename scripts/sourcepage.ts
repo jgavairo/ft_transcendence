@@ -77,8 +77,10 @@ const communityPage = `
 const profileModalHTML = (username: string, email: string, profilePicture: string, bio: string) => `
     <div class="modal-overlay" id="modalOverlay">
         <div class="profile-modal" id="profile-modal">
-          <div class="profile-modal-content">
+          <div class="profile-modal-header">
             <button class="closeProfileModal" id="closeProfileModal">X</button>
+          </div>
+          <div class="profile-modal-content">
             <h2>Profile settings</h2>
             <div class="profile-picture-container-modal">
               <img src="${profilePicture}" class="pictureProfileModal" alt="Profile Picture" />
@@ -110,7 +112,10 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
 `;
 
 const uploadPictureFormHTML = `
-      <button class="closeProfileModal" id="closeModal">X</button>
+      <div class="profile-modal-header">
+          <button class="backArrow" id="backToProfileSettings" aria-label="Back">←</button>
+          <button class="closeProfileModal" id="closeModal">X</button>
+      </div>
       <h2>Choose a new profile picture</h2>
         <div class="picture-upload">
                 <div class="upload-container">

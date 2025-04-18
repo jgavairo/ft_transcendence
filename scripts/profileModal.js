@@ -22,14 +22,14 @@ export function setupProfileModal() {
         const closeButton = document.getElementById('closeProfileModal');
         if (closeButton) {
             closeButton.addEventListener('click', () => {
-                modal.innerHTML = '';
+                modal.innerHTML = ''; // Vide complètement le contenu de la modal
             });
         }
         const overlay = document.getElementById('modalOverlay');
         if (overlay) {
             overlay.addEventListener('click', (event) => {
                 if (event.target === overlay) { // Vérifie que le clic est sur l'overlay
-                    modal.innerHTML = '';
+                    modal.innerHTML = ''; // Vide complètement le contenu de la modal
                 }
             });
         }
@@ -97,12 +97,23 @@ function setupChangeProfilePictureModal() {
     if (!profileModal)
         return;
     profileModal.innerHTML = uploadPictureFormHTML;
+    // Gestionnaire pour la croix (ferme complètement la fenêtre)
     const closeButton = document.getElementById('closeModal');
-    if (!closeButton)
-        return;
-    closeButton.addEventListener('click', () => {
-        setupProfileModal();
-    });
+    if (closeButton) {
+        closeButton.addEventListener('click', () => {
+            const modal = document.getElementById('optionnalModal');
+            if (modal) {
+                modal.innerHTML = ''; // Vide complètement le contenu de la modal
+            }
+        });
+    }
+    // Gestionnaire pour la flèche "Back" (revient aux Profile Settings)
+    const backArrow = document.getElementById('backToProfileSettings');
+    if (backArrow) {
+        backArrow.addEventListener('click', () => {
+            setupProfileModal(); // Retourne aux Profile Settings
+        });
+    }
     const submitButton = document.getElementById('sendPictureButton');
     if (!submitButton)
         return;
@@ -126,7 +137,6 @@ function setupChangeProfilePictureModal() {
                 if (!headerPP)
                     return;
                 headerPP.src = `${data.profile_picture}?t=${Date.now()}`;
-                ;
                 yield setupProfileModal();
             }
             else {
