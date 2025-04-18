@@ -74,7 +74,7 @@ const communityPage = `
   </div>
 `;
 
-const profileModalHTML = (username: string, email: string, profilePicture: string) => `
+const profileModalHTML = (username: string, email: string, profilePicture: string, bio: string) => `
     <div class="modal-overlay" id="modalWindow">
         <div class="profile-modal" id="profile-modal">
           <div class="profile-modal-content">
@@ -88,10 +88,17 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
             </div>
             <div class="profile-modal-content-info">
               <div id="username">
-                <h3>Username: ${username}</h3>
+                <h3>Username:</h3>
+                <p>${username}</p>
               </div>
               <div id="email">
-                <h3>Email: ${email}</h3>
+                <h3>Email:</h3>
+                <p>${email}</p>
+              </div>
+              <div id="bio">
+                <h3>Bio:</h3>
+                <textarea id="bioInput" maxlength="150" placeholder="Write something about yourself...">${bio}</textarea>
+                <button id="saveBioButton" class="save-bio-button">Save Bio</button>
               </div>
               <div id="changePassword">
                 <button id="changePasswordButton">Change password</button>

@@ -128,6 +128,14 @@
     margin-top: 0.5rem;
 }
 
+.profile-card-bio {
+    font-size: 1rem;
+    color: #ccc;
+    text-align: center;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
 /* Overlay pour la carte "profil" */
 .profile-overlay {
     position: fixed;

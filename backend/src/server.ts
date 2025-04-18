@@ -81,6 +81,7 @@ app.get('/api/header', userRoutes.getInfos);
 app.get('/api/getLibrary', userRoutes.getUserLibrary);
 app.post('/api/addGame', userRoutes.addGame);
 app.post('/api/profile/changePicture', upload.single('newPicture'), userRoutes.changePicture);
+app.post('/api/profile/updateBio', userRoutes.updateBio);
 // Servir les fichiers statiques
 
 ////////////////////////////////////////////////
