@@ -23,15 +23,14 @@ export async function showCommunityPage()
 	setupSearchInput();
 	setupChat();
 }
-
-async function fetchUsernames(): Promise<string[]> {
+async function fetchUsernames(): Promise<{ username: string, profile_picture: string }[]> {
     try {
         const response = await fetch('http://127.0.0.1:3000/api/users', {
             credentials: 'include'
         });
         const data = await response.json();
         if (data.success) {
-            return data.usernames; // La liste des noms d'utilisateur sans l'utilisateur en cours
+            return data.users; // Retourne les utilisateurs avec leurs photos de profil
         } else {
             console.error('Failed to fetch usernames:', data.message);
             return [];
@@ -71,46 +70,52 @@ async function renderPeopleList(filter: string = "") {
     }
 
     const friends = getFriendsFromStorage();
-    const people = await fetchUsernames(); // Récupère les usernames depuis l'API
+    const people = await fetchUsernames(); // Récupère les utilisateurs avec leurs photos de profil
 
-    const filtered = people.filter(name =>
-        name.toLowerCase().includes(filter.toLowerCase())
+    const filtered = people.filter(person =>
+        person.username.toLowerCase().includes(filter.toLowerCase())
     );
 
     container.innerHTML = "";
 
-    filtered.forEach(name => {
-        const isFriend = friends.includes(name);
+    filtered.forEach(person => {
+        const isFriend = friends.includes(person.username);
 
         const div = document.createElement("div");
         div.className = "friend-item";
 
+        // Ajouter l'image de profil
+        const img = document.createElement("img");
+        img.className = "profile-picture";
+        img.src = person.profile_picture || "default-profile.png"; // Utiliser une image par défaut si aucune photo n'est disponible
+        img.alt = `${person.username}'s profile picture`;
+
         const label = document.createElement("span");
         label.className = "friend-name";
-        label.textContent = name;
+        label.textContent = person.username;
 
         const button = document.createElement("button");
         button.className = `toggle-button ${isFriend ? "added" : ""}`;
-        button.setAttribute("data-name", name);
+        button.setAttribute("data-name", person.username);
         button.title = isFriend ? "Supprimer des amis" : "Ajouter comme ami";
         button.textContent = isFriend ? "✖" : "＋";
 
         button.addEventListener("click", () => {
             const updatedFriends = getFriendsFromStorage();
-            if (updatedFriends.includes(name)) {
-                removeFriend(name);
+            if (updatedFriends.includes(person.username)) {
+                removeFriend(person.username);
                 button.textContent = "＋";
                 button.classList.remove("added");
                 button.title = "Ajouter comme ami";
             } else {
-                addFriend(name);
+                addFriend(person.username);
                 button.textContent = "✖";
                 button.classList.add("added");
                 button.title = "Supprimer des amis";
             }
         });
 
-        div.appendChild(document.createElement("span")).textContent = "👤";
+        div.appendChild(img); // Ajouter l'image de profil
         div.appendChild(label);
         div.appendChild(button);
         container.appendChild(div);
