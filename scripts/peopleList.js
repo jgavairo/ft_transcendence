@@ -16,7 +16,7 @@ export function fetchUsernames() {
             });
             const data = yield response.json();
             if (data.success) {
-                return data.users; // Retourne les utilisateurs avec leurs emails
+                return data.users; // Retourne les utilisateurs avec leurs bios
             }
             else {
                 console.error('Failed to fetch usernames:', data.message);
@@ -65,7 +65,7 @@ export function renderPeopleList() {
             img.src = person.profile_picture || "default-profile.png"; // Utiliser une image par défaut si aucune photo n'est disponible
             img.alt = `${person.username}'s profile picture`;
             img.addEventListener("click", () => {
-                showProfileCard(person.username, person.profile_picture, person.email);
+                showProfileCard(person.username, person.profile_picture, person.email, person.bio);
             });
             const label = document.createElement("span");
             label.className = "friend-name";
@@ -122,7 +122,7 @@ export function setupSearchInput() {
 export function getFriendsFromStorage() {
     return JSON.parse(localStorage.getItem("friends") || "[]");
 }
-export function showProfileCard(username, profilePicture, email) {
+export function showProfileCard(username, profilePicture, email, bio) {
     // Vérifiez si une carte existe déjà et la supprimez
     let existingCard = document.getElementById("profileOverlay");
     if (existingCard) {
@@ -155,6 +155,10 @@ export function showProfileCard(username, profilePicture, email) {
     const emailElement = document.createElement("p");
     emailElement.className = "profile-card-email";
     emailElement.textContent = `Email: ${email}`;
+    // Ajoutez la bio
+    const bioElement = document.createElement("p");
+    bioElement.className = "profile-card-bio";
+    bioElement.textContent = bio || "No bio available";
     // Ajoutez un bouton pour fermer la carte
     const closeButton = document.createElement("button");
     closeButton.className = "profile-card-close";
@@ -167,6 +171,7 @@ export function showProfileCard(username, profilePicture, email) {
     card.appendChild(img);
     card.appendChild(name);
     card.appendChild(emailElement);
+    card.appendChild(bioElement);
     // Ajoutez la carte à l'overlay
     overlay.appendChild(card);
     // Ajoutez l'overlay au body

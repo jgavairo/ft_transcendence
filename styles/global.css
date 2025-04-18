@@ -534,3 +534,50 @@ body
 
     color: #fff;
 }
+
+/* Styles pour la section bio */
+#bio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#bio h3 {
+    color: #ffffff;
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+}
+
+#bio textarea {
+    width: 80%;
+    height: 100px;
+    background-color: #1e2a38;
+    border: 1px solid #263549;
+    border-radius: 5px;
+    color: #ffffff;
+    padding: 10px;
+    font-size: 1rem;
+    resize: none;
+}
+
+#bio textarea::placeholder {
+    color: #a3a3a3;
+}
+
+.save-bio-button {
+    background-color: #195887;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.save-bio-button:hover {
+    background-color: #113d5e;
+}

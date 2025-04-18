@@ -3,13 +3,13 @@ import { Database, open } from 'sqlite';
 import fs from 'fs';
 import path from 'path';
 
-export interface User
-{
+export interface User {
     id?: number;
     username: string;
     email: string;
     password_hash: string;
     profile_picture: string;
+    bio?: string; // Nouvelle propriété pour la bio
     created_at?: number;
     library?: number[];
 }
@@ -51,13 +51,13 @@ export class DatabaseManager
         }
     }
 
-    public async registerUser(user: User): Promise<number>
-    {
+    public async registerUser(user: User): Promise<number> {
         if (!this.db)
             throw new Error('Database not initialized');
         const result = await this.db.run(
-            'INSERT INTO users (username, email, password_hash, profile_picture, library) VALUES (?, ?, ?, ?, ?)',
-            [user.username, user.email, user.password_hash, user.profile_picture, JSON.stringify([])]);
+            'INSERT INTO users (username, email, password_hash, profile_picture, bio, library) VALUES (?, ?, ?, ?, ?, ?)',
+            [user.username, user.email, user.password_hash, user.profile_picture, '', JSON.stringify([])]
+        );
         if (!result.lastID)
             throw new Error('Failed to create new user');
         return result.lastID;
@@ -74,12 +74,10 @@ export class DatabaseManager
         return result;
     }
 
-    public async getUserById(id: number): Promise<User | null>
-    {
+    public async getUserById(id: number): Promise<User | null> {
         if (!this.db)
             throw new Error('Database not initialized');
-        const result = await this.db.get
-        (
+        const result = await this.db.get(
             'SELECT * FROM users WHERE id = ?',
             [id]
         );
@@ -164,6 +162,15 @@ export class DatabaseManager
         );
     }
 
+    public async updateUserBio(userId: number, bio: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        if (bio.length > 150) throw new Error('Bio exceeds 150 characters');
+        await this.db.run(
+            'UPDATE users SET bio = ? WHERE id = ?',
+            [bio, userId]
+        );
+    }
+
     //********************COMMUNITY-PART*******************************
 
     public async getAllUsernames(): Promise<string[]>
@@ -174,9 +181,9 @@ export class DatabaseManager
         return result.map((row: { username: string }) => row.username);
     }
 
-    public async getAllUsernamesWithIds(): Promise<{ id: number, username: string, profile_picture: string, email: string }[]> {
+    public async getAllUsernamesWithIds(): Promise<{ id: number, username: string, profile_picture: string, email: string, bio: string }[]> {
         if (!this.db) throw new Error('Database not initialized');
-        const result = await this.db.all('SELECT id, username, profile_picture, email FROM users');
+        const result = await this.db.all('SELECT id, username, profile_picture, email, bio FROM users');
         return result;
     }
 }

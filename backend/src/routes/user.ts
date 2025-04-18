@@ -3,49 +3,47 @@ import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database";
 import { JWT_SECRET } from "../server";
 
-
-
 const getInfosHandler: RequestHandler = async (req, res) => {
-	try {
-		const token = req.cookies.token;
-		if (!token) {
-			res.json({
-				success: false,
-				message: "User non authenified"
-			});
-			return;
-		}
-		
-		const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-		const user = await dbManager.getUserById(decoded.userId);
-		
-		if (!user) {
-			res.clearCookie('token');
-			res.json({
-				success: false,
-				message: "User not found in database",
-				clearToken: true
-			});
-			return;
-		}
-		else
-		{
-			console.log('User complet:', JSON.stringify(user, null, 2));
-			res.json({
-				success: true,
-				message: "User found",
-				username: user.username,
-				email: user.email,
-				profile_picture: user.profile_picture
-			});
-		}
-	} catch (error) {
-		console.error('Erreur détaillée:', error);
-		res.json({
-			success: false,
-			message: "Error while getting user"
-		});
-	}
+    try {
+        const token = req.cookies.token;
+        if (!token) {
+            res.json({
+                success: false,
+                message: "User non authenified"
+            });
+            return;
+        }
+        
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+        const user = await dbManager.getUserById(decoded.userId);
+        
+        if (!user) {
+            res.clearCookie('token');
+            res.json({
+                success: false,
+                message: "User not found in database",
+                clearToken: true
+            });
+            return;
+        }
+        else
+        {
+            res.json({
+                success: true,
+                message: "User found",
+                username: user.username,
+                email: user.email,
+                profile_picture: user.profile_picture,
+                bio: user.bio // Ajout de la bio
+            });
+        }
+    } catch (error) {
+        console.error('Erreur détaillée:', error);
+        res.json({
+            success: false,
+            message: "Error while getting user"
+        });
+    }
 };
 
 const getUserLibraryHandler: RequestHandler = async (req, res) =>
@@ -153,7 +151,7 @@ const getAllUsernamesHandler: RequestHandler = async (req, res) => {
 
         res.json({
             success: true,
-            users: filteredUsers // Inclut l'email dans la réponse
+            users: filteredUsers // Inclut la bio dans la réponse
         });
     } catch (error) {
         console.error('Error fetching usernames:', error);
@@ -218,11 +216,49 @@ const changePictureHandler: RequestHandler = async (req, res) =>
 	}
 }
 
+const updateBioHandler: RequestHandler = async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        if (!token) {
+            res.status(401).json({
+                success: false,
+                message: "User not authenticated"
+            });
+            return;
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+        const userId = decoded.userId;
+
+        const { bio } = req.body;
+        if (!bio || bio.length > 150) {
+            res.status(400).json({
+                success: false,
+                message: "Bio is required and must not exceed 150 characters"
+            });
+            return;
+        }
+
+        await dbManager.updateUserBio(userId, bio);
+        res.json({
+            success: true,
+            message: "Bio updated successfully"
+        });
+    } catch (error) {
+        console.error('Error updating bio:', error);
+        res.status(500).json({
+            success: false,
+            message: "Error updating bio"
+        });
+    }
+};
+
 export const userRoutes = 
 {
 	getInfos: getInfosHandler,
 	getUserLibrary: getUserLibraryHandler,
 	addGame: addGameHandler,
 	changePicture: changePictureHandler,
-	getAllUsernames: getAllUsernamesHandler
+	getAllUsernames: getAllUsernamesHandler,
+	updateBio: updateBioHandler
 }

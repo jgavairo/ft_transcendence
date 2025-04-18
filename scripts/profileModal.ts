@@ -3,34 +3,60 @@ import { MainApp } from './main.js'
 import api from './api.js'
 import { showErrorNotification, showNotification } from './notifications.js';
 import { UserLibraryManager } from './userLibrary.js';
-export async function setupProfileModal()
-{
+
+export async function setupProfileModal() {
     const modal = document.getElementById('optionnalModal');
-    if (!modal)
-        return;
+    if (!modal) return;
+
     const userInfos = await MainApp.getUserInfo();
     const profilePictureWithTimestamp = `${userInfos.profile_picture}?t=${Date.now()}`;
-    modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, profilePictureWithTimestamp);
+    modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, profilePictureWithTimestamp, userInfos.bio || '');
+
     const closeButton = document.getElementById('closeProfileModal');
-    if (!closeButton)
-        return;
-    closeButton.addEventListener('click', () => {
-        modal.innerHTML = '';
-    });
+    if (closeButton) {
+        closeButton.addEventListener('click', () => {
+            modal.innerHTML = '';
+        });
+    }
 
     const changeProfilePictureButton = document.getElementById('changeProfilePictureButton');
-    if (!changeProfilePictureButton)
-        return;
-    changeProfilePictureButton.addEventListener('click', () => {
-        setupChangeProfilePictureModal();
-    });
+    if (changeProfilePictureButton) {
+        changeProfilePictureButton.addEventListener('click', () => {
+            setupChangeProfilePictureModal();
+        });
+    }
 
     const changePasswordButton = document.getElementById('changePasswordButton');
-    if (!changePasswordButton)
-        return;
-    changePasswordButton.addEventListener('click', () => {
-        changePassword();
-    });
+    if (changePasswordButton) {
+        changePasswordButton.addEventListener('click', () => {
+            changePassword();
+        });
+    }
+
+    const saveBioButton = document.getElementById('saveBioButton');
+    const bioInput = document.getElementById('bioInput') as HTMLTextAreaElement;
+    if (saveBioButton && bioInput) {
+        saveBioButton.addEventListener('click', async () => {
+            const newBio = bioInput.value.trim();
+            if (newBio.length > 150) {
+                showErrorNotification('Bio must be 150 characters or less.');
+                return;
+            }
+            try {
+                const response = await api.post('http://127.0.0.1:3000/api/profile/updateBio', { bio: newBio });
+                const data = await response.json();
+                if (data.success) {
+                    showNotification('Bio updated successfully.');
+                    userInfos.bio = newBio; // Met à jour localement
+                } else {
+                    showErrorNotification(data.message);
+                }
+            } catch (error) {
+                console.error('Error updating bio:', error);
+                showErrorNotification('Failed to update bio.');
+            }
+        });
+    }
 }
 
 function changePassword()
@@ -108,3 +134,4 @@ function setupChangeProfilePictureModal()
         }
     });
 }
+

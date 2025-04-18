@@ -1,13 +1,13 @@
 const STORAGE_KEY = "people";
 
-export async function fetchUsernames(): Promise<{ username: string, profile_picture: string, email: string }[]> {
+export async function fetchUsernames(): Promise<{ username: string, profile_picture: string, email: string, bio: string }[]> {
     try {
         const response = await fetch('http://127.0.0.1:3000/api/users', {
             credentials: 'include'
         });
         const data = await response.json();
         if (data.success) {
-            return data.users; // Retourne les utilisateurs avec leurs emails
+            return data.users; // Retourne les utilisateurs avec leurs bios
         } else {
             console.error('Failed to fetch usernames:', data.message);
             return [];
@@ -63,7 +63,7 @@ export async function renderPeopleList(filter: string = "") {
         img.alt = `${person.username}'s profile picture`;
 
         img.addEventListener("click", () => {
-            showProfileCard(person.username, person.profile_picture, person.email);
+            showProfileCard(person.username, person.profile_picture, person.email, person.bio);
         });
 
         const label = document.createElement("span");
@@ -127,7 +127,7 @@ export function getFriendsFromStorage(): string[] {
     return JSON.parse(localStorage.getItem("friends") || "[]");
 }
 
-export function showProfileCard(username: string, profilePicture: string, email: string) {
+export function showProfileCard(username: string, profilePicture: string, email: string, bio: string) {
     // Vérifiez si une carte existe déjà et la supprimez
     let existingCard = document.getElementById("profileOverlay");
     if (existingCard) {
@@ -167,6 +167,11 @@ export function showProfileCard(username: string, profilePicture: string, email:
     emailElement.className = "profile-card-email";
     emailElement.textContent = `Email: ${email}`;
 
+    // Ajoutez la bio
+    const bioElement = document.createElement("p");
+    bioElement.className = "profile-card-bio";
+    bioElement.textContent = bio || "No bio available";
+
     // Ajoutez un bouton pour fermer la carte
     const closeButton = document.createElement("button");
     closeButton.className = "profile-card-close";
@@ -180,6 +185,7 @@ export function showProfileCard(username: string, profilePicture: string, email:
     card.appendChild(img);
     card.appendChild(name);
     card.appendChild(emailElement);
+    card.appendChild(bioElement);
 
     // Ajoutez la carte à l'overlay
     overlay.appendChild(card);
