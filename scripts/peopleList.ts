@@ -129,10 +129,22 @@ export function getFriendsFromStorage(): string[] {
 
 export function showProfileCard(username: string, profilePicture: string, email: string) {
     // Vérifiez si une carte existe déjà et la supprimez
-    let existingCard = document.getElementById("profileCard");
+    let existingCard = document.getElementById("profileOverlay");
     if (existingCard) {
         existingCard.remove();
     }
+
+    // Créez un overlay
+    const overlay = document.createElement("div");
+    overlay.id = "profileOverlay";
+    overlay.className = "profile-overlay";
+
+    // Ajoutez un événement pour fermer la carte lorsqu'on clique en dehors
+    overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) {
+            overlay.remove();
+        }
+    });
 
     // Créez une nouvelle carte
     const card = document.createElement("div");
@@ -160,7 +172,7 @@ export function showProfileCard(username: string, profilePicture: string, email:
     closeButton.className = "profile-card-close";
     closeButton.textContent = "✖";
     closeButton.addEventListener("click", () => {
-        card.remove();
+        overlay.remove();
     });
 
     // Ajoutez les éléments à la carte
@@ -169,6 +181,9 @@ export function showProfileCard(username: string, profilePicture: string, email:
     card.appendChild(name);
     card.appendChild(emailElement);
 
-    // Ajoutez la carte au body
-    document.body.appendChild(card);
+    // Ajoutez la carte à l'overlay
+    overlay.appendChild(card);
+
+    // Ajoutez l'overlay au body
+    document.body.appendChild(overlay);
 }
