@@ -72,7 +72,7 @@ const profileModalHTML = (username, email, profilePicture, bio) => `
           <div class="profile-modal-content">
             <button class="closeProfileModal" id="closeProfileModal">X</button>
             <h2>Profile settings</h2>
-            <div class="profile-picture-container">
+            <div class="profile-picture-container-modal">
               <img src="${profilePicture}" class="pictureProfileModal" alt="Profile Picture" />
               <div class="profile-picture-overlay" id="changeProfilePictureButton">
                 Edit
