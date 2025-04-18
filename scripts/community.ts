@@ -31,7 +31,7 @@ async function fetchUsernames(): Promise<string[]> {
         });
         const data = await response.json();
         if (data.success) {
-            return data.usernames;
+            return data.usernames; // La liste des noms d'utilisateur sans l'utilisateur en cours
         } else {
             console.error('Failed to fetch usernames:', data.message);
             return [];

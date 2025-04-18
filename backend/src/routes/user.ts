@@ -136,16 +136,30 @@ const addGameHandler: RequestHandler = async (req, res) =>
 
 const getAllUsernamesHandler: RequestHandler = async (req, res) => {
     try {
-        const usernames = await dbManager.getAllUsernames();
+        const token = req.cookies.token;
+        if (!token) {
+            res.status(401).json({
+                success: false,
+                message: "User not authenticated"
+            });
+            return;
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+        const currentUserId = decoded.userId;
+
+        const users = await dbManager.getAllUsernamesWithIds();
+        const filteredUsers = users.filter(user => user.id !== currentUserId); // Exclure l'utilisateur connecté
+
         res.json({
             success: true,
-            usernames
+            usernames: filteredUsers.map(user => user.username) // Retourne uniquement les noms d'utilisateur
         });
     } catch (error) {
         console.error('Error fetching usernames:', error);
         res.status(500).json({
             success: false,
-            message: 'Error fetching usernames'
+            message: "Error fetching usernames"
         });
     }
 };

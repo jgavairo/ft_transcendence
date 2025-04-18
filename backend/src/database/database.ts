@@ -74,14 +74,6 @@ export class DatabaseManager
         return result;
     }
 
-    public async getAllUsernames(): Promise<string[]>
-    {
-        if (!this.db) throw new Error('Database not initialized');
-
-        const result = await this.db.all('SELECT username FROM users');
-        return result.map((row: { username: string }) => row.username);
-    }
-
     public async getUserById(id: number): Promise<User | null>
     {
         if (!this.db)
@@ -170,6 +162,22 @@ export class DatabaseManager
             'UPDATE users SET profile_picture = ? WHERE id = ?',
             [newPicture, userId]
         );
+    }
+
+    //********************COMMUNITY-PART*******************************
+
+    public async getAllUsernames(): Promise<string[]>
+    {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const result = await this.db.all('SELECT username FROM users');
+        return result.map((row: { username: string }) => row.username);
+    }
+
+    public async getAllUsernamesWithIds(): Promise<{ id: number, username: string }[]> {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.all('SELECT id, username FROM users');
+        return result;
     }
 }
 
