@@ -59,14 +59,29 @@ export function renderPeopleList() {
             const isFriend = friends.includes(person.username);
             const div = document.createElement("div");
             div.className = "friend-item";
+            // Conteneur pour l'image de profil avec effet hover
+            const profileContainer = document.createElement("div");
+            profileContainer.className = "profile-picture-container";
             // Ajouter l'image de profil
             const img = document.createElement("img");
             img.className = "profile-picture";
             img.src = person.profile_picture || "default-profile.png"; // Utiliser une image par défaut si aucune photo n'est disponible
             img.alt = `${person.username}'s profile picture`;
-            img.addEventListener("click", () => {
+            // Ajouter la couche de survol
+            const overlay = document.createElement("div");
+            overlay.className = "profile-picture-overlay";
+            const overlayText = document.createElement("span");
+            overlayText.textContent = "View";
+            overlay.appendChild(overlayText);
+            // Ajouter un événement pour afficher la carte "profil"
+            profileContainer.addEventListener("click", () => {
                 showProfileCard(person.username, person.profile_picture, person.email, person.bio);
             });
+            // Ajouter les éléments au conteneur
+            profileContainer.appendChild(img);
+            profileContainer.appendChild(overlay);
+            // Ajouter le conteneur au div principal
+            div.appendChild(profileContainer);
             const label = document.createElement("span");
             label.className = "friend-name";
             label.textContent = person.username;
@@ -90,7 +105,6 @@ export function renderPeopleList() {
                     button.title = "Supprimer des amis";
                 }
             });
-            div.appendChild(img); // Ajouter l'image de profil
             div.appendChild(label);
             div.appendChild(button);
             container.appendChild(div);
