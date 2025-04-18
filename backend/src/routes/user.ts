@@ -153,7 +153,7 @@ const getAllUsernamesHandler: RequestHandler = async (req, res) => {
 
         res.json({
             success: true,
-            usernames: filteredUsers.map(user => user.username) // Retourne uniquement les noms d'utilisateur
+            users: filteredUsers // Retourne les utilisateurs avec leurs photos de profil
         });
     } catch (error) {
         console.error('Error fetching usernames:', error);
