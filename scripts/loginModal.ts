@@ -42,7 +42,7 @@ const registerModalHTML = `
 async function googleSignInHandler()
 {
     console.log("google sign in handler");
-    window.location.href = 'http://127.0.0.1:3000/api/auth/google';
+    window.location.href = 'http://127.0.0.1:8080/api/auth/google';
 }
 export class LoginManager
 {
@@ -84,7 +84,7 @@ export class LoginManager
                 showErrorNotification("Please enter a username and password");
                 return;
             }
-            api.post('http://127.0.0.1:3000/api/auth/login', { username, password })
+            api.post('http://127.0.0.1:8080/api/auth/login', { username, password })
             .then(response => response.json())
             .then(data => {
                 console.log('backend response:', data);
@@ -149,7 +149,7 @@ export class LoginManager
                     showErrorNotification("Passwords do not match");
                     return;
                 }
-                api.post('http://127.0.0.1:3000/api/auth/register', { username, password, email })
+                api.post('http://127.0.0.1:8080/api/auth/register', { username, password, email })
                 .then(response => response.json())
                 .then(data => {
                     console.log('backend response:', data);
