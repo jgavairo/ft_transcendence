@@ -125,6 +125,18 @@ io.on("connection", (socket: Socket) => {
         matchmakingQueue.push({ id: socket.id, username: playerData.username });
         attemptMatch();
     });
+
+    // Gestion des messages de chat
+    socket.on("sendMessage", (messageData: { author: string, content: string }) => {
+        console.log(`Message received from ${messageData.author}: ${messageData.content}`);
+        
+        // Ajouter l'ID du socket à l'objet messageData
+        const messageWithId = { ...messageData, senderId: socket.id };
+
+        // Diffuser le message à tous les utilisateurs connectés
+        io.emit("receiveMessage", messageWithId);
+    });
+
     socket.on("movePaddle", (data: { paddle: "left" | "right"; direction: "up" | "down" | null }) => {
         const rooms = Array.from(socket.rooms);
         const roomId = rooms.find(r => r !== socket.id);
