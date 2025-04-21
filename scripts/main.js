@@ -71,7 +71,7 @@ MainApp.getUserInfo = () => __awaiter(void 0, void 0, void 0, function* () {
         const text = yield response.text();
         const data = JSON.parse(text);
         if (data.success) {
-            return data;
+            return data.user;
         }
     }
     catch (error) {

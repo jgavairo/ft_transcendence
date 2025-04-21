@@ -16,7 +16,7 @@ function fetchCurrentUser() {
             });
             const data = yield response.json();
             if (data.success) {
-                return data.username; // Retourne le nom d'utilisateur
+                return data.user.username; // Correction de l'accès aux données
             }
             else {
                 console.error("Failed to fetch user info:", data.message);
@@ -84,15 +84,29 @@ export function setupChat() {
             addMessage(message.content, message.author, isSelf);
         });
         // Connecter le client au serveur Socket.IO
-        const socket = io("http://127.0.0.1:3000");
+        const socket = io("http://127.0.0.1:3000", {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
         socket.on("connect", () => {
             console.log("Connected to Socket.IO server");
+        });
+        socket.on("connect_error", (error) => {
+            console.error("Socket.IO connection error:", error);
+        });
+        socket.on("error", (error) => {
+            console.error("Socket.IO error:", error);
         });
         // Envoyer un message au serveur
         sendBtn.addEventListener("click", () => {
             const text = input.value.trim();
+            console.log("Attempting to send message:", text);
             if (text) {
-                socket.emit("sendMessage", { author: username, content: text }); // Envoyer au serveur
+                socket.emit("sendMessage", { author: username, content: text }, (response) => {
+                    console.log("Message sent, server response:", response);
+                }); // Envoyer au serveur
                 addMessage(text, username, true); // Ajouter localement
                 input.value = "";
             }
@@ -109,10 +123,6 @@ export function setupChat() {
                 return; // Ne pas afficher le message
             }
             addMessage(messageData.content, messageData.author, false); // Ajouter un message reçu
-        });
-        // Gestion des erreurs de connexion
-        socket.on("connect_error", (err) => {
-            console.error("Socket.IO connection error:", err);
         });
     });
 }

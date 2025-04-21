@@ -30,7 +30,7 @@ export class MainApp
             const data = JSON.parse(text);
             if (data.success) 
             {
-                return data;
+                return data.user;
             }
         } 
         catch (error) 

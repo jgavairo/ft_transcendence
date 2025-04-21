@@ -2,6 +2,11 @@ import sqlite3 from 'sqlite3';
 import { Database, open } from 'sqlite';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Obtenir l'équivalent de __dirname pour les modules ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface User {
     id?: number;
@@ -36,7 +41,7 @@ export class DatabaseManager
         try
         {
             this.db = await open({
-                filename: '/app/data/database.db',
+                filename: './data/database.db',
                 driver: sqlite3.Database
             });
 
