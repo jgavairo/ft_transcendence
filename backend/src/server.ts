@@ -82,6 +82,24 @@ app.get('/api/getLibrary', userRoutes.getUserLibrary);
 app.post('/api/addGame', userRoutes.addGame);
 app.post('/api/profile/changePicture', upload.single('newPicture'), userRoutes.changePicture);
 app.post('/api/profile/updateBio', userRoutes.updateBio);
+
+//chat routes
+app.get('/api/chat/history', async (req, res) => {
+    try {
+        const messages = await dbManager.getLastMessages(10);
+        res.json({
+            success: true,
+            messages
+        });
+    } catch (error) {
+        console.error("Error fetching chat history:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching chat history"
+        });
+    }
+});
+
 // Servir les fichiers statiques
 
 ////////////////////////////////////////////////
@@ -127,11 +145,18 @@ io.on("connection", (socket: Socket) => {
     });
 
     // Gestion des messages de chat
-    socket.on("sendMessage", (messageData: { author: string, content: string }) => {
+    socket.on("sendMessage", async (messageData: { author: string, content: string }) => {
         console.log(`Message received from ${messageData.author}: ${messageData.content}`);
         
         // Ajouter l'ID du socket à l'objet messageData
         const messageWithId = { ...messageData, senderId: socket.id };
+
+        // Sauvegarder le message dans la base de données
+        try {
+            await dbManager.saveMessage(messageData.author, messageData.content);
+        } catch (error) {
+            console.error("Error saving message to database:", error);
+        }
 
         // Diffuser le message à tous les utilisateurs connectés
         io.emit("receiveMessage", messageWithId);

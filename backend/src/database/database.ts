@@ -186,6 +186,25 @@ export class DatabaseManager
         const result = await this.db.all('SELECT id, username, profile_picture, email, bio FROM users');
         return result;
     }
+
+    //********************MESSAGES-PART*******************************
+
+    public async saveMessage(author: string, content: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        await this.db.run(
+            'INSERT INTO messages (author, content) VALUES (?, ?)',
+            [author, content]
+        );
+    }
+
+    public async getLastMessages(limit: number = 10): Promise<{ author: string, content: string, timestamp: string }[]> {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.all(
+            'SELECT author, content, timestamp FROM messages ORDER BY timestamp DESC LIMIT ?',
+            [limit]
+        );
+        return result.reverse(); // Inverser pour afficher les messages dans l'ordre chronologique
+    }
 }
 
 export const dbManager = DatabaseManager.getInstance();

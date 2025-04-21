@@ -29,6 +29,27 @@ function fetchCurrentUser() {
         }
     });
 }
+function fetchChatHistory() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const response = yield fetch("http://127.0.0.1:3000/api/chat/history", {
+                credentials: "include"
+            });
+            const data = yield response.json();
+            if (data.success) {
+                return data.messages;
+            }
+            else {
+                console.error("Failed to fetch chat history:", data.message);
+                return [];
+            }
+        }
+        catch (error) {
+            console.error("Error fetching chat history:", error);
+            return [];
+        }
+    });
+}
 export function setupChat() {
     return __awaiter(this, void 0, void 0, function* () {
         const input = document.getElementById("chatInput");
@@ -38,17 +59,7 @@ export function setupChat() {
             console.error("Chat elements not found in the DOM.");
             return;
         }
-        // Récupérer le nom d'utilisateur depuis la base de données
-        const username = yield fetchCurrentUser();
-        if (!username) {
-            console.error("Unable to fetch username. Chat will not work properly.");
-            return;
-        }
-        // Connecter le client au serveur Socket.IO
-        const socket = io("http://127.0.0.1:3000");
-        socket.on("connect", () => {
-            console.log("Connected to Socket.IO server");
-        });
+        // Déclarez la fonction addMessage avant de l'utiliser
         const addMessage = (content, author, self = true) => {
             const msgWrapper = document.createElement("div");
             msgWrapper.className = `chat-message ${self ? "right" : "left"}`;
@@ -59,6 +70,24 @@ export function setupChat() {
             chatContainer.appendChild(msgWrapper);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         };
+        // Récupérer le nom d'utilisateur depuis la base de données
+        const username = yield fetchCurrentUser();
+        if (!username) {
+            console.error("Unable to fetch username. Chat will not work properly.");
+            return;
+        }
+        // Charger l'historique des messages
+        const chatHistory = yield fetchChatHistory();
+        chatHistory.forEach(message => {
+            // Vérifier si le message a été envoyé par l'utilisateur connecté
+            const isSelf = message.author === username;
+            addMessage(message.content, message.author, isSelf);
+        });
+        // Connecter le client au serveur Socket.IO
+        const socket = io("http://127.0.0.1:3000");
+        socket.on("connect", () => {
+            console.log("Connected to Socket.IO server");
+        });
         // Envoyer un message au serveur
         sendBtn.addEventListener("click", () => {
             const text = input.value.trim();
