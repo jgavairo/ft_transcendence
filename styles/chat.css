@@ -58,20 +58,20 @@
 }
 
 .chat-message {
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 5px;
     max-width: 70%;
-    padding: 0.6rem 1rem;
-    border-radius: 12px;
-    color: white;
-    word-wrap: break-word;
-}
-
-.chat-message.left {
-    align-self: flex-start;
-    background-color: #2a4a69;
 }
 
 .chat-message.right {
+    background-color: #195887;
+    color: white;
     align-self: flex-end;
-    background-color: #4b6a3f;
-    text-align: right;
+}
+
+.chat-message.left {
+    background-color: #28ac00;
+    color: rgb(255, 255, 255);
+    align-self: flex-start;
 }
