@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { LoginManager } from './loginModal.js';
 import { communityPage } from './sourcepage.js';
-import { initPeopleList, renderPeopleList, setupSearchInput } from './peopleList.js';
+import { renderPeopleList, setupSearchInput } from './peopleList.js';
 import { setupChat } from './chat.js';
 export function showCommunityPage() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -25,7 +25,6 @@ export function showCommunityPage() {
         if (!main)
             return;
         main.innerHTML = communityPage;
-        initPeopleList();
         renderPeopleList();
         setupSearchInput();
         setupChat();
