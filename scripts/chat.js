@@ -119,7 +119,7 @@ export function setupChat() {
         // Recevoir un message du serveur
         socket.on("receiveMessage", (messageData) => {
             // Vérifier si le message provient de l'utilisateur lui-même
-            if (messageData.senderId === socket.id) {
+            if (messageData.author === username) {
                 return; // Ne pas afficher le message
             }
             addMessage(messageData.content, messageData.author, false); // Ajouter un message reçu

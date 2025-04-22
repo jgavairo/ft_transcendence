@@ -117,9 +117,9 @@ export async function setupChat() {
     });
 
     // Recevoir un message du serveur
-    socket.on("receiveMessage", (messageData: { author: string, content: string, senderId: string }) => {
+    socket.on("receiveMessage", (messageData: { author: string, content: string }) => {
         // Vérifier si le message provient de l'utilisateur lui-même
-        if (messageData.senderId === socket.id) {
+        if (messageData.author === username) {
             return; // Ne pas afficher le message
         }
 
