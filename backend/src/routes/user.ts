@@ -2,6 +2,8 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database.js";
 import { JWT_SECRET } from "../server.js";
+import path from 'path';
+import fs from 'fs';
 
 const getInfosHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
@@ -113,41 +115,7 @@ const addGameHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 };
 
 const changePictureHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-        const token = request.cookies.token;
-        if (!token) {
-            return reply.status(401).send({
-                success: false,
-                message: "Non authentifié"
-            });
-        }
-
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-        const file = await request.file();
-        if (!file) {
-            return reply.status(400).send({
-                success: false,
-                message: "Aucun fichier n'a été uploadé"
-            });
-        }
-
-        const buffer = await file.toBuffer();
-        const filename = `${decoded.userId}.jpg`;
-        const filepath = `uploads/profile_pictures/${filename}`;
-
-        await dbManager.changeUserPicture(decoded.userId, filepath);
-        return reply.send({
-            success: true,
-            message: "Photo de profil mise à jour",
-            profile_picture: filepath
-        });
-    } catch (error) {
-        console.error("Erreur détaillée:", error);
-        return reply.status(500).send({
-            success: false,
-            message: "Erreur serveur"
-        });
-    }
+    console.log("changePictureHandler");
 };
 
 const updateBioHandler = async (request: FastifyRequest, reply: FastifyReply) => {

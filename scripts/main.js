@@ -67,7 +67,7 @@ MainApp.checkAuth = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 MainApp.getUserInfo = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const response = yield api.get('http://127.0.0.1:3000/api/header');
+        const response = yield api.get('http://127.0.0.1:3000/api/user/infos');
         const text = yield response.text();
         const data = JSON.parse(text);
         if (data.success) {

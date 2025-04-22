@@ -25,7 +25,7 @@ export class MainApp
     static getUserInfo = async () => {
         try 
         {
-            const response = await api.get('http://127.0.0.1:3000/api/header');
+            const response = await api.get('http://127.0.0.1:3000/api/user/infos');
             const text = await response.text();
             const data = JSON.parse(text);
             if (data.success) 

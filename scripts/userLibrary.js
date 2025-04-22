@@ -34,7 +34,7 @@ export class UserLibraryManager {
     static hasGame(gameId) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log("Checking if game is in library:", gameId);
-            const response = yield api.get('http://127.0.0.1:3000/api/getLibrary');
+            const response = yield api.get('http://127.0.0.1:3000/api/user/library');
             console.log("API response:", response);
             const data = yield response.json();
             console.log("API data:", data);
@@ -48,7 +48,7 @@ export class UserLibraryManager {
     static addGame(gameId) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log("Adding game to library:", gameId);
-            const response = yield api.post('http://127.0.0.1:3000/api/addGame', { gameId });
+            const response = yield api.post('http://127.0.0.1:3000/api/user/addGame', { gameId });
             console.log("API response:", response);
             const data = yield response.json();
             if (data.success) {
@@ -61,7 +61,7 @@ export class UserLibraryManager {
     }
     static getLibraryGames() {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield api.get('http://127.0.0.1:3000/api/getLibrary');
+            const response = yield api.get('http://127.0.0.1:3000/api/user/library');
             const data = yield response.json();
             if (data.success)
                 return data.library;

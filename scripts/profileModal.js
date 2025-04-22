@@ -123,31 +123,11 @@ function setupChangeProfilePictureModal() {
     submitButton.addEventListener('click', () => __awaiter(this, void 0, void 0, function* () {
         var _a;
         const newPicture = (_a = newPictureInput.files) === null || _a === void 0 ? void 0 : _a[0];
-        if (!newPicture)
+        if (!newPicture) {
+            showErrorNotification('No picture selected');
             return;
-        try {
-            const formData = new FormData();
-            formData.append('newPicture', newPicture);
-            const response = yield api.postFormData('http://127.0.0.1:3000/api/profile/changePicture', formData);
-            const data = yield response.json();
-            if (data.success) {
-                console.log('Picture changed');
-                showNotification('Picture changed');
-                const headerPP = document.getElementById('profilePicture');
-                if (!headerPP)
-                    return;
-                headerPP.src = `${data.profile_picture}?t=${Date.now()}`;
-                yield setupProfileModal();
-            }
-            else {
-                console.error('Failed to change picture');
-                console.error(data.message);
-                showErrorNotification('Failed to change picture');
-            }
         }
-        catch (error) {
-            console.error('Error changing picture:', error);
-            showErrorNotification('Error changing picture');
-        }
+        showNotification('Picture Button Clicked');
+        api.post('http://127.0.0.1:3000/api/profile/changePicture', {});
     }));
 }

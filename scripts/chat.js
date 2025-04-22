@@ -11,7 +11,7 @@ import { io } from "socket.io-client";
 function fetchCurrentUser() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const response = yield fetch("http://127.0.0.1:8080/api/header", {
+            const response = yield fetch("http://127.0.0.1:8080/api/user/infos", {
                 credentials: "include", // Inclure les cookies pour l'authentification
             });
             const data = yield response.json();

@@ -44,7 +44,7 @@ export class UserLibraryManager
     static async hasGame(gameId: number): Promise<boolean>
     {
         console.log("Checking if game is in library:", gameId);
-        const response = await api.get('http://127.0.0.1:3000/api/getLibrary');
+        const response = await api.get('http://127.0.0.1:3000/api/user/library');
         console.log("API response:", response);
         const data = await response.json();
         console.log("API data:", data);
@@ -59,7 +59,7 @@ export class UserLibraryManager
     static async addGame(gameId: number): Promise<void>
     {
         console.log("Adding game to library:", gameId);
-        const response = await api.post('http://127.0.0.1:3000/api/addGame', { gameId });
+        const response = await api.post('http://127.0.0.1:3000/api/user/addGame', { gameId });
         console.log("API response:", response);
         const data = await response.json();
         if (data.success)
@@ -73,7 +73,7 @@ export class UserLibraryManager
     }
     public static async getLibraryGames(): Promise<number[]> 
     {
-        const response = await api.get('http://127.0.0.1:3000/api/getLibrary');
+        const response = await api.get('http://127.0.0.1:3000/api/user/library');
         const data = await response.json();
         if (data.success)
             return data.library;
