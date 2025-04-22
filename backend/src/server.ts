@@ -10,11 +10,10 @@ import http from "http";
 import fs from 'fs';
 import multer from 'multer';
 import jwt from 'jsonwebtoken';
-import { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from './middleware/auth.js';
-
+import { chatRoutes } from './routes/chat.js';
 // Obtenir l'équivalent de __dirname pour les modules ES
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,19 +96,7 @@ app.get("/api/auth/logout", async (request: FastifyRequest, reply: FastifyReply)
 
 // Routes communautaires
 app.get('/api/users', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-        const users = await dbManager.getAllUsernamesWithIds();
-        return reply.send({
-            success: true,
-            users: users
-        });
-    } catch (error) {
-        console.error('Error fetching usernames:', error);
-        return reply.status(500).send({
-            success: false,
-            message: "Erreur lors de la récupération des utilisateurs"
-        });
-    }
+    return userRoutes.getAllUsers(request, reply);
 });
 
 // Routes protégées
@@ -157,16 +144,7 @@ app.post('/api/profile/updateBio', { preHandler: authMiddleware }, async (reques
 
 // Route du chat
 app.get('/api/chat/history', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-        const messages = await dbManager.getLastMessages(10);
-        return reply.send({ success: true, messages });
-    } catch (error) {
-        console.error("Error fetching chat history:", error);
-        return reply.status(500).send({
-            success: false,
-            message: "Error fetching chat history"
-        });
-    }
+    return chatRoutes.getChatHistory(request, reply);
 });
 
 // Démarrage du serveur Fastify sur le port 3000
