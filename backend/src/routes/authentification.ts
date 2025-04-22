@@ -2,18 +2,10 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database.js";
 import { JWT_SECRET } from "../server.js";
-import passport from 'passport';
-import { OAuth2Client } from 'google-auth-library';
 
 interface AuthenticatedRequest extends FastifyRequest {
     user?: any;
 }
-
-const client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID || '',
-    process.env.GOOGLE_CLIENT_SECRET || '',
-    process.env.GOOGLE_REDIRECT_URI || 'http://127.0.0.1:8080/api/auth/google/callback'
-);
 
 const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
     try {
@@ -137,65 +129,9 @@ const logoutHandler = async (req: FastifyRequest, res: FastifyReply) => {
     });
 };
 
-const googleAuthHandler = async (req: FastifyRequest, res: FastifyReply) => {
-    console.log('Starting Google authentication...');
-    passport.authenticate('google', { 
-        scope: ['profile', 'email'],
-        prompt: 'select_account'
-    })(req.raw, res.raw, () => {});
-};
-
-const googleCallbackHandler = async (req: AuthenticatedRequest, res: FastifyReply) => {
-    console.log('Google callback received');
-    passport.authenticate('google', { 
-        failureRedirect: '/login',
-        session: false 
-    })(req.raw, res.raw, (err: Error) => {
-        if (err) {
-            console.error('Google authentication error:', err);
-            return res.status(500).send({ 
-                success: false, 
-                message: "Erreur lors de l'authentification Google" 
-            });
-        }
-
-        if (!req.user) {
-            console.error('No user data received from Google');
-            return res.status(401).send({ 
-                success: false, 
-                message: "Utilisateur non authentifié" 
-            });
-        }
-
-        console.log('Google authentication successful, user:', req.user);
-
-        const token = jwt.sign(
-            { userId: (req.user as any).id },
-            JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-
-        res.setCookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/',
-            maxAge: 24 * 60 * 60 * 1000 // 24 heures
-        });
-
-        // Utiliser une redirection HTTP 302 avec l'en-tête Location
-        res.raw.writeHead(302, {
-            'Location': 'http://127.0.0.1:8080'
-        });
-        res.raw.end();
-    });
-};
-
 export const authRoutes = {
     login: loginHandler,
     register: registerHandler,
     checkAuth: checkAuthHandler,
-    logout: logoutHandler,
-    google: googleAuthHandler,
-    googleCallback: googleCallbackHandler
+    logout: logoutHandler
 };

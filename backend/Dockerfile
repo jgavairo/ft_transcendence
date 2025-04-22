@@ -12,12 +12,8 @@ RUN npm install jsonwebtoken @types/jsonwebtoken
 RUN npm install cookie-parser @types/cookie-parser
 RUN npm install multer @types/multer
 RUN npm install fastify @fastify/cors @fastify/cookie @fastify/static @fastify/multipart @fastify/session @fastify/passport @fastify/express
-RUN npm install google-auth-library
-# Installation des dépendances pour l'authentification Google
-RUN npm install passport passport-google-oauth20
-RUN npm install @types/passport @types/passport-google-oauth20
-RUN npm install express-session
-RUN npm install @types/express-session
+
+
 COPY . .
 
 # Création des dossiers nécessaires

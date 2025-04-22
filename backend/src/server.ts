@@ -10,8 +10,6 @@ import http from "http";
 import fs from 'fs';
 import multer from 'multer';
 import jwt from 'jsonwebtoken';
-import session from 'express-session';
-import passport from './config/passport.js';
 import { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -46,21 +44,17 @@ const upload = multer({ storage: storage });
 const initializePlugins = async () => {
     await app.register(fastifyExpress);
     
-    // Configuration CORS améliorée
+    // Configuration CORS
     await app.register(import('@fastify/cors'), {
-        origin: true, // Permet toutes les origines en développement
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Cookie', 'Authorization'],
-        exposedHeaders: ['Set-Cookie'],
-        maxAge: 86400
+        origin: 'http://127.0.0.1:8080',
+        credentials: true
     });
     
     await app.register(import('@fastify/cookie'), {
         secret: JWT_SECRET,
         parseOptions: {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: false,
             sameSite: 'lax',
             path: '/'
         }
@@ -77,35 +71,6 @@ const initializePlugins = async () => {
         }
     });
 };
-
-// Configuration de la session Express
-app.addHook('onRequest', (request, reply, done) => {
-    const expressReq = request.raw as Request;
-    const expressRes = reply.raw as Response;
-    session({
-        secret: JWT_SECRET,
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000 // 24 heures
-        }
-    })(expressReq, expressRes, done);
-});
-
-// Initialisation de Passport
-app.addHook('onRequest', (request, reply, done) => {
-    const expressReq = request.raw as Request;
-    const expressRes = reply.raw as Response;
-    passport.initialize()(expressReq, expressRes, done);
-});
-
-app.addHook('onRequest', (request, reply, done) => {
-    const expressReq = request.raw as Request;
-    const expressRes = reply.raw as Response;
-    passport.session()(expressReq, expressRes, done);
-});
 
 // Créer le dossier pour les uploads s'il n'existe pas
 const uploadDir = 'uploads/profile_pictures';
@@ -128,15 +93,6 @@ app.post('/api/auth/login', async (request: FastifyRequest, reply: FastifyReply)
 
 app.get("/api/auth/logout", async (request: FastifyRequest, reply: FastifyReply) => {
     return authRoutes.logout(request, reply);
-});
-
-// Routes d'authentification Google
-app.get('/api/auth/google', async (request: FastifyRequest, reply: FastifyReply) => {
-    return authRoutes.google(request, reply);
-});
-
-app.get('/api/auth/google/callback', async (request: FastifyRequest, reply: FastifyReply) => {
-    return authRoutes.googleCallback(request, reply);
 });
 
 // Routes communautaires

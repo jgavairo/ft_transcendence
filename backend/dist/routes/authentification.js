@@ -1,125 +1,168 @@
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.authRoutes = void 0;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const database_1 = require("../database/database");
-const server_1 = require("../server");
-const loginHandler = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+import jwt from 'jsonwebtoken';
+import { dbManager } from "../database/database.js";
+import { JWT_SECRET } from "../server.js";
+import passport from 'passport';
+import { OAuth2Client } from 'google-auth-library';
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || '', process.env.GOOGLE_CLIENT_SECRET || '', process.env.GOOGLE_REDIRECT_URI || 'http://127.0.0.1:8080/api/auth/google/callback');
+const loginHandler = async (req, res) => {
     try {
         const { username, password } = req.body;
         console.log('connection tentative -');
         console.log("username: " + username, "password: " + password);
-        const user = yield database_1.dbManager.getUserByUsername(username);
+        const user = await dbManager.getUserByUsername(username);
         if (!user) {
-            res.json({
+            return res.status(401).send({
                 success: false,
-                message: "User not found"
+                message: "Utilisateur non trouvé"
             });
         }
-        else {
-            if (user.password_hash !== password) {
-                res.json({
-                    success: false,
-                    message: "Invalid password"
-                });
-            }
-            else {
-                const token = jsonwebtoken_1.default.sign({ userId: user.id }, server_1.JWT_SECRET, { expiresIn: '1h' });
-                res.cookie('token', token, {
-                    httpOnly: true,
-                    secure: true,
-                    sameSite: 'strict',
-                    maxAge: 24 * 60 * 60 * 1000
-                });
-                res.json({
-                    success: true,
-                    message: "Login successful",
-                    user: user.id
-                });
-            }
+        if (user.password_hash !== password) {
+            return res.status(401).send({
+                success: false,
+                message: "Mot de passe incorrect"
+            });
         }
-    }
-    catch (error) {
-        res.json({
-            success: false,
-            message: "Login failed"
+        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+        res.setCookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 24 * 60 * 60 * 1000 // 24 heures
+        });
+        return res.send({
+            success: true,
+            message: "Connexion réussie",
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                profile_picture: user.profile_picture
+            }
         });
     }
-});
-const registerHandler = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    catch (error) {
+        console.error("Erreur de connexion:", error);
+        return res.status(500).send({
+            success: false,
+            message: "Erreur lors de la connexion"
+        });
+    }
+};
+const registerHandler = async (req, res) => {
     console.log("Registering user");
     const { username, password, email } = req.body;
     try {
-        const userID = yield database_1.dbManager.registerUser({
+        const userID = await dbManager.registerUser({
             username: username,
             email: email,
             password_hash: password,
             profile_picture: '../assets/profile_pictures/default.png',
         });
-        res.json({
+        return res.send({
             success: true,
             message: "User registered successfully",
             userID: userID
         });
     }
     catch (error) {
-        res.json({
+        return res.send({
             success: false,
             message: "User registration failed",
             error: error
         });
     }
-});
-const checkAuthHandler = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const checkAuthHandler = async (req, res) => {
     try {
         const token = req.cookies.token;
         if (!token) {
-            res.json({
+            return res.send({
                 success: false,
                 message: "User non authenified"
             });
-            return;
         }
-        const decoded = jsonwebtoken_1.default.verify(token, server_1.JWT_SECRET);
-        res.json({
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = await dbManager.getUserById(decoded.userId);
+        if (!user) {
+            return res.send({
+                success: false,
+                message: "User not found"
+            });
+        }
+        return res.send({
             success: true,
-            message: "User authenified"
+            message: "User authenified",
+            user: user
         });
     }
     catch (error) {
-        res.json({
+        return res.send({
             success: false,
             message: "Invalid token"
         });
     }
-});
-const logoutHandler = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const logoutHandler = async (req, res) => {
     res.clearCookie('token', {
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
         path: '/'
     });
-    res.json({
+    return res.send({
         success: true,
         message: "User logged out"
     });
-});
-exports.authRoutes = {
+};
+const googleAuthHandler = async (req, res) => {
+    console.log('Starting Google authentication...');
+    passport.authenticate('google', {
+        scope: ['profile', 'email'],
+        prompt: 'select_account'
+    })(req.raw, res.raw, () => { });
+};
+const googleCallbackHandler = async (req, res) => {
+    console.log('Google callback received');
+    passport.authenticate('google', {
+        failureRedirect: '/login',
+        session: false
+    })(req.raw, res.raw, (err) => {
+        if (err) {
+            console.error('Google authentication error:', err);
+            return res.status(500).send({
+                success: false,
+                message: "Erreur lors de l'authentification Google"
+            });
+        }
+        if (!req.user) {
+            console.error('No user data received from Google');
+            return res.status(401).send({
+                success: false,
+                message: "Utilisateur non authentifié"
+            });
+        }
+        console.log('Google authentication successful, user:', req.user);
+        const token = jwt.sign({ userId: req.user.id }, JWT_SECRET, { expiresIn: '1h' });
+        res.setCookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 24 * 60 * 60 * 1000 // 24 heures
+        });
+        // Utiliser une redirection HTTP 302 avec l'en-tête Location
+        res.raw.writeHead(302, {
+            'Location': 'http://127.0.0.1:8080'
+        });
+        res.raw.end();
+    });
+};
+export const authRoutes = {
     login: loginHandler,
     register: registerHandler,
     checkAuth: checkAuthHandler,
-    logout: logoutHandler
+    logout: logoutHandler,
+    google: googleAuthHandler,
+    googleCallback: googleCallbackHandler
 };
