@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 
 async function fetchCurrentUser(): Promise<string | null> {
     try {
-        const response = await fetch("http://127.0.0.1:8080/api/header", {
+        const response = await fetch("http://127.0.0.1:8080/api/user/infos", {
             credentials: "include", // Inclure les cookies pour l'authentification
         });
         const data = await response.json();

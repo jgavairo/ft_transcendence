@@ -89,7 +89,6 @@ function changePassword()
         console.log('sendNewPasswordButton clicked');
     });
 }
-
 function setupChangeProfilePictureModal() {
     const profileModal = document.getElementById('profile-modal');
     if (!profileModal) return;
@@ -116,36 +115,21 @@ function setupChangeProfilePictureModal() {
     }
 
     const submitButton = document.getElementById('sendPictureButton');
-    if (!submitButton) return;
+    if (!submitButton)
+        return;
 
     const newPictureInput = document.getElementById('pictureUploader') as HTMLInputElement;
-    if (!newPictureInput) return;
+    if (!newPictureInput)
+        return;
 
     submitButton.addEventListener('click', async () => {
         const newPicture = newPictureInput.files?.[0];
-        if (!newPicture) return;
-
-        try {
-            const formData = new FormData();
-            formData.append('newPicture', newPicture);
-
-            const response = await api.postFormData('http://127.0.0.1:3000/api/profile/changePicture', formData);
-            const data = await response.json();
-            if (data.success) {
-                console.log('Picture changed');
-                showNotification('Picture changed');
-                const headerPP = document.getElementById('profilePicture') as HTMLImageElement;
-                if (!headerPP) return;
-                headerPP.src = `${data.profile_picture}?t=${Date.now()}`;
-                await setupProfileModal();
-            } else {
-                console.error('Failed to change picture');
-                console.error(data.message);
-                showErrorNotification('Failed to change picture');
-            }
-        } catch (error) {
-            console.error('Error changing picture:', error);
-            showErrorNotification('Error changing picture');
+        if (!newPicture) 
+        {
+            showErrorNotification('No picture selected');
+            return;
         }
+        showNotification('Picture Button Clicked');
+        api.post('http://127.0.0.1:3000/api/profile/changePicture', {});
     });
 }
