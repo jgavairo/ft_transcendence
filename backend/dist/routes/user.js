@@ -1,138 +1,170 @@
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.userRoutes = void 0;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const database_1 = require("../database/database");
-const server_1 = require("../server");
-const getInfosHandler = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+import jwt from 'jsonwebtoken';
+import { dbManager } from "../database/database.js";
+import { JWT_SECRET } from "../server.js";
+const getInfosHandler = async (request, reply) => {
     try {
-        const token = req.cookies.token;
+        const token = request.cookies.token;
+        console.log("getInfosHandler - Token:", token ? "Présent" : "Absent");
         if (!token) {
-            res.json({
+            console.log("getInfosHandler - Token absent, renvoi 401");
+            return reply.status(401).send({
                 success: false,
-                message: "User non authenified"
+                message: "Non authentifié"
             });
         }
-        const decoded = jsonwebtoken_1.default.verify(token, server_1.JWT_SECRET);
-        const user = yield database_1.dbManager.getUserById(decoded.userId);
+        const decoded = jwt.verify(token, JWT_SECRET);
+        console.log("getInfosHandler - Token décodé, userId:", decoded.userId);
+        const user = await dbManager.getUserById(decoded.userId);
+        console.log("getInfosHandler - Utilisateur trouvé:", user ? "Oui" : "Non");
         if (!user) {
-            res.json({
+            console.log("getInfosHandler - Utilisateur non trouvé, renvoi 404");
+            return reply.status(404).send({
                 success: false,
-                message: "User not found"
+                message: "Utilisateur non trouvé"
             });
-            return;
         }
-        else {
-            console.log('User complet:', JSON.stringify(user, null, 2));
-            res.json({
-                success: true,
-                message: "User found",
+        console.log("getInfosHandler - Renvoi des informations utilisateur:", user);
+        return reply.send({
+            success: true,
+            user: {
+                id: user.id,
                 username: user.username,
                 email: user.email,
-                profile_picture: user.profile_picture
-            });
-        }
-    }
-    catch (error) {
-        console.error('Erreur détaillée:', error);
-        res.json({
-            success: false,
-            message: "Error while getting user"
+                profile_picture: user.profile_picture,
+                bio: user.bio || '',
+                created_at: user.created_at,
+                library: user.library || []
+            }
         });
     }
-});
-const getUserLibraryHandler = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    catch (error) {
+        console.error("Erreur détaillée dans getInfosHandler:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+};
+const getUserLibraryHandler = async (request, reply) => {
     try {
-        const token = req.cookies.token;
+        const token = request.cookies.token;
         if (!token) {
-            console.log("No token");
-            res.json({
+            return reply.status(401).send({
                 success: false,
-                message: "User non authenified"
+                message: "Non authentifié"
             });
         }
-        const decoded = jsonwebtoken_1.default.verify(token, server_1.JWT_SECRET);
-        const user = yield database_1.dbManager.getUserById(decoded.userId);
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = await dbManager.getUserById(decoded.userId);
         if (!user) {
-            console.log("NO USER");
-            res.json({
+            return reply.status(404).send({
                 success: false,
-                message: "User not found"
-            });
-            return;
-        }
-        else {
-            console.log("USER FOUND");
-            const userGameLibrary = yield database_1.dbManager.getUserLibrary(decoded.userId);
-            console.log('Library before sending:', userGameLibrary);
-            res.json({
-                success: true,
-                message: "User found",
-                library: userGameLibrary
+                message: "Utilisateur non trouvé"
             });
         }
-    }
-    catch (error) {
-        console.log("ERROR");
-        console.error('Erreur détaillée:', error);
-        res.json({
-            success: false,
-            message: "Error while getting user"
+        const library = await dbManager.getUserLibrary(decoded.userId);
+        return reply.send({
+            success: true,
+            library: library
         });
     }
-});
-const addGameHandler = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("IN ADD GAME HANDLER");
-    const { gameId } = req.body;
+    catch (error) {
+        console.error("Erreur détaillée:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+};
+const addGameHandler = async (request, reply) => {
     try {
-        const token = req.cookies.token;
+        const token = request.cookies.token;
         if (!token) {
-            res.json({
+            return reply.status(401).send({
                 success: false,
-                message: "User non authenified"
+                message: "Non authentifié"
             });
         }
-        const decoded = jsonwebtoken_1.default.verify(token, server_1.JWT_SECRET);
-        const user = yield database_1.dbManager.getUserById(decoded.userId);
-        if (!user) {
-            res.json({
-                success: false,
-                message: "User not found"
-            });
-            return;
-        }
-        else {
-            console.log("USER FOUND");
-            yield database_1.dbManager.addGameToLibrary(decoded.userId, gameId);
-            console.log("Game added to library");
-            res.json({
-                success: true,
-                message: "Game added to library"
-            });
-        }
-    }
-    catch (error) {
-        console.error('Erreur détaillée:', error);
-        res.json({
-            success: false,
-            message: "Error while adding game"
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const { gameId } = request.body;
+        await dbManager.addGameToLibrary(decoded.userId, gameId);
+        return reply.send({
+            success: true,
+            message: "Jeu ajouté à la bibliothèque"
         });
     }
-});
-exports.userRoutes = {
+    catch (error) {
+        console.error("Erreur détaillée:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+};
+const changePictureHandler = async (request, reply) => {
+    try {
+        const token = request.cookies.token;
+        if (!token) {
+            return reply.status(401).send({
+                success: false,
+                message: "Non authentifié"
+            });
+        }
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const file = await request.file();
+        if (!file) {
+            return reply.status(400).send({
+                success: false,
+                message: "Aucun fichier n'a été uploadé"
+            });
+        }
+        const buffer = await file.toBuffer();
+        const filename = `${decoded.userId}.jpg`;
+        const filepath = `uploads/profile_pictures/${filename}`;
+        await dbManager.changeUserPicture(decoded.userId, filepath);
+        return reply.send({
+            success: true,
+            message: "Photo de profil mise à jour",
+            profile_picture: filepath
+        });
+    }
+    catch (error) {
+        console.error("Erreur détaillée:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+};
+const updateBioHandler = async (request, reply) => {
+    try {
+        const token = request.cookies.token;
+        if (!token) {
+            return reply.status(401).send({
+                success: false,
+                message: "Non authentifié"
+            });
+        }
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const { bio } = request.body;
+        await dbManager.updateUserBio(decoded.userId, bio);
+        return reply.send({
+            success: true,
+            message: "Bio mise à jour"
+        });
+    }
+    catch (error) {
+        console.error("Erreur détaillée:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+};
+export const userRoutes = {
     getInfos: getInfosHandler,
     getUserLibrary: getUserLibraryHandler,
-    addGame: addGameHandler
+    addGame: addGameHandler,
+    changePicture: changePictureHandler,
+    updateBio: updateBioHandler
 };

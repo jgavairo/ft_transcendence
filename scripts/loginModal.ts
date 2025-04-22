@@ -42,7 +42,6 @@ const registerModalHTML = `
 async function googleSignInHandler()
 {
     console.log("google sign in handler");
-    window.location.href = 'http://127.0.0.1:8080/api/auth/google';
 }
 export class LoginManager
 {
