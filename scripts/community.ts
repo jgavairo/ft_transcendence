@@ -1,6 +1,6 @@
 import { LoginManager } from './loginModal.js';
 import { communityPage } from './sourcepage.js';
-import { initPeopleList, renderPeopleList, setupSearchInput } from './peopleList.js';
+import { renderPeopleList, setupSearchInput } from './peopleList.js';
 import { setupChat } from './chat.js';
 
 export async function showCommunityPage() {
@@ -17,7 +17,6 @@ export async function showCommunityPage() {
 
     main.innerHTML = communityPage;
 
-    initPeopleList();
     renderPeopleList();
     setupSearchInput();
     setupChat();

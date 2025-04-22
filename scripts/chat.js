@@ -11,7 +11,7 @@ import { io } from "socket.io-client";
 function fetchCurrentUser() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const response = yield fetch("http://127.0.0.1:3000/api/header", {
+            const response = yield fetch("http://127.0.0.1:8080/api/header", {
                 credentials: "include", // Inclure les cookies pour l'authentification
             });
             const data = yield response.json();
@@ -32,7 +32,7 @@ function fetchCurrentUser() {
 function fetchChatHistory() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const response = yield fetch("http://127.0.0.1:3000/api/chat/history", {
+            const response = yield fetch("http://127.0.0.1:8080/api/chat/history", {
                 credentials: "include"
             });
             const data = yield response.json();
@@ -84,7 +84,7 @@ export function setupChat() {
             addMessage(message.content, message.author, isSelf);
         });
         // Connecter le client au serveur Socket.IO
-        const socket = io("http://127.0.0.1:3000", {
+        const socket = io("http://127.0.0.1:8080", {
             transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionAttempts: 5,
