@@ -29,31 +29,26 @@ export function fetchUsernames() {
         }
     });
 }
-export function initPeopleList() {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-        const defaultPeople = [
-            "Xx-ZeNiTsU-xX",
-            "FrancisLeTordu",
-            "Jordanlebucheron",
-            "Jordictateur",
-            "Goboulle",
-            "LilixLePredateur",
-            "PlusDeBatrique",
-            "GOAT_LPR"
-        ];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultPeople));
-    }
-}
 export function renderPeopleList() {
     return __awaiter(this, arguments, void 0, function* (filter = "") {
+        var _a;
         const container = document.getElementById("friendList");
         if (!container) {
             console.error("❌ #friendList introuvable");
             return;
         }
         const friends = getFriendsFromStorage();
-        const people = yield fetchUsernames(); // Récupère les utilisateurs avec leurs photos de profil
-        const filtered = people.filter(person => person.username.toLowerCase().includes(filter.toLowerCase()));
+        const people = yield fetchUsernames();
+        // Récupérer l'utilisateur connecté (par exemple, depuis un token ou une API)
+        const response = yield fetch('http://127.0.0.1:3000/api/user/infos', {
+            credentials: 'include'
+        });
+        const currentUser = yield response.json();
+        const currentUsername = (_a = currentUser === null || currentUser === void 0 ? void 0 : currentUser.user) === null || _a === void 0 ? void 0 : _a.username;
+        // Filtrer les utilisateurs pour exclure l'utilisateur connecté
+        const filtered = people.filter(person => person.username.toLowerCase().includes(filter.toLowerCase()) &&
+            person.username !== currentUsername // Exclure l'utilisateur connecté
+        );
         container.innerHTML = "";
         filtered.forEach(person => {
             const isFriend = friends.includes(person.username);
@@ -65,7 +60,7 @@ export function renderPeopleList() {
             // Ajouter l'image de profil
             const img = document.createElement("img");
             img.className = "profile-picture";
-            img.src = person.profile_picture || "default-profile.png"; // Utiliser une image par défaut si aucune photo n'est disponible
+            img.src = person.profile_picture || "default-profile.png";
             img.alt = `${person.username}'s profile picture`;
             // Ajouter la couche de survol
             const overlay = document.createElement("div");
