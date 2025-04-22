@@ -177,9 +177,26 @@ const updateBioHandler = async (request: FastifyRequest, reply: FastifyReply) =>
     }
 };
 
+const getAllUsersHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const users = await dbManager.getAllUsernamesWithIds();
+        return reply.send({
+            success: true,
+            users: users
+        });
+    } catch (error) {
+        console.error('Error fetching usernames:', error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur lors de la récupération des utilisateurs"
+        });
+    }
+}
+
 export const userRoutes = {
     getInfos: getInfosHandler,
     getUserLibrary: getUserLibraryHandler,
+    getAllUsers: getAllUsersHandler,
     addGame: addGameHandler,
     changePicture: changePictureHandler,
     updateBio: updateBioHandler
