@@ -66,6 +66,39 @@ const communityPage = `
     </section>
   </div>
 `;
+const loginModalHTML = `
+    <div class="modal-overlay" id="modalWindow">
+        <div class="login-modal" id="login-modal">
+            <h2>ft_transcendence</h2>
+            <form id="loginForm" class = "login-form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                </form>
+            <button id="loginButton" class="loginButton">Sign in</button>
+            <button id="googleSignIn" class="googleButton">
+                    <img src="../../assets/google.png" class="googleLogo" alt="Google logo">
+                    Sign in with Google
+            </button>
+            <div class="registerContainer">
+                you don't have an account? 
+                <button id="registerButton" class="registerButton">Sign up</button>
+            </div>
+        </div>
+    </div>
+`;
+const registerModalHTML = `
+            <div class="registerModalTitle">
+                <button id="cancelButton" class="cancelButton">Cancel</button>
+                <h2>Sign up</h2>
+            </div>
+            <form id="registerForm" class = "register-form">
+                <input type="text" id="Rusername" placeholder="Username" required>
+                <input type="password" id="Rpassword" placeholder="Password" required>
+                <input type="password" id="RconfirmPassword" placeholder="confirm password" required>
+                <input type="email" id="Remail" placeholder="Email" required>
+            </form>
+            <button id="registerRequestButton" class="signupButton">Sign up</button>
+`;
 const profileModalHTML = (username, email, profilePicture, bio) => `
     <div class="modal-overlay" id="modalOverlay">
         <div class="profile-modal" id="profile-modal">
@@ -134,4 +167,4 @@ const gameModalHTML = `
         </div>
     </div>
 `;
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML };
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML };

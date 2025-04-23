@@ -1,38 +1,34 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+
 import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database.js";
 import { JWT_SECRET } from "../server.js";
-import path from 'path';
-import fs from 'fs';
+import { authRoutes } from './authentification.js';
+import { authMiddleware } from '../middleware/auth.js';
 
-const getInfosHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-        const token = request.cookies.token;
-        console.log("getInfosHandler - Token:", token ? "Présent" : "Absent");
-        
-        if (!token) {
-            console.log("getInfosHandler - Token absent, renvoi 401");
-            return reply.status(401).send({
+interface AuthenticatedRequest extends FastifyRequest
+{
+    user: 
+    {
+        id: number;
+    };
+}
+
+const getInfosHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
+    try 
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);
+        if (!user) 
+        {
+            return reply.status(404).send
+            ({
                 success: false,
-                message: "Non authentifié"
+                message: "User not found"
             });
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-        console.log("getInfosHandler - Token décodé, userId:", decoded.userId);
-        
-        const user = await dbManager.getUserById(decoded.userId);
-        console.log("getInfosHandler - Utilisateur trouvé:", user ? "Oui" : "Non");
-        
-        if (!user) {
-            console.log("getInfosHandler - Utilisateur non trouvé, renvoi 404");
-            return reply.status(404).send({
-                success: false,
-                message: "Utilisateur non trouvé"
-            });
-        }
-
-        console.log("getInfosHandler - Renvoi des informations utilisateur:", user);
         return reply.send({
             success: true,
             user: {
@@ -45,40 +41,32 @@ const getInfosHandler = async (request: FastifyRequest, reply: FastifyReply) => 
                 library: user.library || []
             }
         });
-    } catch (error) {
+    } 
+    catch (error) 
+    {
         console.error("Erreur détaillée dans getInfosHandler:", error);
-        return reply.status(500).send({
+        return reply.status(500).send
+        ({
             success: false,
             message: "Erreur serveur"
         });
     }
 };
 
-const getUserLibraryHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-        const token = request.cookies.token;
-        if (!token) {
-            return reply.status(401).send({
-                success: false,
-                message: "Non authentifié"
-            });
-        }
-
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-        const user = await dbManager.getUserById(decoded.userId);
-        if (!user) {
-            return reply.status(404).send({
-                success: false,
-                message: "Utilisateur non trouvé"
-            });
-        }
-
-        const library = await dbManager.getUserLibrary(decoded.userId);
-        return reply.send({
+const getUserLibraryHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
+    try 
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const library = await dbManager.getUserLibrary((request as AuthenticatedRequest).user.id);
+        return reply.send
+        ({
             success: true,
             library: library
         });
-    } catch (error) {
+    } 
+    catch (error) 
+    {
         console.error("Erreur détaillée:", error);
         return reply.status(500).send({
             success: false,
@@ -87,25 +75,20 @@ const getUserLibraryHandler = async (request: FastifyRequest, reply: FastifyRepl
     }
 };
 
-const addGameHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-        const token = request.cookies.token;
-        if (!token) {
-            return reply.status(401).send({
-                success: false,
-                message: "Non authentifié"
-            });
-        }
-
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-        const { gameId } = request.body as { gameId: number };
-
-        await dbManager.addGameToLibrary(decoded.userId, gameId);
-        return reply.send({
+const addGameHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
+    try 
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        await dbManager.addGameToLibrary((request as AuthenticatedRequest).user.id, (request.body as { gameId: number }).gameId);
+        return reply.send
+        ({
             success: true,
             message: "Jeu ajouté à la bibliothèque"
         });
-    } catch (error) {
+    } 
+    catch (error) 
+    {
         console.error("Erreur détaillée:", error);
         return reply.status(500).send({
             success: false,
@@ -114,29 +97,25 @@ const addGameHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     }
 };
 
-const changePictureHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+const changePictureHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
     console.log("changePictureHandler");
 };
 
-const updateBioHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-        const token = request.cookies.token;
-        if (!token) {
-            return reply.status(401).send({
-                success: false,
-                message: "Non authentifié"
-            });
-        }
-
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-        const { bio } = request.body as { bio: string };
-
-        await dbManager.updateUserBio(decoded.userId, bio);
-        return reply.send({
+const updateBioHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
+    try 
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        await dbManager.updateUserBio((request as AuthenticatedRequest).user.id, (request.body as { bio: string }).bio);
+        return reply.send
+        ({
             success: true,
             message: "Bio mise à jour"
         });
-    } catch (error) {
+    } 
+    catch (error) 
+    {
         console.error("Erreur détaillée:", error);
         return reply.status(500).send({
             success: false,
@@ -145,14 +124,19 @@ const updateBioHandler = async (request: FastifyRequest, reply: FastifyReply) =>
     }
 };
 
-const getAllUsersHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
+const getAllUsersHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
+    try 
+    {
         const users = await dbManager.getAllUsernamesWithIds();
-        return reply.send({
+        return reply.send
+        ({
             success: true,
             users: users
         });
-    } catch (error) {
+    } 
+    catch (error) 
+    {
         console.error('Error fetching usernames:', error);
         return reply.status(500).send({
             success: false,
@@ -161,7 +145,8 @@ const getAllUsersHandler = async (request: FastifyRequest, reply: FastifyReply) 
     }
 }
 
-export const userRoutes = {
+export const userRoutes = 
+{
     getInfos: getInfosHandler,
     getUserLibrary: getUserLibraryHandler,
     getAllUsers: getAllUsersHandler,

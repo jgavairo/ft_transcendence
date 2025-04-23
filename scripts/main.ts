@@ -1,8 +1,8 @@
 import { storePage, libraryPage, communityPage, header } from "./sourcepage.js";
-import { setupHeader } from "./navigation.js";
-import { setupStore } from "./store.js";
-import api from "./api.js";
-import { LoginManager } from "./loginModal.js";
+import { setupHeader } from "./header/navigation.js";
+import { setupStore } from "./pages/store/store.js";
+import api from "./helpers/api.js";
+import { LoginManager } from "./managers/loginManager.js";
 
 export class MainApp
 {

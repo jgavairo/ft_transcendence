@@ -6,13 +6,12 @@ import { userRoutes } from "./routes/user.js";
 import { authRoutes } from "./routes/authentification.js";
 import { Server as SocketIOServer } from "socket.io";
 import { startMatch, MatchState } from "./games/pong/gameSimulation.js";
-import http from "http";
 import fs from 'fs';
-import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from './middleware/auth.js';
 import { chatRoutes } from './routes/chat.js';
+import { gameRoutes } from './routes/game.js';
 
 // Obtenir l'équivalent de __dirname pour les modules ES
 const __filename = fileURLToPath(import.meta.url);
@@ -28,7 +27,7 @@ const app = fastify({
 
 // Fonction d'initialisation des plugins
 const initializePlugins = async () => {
-    await app.register(fastifyExpress);
+    
     
     // Configuration CORS
     await app.register(import('@fastify/cors'), {
@@ -124,13 +123,22 @@ app.get('/api/chat/history', { preHandler: authMiddleware }, async (request: Fas
     return chatRoutes.getChatHistory(request, reply);
 });
 
+/////////////////
+// GAME ROUTES //
+/////////////////
+
+app.get('/api/games/getAll', async (request: FastifyRequest, reply: FastifyReply) => {
+    return gameRoutes.getAllGames(request, reply);
+});
 
 ////////////////////////////////////////////
 //              SERVER START              //
 ////////////////////////////////////////////
 
-const start = async () => {
-    try {
+const start = async () => 
+{
+    try
+    {
         await initializePlugins();
         await dbManager.initialize();
         
