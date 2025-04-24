@@ -7,26 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { LoginManager } from './loginModal.js';
-import { communityPage } from './sourcepage.js';
-import { renderPeopleList, setupSearchInput } from './peopleList.js';
-import { setupChat } from './chat.js';
-export function showCommunityPage() {
+export function googleSignInHandler() {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!(yield LoginManager.isLoggedIn())) {
-            console.log("Not logged in, showing login modal");
-            LoginManager.showLoginModal();
-            return;
-        }
-        else {
-            console.log("Logged in, showing community");
-        }
-        const main = document.getElementById("main");
-        if (!main)
-            return;
-        main.innerHTML = communityPage;
-        renderPeopleList();
-        setupSearchInput();
-        setupChat();
+        console.log("google sign in handler");
     });
 }

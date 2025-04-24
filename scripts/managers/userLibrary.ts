@@ -1,4 +1,4 @@
-import api from './api.js';
+import api from '../helpers/api.js';
 
 export interface UserLibrary {
     id: number;

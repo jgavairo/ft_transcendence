@@ -7,14 +7,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { libraryPage, storePage, communityPage, profileWindow } from './sourcepage.js';
-import { setupLibrary } from './library.js';
-import { setupStore } from './store.js';
-import { showCommunityPage } from './community.js';
-import { showNotification } from './notifications.js';
-import { LoginManager } from './loginModal.js';
-import { setupProfileModal } from './profileModal.js';
-import api from './api.js';
+import { libraryPage, storePage, communityPage, profileWindow } from '../sourcepage.js';
+import { setupLibrary } from '../pages/library/library.js';
+import { setupStore } from '../pages/store/store.js';
+import { showCommunityPage } from '../pages/community/community.js';
+import { showNotification } from '../helpers/notifications.js';
+import { LoginManager } from '../managers/loginManager.js';
+import { setupProfileModal } from '../modals/profile/profileModal.js';
+import api from '../helpers/api.js';
 let boolprofileMenu = false;
 function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');

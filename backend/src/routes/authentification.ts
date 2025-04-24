@@ -3,39 +3,48 @@ import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database.js";
 import { JWT_SECRET } from "../server.js";
 
-interface AuthenticatedRequest extends FastifyRequest {
-    user?: any;
-}
-
 const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
-    try {
+    try 
+    {
+        console.log("Login attempt");
+
         const { username, password } = req.body as { username: string; password: string };
-        console.log('connection tentative -');
-        console.log("username: " + username, "password: " + password);
+        
+        if (!username || !password)
+        {
+            return res.status(400).send({
+                success: false,
+                message: "Username and password are required"
+            });
+        }
         
         const user = await dbManager.getUserByUsername(username);
         
-        if (!user) {
+        if (!user) 
+        {
             return res.status(401).send({
                 success: false,
-                message: "Utilisateur non trouvé"
+                message: "User not found with this username: " + username
             });
         }
         
         if (user.password_hash !== password) {
             return res.status(401).send({
                 success: false,
-                message: "Mot de passe incorrect"
+                message: "Password is incorrect for this username: " + username
             });
         }
         
-        const token = jwt.sign(
+        const token = jwt.sign
+        (
             { userId: user.id },
             JWT_SECRET,
             { expiresIn: '1h' }
         );
 
-        res.setCookie('token', token, {
+        res.setCookie
+        ('token', token, 
+        {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
@@ -43,17 +52,21 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
             maxAge: 24 * 60 * 60 * 1000 // 24 heures
         });
 
-        return res.send({
+        return res.send
+        ({
             success: true,
-            message: "Connexion réussie",
-            user: {
+            message: "Connection successful",
+            user: 
+            {
                 id: user.id,
                 username: user.username,
                 email: user.email,
                 profile_picture: user.profile_picture
             }
         });
-    } catch (error) {
+    } 
+    catch (error) 
+    {
         console.error("Erreur de connexion:", error);
         return res.status(500).send({
             success: false,
@@ -62,23 +75,33 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
     }
 };
 
-const registerHandler = async (req: FastifyRequest, res: FastifyReply) => {
-    console.log("Registering user");
+const registerHandler = async (req: FastifyRequest, res: FastifyReply) => 
+{
+    console.log("User registration attempt");
+
     const { username, password, email } = req.body as { username: string; password: string; email: string };
-    try {
-        const userID = await dbManager.registerUser({
+
+    try 
+    {
+        const userID = await dbManager.registerUser
+        ({
             username: username,
             email: email,
             password_hash: password,
             profile_picture: '../assets/profile_pictures/default.png',
         });
-        return res.send({
+
+        return res.send
+        ({
             success: true,
-            message: "User registered successfully",
+            message: "User registration successful",
             userID: userID
         });
-    } catch (error) {
-        return res.send({
+    } 
+    catch (error) 
+    {
+        return res.send
+        ({
             success: false,
             message: "User registration failed",
             error: error
@@ -86,50 +109,70 @@ const registerHandler = async (req: FastifyRequest, res: FastifyReply) => {
     }
 };
 
-const checkAuthHandler = async (req: FastifyRequest, res: FastifyReply) => {
-    try {
+const checkAuthHandler = async (req: FastifyRequest, res: FastifyReply) => 
+{
+    try 
+    {
         const token = req.cookies.token;
-        if (!token) {
+
+        if (!token)
+        {
             return res.send({
                 success: false,
-                message: "User non authenified"
+                message: "User is not authenified"
             });
         }
+
         const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+
         const user = await dbManager.getUserById(decoded.userId);
-        if (!user) {
-            return res.send({
+        
+        if (!user)
+        {
+            return res.send
+            ({
                 success: false,
                 message: "User not found"
             });
         }
-        return res.send({
+
+        return res.send
+        ({
             success: true,
             message: "User authenified",
             user: user
         });
-    } catch (error) {
-        return res.send({
+    } 
+    catch (error) 
+    {
+        return res.send
+        ({
             success: false,
             message: "Invalid token"
         });
     }
 };
 
-const logoutHandler = async (req: FastifyRequest, res: FastifyReply) => {
-    res.clearCookie('token', {
+const logoutHandler = async (req: FastifyRequest, res: FastifyReply) => 
+{
+    res.clearCookie
+    ('token', 
+    {
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
         path: '/'
     });
-    return res.send({
+
+    return res.send
+    ({
         success: true,
         message: "User logged out"
     });
 };
 
-export const authRoutes = {
+export const authRoutes = 
+{
     login: loginHandler,
     register: registerHandler,
     checkAuth: checkAuthHandler,

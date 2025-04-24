@@ -11,11 +11,11 @@ import { userRoutes } from "./routes/user.js";
 import { authRoutes } from "./routes/authentification.js";
 import { startMatch, MatchState } from "./games/pong/gameSimulation.js";
 import fs from 'fs';
-import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from './middleware/auth.js';
 import { chatRoutes } from './routes/chat.js';
+import { gameRoutes } from './routes/game.js';
 
 // Obtenir l'équivalent de __dirname pour les modules ES
 const __filename = fileURLToPath(import.meta.url);
@@ -136,6 +136,13 @@ app.get('/api/chat/history', { preHandler: authMiddleware }, async (request: Fas
     return chatRoutes.getChatHistory(request, reply);
 });
 
+/////////////////
+// GAME ROUTES //
+/////////////////
+
+app.get('/api/games/getAll', async (request: FastifyRequest, reply: FastifyReply) => {
+    return gameRoutes.getAllGames(request, reply);
+});
 
 ////////////////////////////////////////////////
 //                Matchmaking                 //

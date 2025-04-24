@@ -1,7 +1,7 @@
-import { LoginManager } from './loginModal.js';
-import { communityPage } from './sourcepage.js';
-import { renderPeopleList, setupSearchInput } from './peopleList.js';
-import { setupChat } from './chat.js';
+import { LoginManager } from '../../managers/loginManager.js';
+import { communityPage } from '../../sourcepage.js';
+import { renderPeopleList, setupSearchInput } from '../community/peopleList.js';
+import { setupChat } from '../community/chat.js';
 
 export async function showCommunityPage() {
     if (!await LoginManager.isLoggedIn()) {

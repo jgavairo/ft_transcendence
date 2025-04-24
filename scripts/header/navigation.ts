@@ -1,11 +1,13 @@
-import { libraryPage, storePage, communityPage, profileWindow, profileModalHTML } from './sourcepage.js';
-import { setupLibrary } from './library.js';
-import { setupStore } from './store.js';
-import { showCommunityPage } from './community.js';
-import { showNotification } from './notifications.js';
-import { LoginManager } from './loginModal.js';
-import { setupProfileModal } from './profileModal.js';
-import api from './api.js';
+import { libraryPage, storePage, communityPage, profileWindow, profileModalHTML } from '../sourcepage.js';
+import { setupLibrary } from '../pages/library/library.js';
+import { setupStore } from '../pages/store/store.js';
+import { showCommunityPage } from '../pages/community/community.js';
+import { showNotification } from '../helpers/notifications.js';
+import { LoginManager } from '../managers/loginManager.js';
+import { setupProfileModal } from '../modals/profile/profileModal.js';
+import api from '../helpers/api.js';
+
+
 let boolprofileMenu = false;
 function changeActiveButton(newButton: HTMLElement, newActiveButton: HTMLElement)
 {

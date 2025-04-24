@@ -1,21 +1,24 @@
-import { gameList } from "./gameStoreList.js";
-import { UserLibraryManager } from "./userLibrary.js";
-import { gameModalHTML } from "../scripts/sourcepage.js"
-import { displayMenu } from './games/pong/pongGame.js';
-import { LoginManager } from "./loginModal.js";
+import { UserLibraryManager } from "../../managers/userLibrary.js";
+import { gameModalHTML } from "../../sourcepage.js"
+import { displayMenu } from '../../games/pong/pongGame.js';
+import { LoginManager } from "../../managers/loginManager.js";
+import { GameManager } from "../../managers/gameManager.js";
 
 let activedinlist = false;
 
+
+
 export async function setupLibrary(): Promise<void> 
 {
+  
   if(!await LoginManager.isLoggedIn())
     {
-        console.log("Not logged in, showing login modal");
-        LoginManager.showLoginModal();
-        return;
+      console.log("Not logged in, showing login modal");
+      LoginManager.showLoginModal();
+      return;
     }
     else 
-        console.log("Logged in, showing library");
+    console.log("Logged in, showing library");
   const libraryList = document.querySelector('.library-games-list') as HTMLElement;
   const detailsContainer = document.querySelector('.library-details') as HTMLElement;
   if (!libraryList || !detailsContainer) {
@@ -24,16 +27,17 @@ export async function setupLibrary(): Promise<void>
   }
   
   let searchBar = document.getElementById("searchBar") as HTMLInputElement;
-
+  
   searchBar.addEventListener("input", () => {
     const query = searchBar.value.toLowerCase();
     renderLibrary(query);
   });
-
+  
   renderLibrary("");
 }
 
 async function renderLibrary(query: string): Promise<void> {
+  const gameList = await GameManager.getGameList();
   const libraryList = document.querySelector('.library-games-list') as HTMLElement;
   const detailsContainer = document.querySelector('.library-details') as HTMLElement;
   if (!libraryList || !detailsContainer) return;
