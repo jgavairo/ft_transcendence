@@ -146,7 +146,6 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
 const uploadPictureFormHTML = `
       <div class="profile-modal-header">
           <button class="backArrow" id="backToProfileSettings" aria-label="Back">←</button>
-          <button class="closeProfileModal" id="closeModal">X</button>
       </div>
       <h2>Choose a new profile picture</h2>
         <div class="picture-upload">
@@ -158,7 +157,9 @@ const uploadPictureFormHTML = `
     `;
 
 const changePasswordModalHTML = `
-        <button class="closeProfileModal" id="closeModal">X</button>
+        <div class="changePassword-modal-header">
+            <button class="backArrow" id="backToProfileSettings" aria-label="Back">←</button>
+        </div>
         <div class="changePassword-modal" id="changePassword-modal">
             <h2>Change password</h2>
             <div class="changePassword-modal-content">

@@ -79,7 +79,7 @@ function changePassword() {
     if (!modal)
         return;
     modal.innerHTML = changePasswordModalHTML;
-    const closeButton = document.getElementById('closeModal');
+    const closeButton = document.getElementById('backToProfileSettings');
     if (!closeButton)
         return;
     closeButton.addEventListener('click', () => {
@@ -97,16 +97,6 @@ function setupChangeProfilePictureModal() {
     if (!profileModal)
         return;
     profileModal.innerHTML = uploadPictureFormHTML;
-    // Gestionnaire pour la croix (ferme complètement la fenêtre)
-    const closeButton = document.getElementById('closeModal');
-    if (closeButton) {
-        closeButton.addEventListener('click', () => {
-            const modal = document.getElementById('optionnalModal');
-            if (modal) {
-                modal.innerHTML = ''; // Vide complètement le contenu de la modal
-            }
-        });
-    }
     // Gestionnaire pour la flèche "Back" (revient aux Profile Settings)
     const backArrow = document.getElementById('backToProfileSettings');
     if (backArrow) {
@@ -127,7 +117,23 @@ function setupChangeProfilePictureModal() {
             showErrorNotification('No picture selected');
             return;
         }
+        const formData = new FormData();
+        formData.append('picture', newPicture);
+        try {
+            const response = yield api.postFormData('http://127.0.0.1:3000/api/profile/changePicture', formData);
+            const data = yield response.json();
+            if (data.success) {
+                showNotification('Profile picture updated successfully.');
+                setupProfileModal();
+            }
+            else {
+                showErrorNotification(data.message || 'Failed to update profile picture');
+            }
+        }
+        catch (error) {
+            console.error('Error changing profile picture:', error);
+            showErrorNotification('Failed to change profile picture.');
+        }
         showNotification('Picture Button Clicked');
-        api.post('http://127.0.0.1:3000/api/profile/changePicture', {});
     }));
 }
