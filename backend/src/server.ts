@@ -1,12 +1,15 @@
 import fastify from 'fastify';
 import fastifyExpress from '@fastify/express';
+import fastifyCors from '@fastify/cors'
+import fastifyStatic from '@fastify/static'
+import fastifyCookie from '@fastify/cookie'
+import fastifySocketIO from 'fastify-socket.io'
 import { FastifyRequest, FastifyReply } from 'fastify';
+import type { Socket } from 'socket.io'
 import { dbManager } from "./database/database.js";
 import { userRoutes } from "./routes/user.js";
 import { authRoutes } from "./routes/authentification.js";
-import { Server as SocketIOServer } from "socket.io";
 import { startMatch, MatchState } from "./games/pong/gameSimulation.js";
-import http from "http";
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import path from 'path';
@@ -27,31 +30,40 @@ const app = fastify({
 });
 
 // Fonction d'initialisation des plugins
-const initializePlugins = async () => {
-    await app.register(fastifyExpress);
-    
-    // Configuration CORS
-    await app.register(import('@fastify/cors'), {
+await app.register(fastifyExpress);
+
+// Configuration CORS
+await app.register(fastifyCors, {
+    origin: 'http://127.0.0.1:8080',
+    credentials: true,
+    methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization','Cookie'],
+    exposedHeaders: ['Set-Cookie']
+});
+
+await app.register(fastifyCookie, {
+    secret: JWT_SECRET,
+    parseOptions: {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/'
+    }
+});
+
+await app.register(fastifyStatic, {
+    root: path.join(__dirname, '..', 'uploads'),
+    prefix: '/uploads/'
+}); 
+
+await app.register(fastifySocketIO, {
+    cors: {
         origin: 'http://127.0.0.1:8080',
         credentials: true
-    });
-    
-    await app.register(import('@fastify/cookie'), {
-        secret: JWT_SECRET,
-        parseOptions: {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            path: '/'
-        }
-    });
-    
-    await app.register(import('@fastify/static'), {
-        root: path.join(__dirname, '..', 'uploads'),
-        prefix: '/uploads/'
-    });
-
-};
+    },
+    transports: ['websocket','polling'],
+    allowEIO3: true
+    })
 
 // Créer le dossier pour les uploads s'il n'existe pas
 const uploadDir = 'uploads/profile_pictures';
@@ -125,35 +137,100 @@ app.get('/api/chat/history', { preHandler: authMiddleware }, async (request: Fas
 });
 
 
+////////////////////////////////////////////////
+//                Matchmaking                 //
+////////////////////////////////////////////////
+
+const gameNs = app.io.of('/game');
+// Global map pour stocker l'état de chaque match par roomId
+const matchStates: Map<string, MatchState> = new Map();
+
+// Interface pour représenter un joueur
+interface Player {
+    id: string;
+    username: string;
+}
+
+// File d'attente des joueurs pour le matchmaking
+let matchmakingQueue: Player[] = [];
+
+
+// Gestion des connexions Socket.IO
+gameNs.on("connection", (socket: Socket) => {
+    console.log(`Client connected: ${socket.id}`);
+    
+    socket.on("joinQueue", (playerData) => {
+        console.log(`Player ${socket.id} joined matchmaking.`, playerData);
+        matchmakingQueue.push({ id: socket.id, username: playerData.username });
+        attemptMatch();
+    });
+    
+    // Gestion des messages de chat
+    socket.on("sendMessage", async (messageData: { author: string, content: string }) => {
+        console.log(`Message received from ${messageData.author}: ${messageData.content}`);
+        
+        // Ajouter l'ID du socket à l'objet messageData
+        const messageWithId = { ...messageData, senderId: socket.id };
+        
+        // Sauvegarder le message dans la base de données
+        try {
+            await dbManager.saveMessage(messageData.author, messageData.content);
+        } catch (error) {
+            console.error("Error saving message to database:", error);
+        }
+
+        // Diffuser le message à tous les utilisateurs connectés
+        gameNs.emit("receiveMessage", messageWithId);
+    });
+
+    socket.on("movePaddle", (data: { paddle: "left" | "right"; direction: "up" | "down" | null }) => {
+        const rooms = Array.from(socket.rooms);
+        const roomId = rooms.find(r => r !== socket.id);
+        if (!roomId) return;
+    
+        const matchState = matchStates.get(roomId);
+        if (!matchState) return;
+    
+        if (data.paddle === "left") {
+          matchState.leftPaddleDirection = data.direction;
+        } else if (data.paddle === "right") {
+          matchState.rightPaddleDirection = data.direction;
+        }
+      })
+    socket.on("disconnect", () => {
+        console.log(`Client disconnected: ${socket.id}`);
+        matchmakingQueue = matchmakingQueue.filter(player => player.id !== socket.id);
+    });
+});
+  
+//connecter deux joueurs
+function attemptMatch(): void {
+    if (matchmakingQueue.length >= 2) {
+      const player1 = matchmakingQueue.shift();
+      const player2 = matchmakingQueue.shift();
+      if (player1 && player2) {
+        console.log(`Match found: ${player1.id} vs ${player2.id}`);
+        const matchState = startMatch(player1, player2, gameNs);
+        matchStates.set(matchState.roomId, matchState);
+      }
+    }
+  }
+
+
 ////////////////////////////////////////////
 //              SERVER START              //
 ////////////////////////////////////////////
 
 const start = async () => {
     try {
-        await initializePlugins();
         await dbManager.initialize();
         
-        // Démarrer le serveur Fastify
         await app.listen({ port: 3000, host: '0.0.0.0' });
-        console.log(`Fastify server is running on port 3000`);
-        
-        // Configurer Socket.IO après que le serveur Fastify soit démarré
-        const io = new SocketIOServer(app.server, {
-            cors: {
-                origin: "*",
-                methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                credentials: true,
-                allowedHeaders: ["Content-Type", "Cookie", "Authorization"]
-            },
-            transports: ['websocket', 'polling'],
-            allowEIO3: true // Compatibilité avec les anciennes versions
-        });
-        
-        console.log(`Socket.IO server is running`);
+        console.log('Fastify server + Socket.IO OK sur port 3000');
 
         // Gestion des événements Socket.IO
-        io.on('connection', (socket) => {
+        const chatNs = app.io.of('/chat');
+        chatNs.on('connection', (socket: Socket) => {
             console.log('Client connected:', socket.id);
 
             socket.on('sendMessage', async (data, callback) => {
@@ -163,11 +240,11 @@ const start = async () => {
                     await dbManager.saveMessage(data.author, data.content);
                     
                     // Diffuser le message à tous les clients connectés
-                    io.emit('receiveMessage', {
+                    socket.broadcast.emit('receiveMessage', {
                         author: data.author,
                         content: data.content,
                         timestamp: new Date().toISOString()
-                    });
+                      });
 
                     if (callback) {
                         callback({ success: true });

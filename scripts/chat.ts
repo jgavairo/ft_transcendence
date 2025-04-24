@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 
 async function fetchCurrentUser(): Promise<string | null> {
     try {
-        const response = await fetch("http://127.0.0.1:8080/api/user/infos", {
+        const response = await fetch("http://127.0.0.1:3000/api/user/infos", {
             credentials: "include", // Inclure les cookies pour l'authentification
         });
         const data = await response.json();
@@ -20,7 +20,7 @@ async function fetchCurrentUser(): Promise<string | null> {
 
 async function fetchChatHistory(): Promise<{ author: string, content: string, timestamp: string }[]> {
     try {
-        const response = await fetch("http://127.0.0.1:8080/api/chat/history", {
+        const response = await fetch("http://127.0.0.1:3000/api/chat/history", {
             credentials: "include"
         });
         const data = await response.json();
@@ -77,7 +77,7 @@ export async function setupChat() {
     });
 
     // Connecter le client au serveur Socket.IO
-    const socket = io("http://127.0.0.1:8080", {
+    const socket = io('http://127.0.0.1:3000/chat', {
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 5,
@@ -123,6 +123,6 @@ export async function setupChat() {
             return; // Ne pas afficher le message
         }
 
-        addMessage(messageData.content, messageData.author, false); // Ajouter un message reçu
+        addMessage(messageData.content, messageData.author, messageData.author === username); // Ajouter un message reçu
     });
 }
