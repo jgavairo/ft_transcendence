@@ -1,7 +1,12 @@
 import io from 'socket.io-client';
 
+
+
 console.log("Début de l'exécution du fichier pongGame.ts");
-const socket = io('http://127.0.0.1:8080');
+const socket = io('http://127.0.0.1:3000/game', {
+  transports: ['websocket', 'polling'],
+  withCredentials: true
+});
 
 socket.on("matchFound", (data: any) => {
   console.log("Match found!", data);
