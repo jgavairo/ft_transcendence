@@ -1,6 +1,7 @@
 import { LoginManager } from "../../managers/loginManager.js";
 import { GameManager } from "../../managers/gameManager.js";
 import { UserLibraryManager } from "../../managers/userLibrary.js";
+import { setupBuyButtons } from "./buybuttons.js";
 
 export async function setupGameList()
 {
@@ -46,5 +47,6 @@ export async function setupGameList()
                 </div>
             `;
             storeContainer.innerHTML += gamesHTML;
-        }));    
+        }));
+        setupBuyButtons();
 }

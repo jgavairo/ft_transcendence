@@ -12,7 +12,9 @@ export function setupBuyButtons()
     }
     buyButtons.forEach(async (button) => 
     {
-        button.addEventListener('click', async (e) => {
+        button.addEventListener('click', async (e) => 
+        {
+            console.log("BUY BUTTON CLICKED");
             const gameList = await GameManager.getGameList();
             const gameCard = (e.target as HTMLElement).closest('.gamecard');
             if (!gameCard) return;
