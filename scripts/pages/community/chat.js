@@ -8,15 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { io } from "socket.io-client";
+import { fetchUsernames } from "./peopleList.js";
+import { showProfileCard } from "./peopleList.js";
 function fetchCurrentUser() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const response = yield fetch("http://127.0.0.1:3000/api/user/infos", {
-                credentials: "include", // Inclure les cookies pour l'authentification
+                credentials: "include",
             });
             const data = yield response.json();
             if (data.success) {
-                return data.user.username; // Correction de l'accès aux données
+                return data.user.username;
             }
             else {
                 console.error("Failed to fetch user info:", data.message);
@@ -59,18 +61,50 @@ export function setupChat() {
             console.error("Chat elements not found in the DOM.");
             return;
         }
-        // Déclarez la fonction addMessage avant de l'utiliser
+        // Récupérer les informations des utilisateurs
+        const users = yield fetchUsernames();
+        const userMap = new Map(users.map(user => [user.username, user]));
         const addMessage = (content, author, self = true) => {
             const msgWrapper = document.createElement("div");
             msgWrapper.className = `chat-message ${self ? "right" : "left"}`;
-            // Ajouter le nom d'utilisateur après le @
-            const fullMessage = document.createElement("div");
-            fullMessage.innerHTML = `<span style="font-weight:bold; margin-right: 0.5rem; color:#ffff;">@${author} :</span>${content}`;
-            msgWrapper.appendChild(fullMessage);
+            const user = userMap.get(author);
+            // Conteneur pour l'image de profil avec effet hover
+            const profileContainer = document.createElement("div");
+            profileContainer.className = "profile-picture-container";
+            // Ajouter la photo de profil
+            const profileImg = document.createElement("img");
+            profileImg.className = "chat-profile-picture";
+            profileImg.src = (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png";
+            profileImg.alt = `${author}'s profile picture`;
+            // Ajouter la couche de survol
+            const overlay = document.createElement("div");
+            overlay.className = "profile-picture-overlay";
+            const overlayText = document.createElement("span");
+            overlayText.textContent = "View";
+            overlay.appendChild(overlayText);
+            // Ajouter un événement de clic pour afficher la carte de profil
+            profileContainer.addEventListener("click", () => {
+                showProfileCard((user === null || user === void 0 ? void 0 : user.username) || author, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.email) || "Email not available", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available");
+            });
+            // Ajouter les éléments au conteneur
+            profileContainer.appendChild(profileImg);
+            profileContainer.appendChild(overlay);
+            // Ajouter le conteneur au message
+            msgWrapper.appendChild(profileContainer);
+            // Ajouter le nom d'utilisateur
+            const usernameSpan = document.createElement("span");
+            usernameSpan.className = "chat-username";
+            usernameSpan.textContent = (user === null || user === void 0 ? void 0 : user.username) || author;
+            // Ajouter le contenu du message
+            const messageContent = document.createElement("p");
+            messageContent.className = "chat-content";
+            messageContent.textContent = content;
+            // Ajouter les éléments au conteneur du message
+            msgWrapper.appendChild(usernameSpan);
+            msgWrapper.appendChild(messageContent);
             chatContainer.appendChild(msgWrapper);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         };
-        // Récupérer le nom d'utilisateur depuis la base de données
         const username = yield fetchCurrentUser();
         if (!username) {
             console.error("Unable to fetch username. Chat will not work properly.");
@@ -79,7 +113,6 @@ export function setupChat() {
         // Charger l'historique des messages
         const chatHistory = yield fetchChatHistory();
         chatHistory.forEach(message => {
-            // Vérifier si le message a été envoyé par l'utilisateur connecté
             const isSelf = message.author === username;
             addMessage(message.content, message.author, isSelf);
         });
@@ -103,12 +136,11 @@ export function setupChat() {
         // Envoyer un message au serveur
         sendBtn.addEventListener("click", () => {
             const text = input.value.trim();
-            console.log("Attempting to send message:", text);
             if (text) {
                 socket.emit("sendMessage", { author: username, content: text }, (response) => {
                     console.log("Message sent, server response:", response);
-                }); // Envoyer au serveur
-                addMessage(text, username, true); // Ajouter localement
+                });
+                addMessage(text, username, true);
                 input.value = "";
             }
         });
@@ -119,11 +151,10 @@ export function setupChat() {
         });
         // Recevoir un message du serveur
         socket.on("receiveMessage", (messageData) => {
-            // Vérifier si le message provient de l'utilisateur lui-même
             if (messageData.author === username) {
-                return; // Ne pas afficher le message
+                return;
             }
-            addMessage(messageData.content, messageData.author, messageData.author === username); // Ajouter un message reçu
+            addMessage(messageData.content, messageData.author, false);
         });
     });
 }

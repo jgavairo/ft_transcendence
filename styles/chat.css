@@ -58,10 +58,77 @@
 }
 
 .chat-message {
-    margin: 5px 0;
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
     padding: 10px;
     border-radius: 5px;
     max-width: 70%;
+}
+
+/* Conteneur pour la photo de profil */
+.profile-picture-container {
+    position: relative;
+    margin-right: 5px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Image de profil */
+.chat-profile-picture {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Couche de survol */
+.profile-picture-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Couleur semi-transparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    opacity: 0; /* Caché par défaut */
+    transition: opacity 0.3s ease;
+}
+
+/* Texte "View" */
+.profile-picture-overlay span {
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    pointer-events: none; /* Empêche les interactions avec le texte */
+}
+
+/* Effet hover */
+.profile-picture-container:hover .profile-picture-overlay {
+    opacity: 1; /* Affiche la couche de survol */
+}
+
+.profile-picture-container:hover .chat-profile-picture {
+    transform: scale(1.1); /* Zoom léger sur l'image */
+    transition: transform 0.3s ease;
+}
+
+.chat-username {
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.chat-content {
+    margin: 0;
+    word-wrap: break-word;
 }
 
 .chat-message.right {
