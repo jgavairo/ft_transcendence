@@ -19,6 +19,7 @@ export function setupBuyButtons() {
     buyButtons.forEach((button) => __awaiter(this, void 0, void 0, function* () {
         button.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
             var _a;
+            console.log("BUY BUTTON CLICKED");
             const gameList = yield GameManager.getGameList();
             const gameCard = e.target.closest('.gamecard');
             if (!gameCard)

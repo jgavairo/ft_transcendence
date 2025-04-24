@@ -115,20 +115,19 @@ const profileModalHTML = (username, email, profilePicture, bio) => `
             </div>
             <div class="profile-modal-content-info">
               <div id="username">
-                <h3>Username:</h3>
+                <h3>Username:&nbsp;</h3>
                 <p>${username}</p>
               </div>
               <div id="email">
-                <h3>Email:</h3>
+                <h3>Email:&nbsp;</h3>
                 <p>${email}</p>
               </div>
               <div id="bio">
-                <h3>Bio:</h3>
-                <textarea id="bioInput" maxlength="150" placeholder="Write something about yourself...">${bio}</textarea>
-                <button id="saveBioButton" class="save-bio-button">Save Bio</button>
+                <textarea id="bioInput" class="bio-input" placeholder="Write something about yourself...">${bio}</textarea>
+                <button id="saveBioButton" class="profile-modal-button-bio">Save Bio</button>
               </div>
               <div id="changePassword">
-                <button id="changePasswordButton">Change password</button>
+                <button id="changePasswordButton" class="profile-modal-button-password">Change password</button>
               </div>
             </div>
           </div>

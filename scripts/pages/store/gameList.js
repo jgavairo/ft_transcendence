@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { LoginManager } from "../../managers/loginManager.js";
 import { GameManager } from "../../managers/gameManager.js";
 import { UserLibraryManager } from "../../managers/userLibrary.js";
+import { setupBuyButtons } from "./buybuttons.js";
 export function setupGameList() {
     return __awaiter(this, void 0, void 0, function* () {
         const storeContainer = document.querySelector('.gamescontainer');
@@ -51,5 +52,6 @@ export function setupGameList() {
             `;
             storeContainer.innerHTML += gamesHTML;
         })));
+        setupBuyButtons();
     });
 }

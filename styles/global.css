@@ -526,44 +526,73 @@ body
     transition: 0.3s;
 }
 
-.profile-modal-content-info {
+.profile-modal .profile-modal-content
+{
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-modal .profile-modal-content-info
+{
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-modal .profile-modal-content-info h3
+{
+    font-weight: bold;
+    
+}
+
+.profile-modal .profile-modal-content-info #username
+{
+    display: flex;
+    flex-direction: row;
+}
+
+.profile-modal .profile-modal-content-info #email
+{
+    display: flex;
+    flex-direction: row;
+}
+
+.profile-modal .profile-modal-content-info #bio
+{
     display: flex;
     flex-direction: column;
-    gap: 15px; /* Ajoute un espacement entre les sections */
-    align-items: flex-start; /* Aligne les éléments à gauche */
-    justify-content: flex-start;
-    margin-top: 10px; /* Ajoute un espace entre le haut de la modal et le contenu */
-    width: 100%; /* Assure que les éléments prennent toute la largeur */
-    box-sizing: border-box; /* Inclut le padding dans la taille totale */
+    align-items: center;
+    justify-content: center;
 }
 
-
-.profile-modal-content-info div {
-    display: flex;
-    flex-direction: row; /* Aligne les éléments verticalement */
-    gap: 20px; /* Ajoute un espacement entre les sous-éléments */
-    width: 100%; /* Assure que chaque section prend toute la largeur */
-    box-sizing: border-box; /* Inclut le padding dans la taille totale */
-	margin-top: 1.5rem;
+.profile-modal .bio-input
+{
+    resize: none;
+    height: 3.7rem;
+    max-lines: 1;
+    width: 100%;
+    text-align: center;
+    background-color: #a3a3a31e;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+	padding: 5px;
+	margin: 0;
+	color: #939393;
+    outline: none;
+    font-style: italic;
 }
 
-.profile-modal-content-info h3 {
-    color: #ffffff;
-    font-size: 1.2rem;
-    font-weight: bold;
-    margin-bottom: 3px;
+.profile-modal .bio-input:focus
+{
+    font-style: normal;
 }
 
-.profile-modal-content-info p,
-.profile-modal-content-info textarea {
-    color: #ffffff;
-    font-size: 1.2rem;
-    width: 100%; /* Assure que les champs prennent toute la largeur */
-    box-sizing: border-box; /* Inclut le padding dans la largeur totale */
-}
-
-
-.profile-modal #changePasswordButton
+.profile-modal .profile-modal-button-password
 {
     margin: 0 auto;
     padding: 10px;
@@ -577,7 +606,28 @@ body
 	margin-top: 2rem;
 }
 
-.profile-modal #changePasswordButton:hover
+.profile-modal .profile-modal-button-bio
+{
+    font-size: 0.9rem;
+    flex-direction: row;
+    height: 1.3rem;
+    line-height: 1.3rem;
+    width: 100%;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    white-space: nowrap;
+    background-color: #195787aa; 
+    transition: 0.3s;
+}
+
+
+.profile-modal .profile-modal-button-password:hover
+{
+	background-color: #113d5e;
+	transition: 0.3s;
+}
+
+.profile-modal .profile-modal-button-bio:hover
 {
 	background-color: #113d5e;
 	transition: 0.3s;
@@ -621,52 +671,4 @@ body
     border: 1px solid #444;
 
     color: #fff;
-}
-
-/* Styles pour la section bio */
-#bio {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start; /* Aligne les éléments à gauche */
-    gap: 20px;
-    margin-top: 20px;
-    width: 80%; /* Assure que la section prend toute la largeur */
-    max-height: 150px; /* Limite la hauteur totale */
-    overflow: hidden; /* Masque tout débordement */
-    box-sizing: border-box; /* Inclut le padding dans la taille totale */
-}
-
-#bio textarea {
-    width: 90%; /* Assure que le champ de texte prend toute la largeur */
-    height: 50px; /* Taille fixe pour le champ de texte */
-    background-color: #1e2a38;
-    border: 1px solid #263549;
-    border-radius: 5px;
-    color: #ffffff;
-    padding: 10px;
-    font-size: 1rem;
-    resize: none; /* Désactive le redimensionnement */
-    box-sizing: border-box; /* Inclut le padding dans la taille totale */
-}
-
-#bio textarea::placeholder {
-    color: #a3a3a3;
-}
-
-.save-bio-button {
-    align-self: flex-end; /* Aligne le bouton à droite */
-    white-space: nowrap; /* Empêche le texte de se diviser sur plusieurs lignes */
-    background-color: #195887;
-    color: #ffffff;
-    border: none;
-    border-radius: 5px;
-    padding: 10px 20px;;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.save-bio-button:hover {
-    background-color: #113d5e;
 }

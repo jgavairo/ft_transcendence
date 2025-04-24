@@ -8,11 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { setupGameList } from "./gameList.js";
-import { setupBuyButtons } from "./buybuttons.js";
 export function setupStore() {
     return __awaiter(this, void 0, void 0, function* () {
         setupGameList();
-        setupBuyButtons();
     });
 }
 document.addEventListener('DOMContentLoaded', setupStore);
