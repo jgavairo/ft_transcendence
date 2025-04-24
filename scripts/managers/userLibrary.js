@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import api from './api.js';
+import api from '../helpers/api.js';
 export class UserLibraryManager {
     static getCurrentUser() {
         const stored = localStorage.getItem(this.STORAGE_KEY);

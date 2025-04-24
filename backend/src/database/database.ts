@@ -19,6 +19,14 @@ export interface User {
     library?: number[];
 }
 
+export interface Game {
+    id: number;
+    name: string;
+    price: number;
+    description: string;
+    image: string;
+}
+
 export class DatabaseManager
 {
     private static instance: DatabaseManager;
@@ -48,6 +56,44 @@ export class DatabaseManager
             const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
             await this.db.exec(schema);
             console.log('database initialized successfully');
+
+            // Vérifier si la table games est vide
+            const count = await this.db.get('SELECT COUNT(*) as count FROM games');
+            if (count.count === 0) {
+                // Insérer les jeux par défaut
+                const defaultGames = [
+                    {
+                        id: 1,
+                        name: "Pong",
+                        price: 0,
+                        description: "Pong is a two-dimensional sports game that simulates table tennis. The player controls an in-game paddle by moving it vertically along the left or right side of the screen, and can use the paddle to hit a ball back and forth across the screen. The goal is to manoeuvre the ball past the opponent's paddle and into the opposing side's court, and to prevent the ball from being hit back into their own court.",
+                        image: "../../assets/games/pong/pong.png",
+                    },
+                    {
+                        id: 3,
+                        name: "Valorant",
+                        price: 29.99,
+                        description: "Une pale copie de Counter-Strike, mais avec des personnages de la série Rick and Morty",
+                        image: "../../assets/games/valorant/valorant.png",
+                    },
+                    {
+                        id: 2,
+                        name: "Francis the Loony",
+                        price: 299.99,
+                        description: "Recevez une invitation mystérieuse à la soirée de Francis le Tordu (YOUPiiIIII). Dans ce jeu psychologique troublant, naviguez à travers une demeure victorienne où les règles changent constamment et où vos choix ont des conséquences... imprévisibles. Les autres invités semblent connaître les règles, mais personne ne veut les partager. Évitez les regards tordus de Francis, découvrez pourquoi certains invités disparaissent après avoir bu le cocktail du chef, et tentez de survivre jusqu'au matin. Mais attention : Francis déteste quand on refuse de danser la valse inversée",
+                        image: "../../assets/games/snake/snake.png",
+                    }
+                ];
+
+                for (const game of defaultGames) 
+                {
+                    await this.db.run(
+                        'INSERT INTO games (name, price, description, image) VALUES (?, ?, ?, ?)',
+                        [game.name, game.price, game.description, game.image]
+                    );
+                }
+                console.log('Default games inserted successfully');
+            }
         }
         catch (error)
         {
@@ -209,6 +255,14 @@ export class DatabaseManager
             [limit]
         );
         return result.reverse(); // Inverser pour afficher les messages dans l'ordre chronologique
+    }
+    //********************GAMES-PART*******************************
+
+    public async getAllGames(): Promise<Game[]>
+    {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.all('SELECT * FROM games');
+        return result;
     }
 }
 

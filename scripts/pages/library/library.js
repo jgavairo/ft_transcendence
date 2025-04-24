@@ -7,11 +7,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { gameList } from "./gameStoreList.js";
-import { UserLibraryManager } from "./userLibrary.js";
-import { gameModalHTML } from "../scripts/sourcepage.js";
-import { displayMenu } from './games/pong/pongGame.js';
-import { LoginManager } from "./loginModal.js";
+import { UserLibraryManager } from "../../managers/userLibrary.js";
+import { gameModalHTML } from "../../sourcepage.js";
+import { displayMenu } from '../../games/pong/pongGame.js';
+import { LoginManager } from "../../managers/loginManager.js";
+import { GameManager } from "../../managers/gameManager.js";
 let activedinlist = false;
 export function setupLibrary() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -38,6 +38,7 @@ export function setupLibrary() {
 }
 function renderLibrary(query) {
     return __awaiter(this, void 0, void 0, function* () {
+        const gameList = yield GameManager.getGameList();
         const libraryList = document.querySelector('.library-games-list');
         const detailsContainer = document.querySelector('.library-details');
         if (!libraryList || !detailsContainer)

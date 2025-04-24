@@ -7,10 +7,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML } from '../scripts/sourcepage.js';
-import { MainApp } from './main.js';
-import api from './api.js';
-import { showErrorNotification, showNotification } from './notifications.js';
+import { profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML } from '../../sourcepage.js';
+import { MainApp } from '../../main.js';
+import api from '../../helpers/api.js';
+import { showErrorNotification, showNotification } from '../../helpers/notifications.js';
 export function setupProfileModal() {
     return __awaiter(this, void 0, void 0, function* () {
         const modal = document.getElementById('optionnalModal');
@@ -22,14 +22,14 @@ export function setupProfileModal() {
         const closeButton = document.getElementById('closeProfileModal');
         if (closeButton) {
             closeButton.addEventListener('click', () => {
-                modal.innerHTML = ''; // Vide complètement le contenu de la modal
+                modal.innerHTML = '';
             });
         }
         const overlay = document.getElementById('modalOverlay');
         if (overlay) {
             overlay.addEventListener('click', (event) => {
-                if (event.target === overlay) { // Vérifie que le clic est sur l'overlay
-                    modal.innerHTML = ''; // Vide complètement le contenu de la modal
+                if (event.target === overlay) {
+                    modal.innerHTML = '';
                 }
             });
         }

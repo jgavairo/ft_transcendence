@@ -7,49 +7,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import api from "./api.js";
-import { MainApp } from "./main.js";
-import { showNotification, showErrorNotification } from "./notifications.js";
-import { setupProfileButton } from "./navigation.js";
-const loginModalHTML = `
-    <div class="modal-overlay" id="modalWindow">
-        <div class="login-modal" id="login-modal">
-            <h2>ft_transcendence</h2>
-            <form id="loginForm" class = "login-form">
-                <input type="text" id="username" placeholder="Username" required>
-                <input type="password" id="password" placeholder="Password" required>
-                </form>
-            <button id="loginButton" class="loginButton">Sign in</button>
-            <button id="googleSignIn" class="googleButton">
-                    <img src="../../assets/google.png" class="googleLogo" alt="Google logo">
-                    Sign in with Google
-            </button>
-            <div class="registerContainer">
-                you don't have an account? 
-                <button id="registerButton" class="registerButton">Sign up</button>
-            </div>
-        </div>
-    </div>
-`;
-const registerModalHTML = `
-            <div class="registerModalTitle">
-                <button id="cancelButton" class="cancelButton">Cancel</button>
-                <h2>Sign up</h2>
-            </div>
-            <form id="registerForm" class = "register-form">
-                <input type="text" id="Rusername" placeholder="Username" required>
-                <input type="password" id="Rpassword" placeholder="Password" required>
-                <input type="password" id="RconfirmPassword" placeholder="confirm password" required>
-                <input type="email" id="Remail" placeholder="Email" required>
-            </form>
-            <button id="registerRequestButton" class="signupButton">Sign up</button>
-`;
-function googleSignInHandler() {
-    return __awaiter(this, void 0, void 0, function* () {
-        console.log("google sign in handler");
-    });
-}
+import { loginModalHTML, registerModalHTML } from "../sourcepage.js";
+import { MainApp } from "../main.js";
+import { showNotification, showErrorNotification } from "../helpers/notifications.js";
+import api from "../helpers/api.js";
+import { setupProfileButton } from "../header/navigation.js";
+import { googleSignInHandler } from "../modals/login/googleSignIn.js";
 export class LoginManager {
+    static removeLoginModal() {
+        const modal = document.getElementById('optionnalModal');
+        if (modal)
+            modal.innerHTML = "";
+        showNotification("Logged in successfully");
+    }
     static isLoggedIn() {
         return __awaiter(this, void 0, void 0, function* () {
             const data = yield MainApp.checkAuth();
@@ -160,12 +130,6 @@ export class LoginManager {
                 });
             });
         });
-    }
-    static removeLoginModal() {
-        const modal = document.getElementById('optionnalModal');
-        if (modal)
-            modal.innerHTML = "";
-        showNotification("Logged in successfully");
     }
 }
 LoginManager.AUTH_KEY = "isauthed";

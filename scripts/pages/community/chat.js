@@ -86,6 +86,7 @@ export function setupChat() {
         // Connecter le client au serveur Socket.IO
         const socket = io('http://127.0.0.1:3000/chat', {
             transports: ['websocket', 'polling'],
+            withCredentials: true,
             reconnection: true,
             reconnectionAttempts: 5,
             reconnectionDelay: 1000
