@@ -3,10 +3,9 @@ import { gameModalHTML } from "../../sourcepage.js"
 import { displayMenu } from '../../games/pong/pongGame.js';
 import { LoginManager } from "../../managers/loginManager.js";
 import { GameManager } from "../../managers/gameManager.js";
+import { fetchUsernames } from "../community/peopleList.js";
 
 let activedinlist = false;
-
-
 
 export async function setupLibrary(): Promise<void> 
 {
@@ -121,9 +120,12 @@ async function renderLibrary(query: string): Promise<void> {
   });
 }
 
-function showGameDetails(game: any): void {
+async function showGameDetails(game: any): Promise<void> {
   const detailsContainer = document.querySelector('.library-details') as HTMLElement;
   if (!detailsContainer) return;
+
+  // Récupérer la liste des utilisateurs
+  const people = await fetchUsernames();
 
   detailsContainer.innerHTML = `
     <div class="detail-container">
@@ -149,21 +151,20 @@ function showGameDetails(game: any): void {
           </ul>
         </div>
         <div class="friendsContainer">
-          <h3 class="sectionTitle">Friends Online</h3>
+          <h3 class="sectionTitle">People List</h3>
           <ul class="friendsList">
-            <li class="friendItem">
-              <img src="/assets/pp.png" class="profilePic">
-              <span class="friendName">LPR</span>
-            </li>
-            <li class="friendItem">
-              <img src="/assets/pp.png" class="profilePic">
-              <span class="friendName">Francis</span>
-            </li>
+            ${people.map(person => `
+              <li class="friendItem">
+                <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic">
+                <span class="friendName">${person.username}</span>
+              </li>
+            `).join('')}
           </ul>
         </div>
       </div>
     </div>
   `;
+
   const closeButton = detailsContainer.querySelector('.close-button') as HTMLButtonElement;
   closeButton.addEventListener('click', () => {
     setupLibrary();
