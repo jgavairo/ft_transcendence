@@ -12,6 +12,7 @@ import { gameModalHTML } from "../../sourcepage.js";
 import { displayMenu } from '../../games/pong/pongGame.js';
 import { LoginManager } from "../../managers/loginManager.js";
 import { GameManager } from "../../managers/gameManager.js";
+import { fetchUsernames } from "../community/peopleList.js";
 let activedinlist = false;
 export function setupLibrary() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -121,10 +122,13 @@ function renderLibrary(query) {
     });
 }
 function showGameDetails(game) {
-    const detailsContainer = document.querySelector('.library-details');
-    if (!detailsContainer)
-        return;
-    detailsContainer.innerHTML = `
+    return __awaiter(this, void 0, void 0, function* () {
+        const detailsContainer = document.querySelector('.library-details');
+        if (!detailsContainer)
+            return;
+        // Récupérer la liste des utilisateurs
+        const people = yield fetchUsernames();
+        detailsContainer.innerHTML = `
     <div class="detail-container">
       <div class="detail-image">
         <button class="close-button">&times;</button>
@@ -148,41 +152,40 @@ function showGameDetails(game) {
           </ul>
         </div>
         <div class="friendsContainer">
-          <h3 class="sectionTitle">Friends Online</h3>
+          <h3 class="sectionTitle">People List</h3>
           <ul class="friendsList">
-            <li class="friendItem">
-              <img src="/assets/pp.png" class="profilePic">
-              <span class="friendName">LPR</span>
-            </li>
-            <li class="friendItem">
-              <img src="/assets/pp.png" class="profilePic">
-              <span class="friendName">Francis</span>
-            </li>
+            ${people.map(person => `
+              <li class="friendItem">
+                <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic">
+                <span class="friendName">${person.username}</span>
+              </li>
+            `).join('')}
           </ul>
         </div>
       </div>
     </div>
   `;
-    const closeButton = detailsContainer.querySelector('.close-button');
-    closeButton.addEventListener('click', () => {
-        setupLibrary();
-    });
-    const playButton = document.getElementById('launchGameButton');
-    if (!playButton)
-        return;
-    playButton.addEventListener('click', () => {
-        const target = document.getElementById('optionnalModal');
-        if (!target)
+        const closeButton = detailsContainer.querySelector('.close-button');
+        closeButton.addEventListener('click', () => {
+            setupLibrary();
+        });
+        const playButton = document.getElementById('launchGameButton');
+        if (!playButton)
             return;
-        target.innerHTML = gameModalHTML;
-        displayMenu();
-        window.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                const target = document.getElementById('optionnalModal');
-                if (target) {
-                    target.innerHTML = '';
+        playButton.addEventListener('click', () => {
+            const target = document.getElementById('optionnalModal');
+            if (!target)
+                return;
+            target.innerHTML = gameModalHTML;
+            displayMenu();
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    const target = document.getElementById('optionnalModal');
+                    if (target) {
+                        target.innerHTML = '';
+                    }
                 }
-            }
+            });
         });
     });
 }
