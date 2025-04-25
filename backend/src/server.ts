@@ -65,7 +65,11 @@ await app.register(fastifySocketIO, {
     allowEIO3: true
     })
 
-// Créer le dossier pour les uploads s'il n'existe pas
+app.io.on('connection', socket => {
+    console.log('Default namespace connected:', socket.id);
+    });
+
+    // Créer le dossier pour les uploads s'il n'existe pas
 const uploadDir = 'uploads/profile_pictures';
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -170,24 +174,6 @@ gameNs.on("connection", (socket: Socket) => {
         console.log(`Player ${socket.id} joined matchmaking.`, playerData);
         matchmakingQueue.push({ id: socket.id, username: playerData.username });
         attemptMatch();
-    });
-    
-    // Gestion des messages de chat
-    socket.on("sendMessage", async (messageData: { author: string, content: string }) => {
-        console.log(`Message received from ${messageData.author}: ${messageData.content}`);
-        
-        // Ajouter l'ID du socket à l'objet messageData
-        const messageWithId = { ...messageData, senderId: socket.id };
-        
-        // Sauvegarder le message dans la base de données
-        try {
-            await dbManager.saveMessage(messageData.author, messageData.content);
-        } catch (error) {
-            console.error("Error saving message to database:", error);
-        }
-
-        // Diffuser le message à tous les utilisateurs connectés
-        gameNs.emit("receiveMessage", messageWithId);
     });
 
     socket.on("movePaddle", (data: { paddle: "left" | "right"; direction: "up" | "down" | null }) => {
