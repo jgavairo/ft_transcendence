@@ -633,8 +633,10 @@ body
 	transition: 0.3s;
 }
 
-/* Bouton "Close" */
-.closeProfileModal {
+.closeProfileModal 
+{
+    position: relative;
+    left: 95%;
     font-weight: bold;
     color: #8d8d8d;
     cursor: pointer;
@@ -644,6 +646,29 @@ body
     transition: color 0.3s ease;
 }
 
+.closeProfileModalPicture 
+{
+    font-weight: bold;
+    color: #8d8d8d;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    transition: color 0.3s ease;
+}
+
+.closeProfileModalPassword 
+{
+    position: relative;
+    left: 40%;
+    font-weight: bold;
+    color: #8d8d8d;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    transition: color 0.3s ease;
+}
 .changePassword-modal
 {
 	border-radius: 10px;

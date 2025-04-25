@@ -3,6 +3,7 @@ import fastifyExpress from '@fastify/express';
 import fastifyCors from '@fastify/cors'
 import fastifyStatic from '@fastify/static'
 import fastifyCookie from '@fastify/cookie'
+import fastifyMultipart from '@fastify/multipart'
 import fastifySocketIO from 'fastify-socket.io'
 import { FastifyRequest, FastifyReply } from 'fastify';
 import type { Socket } from 'socket.io'
@@ -39,6 +40,15 @@ await app.register(fastifyCors, {
     methods: ['GET','POST','PUT','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type','Authorization','Cookie'],
     exposedHeaders: ['Set-Cookie']
+});
+
+await app.register(fastifyMultipart, {
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+        fieldNameSize: 200,
+        fieldSize: 200,
+        fields: 10
+    }
 });
 
 await app.register(fastifyCookie, {
