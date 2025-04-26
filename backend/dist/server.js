@@ -1,23 +1,17 @@
 import fastify from 'fastify';
 import fastifyExpress from '@fastify/express';
 import fastifyCors from '@fastify/cors';
-import fastifyStatic from '@fastify/static';
 import fastifyCookie from '@fastify/cookie';
-import fastifyMultipart from '@fastify/multipart';
 import fastifySocketIO from 'fastify-socket.io';
 import { dbManager } from "./database/database.js";
 import { userRoutes } from "./routes/user.js";
 import { authRoutes } from "./routes/authentification.js";
+import { profileRoutes } from './routes/profile.js';
 import { startMatch } from "./games/pong/gameSimulation.js";
 import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { authMiddleware } from './middleware/auth.js';
 import { chatRoutes } from './routes/chat.js';
 import { gameRoutes } from './routes/game.js';
-// Obtenir l'équivalent de __dirname pour les modules ES
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 export const JWT_SECRET = process.env.JWT_SECRET || '';
 // Créer l'application Fastify
 const app = fastify({
@@ -34,14 +28,6 @@ await app.register(fastifyCors, {
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
     exposedHeaders: ['Set-Cookie']
 });
-await app.register(fastifyMultipart, {
-    limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB
-        fieldNameSize: 200,
-        fieldSize: 200,
-        fields: 10
-    }
-});
 await app.register(fastifyCookie, {
     secret: JWT_SECRET,
     parseOptions: {
@@ -50,10 +36,6 @@ await app.register(fastifyCookie, {
         sameSite: 'lax',
         path: '/'
     }
-});
-await app.register(fastifyStatic, {
-    root: path.join(__dirname, '..', 'uploads'),
-    prefix: '/uploads/'
 });
 await app.register(fastifySocketIO, {
     cors: {
@@ -108,10 +90,10 @@ app.post('/api/user/addGame', { preHandler: authMiddleware }, async (request, re
 // PROFILE ROUTES //
 ////////////////////
 app.post('/api/profile/changePicture', { preHandler: authMiddleware }, async (request, reply) => {
-    return userRoutes.changePicture(request, reply);
+    return profileRoutes.changePicture(request, reply);
 });
 app.post('/api/profile/updateBio', { preHandler: authMiddleware }, async (request, reply) => {
-    return userRoutes.updateBio(request, reply);
+    return profileRoutes.updateBio(request, reply);
 });
 /////////////////
 // CHAT ROUTES //
@@ -135,14 +117,15 @@ const matchStates = new Map();
 let matchmakingQueue = [];
 // Gestion des connexions Socket.IO
 gameNs.on("connection", (socket) => {
-    console.log(`Client connected: ${socket.id}`);
     socket.on('startSolo', ({ username }) => {
-        const match = startMatch({ id: socket.id, username }, { id: socket.id, username }, gameNs);
+        const match = startMatch(socket, socket, gameNs);
+        matchStates.set(match.roomId, match);
         socket.emit('matchFound', { roomId: match.roomId });
     });
-    socket.on("joinQueue", (playerData) => {
-        console.log(`Player ${socket.id} joined matchmaking.`, playerData);
-        matchmakingQueue.push({ id: socket.id, username: playerData.username });
+    socket.on('joinQueue', ({ username }) => {
+        // 1) On inscrit ce joueur dans la file
+        matchmakingQueue.push({ id: socket.id, username });
+        // 2) On tente d'associer deux joueurs
         attemptMatch();
     });
     socket.on("movePaddle", (data) => {
@@ -161,20 +144,19 @@ gameNs.on("connection", (socket) => {
         }
     });
     socket.on("disconnect", () => {
-        console.log(`Client disconnected: ${socket.id}`);
         matchmakingQueue = matchmakingQueue.filter(player => player.id !== socket.id);
     });
 });
 //connecter deux joueurs
 function attemptMatch() {
-    if (matchmakingQueue.length >= 2) {
+    while (matchmakingQueue.length >= 2) {
         const player1 = matchmakingQueue.shift();
         const player2 = matchmakingQueue.shift();
-        if (player1 && player2) {
-            console.log(`Match found: ${player1.id} vs ${player2.id}`);
-            const matchState = startMatch(player1, player2, gameNs);
-            matchStates.set(matchState.roomId, matchState);
-        }
+        console.log(`Match found: ${player1.id} vs ${player2.id}`);
+        const matchState = startMatch(gameNs.sockets.get(player1.id), gameNs.sockets.get(player2.id), gameNs);
+        matchStates.set(matchState.roomId, matchState);
+        gameNs.to(player1.id).emit('matchFound', { roomId: matchState.roomId });
+        gameNs.to(player2.id).emit('matchFound', { roomId: matchState.roomId });
     }
 }
 ////////////////////////////////////////////
@@ -188,9 +170,7 @@ const start = async () => {
         // Gestion des événements Socket.IO
         const chatNs = app.io.of('/chat');
         chatNs.on('connection', (socket) => {
-            console.log('Client connected:', socket.id);
             socket.on('sendMessage', async (data, callback) => {
-                console.log('Message received:', data);
                 try {
                     // Sauvegarder le message dans la base de données
                     await dbManager.saveMessage(data.author, data.content);

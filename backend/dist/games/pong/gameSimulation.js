@@ -12,11 +12,11 @@ const INITIAL_LIVES = 5;
  * Démarre le match entre deux joueurs et lance la boucle de simulation.
  * Retourne l'état initial du match pour pouvoir le stocker.
  */
-export function startMatch(player1, player2, io) {
-    // Créer une room unique
-    const roomId = `${player1.id}_${player2.id}`;
-    io.sockets.sockets.get(player1.id)?.join(roomId);
-    io.sockets.sockets.get(player2.id)?.join(roomId);
+export function startMatch(sock1, sock2, nsp) {
+    const roomId = `${sock1.id}_${sock2.id}`;
+    // 1️⃣ On fait réellement le join
+    sock1.join(roomId);
+    sock2.join(roomId);
     // Initialiser l'état du match
     const matchState = {
         roomId,
@@ -33,17 +33,18 @@ export function startMatch(player1, player2, io) {
         leftPaddleDirection: null,
         rightPaddleDirection: null,
     };
+    nsp.to(roomId).volatile.emit('gameState', matchState);
     // Lancer la boucle de jeu côté serveur
     const intervalId = setInterval(() => {
         if (matchState.gameOver) {
             clearInterval(intervalId);
-            io.to(roomId).emit('gameOver', {
-                winner: (matchState.leftLives <= 0 ? player2.username : player1.username)
+            nsp.to(roomId).emit('gameOver', {
+                winner: (matchState.leftLives <= 0 ? sock2.id : sock1.id)
             });
             return;
         }
         updateGameState(matchState);
-        io.to(roomId).volatile.emit('gameState', matchState);
+        nsp.to(roomId).volatile.emit('gameState', matchState);
     }, 1000 / TICK_RATE);
     return matchState;
 }

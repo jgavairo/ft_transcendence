@@ -1,13 +1,8 @@
-import fastify, { FastifyRequest, FastifyReply } from 'fastify';
-import fs from 'fs';
-import jwt from 'jsonwebtoken';
+import { FastifyRequest, FastifyReply } from 'fastify';
 import { dbManager } from "../database/database.js";
-import { JWT_SECRET } from "../server.js";
-import { authRoutes } from './authentification.js';
 import { authMiddleware } from '../middleware/auth.js';
-import path from 'path';
 
-interface AuthenticatedRequest extends FastifyRequest
+export interface AuthenticatedRequest extends FastifyRequest
 {
     user: 
     {
@@ -98,83 +93,6 @@ const addGameHandler = async (request: FastifyRequest, reply: FastifyReply) =>
     }
 };
 
-const changePictureHandler = async (request: FastifyRequest, reply: FastifyReply) => 
-{
-    try {
-        const data = await request.file();
-        if (!data) {
-            return reply.code(400).send({ success: false, message: 'No file uploaded' });
-        }
-
-        // Vérification du type de fichier
-        if (!data.mimetype.startsWith('image/')) {
-            return reply.code(400).send({ 
-                success: false, 
-                message: 'Only image files are allowed' 
-            });
-        }
-
-        // Création du dossier uploads s'il n'existe pas
-        const uploadDir = path.join(__dirname, '../../uploads');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
-        // Utilisation de l'ID de l'utilisateur comme nom de fichier
-        const userId = (request as AuthenticatedRequest).user.id;
-        const fileExtension = path.extname(data.filename);
-        const filename = `${userId}${fileExtension}`;
-        const filepath = path.join(uploadDir, filename);
-
-        // Suppression de l'ancienne image si elle existe
-        if (fs.existsSync(filepath)) {
-            fs.unlinkSync(filepath);
-        }
-
-        // Écriture du nouveau fichier
-        await data.file.pipe(fs.createWriteStream(filepath));
-
-        // Mise à jour du chemin dans la base de données
-        const relativePath = `/uploads/${filename}`;
-        await dbManager.changeUserPicture(userId, relativePath);
-
-        return reply.send({ 
-            success: true, 
-            message: 'Profile picture updated successfully',
-            path: relativePath
-        });
-
-    } catch (error) {
-        console.error('Error uploading file:', error);
-        return reply.code(500).send({ 
-            success: false, 
-            message: 'Error uploading file' 
-        });
-    }
-};
-
-const updateBioHandler = async (request: FastifyRequest, reply: FastifyReply) => 
-{
-    try 
-    {
-        await authMiddleware(request as AuthenticatedRequest, reply);
-        await dbManager.updateUserBio((request as AuthenticatedRequest).user.id, (request.body as { bio: string }).bio);
-        return reply.send
-        ({
-            success: true,
-            message: "Bio mise à jour"
-        });
-    } 
-    catch (error) 
-    {
-        console.error("Erreur détaillée:", error);
-        return reply.status(500).send({
-            success: false,
-            message: "Erreur serveur"
-        });
-    }
-};
-
 const getAllUsersHandler = async (request: FastifyRequest, reply: FastifyReply) => 
 {
     try 
@@ -202,6 +120,4 @@ export const userRoutes =
     getUserLibrary: getUserLibraryHandler,
     getAllUsers: getAllUsersHandler,
     addGame: addGameHandler,
-    changePicture: changePictureHandler,
-    updateBio: updateBioHandler
 };
