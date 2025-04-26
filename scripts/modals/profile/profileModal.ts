@@ -2,6 +2,7 @@ import {profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML} from '
 import { MainApp } from '../../main.js'
 import api from '../../helpers/api.js'
 import { showErrorNotification, showNotification } from '../../helpers/notifications.js';
+import { setupProfileButton } from '../../header/navigation.js';
 
 
 export async function setupProfileModal() {
@@ -89,9 +90,11 @@ function changePassword()
         console.log('sendNewPasswordButton clicked');
     });
 }
-function setupChangeProfilePictureModal() {
+function setupChangeProfilePictureModal() 
+{
     const profileModal = document.getElementById('profile-modal');
-    if (!profileModal) return;
+    if (!profileModal)
+        return;
 
     profileModal.innerHTML = uploadPictureFormHTML;
 
@@ -99,7 +102,7 @@ function setupChangeProfilePictureModal() {
     const backArrow = document.getElementById('backToProfileSettings');
     if (backArrow) {
         backArrow.addEventListener('click', () => {
-            setupProfileModal(); // Retourne aux Profile Settings
+            setupProfileModal();
         });
     }
 
@@ -129,6 +132,17 @@ function setupChangeProfilePictureModal() {
             if (data.success)
             {
                 showNotification('Profile picture updated successfully.');
+                // Mettre à jour uniquement l'image dans le header
+                const timestamp = Date.now();
+                const headerProfilePicture = document.querySelector('.profile .profilePicture') as HTMLImageElement;
+                if (headerProfilePicture) {
+                    headerProfilePicture.src = `${data.path}?t=${timestamp}`;
+                }
+                // Mettre à jour l'image dans la modal
+                const modalProfilePicture = document.querySelector('.pictureProfileModal') as HTMLImageElement;
+                if (modalProfilePicture) {
+                    modalProfilePicture.src = `${data.path}?t=${timestamp}`;
+                }
                 setupProfileModal();
             }
             else
@@ -141,8 +155,5 @@ function setupChangeProfilePictureModal() {
             console.error('Error changing profile picture:', error);
             showErrorNotification('Failed to change profile picture.');
         }
-
-        showNotification('Picture Button Clicked');
-        
     });
 }

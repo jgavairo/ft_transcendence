@@ -1,26 +1,21 @@
 import fastify from 'fastify';
 import fastifyExpress from '@fastify/express';
 import fastifyCors from '@fastify/cors'
-import fastifyStatic from '@fastify/static'
 import fastifyCookie from '@fastify/cookie'
-import fastifyMultipart from '@fastify/multipart'
 import fastifySocketIO from 'fastify-socket.io'
 import { FastifyRequest, FastifyReply } from 'fastify';
 import type { Socket } from 'socket.io'
 import { dbManager } from "./database/database.js";
 import { userRoutes } from "./routes/user.js";
 import { authRoutes } from "./routes/authentification.js";
+import { profileRoutes } from './routes/profile.js';
 import { startMatch, MatchState } from "./games/pong/gameSimulation.js";
 import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { authMiddleware } from './middleware/auth.js';
 import { chatRoutes } from './routes/chat.js';
 import { gameRoutes } from './routes/game.js';
+import fastifyMultipart from '@fastify/multipart';
 
-// Obtenir l'équivalent de __dirname pour les modules ES
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const JWT_SECRET = process.env.JWT_SECRET || ''
 
@@ -42,9 +37,10 @@ await app.register(fastifyCors, {
     exposedHeaders: ['Set-Cookie']
 });
 
+// Configuration Multipart pour l'upload de fichiers
 await app.register(fastifyMultipart, {
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB
+        fileSize: 5 * 1024 * 1024, // 5MB
         fieldNameSize: 200,
         fieldSize: 200,
         fields: 10
@@ -60,11 +56,6 @@ await app.register(fastifyCookie, {
         path: '/'
     }
 });
-
-await app.register(fastifyStatic, {
-    root: path.join(__dirname, '..', 'uploads'),
-    prefix: '/uploads/'
-}); 
 
 await app.register(fastifySocketIO, {
     cors: {
@@ -135,11 +126,11 @@ app.post('/api/user/addGame', { preHandler: authMiddleware }, async (request: Fa
 ////////////////////
 
 app.post('/api/profile/changePicture', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
-    return userRoutes.changePicture(request, reply);
+    return profileRoutes.changePicture(request, reply);
 });
 
 app.post('/api/profile/updateBio', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
-    return userRoutes.updateBio(request, reply);
+    return profileRoutes.updateBio(request, reply);
 });
 
 /////////////////
@@ -178,11 +169,9 @@ let matchmakingQueue: Player[] = [];
 
 // Gestion des connexions Socket.IO
 gameNs.on("connection", (socket: Socket) => {
-    console.log(`Client connected: ${socket.id}`);
     
 
     socket.on('startSolo', ({ username }) => {
-        console.log('🟢 startSolo reçu pour', socket.id);
         const match = startMatch(socket, socket, gameNs);
         matchStates.set(match.roomId, match);
 
@@ -190,7 +179,6 @@ gameNs.on("connection", (socket: Socket) => {
       });
     
       socket.on('joinQueue', ({ username }) => {
-        console.log(`🟢 joinQueue reçu pour ${socket.id} (${username})`);
         // 1) On inscrit ce joueur dans la file
         matchmakingQueue.push({ id: socket.id, username });
         // 2) On tente d'associer deux joueurs
@@ -213,7 +201,6 @@ gameNs.on("connection", (socket: Socket) => {
         }
     })
     socket.on("disconnect", () => {
-        console.log(`Client disconnected: ${socket.id}`);
         matchmakingQueue = matchmakingQueue.filter(player => player.id !== socket.id);
     });
 });
@@ -252,10 +239,8 @@ const start = async () => {
         // Gestion des événements Socket.IO
         const chatNs = app.io.of('/chat');
         chatNs.on('connection', (socket: Socket) => {
-            console.log('Client connected:', socket.id);
 
             socket.on('sendMessage', async (data, callback) => {
-                console.log('Message received:', data);
                 try {
                     // Sauvegarder le message dans la base de données
                     await dbManager.saveMessage(data.author, data.content);

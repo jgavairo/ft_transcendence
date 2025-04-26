@@ -101,7 +101,7 @@ function setupChangeProfilePictureModal() {
     const backArrow = document.getElementById('backToProfileSettings');
     if (backArrow) {
         backArrow.addEventListener('click', () => {
-            setupProfileModal(); // Retourne aux Profile Settings
+            setupProfileModal();
         });
     }
     const submitButton = document.getElementById('sendPictureButton');
@@ -124,6 +124,32 @@ function setupChangeProfilePictureModal() {
             const data = yield response.json();
             if (data.success) {
                 showNotification('Profile picture updated successfully.');
+                const timestamp = Date.now();
+                const newImagePath = `${data.path}?t=${timestamp}`;
+                // Mettre à jour l'image dans le header
+                const headerProfilePicture = document.querySelector('.profile .profilePicture');
+                if (headerProfilePicture) {
+                    headerProfilePicture.src = newImagePath;
+                }
+                // Mettre à jour l'image dans la modal
+                const modalProfilePicture = document.querySelector('.pictureProfileModal');
+                if (modalProfilePicture) {
+                    modalProfilePicture.src = newImagePath;
+                }
+                // Mettre à jour les images dans le chat
+                const chatProfilePictures = document.querySelectorAll('.chat-profile-picture');
+                chatProfilePictures.forEach(img => {
+                    if (img.alt.includes('profile picture')) {
+                        img.src = newImagePath;
+                    }
+                });
+                // Mettre à jour les images dans la liste des personnes
+                const peopleListProfilePictures = document.querySelectorAll('.profile-card-picture');
+                peopleListProfilePictures.forEach(img => {
+                    if (img.alt.includes('profile picture')) {
+                        img.src = newImagePath;
+                    }
+                });
                 setupProfileModal();
             }
             else {
@@ -134,6 +160,5 @@ function setupChangeProfilePictureModal() {
             console.error('Error changing profile picture:', error);
             showErrorNotification('Failed to change profile picture.');
         }
-        showNotification('Picture Button Clicked');
     }));
 }
