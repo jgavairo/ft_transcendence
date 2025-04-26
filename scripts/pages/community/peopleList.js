@@ -1,109 +1,96 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 const STORAGE_KEY = "people";
-export function fetchUsernames() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const response = yield fetch('http://127.0.0.1:3000/api/users', {
-                credentials: 'include'
-            });
-            const data = yield response.json();
-            if (data.success) {
-                return data.users; // Retourne les utilisateurs avec leurs bios
-            }
-            else {
-                console.error('Failed to fetch usernames:', data.message);
-                return [];
-            }
-        }
-        catch (error) {
-            console.error('Error fetching usernames:', error);
-            return [];
-        }
-    });
-}
-export function renderPeopleList() {
-    return __awaiter(this, arguments, void 0, function* (filter = "") {
-        var _a;
-        const container = document.getElementById("friendList");
-        if (!container) {
-            console.error("❌ #friendList introuvable");
-            return;
-        }
-        const friends = getFriendsFromStorage();
-        const people = yield fetchUsernames();
-        // Récupérer l'utilisateur connecté (par exemple, depuis un token ou une API)
-        const response = yield fetch('http://127.0.0.1:3000/api/user/infos', {
+export async function fetchUsernames() {
+    try {
+        const response = await fetch('http://127.0.0.1:3000/api/users', {
             credentials: 'include'
         });
-        const currentUser = yield response.json();
-        const currentUsername = (_a = currentUser === null || currentUser === void 0 ? void 0 : currentUser.user) === null || _a === void 0 ? void 0 : _a.username;
-        // Filtrer les utilisateurs pour exclure l'utilisateur connecté
-        const filtered = people.filter(person => person.username.toLowerCase().includes(filter.toLowerCase()) &&
-            person.username !== currentUsername // Exclure l'utilisateur connecté
-        );
-        container.innerHTML = "";
-        filtered.forEach(person => {
-            const isFriend = friends.includes(person.username);
-            const div = document.createElement("div");
-            div.className = "friend-item";
-            // Conteneur pour l'image de profil avec effet hover
-            const profileContainer = document.createElement("div");
-            profileContainer.className = "profile-picture-container";
-            // Ajouter l'image de profil
-            const img = document.createElement("img");
-            img.className = "profile-picture";
-            img.src = person.profile_picture || "default-profile.png";
-            img.alt = `${person.username}'s profile picture`;
-            // Ajouter la couche de survol
-            const overlay = document.createElement("div");
-            overlay.className = "profile-picture-overlay";
-            const overlayText = document.createElement("span");
-            overlayText.textContent = "View";
-            overlay.appendChild(overlayText);
-            // Ajouter un événement pour afficher la carte "profil"
-            profileContainer.addEventListener("click", () => {
-                showProfileCard(person.username, person.profile_picture, person.email, person.bio);
-            });
-            // Ajouter les éléments au conteneur
-            profileContainer.appendChild(img);
-            profileContainer.appendChild(overlay);
-            // Ajouter le conteneur au div principal
-            div.appendChild(profileContainer);
-            const label = document.createElement("span");
-            label.className = "friend-name";
-            label.textContent = person.username;
-            const button = document.createElement("button");
-            button.className = `toggle-button ${isFriend ? "added" : ""}`;
-            button.setAttribute("data-name", person.username);
-            button.title = isFriend ? "Supprimer des amis" : "Ajouter comme ami";
-            button.textContent = isFriend ? "✖" : "＋";
-            button.addEventListener("click", () => {
-                const updatedFriends = getFriendsFromStorage();
-                if (updatedFriends.includes(person.username)) {
-                    removeFriend(person.username);
-                    button.textContent = "＋";
-                    button.classList.remove("added");
-                    button.title = "Ajouter comme ami";
-                }
-                else {
-                    addFriend(person.username);
-                    button.textContent = "✖";
-                    button.classList.add("added");
-                    button.title = "Supprimer des amis";
-                }
-            });
-            div.appendChild(label);
-            div.appendChild(button);
-            container.appendChild(div);
+        const data = await response.json();
+        if (data.success) {
+            return data.users; // Retourne les utilisateurs avec leurs bios
+        }
+        else {
+            console.error('Failed to fetch usernames:', data.message);
+            return [];
+        }
+    }
+    catch (error) {
+        console.error('Error fetching usernames:', error);
+        return [];
+    }
+}
+export async function renderPeopleList(filter = "") {
+    var _a;
+    const container = document.getElementById("friendList");
+    if (!container) {
+        console.error("❌ #friendList introuvable");
+        return;
+    }
+    const friends = getFriendsFromStorage();
+    const people = await fetchUsernames();
+    // Récupérer l'utilisateur connecté (par exemple, depuis un token ou une API)
+    const response = await fetch('http://127.0.0.1:3000/api/user/infos', {
+        credentials: 'include'
+    });
+    const currentUser = await response.json();
+    const currentUsername = (_a = currentUser === null || currentUser === void 0 ? void 0 : currentUser.user) === null || _a === void 0 ? void 0 : _a.username;
+    // Filtrer les utilisateurs pour exclure l'utilisateur connecté
+    const filtered = people.filter(person => person.username.toLowerCase().includes(filter.toLowerCase()) &&
+        person.username !== currentUsername // Exclure l'utilisateur connecté
+    );
+    container.innerHTML = "";
+    filtered.forEach(person => {
+        const isFriend = friends.includes(person.username);
+        const div = document.createElement("div");
+        div.className = "friend-item";
+        // Conteneur pour l'image de profil avec effet hover
+        const profileContainer = document.createElement("div");
+        profileContainer.className = "profile-picture-container";
+        // Ajouter l'image de profil
+        const img = document.createElement("img");
+        img.className = "profile-picture";
+        img.src = person.profile_picture || "default-profile.png";
+        img.alt = `${person.username}'s profile picture`;
+        // Ajouter la couche de survol
+        const overlay = document.createElement("div");
+        overlay.className = "profile-picture-overlay";
+        const overlayText = document.createElement("span");
+        overlayText.textContent = "View";
+        overlay.appendChild(overlayText);
+        // Ajouter un événement pour afficher la carte "profil"
+        profileContainer.addEventListener("click", () => {
+            showProfileCard(person.username, person.profile_picture, person.email, person.bio);
         });
+        // Ajouter les éléments au conteneur
+        profileContainer.appendChild(img);
+        profileContainer.appendChild(overlay);
+        // Ajouter le conteneur au div principal
+        div.appendChild(profileContainer);
+        const label = document.createElement("span");
+        label.className = "friend-name";
+        label.textContent = person.username;
+        const button = document.createElement("button");
+        button.className = `toggle-button ${isFriend ? "added" : ""}`;
+        button.setAttribute("data-name", person.username);
+        button.title = isFriend ? "Supprimer des amis" : "Ajouter comme ami";
+        button.textContent = isFriend ? "✖" : "＋";
+        button.addEventListener("click", () => {
+            const updatedFriends = getFriendsFromStorage();
+            if (updatedFriends.includes(person.username)) {
+                removeFriend(person.username);
+                button.textContent = "＋";
+                button.classList.remove("added");
+                button.title = "Ajouter comme ami";
+            }
+            else {
+                addFriend(person.username);
+                button.textContent = "✖";
+                button.classList.add("added");
+                button.title = "Supprimer des amis";
+            }
+        });
+        div.appendChild(label);
+        div.appendChild(button);
+        container.appendChild(div);
     });
 }
 export function removeFriend(name) {
