@@ -147,6 +147,21 @@ export class DatabaseManager
         return result;
     }
 
+    public async getUserPassword(userId: number): Promise<string>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const result = await this.db.get('SELECT password_hash FROM users WHERE id = ?', [userId]);
+        return result.password_hash;
+    }
+
+    public async updateUserPassword(userId: number, newPassword: string): Promise<void>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        await this.db.run('UPDATE users SET password_hash = ? WHERE id = ?', [newPassword, userId]);
+    }
+
     public async getUserLibrary(userId: number): Promise<number[]>
     {
         if (!this.db)
