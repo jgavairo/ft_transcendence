@@ -1,3 +1,5 @@
+import type { Socket, Namespace } from 'socket.io';
+
 export interface MatchState {
   roomId: string;
   leftPaddleY: number;
@@ -32,14 +34,14 @@ const INITIAL_LIVES = 5;
  */
 
 export function startMatch(
-  player1: { id: string; username: string },
-  player2: { id: string; username: string },
-  io: any
+  sock1: Socket,
+  sock2: Socket,
+  nsp: Namespace
 ): MatchState {
-  // Créer une room unique
-  const roomId = `${player1.id}_${player2.id}`;
-  io.sockets.sockets.get(player1.id)?.join(roomId);
-  io.sockets.sockets.get(player2.id)?.join(roomId);
+  const roomId = `${sock1.id}_${sock2.id}`;
+  // 1️⃣ On fait réellement le join
+  sock1.join(roomId);
+  sock2.join(roomId);
 
   // Initialiser l'état du match
   const matchState: MatchState = {
@@ -58,17 +60,19 @@ export function startMatch(
     rightPaddleDirection: null,
   };
 
+  nsp.to(roomId).volatile.emit('gameState', matchState);
+
   // Lancer la boucle de jeu côté serveur
   const intervalId = setInterval(() => {
     if (matchState.gameOver) {
       clearInterval(intervalId);
-      io.to(roomId).emit('gameOver', {
-        winner: (matchState.leftLives <= 0 ? player2.username : player1.username)
+      nsp.to(roomId).emit('gameOver', {
+        winner: (matchState.leftLives <= 0 ? sock2.id : sock1.id)
       });
       return;
     }
     updateGameState(matchState);
-    io.to(roomId).volatile.emit('gameState', matchState)
+    nsp.to(roomId).volatile.emit('gameState', matchState)
   }, 1000 / TICK_RATE);
 
   return matchState;

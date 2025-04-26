@@ -1,100 +1,82 @@
 import fastify from 'fastify';
 import fastifyExpress from '@fastify/express';
+import fastifyCors from '@fastify/cors';
+import fastifyStatic from '@fastify/static';
+import fastifyCookie from '@fastify/cookie';
+import fastifyMultipart from '@fastify/multipart';
+import fastifySocketIO from 'fastify-socket.io';
 import { dbManager } from "./database/database.js";
 import { userRoutes } from "./routes/user.js";
 import { authRoutes } from "./routes/authentification.js";
-import { Server as SocketIOServer } from "socket.io";
+import { startMatch } from "./games/pong/gameSimulation.js";
 import fs from 'fs';
-import multer from 'multer';
-import jwt from 'jsonwebtoken';
-import session from 'express-session';
-import passport from './config/passport.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from './middleware/auth.js';
+import { chatRoutes } from './routes/chat.js';
+import { gameRoutes } from './routes/game.js';
 // Obtenir l'équivalent de __dirname pour les modules ES
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-export const JWT_SECRET = process.env.JWT_SECRET || '6d239a75c7b0219b01411336aec34a4c10e9ff3e43d5382100eba4268c5bfa0572e90558e5367cb169de6d43a2e8542cd3643a5d0494c8ac192566a40e86d44c';
+export const JWT_SECRET = process.env.JWT_SECRET || '';
 // Créer l'application Fastify
 const app = fastify({
-    logger: true
+    logger: true,
+    bodyLimit: 10 * 1024 * 1024 // 10MB
 });
-// Configuration de multer pour les uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/profile_pictures');
-    },
-    filename: (req, file, cb) => {
-        const token = req.cookies.token;
-        const decoded = jwt.verify(token, JWT_SECRET);
-        cb(null, `${decoded.userId}.jpg`);
+// Fonction d'initialisation des plugins
+await app.register(fastifyExpress);
+// Configuration CORS
+await app.register(fastifyCors, {
+    origin: 'http://127.0.0.1:8080',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie']
+});
+await app.register(fastifyMultipart, {
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+        fieldNameSize: 200,
+        fieldSize: 200,
+        fields: 10
     }
 });
-const upload = multer({ storage: storage });
-// Fonction d'initialisation des plugins
-const initializePlugins = async () => {
-    await app.register(fastifyExpress);
-    // Configuration CORS améliorée
-    await app.register(import('@fastify/cors'), {
-        origin: true, // Permet toutes les origines en développement
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Cookie', 'Authorization'],
-        exposedHeaders: ['Set-Cookie'],
-        maxAge: 86400
-    });
-    await app.register(import('@fastify/cookie'), {
-        secret: JWT_SECRET,
-        parseOptions: {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/'
-        }
-    });
-    await app.register(import('@fastify/static'), {
-        root: path.join(__dirname, '..', 'uploads'),
-        prefix: '/uploads/'
-    });
-    await app.register(import('@fastify/multipart'), {
-        limits: {
-            fileSize: 5 * 1024 * 1024 // 5MB
-        }
-    });
-};
-// Configuration de la session Express
-app.addHook('onRequest', (request, reply, done) => {
-    const expressReq = request.raw;
-    const expressRes = reply.raw;
-    session({
-        secret: JWT_SECRET,
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000 // 24 heures
-        }
-    })(expressReq, expressRes, done);
+await app.register(fastifyCookie, {
+    secret: JWT_SECRET,
+    parseOptions: {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/'
+    }
 });
-// Initialisation de Passport
-app.addHook('onRequest', (request, reply, done) => {
-    const expressReq = request.raw;
-    const expressRes = reply.raw;
-    passport.initialize()(expressReq, expressRes, done);
+await app.register(fastifyStatic, {
+    root: path.join(__dirname, '..', 'uploads'),
+    prefix: '/uploads/'
 });
-app.addHook('onRequest', (request, reply, done) => {
-    const expressReq = request.raw;
-    const expressRes = reply.raw;
-    passport.session()(expressReq, expressRes, done);
+await app.register(fastifySocketIO, {
+    cors: {
+        origin: 'http://127.0.0.1:8080',
+        credentials: true
+    },
+    transports: ['websocket', 'polling'],
+    allowEIO3: true
+});
+app.io.on('connection', socket => {
+    console.log('Default namespace connected:', socket.id);
 });
 // Créer le dossier pour les uploads s'il n'existe pas
 const uploadDir = 'uploads/profile_pictures';
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
-// Routes d'authentification
+////////////////////////////////////////////
+//                 ROUTES                 //
+////////////////////////////////////////////
+/////////////////
+// AUTH ROUTES //
+/////////////////
 app.get("/api/auth/check", async (request, reply) => {
     return authRoutes.checkAuth(request, reply);
 });
@@ -104,104 +86,108 @@ app.post('/api/auth/register', async (request, reply) => {
 app.post('/api/auth/login', async (request, reply) => {
     return authRoutes.login(request, reply);
 });
-app.get("/api/auth/logout", async (request, reply) => {
+app.get("/api/auth/logout", { preHandler: authMiddleware }, async (request, reply) => {
     return authRoutes.logout(request, reply);
 });
-// Routes d'authentification Google
-app.get('/api/auth/google', async (request, reply) => {
-    return authRoutes.google(request, reply);
-});
-app.get('/api/auth/google/callback', async (request, reply) => {
-    return authRoutes.googleCallback(request, reply);
-});
-// Routes communautaires
+/////////////////
+// USER ROUTES //
+/////////////////
 app.get('/api/users', { preHandler: authMiddleware }, async (request, reply) => {
-    try {
-        const users = await dbManager.getAllUsernamesWithIds();
-        return reply.send({
-            success: true,
-            users: users
-        });
-    }
-    catch (error) {
-        console.error('Error fetching usernames:', error);
-        return reply.status(500).send({
-            success: false,
-            message: "Erreur lors de la récupération des utilisateurs"
-        });
-    }
+    return userRoutes.getAllUsers(request, reply);
 });
-// Routes protégées
 app.get('/api/user/infos', { preHandler: authMiddleware }, async (request, reply) => {
     return userRoutes.getInfos(request, reply);
 });
 app.get('/api/user/library', { preHandler: authMiddleware }, async (request, reply) => {
     return userRoutes.getUserLibrary(request, reply);
 });
-app.get('/api/getLibrary', { preHandler: authMiddleware }, async (request, reply) => {
-    return userRoutes.getUserLibrary(request, reply);
-});
 app.post('/api/user/addGame', { preHandler: authMiddleware }, async (request, reply) => {
     return userRoutes.addGame(request, reply);
 });
-app.post('/api/addGame', { preHandler: authMiddleware }, async (request, reply) => {
-    return userRoutes.addGame(request, reply);
-});
-app.get('/api/header', { preHandler: authMiddleware }, async (request, reply) => {
-    return userRoutes.getInfos(request, reply);
-});
-app.post('/api/profile/changePicture', {
-    preHandler: [authMiddleware, async (request, reply) => {
-            const file = await request.file();
-            if (!file) {
-                return reply.status(400).send({
-                    success: false,
-                    message: "Aucun fichier n'a été uploadé"
-                });
-            }
-        }]
-}, async (request, reply) => {
+////////////////////
+// PROFILE ROUTES //
+////////////////////
+app.post('/api/profile/changePicture', { preHandler: authMiddleware }, async (request, reply) => {
     return userRoutes.changePicture(request, reply);
 });
 app.post('/api/profile/updateBio', { preHandler: authMiddleware }, async (request, reply) => {
     return userRoutes.updateBio(request, reply);
 });
-// Route du chat
+/////////////////
+// CHAT ROUTES //
+/////////////////
 app.get('/api/chat/history', { preHandler: authMiddleware }, async (request, reply) => {
-    try {
-        const messages = await dbManager.getLastMessages(10);
-        return reply.send({ success: true, messages });
-    }
-    catch (error) {
-        console.error("Error fetching chat history:", error);
-        return reply.status(500).send({
-            success: false,
-            message: "Error fetching chat history"
-        });
-    }
+    return chatRoutes.getChatHistory(request, reply);
 });
-// Démarrage du serveur Fastify sur le port 3000
+/////////////////
+// GAME ROUTES //
+/////////////////
+app.get('/api/games/getAll', async (request, reply) => {
+    return gameRoutes.getAllGames(request, reply);
+});
+////////////////////////////////////////////////
+//                Matchmaking                 //
+////////////////////////////////////////////////
+const gameNs = app.io.of('/game');
+// Global map pour stocker l'état de chaque match par roomId
+const matchStates = new Map();
+// File d'attente des joueurs pour le matchmaking
+let matchmakingQueue = [];
+// Gestion des connexions Socket.IO
+gameNs.on("connection", (socket) => {
+    console.log(`Client connected: ${socket.id}`);
+    socket.on('startSolo', ({ username }) => {
+        const match = startMatch({ id: socket.id, username }, { id: socket.id, username }, gameNs);
+        socket.emit('matchFound', { roomId: match.roomId });
+    });
+    socket.on("joinQueue", (playerData) => {
+        console.log(`Player ${socket.id} joined matchmaking.`, playerData);
+        matchmakingQueue.push({ id: socket.id, username: playerData.username });
+        attemptMatch();
+    });
+    socket.on("movePaddle", (data) => {
+        const rooms = Array.from(socket.rooms);
+        const roomId = rooms.find(r => r !== socket.id);
+        if (!roomId)
+            return;
+        const matchState = matchStates.get(roomId);
+        if (!matchState)
+            return;
+        if (data.paddle === "left") {
+            matchState.leftPaddleDirection = data.direction;
+        }
+        else if (data.paddle === "right") {
+            matchState.rightPaddleDirection = data.direction;
+        }
+    });
+    socket.on("disconnect", () => {
+        console.log(`Client disconnected: ${socket.id}`);
+        matchmakingQueue = matchmakingQueue.filter(player => player.id !== socket.id);
+    });
+});
+//connecter deux joueurs
+function attemptMatch() {
+    if (matchmakingQueue.length >= 2) {
+        const player1 = matchmakingQueue.shift();
+        const player2 = matchmakingQueue.shift();
+        if (player1 && player2) {
+            console.log(`Match found: ${player1.id} vs ${player2.id}`);
+            const matchState = startMatch(player1, player2, gameNs);
+            matchStates.set(matchState.roomId, matchState);
+        }
+    }
+}
+////////////////////////////////////////////
+//              SERVER START              //
+////////////////////////////////////////////
 const start = async () => {
     try {
-        await initializePlugins();
         await dbManager.initialize();
-        // Démarrer le serveur Fastify
         await app.listen({ port: 3000, host: '0.0.0.0' });
-        console.log(`Fastify server is running on port 3000`);
-        // Configurer Socket.IO après que le serveur Fastify soit démarré
-        const io = new SocketIOServer(app.server, {
-            cors: {
-                origin: "*",
-                methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                credentials: true,
-                allowedHeaders: ["Content-Type", "Cookie", "Authorization"]
-            },
-            transports: ['websocket', 'polling'],
-            allowEIO3: true // Compatibilité avec les anciennes versions
-        });
-        console.log(`Socket.IO server is running`);
+        console.log('Fastify server + Socket.IO OK sur port 3000');
         // Gestion des événements Socket.IO
-        io.on('connection', (socket) => {
+        const chatNs = app.io.of('/chat');
+        chatNs.on('connection', (socket) => {
             console.log('Client connected:', socket.id);
             socket.on('sendMessage', async (data, callback) => {
                 console.log('Message received:', data);
@@ -209,7 +195,7 @@ const start = async () => {
                     // Sauvegarder le message dans la base de données
                     await dbManager.saveMessage(data.author, data.content);
                     // Diffuser le message à tous les clients connectés
-                    io.emit('receiveMessage', {
+                    socket.broadcast.emit('receiveMessage', {
                         author: data.author,
                         content: data.content,
                         timestamp: new Date().toISOString()

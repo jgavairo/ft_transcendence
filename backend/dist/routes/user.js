@@ -1,29 +1,17 @@
-import jwt from 'jsonwebtoken';
+import fs from 'fs';
 import { dbManager } from "../database/database.js";
-import { JWT_SECRET } from "../server.js";
+import { authMiddleware } from '../middleware/auth.js';
+import path from 'path';
 const getInfosHandler = async (request, reply) => {
     try {
-        const token = request.cookies.token;
-        console.log("getInfosHandler - Token:", token ? "Présent" : "Absent");
-        if (!token) {
-            console.log("getInfosHandler - Token absent, renvoi 401");
-            return reply.status(401).send({
-                success: false,
-                message: "Non authentifié"
-            });
-        }
-        const decoded = jwt.verify(token, JWT_SECRET);
-        console.log("getInfosHandler - Token décodé, userId:", decoded.userId);
-        const user = await dbManager.getUserById(decoded.userId);
-        console.log("getInfosHandler - Utilisateur trouvé:", user ? "Oui" : "Non");
+        await authMiddleware(request, reply);
+        const user = await dbManager.getUserById(request.user.id);
         if (!user) {
-            console.log("getInfosHandler - Utilisateur non trouvé, renvoi 404");
             return reply.status(404).send({
                 success: false,
-                message: "Utilisateur non trouvé"
+                message: "User not found"
             });
         }
-        console.log("getInfosHandler - Renvoi des informations utilisateur:", user);
         return reply.send({
             success: true,
             user: {
@@ -47,22 +35,8 @@ const getInfosHandler = async (request, reply) => {
 };
 const getUserLibraryHandler = async (request, reply) => {
     try {
-        const token = request.cookies.token;
-        if (!token) {
-            return reply.status(401).send({
-                success: false,
-                message: "Non authentifié"
-            });
-        }
-        const decoded = jwt.verify(token, JWT_SECRET);
-        const user = await dbManager.getUserById(decoded.userId);
-        if (!user) {
-            return reply.status(404).send({
-                success: false,
-                message: "Utilisateur non trouvé"
-            });
-        }
-        const library = await dbManager.getUserLibrary(decoded.userId);
+        await authMiddleware(request, reply);
+        const library = await dbManager.getUserLibrary(request.user.id);
         return reply.send({
             success: true,
             library: library
@@ -78,16 +52,8 @@ const getUserLibraryHandler = async (request, reply) => {
 };
 const addGameHandler = async (request, reply) => {
     try {
-        const token = request.cookies.token;
-        if (!token) {
-            return reply.status(401).send({
-                success: false,
-                message: "Non authentifié"
-            });
-        }
-        const decoded = jwt.verify(token, JWT_SECRET);
-        const { gameId } = request.body;
-        await dbManager.addGameToLibrary(decoded.userId, gameId);
+        await authMiddleware(request, reply);
+        await dbManager.addGameToLibrary(request.user.id, request.body.gameId);
         return reply.send({
             success: true,
             message: "Jeu ajouté à la bibliothèque"
@@ -103,51 +69,54 @@ const addGameHandler = async (request, reply) => {
 };
 const changePictureHandler = async (request, reply) => {
     try {
-        const token = request.cookies.token;
-        if (!token) {
-            return reply.status(401).send({
+        const data = await request.file();
+        if (!data) {
+            return reply.code(400).send({ success: false, message: 'No file uploaded' });
+        }
+        // Vérification du type de fichier
+        if (!data.mimetype.startsWith('image/')) {
+            return reply.code(400).send({
                 success: false,
-                message: "Non authentifié"
+                message: 'Only image files are allowed'
             });
         }
-        const decoded = jwt.verify(token, JWT_SECRET);
-        const file = await request.file();
-        if (!file) {
-            return reply.status(400).send({
-                success: false,
-                message: "Aucun fichier n'a été uploadé"
-            });
+        // Création du dossier uploads s'il n'existe pas
+        const uploadDir = path.join(__dirname, '../../uploads');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
         }
-        const buffer = await file.toBuffer();
-        const filename = `${decoded.userId}.jpg`;
-        const filepath = `uploads/profile_pictures/${filename}`;
-        await dbManager.changeUserPicture(decoded.userId, filepath);
+        // Utilisation de l'ID de l'utilisateur comme nom de fichier
+        const userId = request.user.id;
+        const fileExtension = path.extname(data.filename);
+        const filename = `${userId}${fileExtension}`;
+        const filepath = path.join(uploadDir, filename);
+        // Suppression de l'ancienne image si elle existe
+        if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+        }
+        // Écriture du nouveau fichier
+        await data.file.pipe(fs.createWriteStream(filepath));
+        // Mise à jour du chemin dans la base de données
+        const relativePath = `/uploads/${filename}`;
+        await dbManager.changeUserPicture(userId, relativePath);
         return reply.send({
             success: true,
-            message: "Photo de profil mise à jour",
-            profile_picture: filepath
+            message: 'Profile picture updated successfully',
+            path: relativePath
         });
     }
     catch (error) {
-        console.error("Erreur détaillée:", error);
-        return reply.status(500).send({
+        console.error('Error uploading file:', error);
+        return reply.code(500).send({
             success: false,
-            message: "Erreur serveur"
+            message: 'Error uploading file'
         });
     }
 };
 const updateBioHandler = async (request, reply) => {
     try {
-        const token = request.cookies.token;
-        if (!token) {
-            return reply.status(401).send({
-                success: false,
-                message: "Non authentifié"
-            });
-        }
-        const decoded = jwt.verify(token, JWT_SECRET);
-        const { bio } = request.body;
-        await dbManager.updateUserBio(decoded.userId, bio);
+        await authMiddleware(request, reply);
+        await dbManager.updateUserBio(request.user.id, request.body.bio);
         return reply.send({
             success: true,
             message: "Bio mise à jour"
@@ -161,9 +130,26 @@ const updateBioHandler = async (request, reply) => {
         });
     }
 };
+const getAllUsersHandler = async (request, reply) => {
+    try {
+        const users = await dbManager.getAllUsernamesWithIds();
+        return reply.send({
+            success: true,
+            users: users
+        });
+    }
+    catch (error) {
+        console.error('Error fetching usernames:', error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur lors de la récupération des utilisateurs"
+        });
+    }
+};
 export const userRoutes = {
     getInfos: getInfosHandler,
     getUserLibrary: getUserLibraryHandler,
+    getAllUsers: getAllUsersHandler,
     addGame: addGameHandler,
     changePicture: changePictureHandler,
     updateBio: updateBioHandler
