@@ -180,42 +180,60 @@ let matchmakingQueue: Player[] = [];
 gameNs.on("connection", (socket: Socket) => {
     console.log(`Client connected: ${socket.id}`);
     
-    socket.on("joinQueue", (playerData) => {
-        console.log(`Player ${socket.id} joined matchmaking.`, playerData);
-        matchmakingQueue.push({ id: socket.id, username: playerData.username });
-        attemptMatch();
-    });
 
+    socket.on('startSolo', ({ username }) => {
+        console.log('🟢 startSolo reçu pour', socket.id);
+        const match = startMatch(socket, socket, gameNs);
+        matchStates.set(match.roomId, match);
+
+        socket.emit('matchFound', { roomId: match.roomId });
+      });
+    
+      socket.on('joinQueue', ({ username }) => {
+        console.log(`🟢 joinQueue reçu pour ${socket.id} (${username})`);
+        // 1) On inscrit ce joueur dans la file
+        matchmakingQueue.push({ id: socket.id, username });
+        // 2) On tente d'associer deux joueurs
+        attemptMatch();
+      });
+
+    
     socket.on("movePaddle", (data: { paddle: "left" | "right"; direction: "up" | "down" | null }) => {
         const rooms = Array.from(socket.rooms);
         const roomId = rooms.find(r => r !== socket.id);
         if (!roomId) return;
-    
+        
         const matchState = matchStates.get(roomId);
         if (!matchState) return;
-    
+        
         if (data.paddle === "left") {
-          matchState.leftPaddleDirection = data.direction;
+            matchState.leftPaddleDirection = data.direction;
         } else if (data.paddle === "right") {
-          matchState.rightPaddleDirection = data.direction;
+            matchState.rightPaddleDirection = data.direction;
         }
-      })
+    })
     socket.on("disconnect", () => {
         console.log(`Client disconnected: ${socket.id}`);
         matchmakingQueue = matchmakingQueue.filter(player => player.id !== socket.id);
     });
 });
-  
+
 //connecter deux joueurs
 function attemptMatch(): void {
-    if (matchmakingQueue.length >= 2) {
-      const player1 = matchmakingQueue.shift();
-      const player2 = matchmakingQueue.shift();
-      if (player1 && player2) {
-        console.log(`Match found: ${player1.id} vs ${player2.id}`);
-        const matchState = startMatch(player1, player2, gameNs);
-        matchStates.set(matchState.roomId, matchState);
-      }
+    while (matchmakingQueue.length >= 2) {
+      const player1 = matchmakingQueue.shift()!;
+      const player2 = matchmakingQueue.shift()!;
+      console.log(`Match found: ${player1.id} vs ${player2.id}`);
+
+      const matchState = startMatch(
+        gameNs.sockets.get(player1.id)!,
+        gameNs.sockets.get(player2.id)!,
+        gameNs
+      );
+      matchStates.set(matchState.roomId, matchState);
+
+      gameNs.to(player1.id).emit('matchFound', { roomId: matchState.roomId });
+      gameNs.to(player2.id).emit('matchFound', { roomId: matchState.roomId });
     }
   }
 

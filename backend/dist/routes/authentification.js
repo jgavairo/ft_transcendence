@@ -1,25 +1,27 @@
 import jwt from 'jsonwebtoken';
 import { dbManager } from "../database/database.js";
 import { JWT_SECRET } from "../server.js";
-import passport from 'passport';
-import { OAuth2Client } from 'google-auth-library';
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || '', process.env.GOOGLE_CLIENT_SECRET || '', process.env.GOOGLE_REDIRECT_URI || 'http://127.0.0.1:8080/api/auth/google/callback');
 const loginHandler = async (req, res) => {
     try {
+        console.log("Login attempt");
         const { username, password } = req.body;
-        console.log('connection tentative -');
-        console.log("username: " + username, "password: " + password);
+        if (!username || !password) {
+            return res.status(400).send({
+                success: false,
+                message: "Username and password are required"
+            });
+        }
         const user = await dbManager.getUserByUsername(username);
         if (!user) {
             return res.status(401).send({
                 success: false,
-                message: "Utilisateur non trouvé"
+                message: "User not found with this username: " + username
             });
         }
         if (user.password_hash !== password) {
             return res.status(401).send({
                 success: false,
-                message: "Mot de passe incorrect"
+                message: "Password is incorrect for this username: " + username
             });
         }
         const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
@@ -32,7 +34,7 @@ const loginHandler = async (req, res) => {
         });
         return res.send({
             success: true,
-            message: "Connexion réussie",
+            message: "Connection successful",
             user: {
                 id: user.id,
                 username: user.username,
@@ -50,7 +52,7 @@ const loginHandler = async (req, res) => {
     }
 };
 const registerHandler = async (req, res) => {
-    console.log("Registering user");
+    console.log("User registration attempt");
     const { username, password, email } = req.body;
     try {
         const userID = await dbManager.registerUser({
@@ -61,7 +63,7 @@ const registerHandler = async (req, res) => {
         });
         return res.send({
             success: true,
-            message: "User registered successfully",
+            message: "User registration successful",
             userID: userID
         });
     }
@@ -79,7 +81,7 @@ const checkAuthHandler = async (req, res) => {
         if (!token) {
             return res.send({
                 success: false,
-                message: "User non authenified"
+                message: "User is not authenified"
             });
         }
         const decoded = jwt.verify(token, JWT_SECRET);
@@ -115,54 +117,9 @@ const logoutHandler = async (req, res) => {
         message: "User logged out"
     });
 };
-const googleAuthHandler = async (req, res) => {
-    console.log('Starting Google authentication...');
-    passport.authenticate('google', {
-        scope: ['profile', 'email'],
-        prompt: 'select_account'
-    })(req.raw, res.raw, () => { });
-};
-const googleCallbackHandler = async (req, res) => {
-    console.log('Google callback received');
-    passport.authenticate('google', {
-        failureRedirect: '/login',
-        session: false
-    })(req.raw, res.raw, (err) => {
-        if (err) {
-            console.error('Google authentication error:', err);
-            return res.status(500).send({
-                success: false,
-                message: "Erreur lors de l'authentification Google"
-            });
-        }
-        if (!req.user) {
-            console.error('No user data received from Google');
-            return res.status(401).send({
-                success: false,
-                message: "Utilisateur non authentifié"
-            });
-        }
-        console.log('Google authentication successful, user:', req.user);
-        const token = jwt.sign({ userId: req.user.id }, JWT_SECRET, { expiresIn: '1h' });
-        res.setCookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/',
-            maxAge: 24 * 60 * 60 * 1000 // 24 heures
-        });
-        // Utiliser une redirection HTTP 302 avec l'en-tête Location
-        res.raw.writeHead(302, {
-            'Location': 'http://127.0.0.1:8080'
-        });
-        res.raw.end();
-    });
-};
 export const authRoutes = {
     login: loginHandler,
     register: registerHandler,
     checkAuth: checkAuthHandler,
-    logout: logoutHandler,
-    google: googleAuthHandler,
-    googleCallback: googleCallbackHandler
+    logout: logoutHandler
 };
