@@ -56,8 +56,10 @@ export async function setupProfileModal() {
                 const data = await response.json();
                 if (data.success) {
                     showNotification('Bio updated successfully.');
-                    userInfos.bio = newBio; // Met à jour localement
-                } else {
+                    userInfos.bio = newBio;
+                }
+                else
+                {
                     showErrorNotification(data.message);
                 }
             } catch (error) {
@@ -85,8 +87,41 @@ function changePassword()
     const sendNewPasswordButton = document.getElementById('changePasswordButton');
     if (!sendNewPasswordButton)
         return;
-    sendNewPasswordButton.addEventListener('click', () => {
+    sendNewPasswordButton.addEventListener('click', async () => {
         console.log('sendNewPasswordButton clicked');
+        const oldPassword = document.getElementById('oldPassword') as HTMLInputElement;
+        const newPassword = document.getElementById('newPassword') as HTMLInputElement;
+        const confirmNewPassword = document.getElementById('confirmNewPassword') as HTMLInputElement;
+        if (!oldPassword || !newPassword || !confirmNewPassword)
+        {
+            showErrorNotification('Please fill in all fields');
+            return;
+        }
+        if (newPassword.value !== confirmNewPassword.value)
+        {
+            showErrorNotification('New password and confirm new password do not match');
+            return;
+        }
+        if (oldPassword.value === newPassword.value)
+        {
+            showErrorNotification('New password and old password cannot be the same');
+            return;
+        }
+        const response = await api.post('http://127.0.0.1:3000/api/user/changePassword', 
+        {
+            oldPassword: oldPassword.value,
+            newPassword: newPassword.value
+        });
+        const data = await response.json();
+        if (data.success)
+        {
+            showNotification('Password updated successfully.');
+            setupProfileModal();
+        }
+        else
+        {
+            showErrorNotification(data.message);
+        }
     });
 }
 function setupChangeProfilePictureModal() 

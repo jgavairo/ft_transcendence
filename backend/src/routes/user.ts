@@ -10,16 +10,21 @@ export interface AuthenticatedRequest extends FastifyRequest
     };
 }
 
+export interface ChangePasswordRequest 
+{
+    oldPassword: string;
+    newPassword: string;
+}
+
 const getInfosHandler = async (request: FastifyRequest, reply: FastifyReply) => 
 {
     try 
     {
         await authMiddleware(request as AuthenticatedRequest, reply);
         const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);
-        if (!user) 
+        if (!user || !user.id)
         {
-            return reply.status(404).send
-            ({
+            return reply.status(404).send({
                 success: false,
                 message: "User not found"
             });
@@ -114,10 +119,50 @@ const getAllUsersHandler = async (request: FastifyRequest, reply: FastifyReply) 
     }
 }
 
+const changePasswordHandler = async (request: FastifyRequest<{ Body: ChangePasswordRequest }>, reply: FastifyReply) => 
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);
+        if (!user || !user.id)
+        {
+            return reply.status(404).send({
+                success: false,
+                message: "User not found"
+            });
+        }
+        const realPassword = await dbManager.getUserPassword(user.id);
+        console.log("realPassword", realPassword, "request.body.oldPassword", request.body.oldPassword);
+        if (realPassword !== request.body.oldPassword)
+        {
+            return reply.status(401).send({
+                success: false,
+                message: "Invalid password"
+            });
+        }
+        await dbManager.updateUserPassword(user.id, request.body.newPassword);
+        return reply.send
+        ({
+            success: true,
+            message: "Password updated successfully"
+        });
+    }
+    catch (error)
+    {
+        console.error("Erreur détaillée:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+};
+
 export const userRoutes = 
 {
     getInfos: getInfosHandler,
     getUserLibrary: getUserLibraryHandler,
     getAllUsers: getAllUsersHandler,
     addGame: addGameHandler,
+    changePassword: changePasswordHandler
 };

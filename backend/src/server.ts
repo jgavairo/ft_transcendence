@@ -6,7 +6,7 @@ import fastifySocketIO from 'fastify-socket.io'
 import { FastifyRequest, FastifyReply } from 'fastify';
 import type { Socket } from 'socket.io'
 import { dbManager } from "./database/database.js";
-import { userRoutes } from "./routes/user.js";
+import { userRoutes, ChangePasswordRequest } from "./routes/user.js";
 import { authRoutes } from "./routes/authentification.js";
 import { profileRoutes } from './routes/profile.js';
 import { startMatch, MatchState } from "./games/pong/gameSimulation.js";
@@ -119,6 +119,10 @@ app.get('/api/user/library', { preHandler: authMiddleware }, async (request: Fas
 
 app.post('/api/user/addGame', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return userRoutes.addGame(request, reply);
+});
+
+app.post<{ Body: ChangePasswordRequest }>('/api/user/changePassword', { preHandler: authMiddleware }, async (request, reply) => {
+    return userRoutes.changePassword(request, reply);
 });
 
 ////////////////////

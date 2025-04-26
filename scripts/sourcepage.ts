@@ -163,9 +163,9 @@ const changePasswordModalHTML = `
         <div class="changePassword-modal" id="changePassword-modal">
             <h2>Change password</h2>
             <div class="changePassword-modal-content">
-                <input type="password" id="oldPassword" placeholder="Old password" />
-                <input type="password" id="newPassword" placeholder="New password" />
-                <input type="password" id="confirmNewPassword" placeholder="Confirm new password" />
+                <input type="password" class="changePasswordInput" id="oldPassword" placeholder="Old password" />
+                <input type="password" class="changePasswordInput" id="newPassword" placeholder="New password" />
+                <input type="password" class="changePasswordInput" id="confirmNewPassword" placeholder="Confirm new password" />
                 <button id="changePasswordButton">Change password</button>
             </div>
         </div>
