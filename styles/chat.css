@@ -1,4 +1,5 @@
-/* Section du chat */
+@import './colors.css';
+
 .chat-section {
     background-color: #1e2a38;
     border-radius: 12px;
@@ -138,7 +139,7 @@
 }
 
 .chat-message.left {
-    background-color: #28ac00;
+    background-color: var(--vert);
     color: rgb(255, 255, 255);
     align-self: flex-start;
 }
