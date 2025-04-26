@@ -1,12 +1,3 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 import { libraryPage, storePage, communityPage, profileWindow } from '../sourcepage.js';
 import { setupLibrary } from '../pages/library/library.js';
 import { setupStore } from '../pages/store/store.js';
@@ -102,9 +93,9 @@ export function setupProfileButton() {
             const logoutButton = document.getElementById('logoutButton');
             if (!logoutButton)
                 return;
-            logoutButton.addEventListener('click', () => __awaiter(this, void 0, void 0, function* () {
+            logoutButton.addEventListener('click', async () => {
                 console.log("logout button clicked");
-                const response = yield api.get('http://127.0.0.1:3000/api/auth/logout');
+                const response = await api.get('http://127.0.0.1:3000/api/auth/logout');
                 console.log('response:', response);
                 showNotification("Logged out successfully");
                 const main = document.getElementById('main');
@@ -113,7 +104,7 @@ export function setupProfileButton() {
                 main.innerHTML = "";
                 LoginManager.showLoginModal();
                 return;
-            }));
+            });
             const profileSettingsButton = document.getElementById('profileSettings');
             if (!profileSettingsButton)
                 return;
