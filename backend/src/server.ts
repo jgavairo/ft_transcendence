@@ -178,11 +178,7 @@ let matchmakingQueue: Player[] = [];
 
 // Gestion des connexions Socket.IO
 gameNs.on("connection", (socket: Socket) => {
-    console.log(`Client connected: ${socket.id}`);
-    
-
     socket.on('startSolo', ({ username }) => {
-        console.log('🟢 startSolo reçu pour', socket.id);
         const match = startMatch(socket, socket, gameNs);
         matchStates.set(match.roomId, match);
 
@@ -190,7 +186,6 @@ gameNs.on("connection", (socket: Socket) => {
       });
     
       socket.on('joinQueue', ({ username }) => {
-        console.log(`🟢 joinQueue reçu pour ${socket.id} (${username})`);
         // 1) On inscrit ce joueur dans la file
         matchmakingQueue.push({ id: socket.id, username });
         // 2) On tente d'associer deux joueurs
