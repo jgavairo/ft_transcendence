@@ -120,25 +120,6 @@ function setupChangeProfilePictureModal() {
                 if (headerProfilePicture) {
                     headerProfilePicture.src = newImagePath;
                 }
-                // Mettre à jour l'image dans la modal
-                const modalProfilePicture = document.querySelector('.pictureProfileModal');
-                if (modalProfilePicture) {
-                    modalProfilePicture.src = newImagePath;
-                }
-                // Mettre à jour les images dans le chat
-                const chatProfilePictures = document.querySelectorAll('.chat-profile-picture');
-                chatProfilePictures.forEach(img => {
-                    if (img.alt.includes('profile picture')) {
-                        img.src = newImagePath;
-                    }
-                });
-                // Mettre à jour les images dans la liste des personnes
-                const peopleListProfilePictures = document.querySelectorAll('.profile-card-picture');
-                peopleListProfilePictures.forEach(img => {
-                    if (img.alt.includes('profile picture')) {
-                        img.src = newImagePath;
-                    }
-                });
                 setupProfileModal();
             }
             else {
@@ -149,5 +130,5 @@ function setupChangeProfilePictureModal() {
             console.error('Error changing profile picture:', error);
             showErrorNotification('Failed to change profile picture.');
         }
-    }));
+    });
 }

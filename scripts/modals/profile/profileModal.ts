@@ -2,7 +2,6 @@ import {profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML} from '
 import { MainApp } from '../../main.js'
 import api from '../../helpers/api.js'
 import { showErrorNotification, showNotification } from '../../helpers/notifications.js';
-import { setupProfileButton } from '../../header/navigation.js';
 
 
 export async function setupProfileModal() {
@@ -132,17 +131,14 @@ function setupChangeProfilePictureModal()
             if (data.success)
             {
                 showNotification('Profile picture updated successfully.');
-                // Mettre à jour uniquement l'image dans le header
                 const timestamp = Date.now();
+                const newImagePath = `${data.path}?t=${timestamp}`;
+
                 const headerProfilePicture = document.querySelector('.profile .profilePicture') as HTMLImageElement;
                 if (headerProfilePicture) {
-                    headerProfilePicture.src = `${data.path}?t=${timestamp}`;
+                    headerProfilePicture.src = newImagePath;
                 }
-                // Mettre à jour l'image dans la modal
-                const modalProfilePicture = document.querySelector('.pictureProfileModal') as HTMLImageElement;
-                if (modalProfilePicture) {
-                    modalProfilePicture.src = `${data.path}?t=${timestamp}`;
-                }
+
                 setupProfileModal();
             }
             else
