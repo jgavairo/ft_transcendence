@@ -169,8 +169,6 @@ let matchmakingQueue: Player[] = [];
 
 // Gestion des connexions Socket.IO
 gameNs.on("connection", (socket: Socket) => {
-    
-
     socket.on('startSolo', ({ username }) => {
         const match = startMatch(socket, socket, gameNs);
         matchStates.set(match.roomId, match);
