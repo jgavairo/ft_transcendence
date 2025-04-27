@@ -1,3 +1,3 @@
 export async function googleSignInHandler() {
-    console.log("google sign in handler");
+    window.location.href = "http://127.0.0.1:3000/api/auth/google";
 }

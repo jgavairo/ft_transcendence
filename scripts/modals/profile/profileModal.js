@@ -49,7 +49,7 @@ export async function setupProfileModal() {
                 const data = await response.json();
                 if (data.success) {
                     showNotification('Bio updated successfully.');
-                    userInfos.bio = newBio; // Met à jour localement
+                    userInfos.bio = newBio;
                 }
                 else {
                     showErrorNotification(data.message);
