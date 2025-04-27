@@ -20,7 +20,8 @@ export async function setupProfileModal() {
     }
 
     const overlay = document.getElementById('modalOverlay');
-    if (overlay) {
+    if (overlay) 
+    {
         overlay.addEventListener('click', (event) => {
             if (event.target === overlay) {
                 modal.innerHTML = '';

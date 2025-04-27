@@ -171,10 +171,53 @@ const logoutHandler = async (req: FastifyRequest, res: FastifyReply) =>
     });
 };
 
+export const googleAuthHandler = async (userInfo: { email?: string; name?: string; picture?: string }) => {
+    const { email, name, picture } = userInfo;
+    console.log("Google auth handler called with:", { email, name, picture });
+
+    if (!email) 
+    {
+        console.error("No email provided by Google");
+        return { success: false, message: "Google n'a pas renvoyé d'email, impossible de créer le compte." };
+    }
+
+    const username = name && name.trim() !== '' ? name : email.split('@')[0];
+    console.log("Generated username:", username);
+
+    let user = await dbManager.getUserByEmail(email);
+    console.log("User found in database:", user);
+
+    if (!user)
+    {
+        console.log("Creating new user");
+        const userID = await dbManager.registerUser({
+            username: username,
+            email: email,
+            password_hash: '',
+            profile_picture: picture || '../assets/profile_pictures/default.png'
+        });
+        user = await dbManager.getUserById(userID);
+        console.log("New user created:", user);
+    }
+
+    if (!user)
+    {
+        console.error("Failed to create or find user");
+        return { success: false, message: "problem with google auth" };
+    }
+
+    console.log("Generating JWT token for user:", user.id);
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+    console.log("Token generated successfully");
+    
+    return { user, token };
+};
+
 export const authRoutes = 
 {
     login: loginHandler,
     register: registerHandler,
     checkAuth: checkAuthHandler,
-    logout: logoutHandler
+    logout: logoutHandler,
+    googleAuth: googleAuthHandler
 };
