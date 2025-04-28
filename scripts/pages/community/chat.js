@@ -104,7 +104,7 @@ export async function setupChat() {
         addMessage(message.content, message.author, isSelf);
     });
     // Connecter le client au serveur socket.IO
-    const socket = io(`http://${HOSTNAME}:3000/chat`, {
+    const socket = io('http://127.0.0.1:3000/chat', {
         transports: ['websocket', 'polling'],
         withCredentials: true,
         reconnection: true,

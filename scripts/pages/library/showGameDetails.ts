@@ -1,6 +1,6 @@
 import { fetchUsernames } from "../community/peopleList.js";
 import { gameModalHTML } from "../../sourcepage.js";
-import { displayMenu } from '../../games/pong/pongGame.js';
+import { displayMenu } from '../../games/pong/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
 
@@ -15,8 +15,15 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
   }
   if (!game) return;
 
+
   // Récupérer les utilisateurs
   const people = await fetchUsernames();
+
+  // Récupérer l'utilisateur en cours
+  const currentUser = await GameManager.getCurrentUser(); // Assurez-vous que cette méthode existe
+
+  // Filtrer la liste pour exclure l'utilisateur en cours
+  const filteredPeople = people.filter(person => person.username !== currentUser.username);
 
   const details = document.querySelector('.library-details') as HTMLElement;
   if (!details) return;
@@ -47,7 +54,7 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
         <div class="friendsContainer">
           <h3 class="sectionTitle">People List</h3>
           <ul class="friendsList">
-            ${people.map(person => `
+            ${filteredPeople.map(person => `
               <li class="friendItem">
                 <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
                 <span class="friendName">${person.username}</span>
@@ -72,8 +79,5 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
     if (!modal) return;
     modal.innerHTML = gameModalHTML;
     displayMenu();
-    window.addEventListener('keydown', e => {
-      if (e.key === 'Escape') modal.innerHTML = '';
-    }, { once: true });
   });
 }
