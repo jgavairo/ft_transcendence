@@ -159,8 +159,8 @@ const logoutHandler = async (req: FastifyRequest, res: FastifyReply) =>
     ('token', 
     {
         httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
         path: '/'
     });
 

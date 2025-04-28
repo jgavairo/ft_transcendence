@@ -19,6 +19,7 @@ import fastifyOauth2 from '@fastify/oauth2';
 import type { FastifyPluginAsync } from 'fastify';
 
 export const JWT_SECRET = process.env.JWT_SECRET || ''
+export const HOSTNAME = process.env.HOSTNAME || 'localhost'
 
 // Créer l'application Fastify
 const app = fastify({
@@ -32,7 +33,7 @@ await app.register(fastifyExpress);
 
 // Configuration CORS
 await app.register(fastifyCors, {
-    origin: 'http://127.0.0.1:8080',
+    origin: true, // Permet toutes les origines
     credentials: true,
     methods: ['GET','POST','PUT','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type','Authorization','Cookie'],
@@ -51,7 +52,8 @@ await app.register(fastifyMultipart, {
 
 await app.register(fastifyCookie, {
     secret: JWT_SECRET,
-    parseOptions: {
+    parseOptions: 
+    {
         httpOnly: true,
         secure: false,
         sameSite: 'lax',
@@ -61,7 +63,7 @@ await app.register(fastifyCookie, {
 
 await app.register(fastifySocketIO, {
     cors: {
-        origin: 'http://127.0.0.1:8080',
+        origin: true, // Permet toutes les origines
         credentials: true
     },
     transports: ['websocket','polling'],
@@ -84,7 +86,13 @@ app.register(fastifyOauth2 as unknown as FastifyPluginAsync<any>,
         auth: fastifyOauth2.GOOGLE_CONFIGURATION
     },
     startRedirectPath: '/api/auth/google',
-    callbackUri: 'http://127.0.0.1:3000/api/auth/google/callback'
+    callbackUri: `http://z1r2p4.42lyon.fr:3000/api/auth/google/callback`,
+    generateStateFunction: () => {
+        return 'state_' + Math.random().toString(36).substring(7);
+    },
+    checkStateFunction: (state: string, callback: (err: Error | null, valid: boolean) => void) => {
+        callback(null, true);
+    }
 });
 
 // Créer le dossier pour les uploads s'il n'existe pas
@@ -135,7 +143,7 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
 
         if (userInfo.error) {
             console.error("Google API error:", userInfo.error);
-            return reply.redirect('http://127.0.0.1:8080/login?error=google');
+            return reply.redirect(`http://z1r2p4.42lyon.fr:8080/login?error=google`);
         }
 
         const result = await googleAuthHandler(userInfo);
@@ -143,7 +151,7 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
 
         if (!result.token) {
             console.error('No token generated from googleAuthHandler');
-            return reply.redirect('http://127.0.0.1:8080/login?error=google');
+            return reply.redirect(`http://z1r2p4.42lyon.fr:8080/login?error=google`);
         }
 
         console.log("Setting token cookie:", result.token);
@@ -156,10 +164,10 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
         });
 
         // Redirige vers le frontend après succès
-        return reply.redirect('http://127.0.0.1:8080/');
+        return reply.redirect(`http://z1r2p4.42lyon.fr:8080/`);
     } catch (error) {
         console.error('Error during Google authentication:', error);
-        return reply.redirect('http://127.0.0.1:8080/login?error=google');
+        return reply.redirect(`http://z1r2p4.42lyon.fr:8080/login?error=google`);
     }
 });
 
@@ -290,6 +298,10 @@ function attemptMatch(): void {
     }
   }
 
+// Route pour récupérer le nom d'hôte
+app.get('/api/hostname', async (request: FastifyRequest, reply: FastifyReply) => {
+    return { hostname: process.env.HOSTNAME || 'localhost' };
+});
 
 ////////////////////////////////////////////
 //              SERVER START              //

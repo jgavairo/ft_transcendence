@@ -4,6 +4,7 @@ import { setupHeader } from "./header/navigation.js";
 import { setupStore } from "./pages/store/store.js";
 import api from "./helpers/api.js";
 import { LoginManager } from "./managers/loginManager.js";
+export const HOSTNAME = window.location.hostname;
 export class MainApp {
     static async init() {
         console.log("init");
@@ -47,14 +48,14 @@ export class MainApp {
 }
 _a = MainApp;
 MainApp.checkAuth = async () => {
-    const response = await api.get('http://127.0.0.1:3000/api/auth/check');
+    const response = await api.get(`http://${HOSTNAME}:3000/api/auth/check`);
     const text = await response.text();
     const data = JSON.parse(text);
     return data;
 };
 MainApp.getUserInfo = async () => {
     try {
-        const response = await api.get('http://127.0.0.1:3000/api/user/infos');
+        const response = await api.get(`http://${HOSTNAME}:3000/api/user/infos`);
         const text = await response.text();
         const data = JSON.parse(text);
         if (data.success) {

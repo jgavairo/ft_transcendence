@@ -1,4 +1,5 @@
 import api from '../helpers/api.js';
+import { HOSTNAME } from '../main.js';
 export class UserLibraryManager {
     static getCurrentUser() {
         const stored = localStorage.getItem(this.STORAGE_KEY);
@@ -24,7 +25,7 @@ export class UserLibraryManager {
     }
     static async hasGame(gameId) {
         console.log("Checking if game is in library:", gameId);
-        const response = await api.get('http://127.0.0.1:3000/api/user/library');
+        const response = await api.get(`http://${HOSTNAME}:3000/api/user/library`);
         console.log("API response:", response);
         const data = await response.json();
         console.log("API data:", data);
@@ -36,7 +37,7 @@ export class UserLibraryManager {
     }
     static async addGame(gameId) {
         console.log("Adding game to library:", gameId);
-        const response = await api.post('http://127.0.0.1:3000/api/user/addGame', { gameId });
+        const response = await api.post(`http://${HOSTNAME}:3000/api/user/addGame`, { gameId });
         console.log("API response:", response);
         const data = await response.json();
         if (data.success) {
@@ -47,7 +48,7 @@ export class UserLibraryManager {
         }
     }
     static async getLibraryGames() {
-        const response = await api.get('http://127.0.0.1:3000/api/user/library');
+        const response = await api.get(`http://${HOSTNAME}:3000/api/user/library`);
         const data = await response.json();
         if (data.success)
             return data.library;

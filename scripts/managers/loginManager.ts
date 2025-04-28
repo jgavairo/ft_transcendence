@@ -1,5 +1,5 @@
 import { loginModalHTML, registerModalHTML } from "../sourcepage.js";
-import { MainApp } from "../main.js";
+import { HOSTNAME, MainApp } from "../main.js";
 import { showNotification, showErrorNotification } from "../helpers/notifications.js";
 import api from "../helpers/api.js";
 import { setupProfileButton } from "../header/navigation.js";
@@ -53,7 +53,7 @@ export class LoginManager
                 showErrorNotification("Please enter a username and password");
                 return;
             }
-            api.post('http://127.0.0.1:8080/api/auth/login', { username, password })
+            api.post(`http://${HOSTNAME}:8080/api/auth/login`, { username, password })
             .then(response => response.json())
             .then(data => {
                 console.log('backend response:', data);
@@ -118,7 +118,7 @@ export class LoginManager
                     showErrorNotification("Passwords do not match");
                     return;
                 }
-                api.post('http://127.0.0.1:8080/api/auth/register', { username, password, email })
+                api.post(`http://${HOSTNAME}:8080/api/auth/register`, { username, password, email })
                 .then(response => response.json())
                 .then(data => {
                     console.log('backend response:', data);

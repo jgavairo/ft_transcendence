@@ -2,10 +2,11 @@ import { libraryPage, storePage, communityPage, profileWindow } from '../sourcep
 import { setupLibrary } from '../pages/library/library.js';
 import { setupStore } from '../pages/store/store.js';
 import { showCommunityPage } from '../pages/community/community.js';
-import { showNotification } from '../helpers/notifications.js';
+import { showNotification, showErrorNotification } from '../helpers/notifications.js';
 import { LoginManager } from '../managers/loginManager.js';
 import { setupProfileModal } from '../modals/profile/profileModal.js';
 import api from '../helpers/api.js';
+import { HOSTNAME } from '../main.js';
 let boolprofileMenu = false;
 function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');
@@ -95,15 +96,26 @@ export function setupProfileButton() {
                 return;
             logoutButton.addEventListener('click', async () => {
                 console.log("logout button clicked");
-                const response = await api.get('http://127.0.0.1:3000/api/auth/logout');
-                console.log('response:', response);
-                showNotification("Logged out successfully");
-                const main = document.getElementById('main');
-                if (!main)
-                    return;
-                main.innerHTML = "";
-                LoginManager.showLoginModal();
-                return;
+                try {
+                    const response = await api.get(`http://${HOSTNAME}:3000/api/auth/logout`);
+                    const data = await response.json();
+                    console.log('response:', data);
+                    if (data.success) {
+                        showNotification("Logged out successfully");
+                        const main = document.getElementById('main');
+                        if (!main)
+                            return;
+                        main.innerHTML = "";
+                        LoginManager.showLoginModal();
+                    }
+                    else {
+                        showErrorNotification(data.message);
+                    }
+                }
+                catch (error) {
+                    console.error('Error during logout:', error);
+                    showErrorNotification("Error during logout");
+                }
             });
             const profileSettingsButton = document.getElementById('profileSettings');
             if (!profileSettingsButton)

@@ -1,10 +1,10 @@
 import { io } from "socket.io-client";
 import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
-
+import { HOSTNAME } from "../../main.js";
 async function fetchCurrentUser(): Promise<string | null> {
     try {
-        const response = await fetch("http://127.0.0.1:3000/api/user/infos", {
+        const response = await fetch(`http://${HOSTNAME}:3000/api/user/infos`, {
             credentials: "include",
         });
         const data = await response.json();
@@ -22,7 +22,7 @@ async function fetchCurrentUser(): Promise<string | null> {
 
 async function fetchChatHistory(): Promise<{ author: string, content: string, timestamp: string }[]> {
     try {
-        const response = await fetch("http://127.0.0.1:3000/api/chat/history", {
+        const response = await fetch(`http://${HOSTNAME}:3000/api/chat/history`, {
             credentials: "include"
         });
         const data = await response.json();
@@ -125,7 +125,7 @@ export async function setupChat() {
     });
 
     // Connecter le client au serveur socket.IO
-    const socket = io('http://127.0.0.1:3000/chat', {
+    const socket = io(`http://${HOSTNAME}:3000/chat`, {
         transports: ['websocket', 'polling'],
         withCredentials: true,
         reconnection: true,
