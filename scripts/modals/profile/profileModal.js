@@ -49,7 +49,7 @@ export async function setupProfileModal() {
                 const data = await response.json();
                 if (data.success) {
                     showNotification('Bio updated successfully.');
-                    userInfos.bio = newBio; // Met à jour localement
+                    userInfos.bio = newBio;
                 }
                 else {
                     showErrorNotification(data.message);
@@ -77,8 +77,35 @@ function changePassword() {
     const sendNewPasswordButton = document.getElementById('changePasswordButton');
     if (!sendNewPasswordButton)
         return;
-    sendNewPasswordButton.addEventListener('click', () => {
+    sendNewPasswordButton.addEventListener('click', async () => {
         console.log('sendNewPasswordButton clicked');
+        const oldPassword = document.getElementById('oldPassword');
+        const newPassword = document.getElementById('newPassword');
+        const confirmNewPassword = document.getElementById('confirmNewPassword');
+        if (!oldPassword || !newPassword || !confirmNewPassword) {
+            showErrorNotification('Please fill in all fields');
+            return;
+        }
+        if (newPassword.value !== confirmNewPassword.value) {
+            showErrorNotification('New password and confirm new password do not match');
+            return;
+        }
+        if (oldPassword.value === newPassword.value) {
+            showErrorNotification('New password and old password cannot be the same');
+            return;
+        }
+        const response = await api.post('http://127.0.0.1:3000/api/user/changePassword', {
+            oldPassword: oldPassword.value,
+            newPassword: newPassword.value
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Password updated successfully.');
+            setupProfileModal();
+        }
+        else {
+            showErrorNotification(data.message);
+        }
     });
 }
 function setupChangeProfilePictureModal() {
@@ -115,14 +142,10 @@ function setupChangeProfilePictureModal() {
                 showNotification('Profile picture updated successfully.');
                 // Mettre à jour uniquement l'image dans le header
                 const timestamp = Date.now();
+                const newImagePath = `${data.path}?t=${timestamp}`;
                 const headerProfilePicture = document.querySelector('.profile .profilePicture');
                 if (headerProfilePicture) {
                     headerProfilePicture.src = `${data.path}?t=${timestamp}`;
-                }
-                // Mettre à jour l'image dans la modal
-                const modalProfilePicture = document.querySelector('.pictureProfileModal');
-                if (modalProfilePicture) {
-                    modalProfilePicture.src = `${data.path}?t=${timestamp}`;
                 }
                 setupProfileModal();
             }

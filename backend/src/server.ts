@@ -6,8 +6,8 @@ import fastifySocketIO from 'fastify-socket.io'
 import { FastifyRequest, FastifyReply } from 'fastify';
 import type { Socket } from 'socket.io'
 import { dbManager } from "./database/database.js";
-import { userRoutes } from "./routes/user.js";
-import { authRoutes } from "./routes/authentification.js";
+import { userRoutes, ChangePasswordRequest } from "./routes/user.js";
+import { authRoutes, googleAuthHandler } from "./routes/authentification.js";
 import { profileRoutes } from './routes/profile.js';
 import { startMatch, MatchState } from "./games/pong/gameSimulation.js";
 import fs from 'fs';
@@ -15,15 +15,17 @@ import { authMiddleware } from './middleware/auth.js';
 import { chatRoutes } from './routes/chat.js';
 import { gameRoutes } from './routes/game.js';
 import fastifyMultipart from '@fastify/multipart';
-
+import fastifyOauth2 from '@fastify/oauth2';
+import type { FastifyPluginAsync } from 'fastify';
 
 export const JWT_SECRET = process.env.JWT_SECRET || ''
 
 // Créer l'application Fastify
 const app = fastify({
-  logger: true,
-  bodyLimit: 10 * 1024 * 1024 // 10MB
+    logger: true,
+    bodyLimit: 10 * 1024 * 1024 // 10MB
 });
+
 
 // Fonction d'initialisation des plugins
 await app.register(fastifyExpress);
@@ -64,17 +66,33 @@ await app.register(fastifySocketIO, {
     },
     transports: ['websocket','polling'],
     allowEIO3: true
-    })
+})
 
 app.io.on('connection', socket => {
     console.log('Default namespace connected:', socket.id);
-    });
+});
 
-    // Créer le dossier pour les uploads s'il n'existe pas
+app.register(fastifyOauth2 as unknown as FastifyPluginAsync<any>, 
+{
+    name: 'googleOAuth2',
+    scope: ['profile', 'email'],
+    credentials: {
+        client: {
+            id: process.env.GOOGLE_CLIENT_ID,
+            secret: process.env.GOOGLE_CLIENT_SECRET
+        },
+        auth: fastifyOauth2.GOOGLE_CONFIGURATION
+    },
+    startRedirectPath: '/api/auth/google',
+    callbackUri: 'http://127.0.0.1:3000/api/auth/google/callback'
+});
+
+// Créer le dossier pour les uploads s'il n'existe pas
 const uploadDir = 'uploads/profile_pictures';
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
+
 
 ////////////////////////////////////////////
 //                 ROUTES                 //
@@ -101,6 +119,52 @@ app.get("/api/auth/logout", { preHandler: authMiddleware }, async (request: Fast
     return authRoutes.logout(request, reply);
 });
 
+app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+        console.log("Google callback received");
+        const { token } = await (app as any).googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request, reply);
+        console.log("Access token received from Google:", token);
+
+        const userInfo = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { 
+                Authorization: `Bearer ${token.access_token}`,
+                Accept: 'application/json'
+            }
+        }).then(res => res.json());
+        console.log("User info received:", userInfo);
+
+        if (userInfo.error) {
+            console.error("Google API error:", userInfo.error);
+            return reply.redirect('http://127.0.0.1:8080/login?error=google');
+        }
+
+        const result = await googleAuthHandler(userInfo);
+        console.log("Google auth handler result:", result);
+
+        if (!result.token) {
+            console.error('No token generated from googleAuthHandler');
+            return reply.redirect('http://127.0.0.1:8080/login?error=google');
+        }
+
+        console.log("Setting token cookie:", result.token);
+        reply.setCookie('token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 24 * 60 * 60 * 1000 // 24 heures
+        });
+
+        // Redirige vers le frontend après succès
+        return reply.redirect('http://127.0.0.1:8080/');
+    } catch (error) {
+        console.error('Error during Google authentication:', error);
+        return reply.redirect('http://127.0.0.1:8080/login?error=google');
+    }
+});
+
+
+
 /////////////////
 // USER ROUTES //
 /////////////////
@@ -119,6 +183,10 @@ app.get('/api/user/library', { preHandler: authMiddleware }, async (request: Fas
 
 app.post('/api/user/addGame', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return userRoutes.addGame(request, reply);
+});
+
+app.post<{ Body: ChangePasswordRequest }>('/api/user/changePassword', { preHandler: authMiddleware }, async (request, reply) => {
+    return userRoutes.changePassword(request, reply);
 });
 
 ////////////////////
