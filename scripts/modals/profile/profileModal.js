@@ -1,5 +1,5 @@
 import { profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML } from '../../sourcepage.js';
-import { MainApp } from '../../main.js';
+import { MainApp, HOSTNAME } from '../../main.js';
 import api from '../../helpers/api.js';
 import { showErrorNotification, showNotification } from '../../helpers/notifications.js';
 export async function setupProfileModal() {
@@ -45,7 +45,7 @@ export async function setupProfileModal() {
                 return;
             }
             try {
-                const response = await api.post('http://127.0.0.1:3000/api/profile/updateBio', { bio: newBio });
+                const response = await api.post(`http://${HOSTNAME}:3000/api/profile/updateBio`, { bio: newBio });
                 const data = await response.json();
                 if (data.success) {
                     showNotification('Bio updated successfully.');
@@ -94,7 +94,7 @@ function changePassword() {
             showErrorNotification('New password and old password cannot be the same');
             return;
         }
-        const response = await api.post('http://127.0.0.1:3000/api/user/changePassword', {
+        const response = await api.post(`http://${HOSTNAME}:3000/api/user/changePassword`, {
             oldPassword: oldPassword.value,
             newPassword: newPassword.value
         });
@@ -136,16 +136,15 @@ function setupChangeProfilePictureModal() {
         const formData = new FormData();
         formData.append('picture', newPicture);
         try {
-            const response = await api.postFormData('http://127.0.0.1:3000/api/profile/changePicture', formData);
+            const response = await api.postFormData(`http://${HOSTNAME}:3000/api/profile/changePicture`, formData);
             const data = await response.json();
             if (data.success) {
                 showNotification('Profile picture updated successfully.');
-                // Mettre à jour uniquement l'image dans le header
                 const timestamp = Date.now();
                 const newImagePath = `${data.path}?t=${timestamp}`;
                 const headerProfilePicture = document.querySelector('.profile .profilePicture');
                 if (headerProfilePicture) {
-                    headerProfilePicture.src = `${data.path}?t=${timestamp}`;
+                    headerProfilePicture.src = newImagePath;
                 }
                 setupProfileModal();
             }

@@ -1,9 +1,10 @@
 import { io } from "socket.io-client";
 import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
+import { HOSTNAME } from "../../main.js";
 async function fetchCurrentUser() {
     try {
-        const response = await fetch("http://127.0.0.1:3000/api/user/infos", {
+        const response = await fetch(`http://${HOSTNAME}:3000/api/user/infos`, {
             credentials: "include",
         });
         const data = await response.json();
@@ -22,7 +23,7 @@ async function fetchCurrentUser() {
 }
 async function fetchChatHistory() {
     try {
-        const response = await fetch("http://127.0.0.1:3000/api/chat/history", {
+        const response = await fetch(`http://${HOSTNAME}:3000/api/chat/history`, {
             credentials: "include"
         });
         const data = await response.json();
@@ -102,8 +103,8 @@ export async function setupChat() {
         const isSelf = message.author === username;
         addMessage(message.content, message.author, isSelf);
     });
-    // Connecter le client au serveur Socket.IO
-    const socket = io('http://127.0.0.1:3000/chat', {
+    // Connecter le client au serveur socket.IO
+    const socket = io(`http://${HOSTNAME}:3000/chat`, {
         transports: ['websocket', 'polling'],
         withCredentials: true,
         reconnection: true,

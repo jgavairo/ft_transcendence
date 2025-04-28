@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
+export const HOSTNAME = window.location.hostname;
 
-const socket = io('http://127.0.0.1:3000/game', {
+const socket = io(`http://${HOSTNAME}:3000/game`, {
   withCredentials: true,
 });
 

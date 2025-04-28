@@ -1,8 +1,10 @@
+import { HOSTNAME } from "../../main.js";
+
 const STORAGE_KEY = "people";
 
 export async function fetchUsernames(): Promise<{ username: string, profile_picture: string, email: string, bio: string }[]> {
     try {
-        const response = await fetch('http://127.0.0.1:3000/api/users', {
+        const response = await fetch(`http://${HOSTNAME}:3000/api/users`, {
             credentials: 'include'
         });
         const data = await response.json();
@@ -29,7 +31,7 @@ export async function renderPeopleList(filter: string = "") {
     const people = await fetchUsernames();
 
     // Récupérer l'utilisateur connecté (par exemple, depuis un token ou une API)
-    const response = await fetch('http://127.0.0.1:3000/api/user/infos', {
+    const response = await fetch(`http://${HOSTNAME}:3000/api/user/infos`, {
         credentials: 'include'
     });
     const currentUser = await response.json();
