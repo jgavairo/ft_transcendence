@@ -7,8 +7,13 @@ socket.on('connect', () => {
 let mode = 'multi';
 let mySide = 'left';
 socket.on('matchFound', ({ roomId, side }) => {
-    mySide = side;
-    if (mode === 'multi') {
+    if (mode == 'solo') {
+        mySide = 'left';
+    }
+    else {
+        mySide = side;
+    }
+    if (mode == 'multi') {
         displayWaitingScreen();
     }
 });
@@ -445,4 +450,15 @@ export function displayShopMenu() {
 }
 document.addEventListener('DOMContentLoaded', () => {
     displayMenu();
+});
+window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape')
+        return;
+    const modal = document.getElementById('optionnalModal');
+    if (!modal)
+        return;
+    if (modal.innerHTML.trim() !== '') {
+        modal.innerHTML = '';
+        displayMenu();
+    }
 });
