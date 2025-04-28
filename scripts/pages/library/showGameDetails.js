@@ -74,9 +74,5 @@ export async function showGameDetails(gameIdOrObj) {
             return;
         modal.innerHTML = gameModalHTML;
         displayMenu();
-        window.addEventListener('keydown', e => {
-            if (e.key === 'Escape')
-                modal.innerHTML = '';
-        }, { once: true });
     });
 }

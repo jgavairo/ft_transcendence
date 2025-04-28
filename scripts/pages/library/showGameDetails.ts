@@ -78,8 +78,5 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
     if (!modal) return;
     modal.innerHTML = gameModalHTML;
     displayMenu();
-    window.addEventListener('keydown', e => {
-      if (e.key === 'Escape') modal.innerHTML = '';
-    }, { once: true });
   });
 }

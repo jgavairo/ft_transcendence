@@ -11,8 +11,14 @@ let mode: 'solo' | 'multi' = 'multi';
 let mySide: 'left' | 'right' = 'left';
 
 socket.on('matchFound', ({ roomId, side }: { roomId: string, side: 'left' | 'right' }) => {
-  mySide = side;
-  if (mode === 'multi') {
+  
+  if (mode == 'solo') {
+    mySide = 'left';
+  }
+  else {
+    mySide = side;
+  }
+  if (mode == 'multi') {
     displayWaitingScreen();
   }
 });
@@ -529,4 +535,14 @@ export function displayShopMenu(): void {
 
 document.addEventListener('DOMContentLoaded', () => {
   displayMenu();
+});
+
+window.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const modal = document.getElementById('optionnalModal');
+  if (!modal) return;
+  if (modal.innerHTML.trim() !== '') {
+    modal.innerHTML = '';
+    displayMenu();
+  }
 });
