@@ -683,6 +683,14 @@ body
     color: #fff;
 }
 
+.changePassword-modal .changePasswordInput
+{
+	padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #444;
+
+}
+
 .changePassword-modal-content {
 	padding: 20px;
     display: flex;
@@ -690,10 +698,34 @@ body
     gap: 15px;
 }
 
-.changePassword-modal-content input {
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #444;
+.changePassword-modal-content .changePasswordInput
+{
+    background-color: #a3a3a36c;
+	border-radius: 7px;
+	padding: 5px;
+	margin: 10px 0;
+	width: 100%;
+	color: rgb(255, 255, 255);
+}
 
-    color: #fff;
+.changePassword-modal #changePasswordButton
+{
+    height: 2rem;
+    position: relative;
+    left: 10%;
+    margin-top: 1rem;
+    width: 80%;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.changePassword-modal #changePasswordButton:hover
+{
+	transition: 0.3s;
+	background-color: #113d5e;
 }

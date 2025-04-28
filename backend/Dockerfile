@@ -11,7 +11,7 @@ RUN npm install jsonwebtoken cookie-parser
 RUN npm install jsonwebtoken @types/jsonwebtoken
 RUN npm install cookie-parser @types/cookie-parser
 RUN npm install multer @types/multer
-RUN npm install fastify @fastify/cors @fastify/cookie @fastify/static @fastify/multipart @fastify/session @fastify/websocket @fastify/passport @fastify/express
+RUN npm install fastify @fastify/cors @fastify/cookie @fastify/static @fastify/multipart @fastify/session @fastify/websocket @fastify/passport @fastify/express install @fastify/oauth2
 
 
 COPY . .
