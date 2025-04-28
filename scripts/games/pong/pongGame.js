@@ -5,7 +5,9 @@ const socket = io('http://127.0.0.1:3000/game', {
 socket.on('connect', () => {
 });
 let mode = 'multi';
-socket.on("matchFound", (data) => {
+let mySide = 'left';
+socket.on('matchFound', ({ roomId, side }) => {
+    mySide = side;
     if (mode === 'multi') {
         displayWaitingScreen();
     }
@@ -107,15 +109,15 @@ function renderGame(matchState) {
 }
 window.addEventListener("keydown", (event) => {
     if (event.key === "w" || event.key === "W") {
-        socket.emit("movePaddle", { paddle: "left", direction: "up" });
+        socket.emit("movePaddle", { paddle: mySide, direction: "up" });
     }
     if (event.key === "s" || event.key === "S") {
-        socket.emit("movePaddle", { paddle: "left", direction: "down" });
+        socket.emit("movePaddle", { paddle: mySide, direction: "down" });
     }
 });
 window.addEventListener("keyup", (event) => {
     if (event.key === "w" || event.key === "W" || event.key === "s" || event.key === "S") {
-        socket.emit("movePaddle", { paddle: "left", direction: null });
+        socket.emit("movePaddle", { paddle: mySide, direction: null });
     }
 });
 window.addEventListener("keydown", (event) => {

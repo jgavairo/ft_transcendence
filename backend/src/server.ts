@@ -217,8 +217,8 @@ function attemptMatch(): void {
       );
       matchStates.set(matchState.roomId, matchState);
 
-      gameNs.to(player1.id).emit('matchFound', { roomId: matchState.roomId });
-      gameNs.to(player2.id).emit('matchFound', { roomId: matchState.roomId });
+      gameNs.to(player1.id).emit('matchFound', { roomId: matchState.roomId, side: 'left' });
+        gameNs.to(player2.id).emit('matchFound', { roomId: matchState.roomId, side: 'right' });
     }
   }
 
