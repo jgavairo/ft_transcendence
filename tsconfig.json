@@ -12,6 +12,6 @@
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true
     },
-    "include": ["scripts/**/*", "scripts/games/pong/pongGame.ts"],
+    "include": ["scripts/**/*", "scripts/games/pong/*"],
     "exclude": ["node_modules"]
 } 

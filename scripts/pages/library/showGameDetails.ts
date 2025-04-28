@@ -1,6 +1,6 @@
 import { fetchUsernames } from "../community/peopleList.js";
 import { gameModalHTML } from "../../sourcepage.js";
-import { displayMenu } from '../../games/pong/pongGame.js';
+import { displayMenu } from '../../games/pong/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
 
@@ -14,6 +14,7 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
     game = gameIdOrObj;
   }
   if (!game) return;
+
 
   // Récupérer les utilisateurs
   const people = await fetchUsernames();
