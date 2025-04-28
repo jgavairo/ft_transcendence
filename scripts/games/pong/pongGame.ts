@@ -8,8 +8,10 @@ socket.on('connect', () => {
 });
 
 let mode: 'solo' | 'multi' = 'multi';
+let mySide: 'left' | 'right' = 'left';
 
-socket.on("matchFound", (data: any) => {
+socket.on('matchFound', ({ roomId, side }: { roomId: string, side: 'left' | 'right' }) => {
+  mySide = side;
   if (mode === 'multi') {
     displayWaitingScreen();
   }
@@ -144,16 +146,16 @@ function renderGame(matchState: any): void {
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "w" || event.key === "W") {
-    socket.emit("movePaddle", { paddle: "left", direction: "up" });
+    socket.emit("movePaddle", { paddle: mySide, direction: "up" });
   }
   if (event.key === "s" || event.key === "S") {
-    socket.emit("movePaddle", { paddle: "left", direction: "down" });
+    socket.emit("movePaddle", { paddle: mySide, direction: "down" });
   }
 });
 
 window.addEventListener("keyup", (event) => {
   if (event.key === "w" || event.key === "W" || event.key === "s" || event.key === "S") {
-    socket.emit("movePaddle", { paddle: "left", direction: null });
+    socket.emit("movePaddle", { paddle: mySide, direction: null });
   }
 });
 

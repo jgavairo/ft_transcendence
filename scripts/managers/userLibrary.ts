@@ -8,7 +8,7 @@ export interface UserLibrary {
     library: number[];
 }
 
-export class UserLibraryManager 
+export class UserLibraryManager
 {
     private static readonly STORAGE_KEY = 'userLibrary';
 
@@ -81,5 +81,4 @@ export class UserLibraryManager
             return [];
     }
 }
-
     
