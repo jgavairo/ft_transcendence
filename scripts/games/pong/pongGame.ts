@@ -1,7 +1,6 @@
 import { io } from 'socket.io-client';
-import { displayMenu, displayPlayMenu, displaySoloMenu, displayWaitingScreen, displayShopMenu } from './DisplayMenu.js';
-
-const HOSTNAME = window.location.hostname;
+import { displayMenu, displayWaitingScreen } from './DisplayMenu.js';
+export const HOSTNAME = window.location.hostname;
 
 export const socket = io(`http://${HOSTNAME}:3000/game`, {
   withCredentials: true,
