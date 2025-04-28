@@ -140,12 +140,11 @@ function setupChangeProfilePictureModal() {
             const data = await response.json();
             if (data.success) {
                 showNotification('Profile picture updated successfully.');
-                // Mettre à jour uniquement l'image dans le header
                 const timestamp = Date.now();
                 const newImagePath = `${data.path}?t=${timestamp}`;
                 const headerProfilePicture = document.querySelector('.profile .profilePicture');
                 if (headerProfilePicture) {
-                    headerProfilePicture.src = `${data.path}?t=${timestamp}`;
+                    headerProfilePicture.src = newImagePath;
                 }
                 setupProfileModal();
             }

@@ -17,6 +17,10 @@ export async function showGameDetails(gameIdOrObj) {
         return;
     // Récupérer les utilisateurs
     const people = await fetchUsernames();
+    // Récupérer l'utilisateur en cours
+    const currentUser = await GameManager.getCurrentUser(); // Assurez-vous que cette méthode existe
+    // Filtrer la liste pour exclure l'utilisateur en cours
+    const filteredPeople = people.filter(person => person.username !== currentUser.username);
     const details = document.querySelector('.library-details');
     if (!details)
         return;
@@ -46,7 +50,7 @@ export async function showGameDetails(gameIdOrObj) {
         <div class="friendsContainer">
           <h3 class="sectionTitle">People List</h3>
           <ul class="friendsList">
-            ${people.map(person => `
+            ${filteredPeople.map(person => `
               <li class="friendItem">
                 <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
                 <span class="friendName">${person.username}</span>
