@@ -233,6 +233,9 @@ const gameNs = app.io.of('/game');
 // Global map pour stocker l'état de chaque match par roomId
 const matchStates: Map<string, MatchState> = new Map();
 
+interface PlayerInfo { side: 'left' | 'right'; mode: 'solo' | 'multi' }
+const playerInfo = new Map<string, PlayerInfo>();
+
 // Interface pour représenter un joueur
 interface Player {
     id: string;
@@ -245,10 +248,13 @@ let matchmakingQueue: Player[] = [];
 
 // Gestion des connexions Socket.IO
 gameNs.on("connection", (socket: Socket) => {
+    
     socket.on('startSolo', ({ username }) => {
+
         const match = startMatch(socket, socket, gameNs);
         matchStates.set(match.roomId, match);
 
+        playerInfo.set(socket.id, { side: 'left', mode: 'solo' });
         socket.emit('matchFound', { roomId: match.roomId });
       });
     
@@ -260,43 +266,53 @@ gameNs.on("connection", (socket: Socket) => {
       });
 
     
-    socket.on("movePaddle", (data: { paddle: "left" | "right"; direction: "up" | "down" | null }) => {
-        const rooms = Array.from(socket.rooms);
-        const roomId = rooms.find(r => r !== socket.id);
-        if (!roomId) return;
-        
-        const matchState = matchStates.get(roomId);
-        if (!matchState) return;
-        
-        if (data.paddle === "left") {
-            matchState.leftPaddleDirection = data.direction;
-        } else if (data.paddle === "right") {
-            matchState.rightPaddleDirection = data.direction;
+      socket.on('movePaddle', (data: { paddle: 'left'|'right'; direction: 'up'|'down'|null }) => {
+        const info = playerInfo.get(socket.id);
+        if (!info) return;
+    
+        // 🔹 En multi, on restreint le côté
+        if (info.mode === 'multi' && info.side !== data.paddle) {
+          return;
         }
-    })
-    socket.on("disconnect", () => {
-        matchmakingQueue = matchmakingQueue.filter(player => player.id !== socket.id);
+        // 🔹 En solo, pas de restriction : il peut bouger left ET right
+
+        const roomId = Array.from(socket.rooms).find(r => r !== socket.id);
+        if (!roomId) return;
+
+        const match = matchStates.get(roomId);
+        if (!match) return;
+    
+        if (data.paddle === 'left') {
+            match.leftPaddleDirection = data.direction;
+        } else {
+            match.rightPaddleDirection = data.direction;
+        }
+      });
+    
+      socket.on('disconnect', () => {
+        playerInfo.delete(socket.id);
+        matchmakingQueue = matchmakingQueue.filter(p => p.id !== socket.id);
     });
 });
 
 //connecter deux joueurs
 function attemptMatch(): void {
     while (matchmakingQueue.length >= 2) {
-      const player1 = matchmakingQueue.shift()!;
-      const player2 = matchmakingQueue.shift()!;
-      console.log(`Match found: ${player1.id} vs ${player2.id}`);
+        const p1 = matchmakingQueue.shift()!;
+        const p2 = matchmakingQueue.shift()!;
+    
+        const sock1 = gameNs.sockets.get(p1.id)!;
+        const sock2 = gameNs.sockets.get(p2.id)!;
+        const match = startMatch(sock1, sock2, gameNs);
+        matchStates.set(match.roomId, match);
 
-      const matchState = startMatch(
-        gameNs.sockets.get(player1.id)!,
-        gameNs.sockets.get(player2.id)!,
-        gameNs
-      );
-      matchStates.set(matchState.roomId, matchState);
+        playerInfo.set(p1.id, { side: 'left',  mode: 'multi' });
+        playerInfo.set(p2.id, { side: 'right', mode: 'multi' });
 
-      gameNs.to(player1.id).emit('matchFound', { roomId: matchState.roomId, side: 'left' });
-        gameNs.to(player2.id).emit('matchFound', { roomId: matchState.roomId, side: 'right' });
+        sock1.emit('matchFound', { roomId: match.roomId, side: 'left',  mode: 'multi' });
+        sock2.emit('matchFound', { roomId: match.roomId, side: 'right', mode: 'multi' });
     }
-  }
+}
 
 // Route pour récupérer le nom d'hôte
 app.get('/api/hostname', async (request: FastifyRequest, reply: FastifyReply) => {

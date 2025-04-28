@@ -21,4 +21,14 @@ export class GameManager
         }
         return data.games;
     }
+
+    static async getCurrentUser(): Promise<any>
+    {
+        const response = await api.get('/api/user/infos');
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.message);
+        }
+        return data.user;
+    }
 }
