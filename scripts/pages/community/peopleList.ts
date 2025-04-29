@@ -125,6 +125,8 @@ export function addFriend(name: string) {
         friends.push(name);
         localStorage.setItem("friends", JSON.stringify(friends));
         console.log(`✅ "${name}" ajouté aux amis.`);
+        //add name to attempting_friend_ids
+        //add this user to the friend_requests of the other user
     }
 }
 
