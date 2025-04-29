@@ -197,6 +197,7 @@ export class DatabaseManager
         if (!this.db)
             throw new Error('Database not initialized');
         
+        // Ajouter le jeu à la bibliothèque de l'utilisateur
         const library = await this.getUserLibrary(userId);
         console.log("Library before adding game:", library);
         
@@ -205,10 +206,35 @@ export class DatabaseManager
             library.push(gameId);
             console.log("Library after adding game:", library);
             
-            // Ajouter cette ligne pour sauvegarder dans la base de données
+            // Mettre à jour la bibliothèque de l'utilisateur
             await this.db.run(
                 'UPDATE users SET library = ? WHERE id = ?',
                 [JSON.stringify(library), userId]
+            );
+        }
+
+        // Ajouter l'utilisateur à la liste des IDs dans la table games
+        const game = await this.db.get('SELECT user_ids FROM games WHERE id = ?', [gameId]);
+        if (!game)
+            throw new Error('Game not found');
+
+        let userIds: number[] = [];
+        if (game.user_ids) {
+            try {
+                userIds = JSON.parse(game.user_ids);
+            } catch (error) {
+                console.error('Error parsing user_ids:', error);
+            }
+        }
+
+        if (!userIds.includes(userId)) {
+            userIds.push(userId);
+            console.log("Updated user_ids for game:", userIds);
+
+            // Mettre à jour la colonne user_ids dans la table games
+            await this.db.run(
+                'UPDATE games SET user_ids = ? WHERE id = ?',
+                [JSON.stringify(userIds), gameId]
             );
         }
     }

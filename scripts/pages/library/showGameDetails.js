@@ -19,8 +19,13 @@ export async function showGameDetails(gameIdOrObj) {
     const people = await fetchUsernames();
     // Récupérer l'utilisateur en cours
     const currentUser = await GameManager.getCurrentUser(); // Assurez-vous que cette méthode existe
-    // Filtrer la liste pour exclure l'utilisateur en cours
-    const filteredPeople = people.filter(person => person.username !== currentUser.username);
+    // Récupérer les user_ids du jeu
+    const userIds = JSON.parse(game.user_ids || '[]'); // Parse user_ids de la table games
+    // Filtrer la liste pour exclure l'utilisateur en cours et vérifier s'ils possèdent le jeu
+    const filteredPeople = people.filter(person => {
+        const personId = person.id; // Temporarily cast to any if id is missing in type
+        return person.username !== currentUser.username && userIds.includes(personId);
+    });
     const details = document.querySelector('.library-details');
     if (!details)
         return;
