@@ -305,6 +305,41 @@ export class DatabaseManager
         const result = await this.db.all('SELECT * FROM games');
         return result;
     }
+
+    public async getVictories(userId: number, gameId: number): Promise<number> {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.get(
+            'SELECT victories FROM game_victories WHERE user_id = ? AND game_id = ?',
+            [userId, gameId]
+        );
+        return result ? result.victories : 0;
+    }
+
+    public async addVictory(userId: number, gameId: number): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        const currentVictories = await this.getVictories(userId, gameId);
+
+        if (currentVictories === 0) {
+            await this.db.run(
+                'INSERT INTO game_victories (user_id, game_id, victories) VALUES (?, ?, ?)',
+                [userId, gameId, 1]
+            );
+        } else {
+            await this.db.run(
+                'UPDATE game_victories SET victories = victories + 1 WHERE user_id = ? AND game_id = ?',
+                [userId, gameId]
+            );
+        }
+    }
+
+    public async getLeaderboard(gameId: number): Promise<{ user_id: number, victories: number }[]> {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.all(
+            'SELECT user_id, victories FROM game_victories WHERE game_id = ? ORDER BY victories DESC',
+            [gameId]
+        );
+        return result;
+    }
 }
 
 export const dbManager = DatabaseManager.getInstance();
