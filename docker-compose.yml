@@ -13,6 +13,8 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    environment:
+      - HOSTNAME=${HOSTNAME}
 
   database:
     image: alpine:latest
@@ -28,11 +30,6 @@ services:
       - uploads_data:/app/uploads
     ports:
       - "3000:3000"
-    environment:
-      - JWT_SECRET=${JWT_SECRET}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - HOSTNAME=${HOSTNAME:-$(hostname)}
     env_file:
       - .env
     restart: unless-stopped
