@@ -6,7 +6,10 @@ CREATE TABLE IF NOT EXISTS users (
     profile_picture TEXT DEFAULT '../../assets/profile_pictures/rael.png',
     bio TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    library TEXT DEFAULT '[]'
+    library TEXT DEFAULT '[]',
+    attempting_friend_ids TEXT DEFAULT '[]',
+    friends TEXT DEFAULT '[]',
+    friend_requests TEXT DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS messages (
