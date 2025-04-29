@@ -27,6 +27,8 @@ const PADDLE_WIDTH = 10;
 const PADDLE_HEIGHT = 100;
 const PADDLE_SPEED = 4;
 const INITIAL_LIVES = 5;
+const LEFT_PX  = 30;
+const RIGHT_PX = CANVAS_WIDTH - 30 - PADDLE_WIDTH;
 
 /**
  * Démarre le match entre deux joueurs et lance la boucle de simulation.
@@ -82,53 +84,63 @@ export function startMatch(
  * Met à jour l'état du match.
  */
 function updateGameState(matchState: MatchState): void {
-  // Mise à jour des positions des paddles (basée sur la direction reçue)
+  // 1) Paddles
   if (matchState.leftPaddleDirection === "up") {
     matchState.leftPaddleY = Math.max(0, matchState.leftPaddleY - PADDLE_SPEED);
   } else if (matchState.leftPaddleDirection === "down") {
     matchState.leftPaddleY = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, matchState.leftPaddleY + PADDLE_SPEED);
   }
-  
   if (matchState.rightPaddleDirection === "up") {
     matchState.rightPaddleY = Math.max(0, matchState.rightPaddleY - PADDLE_SPEED);
   } else if (matchState.rightPaddleDirection === "down") {
     matchState.rightPaddleY = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, matchState.rightPaddleY + PADDLE_SPEED);
   }
-  
-  // Mise à jour de la position de la balle
+
+  // 2) Balle
   matchState.ballX += matchState.ballSpeedX;
   matchState.ballY += matchState.ballSpeedY;
-  
-  // Collision avec le haut et le bas
+
+  // 2a) Rebonds haut/bas
   if (matchState.ballY - BALL_RADIUS <= 0 || matchState.ballY + BALL_RADIUS >= CANVAS_HEIGHT) {
     matchState.ballSpeedY = -matchState.ballSpeedY;
   }
-  
-  if ( matchState.ballX - BALL_RADIUS <= 30 + PADDLE_WIDTH &&
+
+  // 2b) Collision LEFT paddle
+  if (
+    matchState.ballX - BALL_RADIUS <= LEFT_PX + PADDLE_WIDTH &&
+    matchState.ballX - BALL_RADIUS >= LEFT_PX &&
     matchState.ballY >= matchState.leftPaddleY &&
     matchState.ballY <= matchState.leftPaddleY + PADDLE_HEIGHT
   ) {
     matchState.ballSpeedX = -matchState.ballSpeedX * 1.1;
+    // optionnel : un petit random pour varier l’angle
+    const deltaY = (matchState.ballY - (matchState.leftPaddleY + PADDLE_HEIGHT/2)) / (PADDLE_HEIGHT/2);
+    matchState.ballSpeedY += deltaY * 2; 
   }
 
+  // 2c) Collision RIGHT paddle
   if (
-    matchState.ballX + BALL_RADIUS >= CANVAS_WIDTH - 50 - PADDLE_WIDTH &&
+    matchState.ballX + BALL_RADIUS >= RIGHT_PX &&
+    matchState.ballX + BALL_RADIUS <= RIGHT_PX + PADDLE_WIDTH &&
     matchState.ballY >= matchState.rightPaddleY &&
     matchState.ballY <= matchState.rightPaddleY + PADDLE_HEIGHT
   ) {
     matchState.ballSpeedX = -matchState.ballSpeedX * 1.1;
+    // optionnel : variation selon point d’impact
+    const deltaY = (matchState.ballY - (matchState.rightPaddleY + PADDLE_HEIGHT/2)) / (PADDLE_HEIGHT/2);
+    matchState.ballSpeedY += deltaY * 2;
   }
-  
-  // Score et réinitialisation de la balle
+
+  // 3) Reprise après score  
   if (matchState.ballX - BALL_RADIUS <= 0) {
     matchState.leftLives--;
-    resetBall(matchState, 1);
+    resetBall(matchState, +1);
   } else if (matchState.ballX + BALL_RADIUS >= CANVAS_WIDTH) {
     matchState.rightLives--;
     resetBall(matchState, -1);
   }
-  
-  // Vérification de la fin du match
+
+  // 4) Fin de partie ?
   if (matchState.leftLives <= 0 || matchState.rightLives <= 0) {
     matchState.gameOver = true;
   }
