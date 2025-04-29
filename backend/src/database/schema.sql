@@ -22,5 +22,6 @@ CREATE TABLE IF NOT EXISTS games
     name TEXT NOT NULL,
     price REAL NOT NULL,
     description TEXT NOT NULL,
-    image TEXT NOT NULL
+    image TEXT NOT NULL,
+    user_ids TEXT DEFAULT '[]'
 );
