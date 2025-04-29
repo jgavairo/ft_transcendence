@@ -10,6 +10,7 @@ import { userRoutes, ChangePasswordRequest } from "./routes/user.js";
 import { authRoutes, googleAuthHandler } from "./routes/authentification.js";
 import { profileRoutes } from './routes/profile.js';
 import { startMatch, MatchState } from "./games/pong/gameSimulation.js";
+import { startTriMatch, updateTriMatch, TriMatchState } from './games/pong/TripongSimulation.js';
 import fs from 'fs';
 import { authMiddleware } from './middleware/auth.js';
 import { chatRoutes } from './routes/chat.js';
@@ -230,88 +231,124 @@ app.get('/api/games/getAll', async (request: FastifyRequest, reply: FastifyReply
 ////////////////////////////////////////////////
 
 const gameNs = app.io.of('/game');
-// Global map pour stocker l'état de chaque match par roomId
-const matchStates: Map<string, MatchState> = new Map();
 
-interface PlayerInfo { side: 'left' | 'right'; mode: 'solo' | 'multi' }
+// --- Types partagés ---
+interface PlayerInfo {
+  side: number;               // 0=player1/left, 1=player2/right (ou 2 pour tri)
+  mode: 'solo' | 'multi' | 'tri';
+}
 const playerInfo = new Map<string, PlayerInfo>();
 
-// Interface pour représenter un joueur
-interface Player {
-    id: string;
-    username: string;
-}
+interface Player { id: string; username: string; }
 
-// File d'attente des joueurs pour le matchmaking
+// --- Files d'attente & états de match ---
 let matchmakingQueue: Player[] = [];
+const matchStates = new Map<string, MatchState>();
 
+let triQueue: Player[] = [];
+const triMatchStates = new Map<string, TriMatchState>();
 
-// Gestion des connexions Socket.IO
-gameNs.on("connection", (socket: Socket) => {
-    
-    socket.on('startSolo', ({ username }) => {
+// === Lorsqu'un client se connecte ===
+gameNs.on('connection', (socket: Socket) => {
+  // --- SOLO (1 joueur local) ---
+  socket.on('startSolo', ({ username }: { username: string }) => {
+    const match = startMatch(socket, socket, gameNs);
+    matchStates.set(match.roomId, match);
+    playerInfo.set(socket.id, { side: 0, mode: 'solo' });
+    socket.emit('matchFound', { roomId: match.roomId, side: 0, mode: 'solo' });
+  });
 
-        const match = startMatch(socket, socket, gameNs);
-        matchStates.set(match.roomId, match);
+  // --- CLASSIC 2 JOUEURS ---
+  socket.on('joinQueue', ({ username }: { username: string }) => {
+    matchmakingQueue.push({ id: socket.id, username });
+    attemptClassicMatch();
+  });
 
-        playerInfo.set(socket.id, { side: 'left', mode: 'solo' });
-        socket.emit('matchFound', { roomId: match.roomId });
-      });
-    
-      socket.on('joinQueue', ({ username }) => {
-        // 1) On inscrit ce joueur dans la file
-        matchmakingQueue.push({ id: socket.id, username });
-        // 2) On tente d'associer deux joueurs
-        attemptMatch();
-      });
+  socket.on('movePaddle', (data: { paddle: 0|1; direction: 'up'|'down'|null }) => {
+    const info = playerInfo.get(socket.id);
+    if (!info || info.mode !== 'multi') return;
+    if (info.side !== data.paddle) return;  // on pilote que son côté
+    const roomId = [...socket.rooms].find(r => r !== socket.id);
+    if (!roomId) return;
+    const match = matchStates.get(roomId);
+    if (!match) return;
+    if (data.paddle === 0) match.leftPaddleDirection  = data.direction;
+    else                  match.rightPaddleDirection = data.direction;
+  });
 
-    
-      socket.on('movePaddle', (data: { paddle: 'left'|'right'; direction: 'up'|'down'|null }) => {
-        const info = playerInfo.get(socket.id);
-        if (!info) return;
-    
-        // 🔹 En multi, on restreint le côté
-        if (info.mode === 'multi' && info.side !== data.paddle) {
-          return;
-        }
-        // 🔹 En solo, pas de restriction : il peut bouger left ET right
+  // --- TRI-PONG 3 JOUEURS ---
+  socket.on('joinTriQueue', ({ username }: { username: string }) => {
+    triQueue.push({ id: socket.id, username });
+    attemptTriMatch();
+  });
 
-        const roomId = Array.from(socket.rooms).find(r => r !== socket.id);
-        if (!roomId) return;
+  socket.on('movePaddleTri', ({ direction }: { direction: 'up'|'down'|null }) => {
+    const info = playerInfo.get(socket.id);
+    if (!info || info.mode !== 'tri') return;
+    const roomId = [...socket.rooms].find(r => r !== socket.id);
+    if (!roomId) return;
+    const match = triMatchStates.get(roomId);
+    if (!match) return;
+    match.paddles[info.side].direction = direction;
+  });
 
-        const match = matchStates.get(roomId);
-        if (!match) return;
-    
-        if (data.paddle === 'left') {
-            match.leftPaddleDirection = data.direction;
-        } else {
-            match.rightPaddleDirection = data.direction;
-        }
-      });
-    
-      socket.on('disconnect', () => {
-        playerInfo.delete(socket.id);
-        matchmakingQueue = matchmakingQueue.filter(p => p.id !== socket.id);
-    });
+  // --- Nettoyage à la déconnexion ---
+  socket.on('disconnect', () => {
+    playerInfo.delete(socket.id);
+    matchmakingQueue = matchmakingQueue.filter(p => p.id !== socket.id);
+    triQueue         = triQueue.filter(p => p.id !== socket.id);
+  });
 });
 
-//connecter deux joueurs
-function attemptMatch(): void {
-    while (matchmakingQueue.length >= 2) {
-        const p1 = matchmakingQueue.shift()!;
-        const p2 = matchmakingQueue.shift()!;
-    
-        const sock1 = gameNs.sockets.get(p1.id)!;
-        const sock2 = gameNs.sockets.get(p2.id)!;
-        const match = startMatch(sock1, sock2, gameNs);
-        matchStates.set(match.roomId, match);
+// === Fonctions de mise en relation ===
 
-        playerInfo.set(p1.id, { side: 'left',  mode: 'multi' });
-        playerInfo.set(p2.id, { side: 'right', mode: 'multi' });
+// 2-joueurs classique
+function attemptClassicMatch() {
+  while (matchmakingQueue.length >= 2) {
+    const p1 = matchmakingQueue.shift()!;
+    const p2 = matchmakingQueue.shift()!;
+    const s1 = gameNs.sockets.get(p1.id)!;
+    const s2 = gameNs.sockets.get(p2.id)!;
 
-        sock1.emit('matchFound', { roomId: match.roomId, side: 'left',  mode: 'multi' });
-        sock2.emit('matchFound', { roomId: match.roomId, side: 'right', mode: 'multi' });
-    }
+    const match = startMatch(s1, s2, gameNs);
+    matchStates.set(match.roomId, match);
+
+    playerInfo.set(p1.id, { side: 0, mode: 'multi' });
+    playerInfo.set(p2.id, { side: 1, mode: 'multi' });
+
+    s1.join(match.roomId);
+    s2.join(match.roomId);
+    s1.emit('matchFound', { roomId: match.roomId, side: 0, mode: 'multi' });
+    s2.emit('matchFound', { roomId: match.roomId, side: 1, mode: 'multi' });
+  }
+}
+
+// 3-joueurs Tri-Pong
+function attemptTriMatch() {
+  while (triQueue.length >= 3) {
+    const trio = triQueue.splice(0, 3);
+    const socks = trio
+      .map(p => gameNs.sockets.get(p.id))
+      .filter((s): s is Socket => !!s);
+
+    const match = startTriMatch(socks, gameNs);
+    triMatchStates.set(match.roomId, match);
+
+    socks.forEach((s, i) => {
+      playerInfo.set(s.id, { side: i, mode: 'tri' });
+      s.join(match.roomId);
+      s.emit('matchFoundTri', { roomId: match.roomId, side: i });
+    });
+
+    // boucle serveur 60 FPS
+    const tick = setInterval(() => {
+      const m = triMatchStates.get(match.roomId);
+      if (!m) return clearInterval(tick);
+      updateTriMatch(m);
+      gameNs.to(match.roomId).emit('stateUpdateTri', m);
+      if (m.gameOver) clearInterval(tick);
+    }, 1000/60);
+  }
 }
 
 // Route pour récupérer le nom d'hôte

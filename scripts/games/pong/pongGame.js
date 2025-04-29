@@ -1,9 +1,12 @@
 import { io } from 'socket.io-client';
-import { displayMenu, displayWaitingScreen } from './DisplayMenu.js';
+import { displayMenu } from './DisplayMenu.js';
+import { displayWaitingScreen } from './WaitingScreen.js';
+import { connectTriPong } from './TriPong.js';
 export const HOSTNAME = window.location.hostname;
 export const socket = io(`http://${HOSTNAME}:3000/game`, {
     withCredentials: true,
 });
+connectTriPong();
 socket.on('connect', () => {
 });
 export let mode = 'multi';
