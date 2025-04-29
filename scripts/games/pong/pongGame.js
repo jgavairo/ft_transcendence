@@ -25,6 +25,12 @@ socket.on('matchFound', ({ roomId, side }) => {
 });
 socket.on('gameState', (state) => {
     renderGame(state);
+    // Vérifiez si la partie est terminée
+    if (state.leftLives === 0 || state.rightLives === 0) {
+        const winnerId = state.leftLives > 0 ? state.leftPlayerId : state.rightPlayerId;
+        const gameId = state.gameId; // Assurez-vous que l'ID du jeu est inclus dans l'état
+        socket.emit('gameOver', { winnerId, gameId });
+    }
 });
 export let selectedPaddleColor = 'white';
 export function setSelectedPaddleColor(c) { selectedPaddleColor = c; }
