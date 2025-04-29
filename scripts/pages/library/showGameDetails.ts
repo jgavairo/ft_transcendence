@@ -1,4 +1,4 @@
-import { fetchUsernames } from "../community/peopleList.js";
+import { fetchUsernames, showProfileCard } from "../community/peopleList.js"; // Import de showProfileCard
 import { gameModalHTML } from "../../sourcepage.js";
 import { displayMenu } from '../../games/pong/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
@@ -19,7 +19,7 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
   const people = await fetchUsernames();
 
   // Récupérer l'utilisateur en cours
-  const currentUser = await GameManager.getCurrentUser(); // Assurez-vous que cette méthode existe
+  const currentUser = await GameManager.getCurrentUser();
 
   // Récupérer les user_ids du jeu
   const userIds = JSON.parse(game.user_ids || '[]'); // Parse user_ids de la table games
@@ -62,7 +62,9 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
             ${filteredPeople.map(person => `
               <li class="friendItem">
                 <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
-                <span class="friendName">${person.username}</span>
+                <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
+                  ${person.username}
+                </span>
               </li>
             `).join('')}
           </ul>
@@ -70,6 +72,18 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
       </div>
     </div>
   `;
+
+  // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
+  const friendNames = details.querySelectorAll('.friendName') as NodeListOf<HTMLSpanElement>;
+  friendNames.forEach(friendName => {
+    friendName.addEventListener('click', () => {
+      const username = friendName.getAttribute('data-username')!;
+      const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
+      const email = friendName.getAttribute('data-email')!;
+      const bio = friendName.getAttribute('data-bio') || 'No bio available';
+      showProfileCard(username, profilePicture, email, bio);
+    });
+  });
 
   // Bouton de fermeture
   const closeBtn = details.querySelector('.close-button') as HTMLButtonElement;
