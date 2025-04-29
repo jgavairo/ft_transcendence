@@ -27,7 +27,6 @@ const app = fastify({
     bodyLimit: 10 * 1024 * 1024 // 10MB
 });
 
-
 // Fonction d'initialisation des plugins
 await app.register(fastifyExpress);
 
@@ -86,7 +85,7 @@ app.register(fastifyOauth2 as unknown as FastifyPluginAsync<any>,
         auth: fastifyOauth2.GOOGLE_CONFIGURATION
     },
     startRedirectPath: '/api/auth/google',
-    callbackUri: `http://z3r5p2.42lyon.fr:3000/api/auth/google/callback`,
+    callbackUri: `http://${HOSTNAME}:3000/api/auth/google/callback`,
     generateStateFunction: () => {
         return 'state_' + Math.random().toString(36).substring(7);
     },
@@ -143,7 +142,7 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
 
         if (userInfo.error) {
             console.error("Google API error:", userInfo.error);
-            return reply.redirect(`http://z3r5p2.42lyon.fr:8080/login?error=google`);
+            return reply.redirect(`http://${HOSTNAME}:8080/login?error=google`);
         }
 
         const result = await googleAuthHandler(userInfo);
@@ -151,7 +150,7 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
 
         if (!result.token) {
             console.error('No token generated from googleAuthHandler');
-            return reply.redirect(`http://z3r5p2.42lyon.fr:8080/login?error=google`);
+            return reply.redirect(`http://${HOSTNAME}:8080/login?error=google`);
         }
 
         console.log("Setting token cookie:", result.token);
@@ -163,11 +162,16 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
             maxAge: 24 * 60 * 60 * 1000 // 24 heures
         });
 
+        // Supprimer le cookie oauth2-redirect-state
+        reply.clearCookie('oauth2-redirect-state', {
+            path: '/'
+        });
+
         // Redirige vers le frontend après succès
-        return reply.redirect(`http://z3r5p2.42lyon.fr:8080/`);
+        return reply.redirect(`http://${HOSTNAME}:8080/`);
     } catch (error) {
         console.error('Error during Google authentication:', error);
-        return reply.redirect(`http://z3r5p2.42lyon.fr:8080/login?error=google`);
+        return reply.redirect(`http://${HOSTNAME}:8080/login?error=google`);
     }
 });
 
@@ -323,17 +327,13 @@ function attemptMatch(): void {
     }
 }
 
-// Route pour récupérer le nom d'hôte
-app.get('/api/hostname', async (request: FastifyRequest, reply: FastifyReply) => {
-    return { hostname: process.env.HOSTNAME || 'localhost' };
-});
-
 ////////////////////////////////////////////
 //              SERVER START              //
 ////////////////////////////////////////////
 
 const start = async () => {
     try {
+        console.log("HOSTNAME", HOSTNAME);
         await dbManager.initialize();
         
         await app.listen({ port: 3000, host: '0.0.0.0' });
