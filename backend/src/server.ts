@@ -288,7 +288,16 @@ gameNs.on("connection", (socket: Socket) => {
             match.rightPaddleDirection = data.direction;
         }
       });
-    
+
+      socket.on('gameOver', async ({ winnerId, gameId }: { winnerId: number, gameId: number }) => {
+        try {
+            await dbManager.addVictory(winnerId, gameId);
+            console.log(`Victory added for user ${winnerId} in game ${gameId}`);
+        } catch (error) {
+            console.error('Error adding victory:', error);
+        }
+    });
+
       socket.on('disconnect', () => {
         playerInfo.delete(socket.id);
         matchmakingQueue = matchmakingQueue.filter(p => p.id !== socket.id);
@@ -368,3 +377,43 @@ const start = async () => {
 };
 
 start();
+
+/////////////////
+// VICTORY ROUTES //
+/////////////////
+
+// Route pour récupérer le nombre de victoires d'un utilisateur pour un jeu donné
+app.get('/api/victories/:userId/:gameId', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const { userId, gameId } = request.params as { userId: string, gameId: string };
+    try {
+        const victories = await dbManager.getVictories(parseInt(userId), parseInt(gameId));
+        return reply.send({ victories });
+    } catch (error) {
+        console.error('Error fetching victories:', error);
+        return reply.status(500).send({ error: 'Failed to fetch victories' });
+    }
+});
+
+// Route pour ajouter une victoire pour un utilisateur et un jeu donné
+app.post('/api/victories/add', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const { userId, gameId } = request.body as { userId: number, gameId: number };
+    try {
+        await dbManager.addVictory(userId, gameId);
+        return reply.send({ success: true });
+    } catch (error) {
+        console.error('Error adding victory:', error);
+        return reply.status(500).send({ error: 'Failed to add victory' });
+    }
+});
+
+// Route pour récupérer le classement des utilisateurs pour un jeu donné
+app.get('/api/leaderboard/:gameId', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const { gameId } = request.params as { gameId: string };
+    try {
+        const leaderboard = await dbManager.getLeaderboard(parseInt(gameId));
+        return reply.send({ leaderboard });
+    } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        return reply.status(500).send({ error: 'Failed to fetch leaderboard' });
+    }
+});

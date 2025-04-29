@@ -3,37 +3,60 @@ import { gameModalHTML } from "../../sourcepage.js";
 import { displayMenu } from '../../games/pong/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
+import { HOSTNAME } from "../../main.js"; // Assurez-vous que HOSTNAME est correctement importé
+
+// Nouvelle fonction pour récupérer le classement des joueurs
+async function fetchLeaderboard(gameId: number): Promise<{ user_id: number, victories: number }[]> {
+    try {
+        const response = await fetch(`http://${HOSTNAME}:3000/api/leaderboard/${gameId}`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        if (data.leaderboard) {
+            return data.leaderboard;
+        } else {
+            console.error('Failed to fetch leaderboard:', data.error);
+            return [];
+        }
+    } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        return [];
+    }
+}
 
 export async function showGameDetails(gameIdOrObj: number | any): Promise<void> {
-  // Récupérer l'objet game complet
-  let game;
-  if (typeof gameIdOrObj === 'number') {
-    const allGames = await GameManager.getGameList();
-    game = allGames.find(g => g.id === gameIdOrObj);
-  } else {
-    game = gameIdOrObj;
-  }
-  if (!game) return;
+    // Récupérer l'objet game complet
+    let game;
+    if (typeof gameIdOrObj === 'number') {
+        const allGames = await GameManager.getGameList();
+        game = allGames.find(g => g.id === gameIdOrObj);
+    } else {
+        game = gameIdOrObj;
+    }
+    if (!game) return;
 
-  // Récupérer les utilisateurs
-  const people = await fetchUsernames();
+    // Récupérer les utilisateurs
+    const people = await fetchUsernames();
 
-  // Récupérer l'utilisateur en cours
-  const currentUser = await GameManager.getCurrentUser();
+    // Récupérer l'utilisateur en cours
+    const currentUser = await GameManager.getCurrentUser();
 
-  // Récupérer les user_ids du jeu
-  const userIds = JSON.parse(game.user_ids || '[]'); // Parse user_ids de la table games
+    // Récupérer les user_ids du jeu
+    const userIds = JSON.parse(game.user_ids || '[]'); // Parse user_ids de la table games
 
-  // Filtrer la liste pour exclure l'utilisateur en cours et vérifier s'ils possèdent le jeu
-  const filteredPeople = people.filter(person => {
-    const personId = (person as any).id; // Temporarily cast to any if id is missing in type
-    return person.username !== currentUser.username && userIds.includes(personId);
-  });
+    // Filtrer la liste pour exclure l'utilisateur en cours et vérifier s'ils possèdent le jeu
+    const filteredPeople = people.filter(person => {
+        const personId = (person as any).id; // Temporarily cast to any if id is missing in type
+        return person.username !== currentUser.username && userIds.includes(personId);
+    });
 
-  const details = document.querySelector('.library-details') as HTMLElement;
-  if (!details) return;
+    // Récupérer le classement des joueurs pour ce jeu
+    const leaderboard = await fetchLeaderboard(game.id);
 
-  details.innerHTML = `
+    const details = document.querySelector('.library-details') as HTMLElement;
+    if (!details) return;
+
+    details.innerHTML = `
     <div class="detail-container">
       <div class="detail-image">
         <button class="close-button">&times;</button>
@@ -46,14 +69,19 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
         <div class="rankingContainer">
           <h3 class="sectionTitle">Player Ranking</h3>
           <ul class="rankingList">
-            <li class="rankingItem">
-              <span class="numberRank">1</span>
-              <img src="/assets/pp.png" class="profilePic" alt="Profile">
-              <div class="playerInfo">
-                <span class="playerName">Jordan</span>
-                <span class="playerWins">Wins: 10</span>
-              </div>
-            </li>
+            ${leaderboard.map((entry, index) => {
+                const player = people.find(person => (person as any).id === entry.user_id);
+                return `
+                  <li class="rankingItem">
+                    <span class="numberRank">${index + 1}</span>
+                    <img src="${player?.profile_picture || '/assets/default-profile.png'}" class="profilePic" alt="Profile">
+                    <div class="playerInfo">
+                      <span class="playerName">${player?.username || 'Unknown'}</span>
+                      <span class="playerWins">Wins: ${entry.victories}</span>
+                    </div>
+                  </li>
+                `;
+            }).join('')}
           </ul>
         </div>
         <div class="friendsContainer">
@@ -73,30 +101,30 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
     </div>
   `;
 
-  // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
-  const friendNames = details.querySelectorAll('.friendName') as NodeListOf<HTMLSpanElement>;
-  friendNames.forEach(friendName => {
-    friendName.addEventListener('click', () => {
-      const username = friendName.getAttribute('data-username')!;
-      const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
-      const email = friendName.getAttribute('data-email')!;
-      const bio = friendName.getAttribute('data-bio') || 'No bio available';
-      showProfileCard(username, profilePicture, email, bio);
+    // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
+    const friendNames = details.querySelectorAll('.friendName') as NodeListOf<HTMLSpanElement>;
+    friendNames.forEach(friendName => {
+        friendName.addEventListener('click', () => {
+            const username = friendName.getAttribute('data-username')!;
+            const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
+            const email = friendName.getAttribute('data-email')!;
+            const bio = friendName.getAttribute('data-bio') || 'No bio available';
+            showProfileCard(username, profilePicture, email, bio);
+        });
     });
-  });
 
-  // Bouton de fermeture
-  const closeBtn = details.querySelector('.close-button') as HTMLButtonElement;
-  closeBtn.addEventListener('click', () => {
-    setupLibrary();
-  });
+    // Bouton de fermeture
+    const closeBtn = details.querySelector('.close-button') as HTMLButtonElement;
+    closeBtn.addEventListener('click', () => {
+        setupLibrary();
+    });
 
-  // Bouton PLAY
-  const playBtn = details.querySelector('#launchGameButton') as HTMLButtonElement;
-  playBtn.addEventListener('click', () => {
-    const modal = document.getElementById('optionnalModal');
-    if (!modal) return;
-    modal.innerHTML = gameModalHTML;
-    displayMenu();
-  });
+    // Bouton PLAY
+    const playBtn = details.querySelector('#launchGameButton') as HTMLButtonElement;
+    playBtn.addEventListener('click', () => {
+        const modal = document.getElementById('optionnalModal');
+        if (!modal) return;
+        modal.innerHTML = gameModalHTML;
+        displayMenu();
+    });
 }
