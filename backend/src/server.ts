@@ -18,7 +18,7 @@ import { gameRoutes } from './routes/game.js';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyOauth2 from '@fastify/oauth2';
 import type { FastifyPluginAsync } from 'fastify';
-
+import { friendsRoutes } from './routes/friends.js';
 export const JWT_SECRET = process.env.JWT_SECRET || ''
 export const HOSTNAME = process.env.HOSTNAME || 'localhost'
 
@@ -212,6 +212,14 @@ app.post('/api/profile/changePicture', { preHandler: authMiddleware }, async (re
 
 app.post('/api/profile/updateBio', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return profileRoutes.updateBio(request, reply);
+});
+
+////////////////////
+// FRIENDS ROUTES //
+////////////////////
+
+app.post('/api/friends/sendRequest', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return friendsRoutes.sendRequest(request, reply);
 });
 
 /////////////////
@@ -411,9 +419,9 @@ const start = async () => {
 
 start();
 
-/////////////////
+////////////////////
 // VICTORY ROUTES //
-/////////////////
+////////////////////
 
 // Route pour récupérer le nombre de victoires d'un utilisateur pour un jeu donné
 app.get('/api/victories/:userId/:gameId', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
