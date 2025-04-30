@@ -1,4 +1,5 @@
 import { HOSTNAME } from "../../main.js";
+import { FriendsManager } from "../../managers/friendsManager.js";
 
 const STORAGE_KEY = "people";
 
@@ -119,12 +120,15 @@ export function removeFriend(name: string) {
     console.log(`❌ "${name}" supprimé des amis.`);
 }
 
+
+
 export function addFriend(name: string) {
     const friends = getFriendsFromStorage();
     if (!friends.includes(name)) {
         friends.push(name);
         localStorage.setItem("friends", JSON.stringify(friends));
         console.log(`✅ "${name}" ajouté aux amis.`);
+        FriendsManager.sendFriendRequest(name);
         //add name to attempting_friend_ids
         //add this user to the friend_requests of the other user
     }
