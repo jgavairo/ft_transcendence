@@ -4,6 +4,7 @@ import { showNotification, showErrorNotification } from "../helpers/notification
 import api from "../helpers/api.js";
 import { setupProfileButton } from "../header/navigation.js";
 import { googleSignInHandler } from "../modals/login/googleSignIn.js";
+import { socket } from "../sockets/socket.js";
 
 export class LoginManager
 {
@@ -63,6 +64,7 @@ export class LoginManager
                     MainApp.setupHeader();
                     MainApp.setupCurrentPage();
                     setupProfileButton();
+                    socket.emit('authenticate', { userId: data.userId });
                 }
                 else
                 {
