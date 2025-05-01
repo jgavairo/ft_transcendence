@@ -17,6 +17,9 @@ export interface User {
     bio?: string; // Nouvelle propriété pour la bio
     created_at?: number;
     library?: number[];
+    attempting_friend_ids?: number[];
+    friends: number [];
+    friend_requests: number[];
 }
 
 export interface Game {
@@ -277,6 +280,35 @@ export class DatabaseManager
         if (!this.db) throw new Error('Database not initialized');
         const result = await this.db.all('SELECT id, username, profile_picture, email, bio FROM users');
         return result;
+    }
+
+    //********************FRIENDS-PART*******************************
+
+    public async sendFriendRequest(senderId: number, receiverId: number): Promise<void>
+    {
+        if (!this.db) throw new Error('Database not initialized');
+        //verifier si la requete n'existe pas deja 
+        const result = await this.db.get('SELECT friend_requests, attempting_friend_ids FROM users WHERE id = ?', [senderId]);
+        if (result)
+        {
+            if (result.friend_requests.includes(receiverId) || result.attempting_friend_ids.includes(receiverId))
+                throw new Error('Friend request already exists');
+        }
+
+        //verifier si l'utilisateur est deja ami
+        const result2 = await this.db.get('SELECT friends FROM users WHERE id = ?', [receiverId]);
+        if (result2)
+        {
+            if (result2.friends.includes(senderId))
+                throw new Error('User is already friends');
+        }
+        //ajouter la requete a la base de donnees
+
+        // ajouter senderID dans request de receiverID
+        await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', [JSON.stringify([...result.friend_requests, senderId]), receiverId]);
+        // ajouter receiverID dans attemping friends de senderID
+        await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', [JSON.stringify([...result.attempting_friend_ids, receiverId]), senderId]);
+        // envoyer la notification par socket a recevierID
     }
 
     //********************MESSAGES-PART*******************************

@@ -88,7 +88,7 @@ const addGameHandler = async (request: FastifyRequest, reply: FastifyReply) =>
             message: "Jeu ajouté à la bibliothèque"
         });
     } 
-    catch (error) 
+    catch (error)
     {
         console.error("Erreur détaillée:", error);
         return reply.status(500).send({

@@ -89,6 +89,9 @@ const registerHandler = async (req: FastifyRequest, res: FastifyReply) =>
             email: email,
             password_hash: password,
             profile_picture: '../assets/profile_pictures/default.png',
+            friends: [],
+            friend_requests: [],
+            attempting_friend_ids: []
         });
 
         return res.send
@@ -194,7 +197,10 @@ export const googleAuthHandler = async (userInfo: { email?: string; name?: strin
             username: username,
             email: email,
             password_hash: '',
-            profile_picture: picture || '../assets/profile_pictures/default.png'
+            profile_picture: picture || '../assets/profile_pictures/default.png',
+            friends: [],
+            friend_requests: [],
+            attempting_friend_ids: []
         });
         user = await dbManager.getUserById(userID);
         console.log("New user created:", user);
