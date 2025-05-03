@@ -2,6 +2,7 @@ import { io } from 'socket.io-client';
 import { displayMenu } from './DisplayMenu.js';
 import { displayWaitingScreen } from './WaitingScreen.js';
 import { connectTriPong } from './TriPong.js';
+import { displayMatchFound } from './DisplayMatchFound.js';
 
 export const HOSTNAME = window.location.hostname;
 
@@ -19,17 +20,24 @@ export function setMode(m: 'solo' | 'multi') { mode = m; }
 
 export let mySide: 'left' | 'right' = 'left';
 
-socket.on('matchFound', ({ roomId, side }: { roomId: string, side: 'left' | 'right' }) => {
-  
-  if (mode == 'solo') {
+socket.on('matchFound', (data: {
+  roomId: string,
+  side: 'left'|'right',
+  you: string,
+  opponent: string
+  }) => {
+  if (mode === 'solo') {
     mySide = 'left';
+  } else {
+    mySide = data.side;
   }
-  else {
-    mySide = side;
-  }
-  if (mode == 'multi') {
-    displayWaitingScreen();
-  }
+
+  displayWaitingScreen();
+
+  // displayMatchFound(`${data.you} vs ${data.opponent}`);
+  // setTimeout(() => {
+  // }, 1000);
+  
 });
 
 socket.on('gameState', (state: any) => {

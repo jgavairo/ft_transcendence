@@ -12,16 +12,17 @@ socket.on('connect', () => {
 export let mode = 'multi';
 export function setMode(m) { mode = m; }
 export let mySide = 'left';
-socket.on('matchFound', ({ roomId, side }) => {
-    if (mode == 'solo') {
+socket.on('matchFound', (data) => {
+    if (mode === 'solo') {
         mySide = 'left';
     }
     else {
-        mySide = side;
+        mySide = data.side;
     }
-    if (mode == 'multi') {
-        displayWaitingScreen();
-    }
+    displayWaitingScreen();
+    // displayMatchFound(`${data.you} vs ${data.opponent}`);
+    // setTimeout(() => {
+    // }, 1000);
 });
 socket.on('gameState', (state) => {
     renderGame(state);

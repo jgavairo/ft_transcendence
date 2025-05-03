@@ -46,23 +46,54 @@ export function joinTriQueue(username: string) {
   socket.emit('joinTriQueue', { username });
 }
 
+export function startSoloTriPong(username: string) {
+  socket.emit('startSoloTri', { username });
+}
+
+
 // Envoi des commandes paddle au serveur
-function sendMove(direction: 'up' | 'down' | null) {
-  socket.emit('movePaddleTri', { direction });
+function sendMove(side: number, direction: 'up'|'down'|null) {
+  socket.emit('movePaddleTri', { side, direction });
 }
 
 // Écoute clavier global
-window.addEventListener('keydown', e => {
-  const valid = ['KeyW','KeyS','KeyI','KeyK','ArrowUp','ArrowDown'];
-  if (valid.includes(e.code)) {
-    const dir = (e.code === 'KeyW' || e.code === 'KeyI' || e.code === 'ArrowUp')
-      ? 'up' : 'down';
-    sendMove(dir);
+window.addEventListener('keydown', (e: KeyboardEvent) => {
+  if (mySide >= 0) {
+    // —— mode multi-tri : votre player (mySide) se déplace avec W/S seulement
+    if (e.code === 'KeyW') {
+      sendMove(mySide, 'up');
+    } else if (e.code === 'KeyS') {
+      sendMove(mySide, 'down');
+    }
+  } else {
+    // —— mode solo-tri : un seul joueur pilote tout, on garde W/S, I/K, flèches
+    if (['KeyW','KeyS','KeyI','KeyK','ArrowUp','ArrowDown'].includes(e.code)) {
+      let side: number;
+      if (['KeyW','KeyS'].includes(e.code))          side = 0;
+      else if (['KeyI','KeyK'].includes(e.code))     side = 1;
+      else /* arrows */                              side = 2;
+      const dir = (e.code === 'KeyW' || e.code === 'KeyI' || e.code === 'ArrowUp') 
+                  ? 'up' : 'down';
+      sendMove(side, dir);
+    }
   }
 });
-window.addEventListener('keyup', e => {
-  if (['KeyW','KeyS','KeyI','KeyK','ArrowUp','ArrowDown'].includes(e.code)) {
-    sendMove(null);
+
+window.addEventListener('keyup', (e: KeyboardEvent) => {
+  if (mySide >= 0) {
+    // —— multi-tri : on arrête toujours avec W/S
+    if (e.code === 'KeyW' || e.code === 'KeyS') {
+      sendMove(mySide, null);
+    }
+  } else {
+    // —— solo-tri : on arrête le paddle correspondant
+    if (['KeyW','KeyS','KeyI','KeyK','ArrowUp','ArrowDown'].includes(e.code)) {
+      let side: number;
+      if (['KeyW','KeyS'].includes(e.code))          side = 0;
+      else if (['KeyI','KeyK'].includes(e.code))     side = 1;
+      else /* arrows */                              side = 2;
+      sendMove(side, null);
+    }
   }
 });
 
