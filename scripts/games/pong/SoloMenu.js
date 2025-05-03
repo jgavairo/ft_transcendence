@@ -1,5 +1,5 @@
 import { socket } from './pongGame.js';
-import { startTriPong } from './TriPong.js';
+import { startSoloTriPong } from './TriPong.js';
 import { displayPlayMenu } from './PlayMenu.js';
 export function displaySoloMenu() {
     const canvas = document.getElementById('pongCanvas');
@@ -41,7 +41,7 @@ export function displaySoloMenu() {
             w: btnW, h: btnH,
             onClick: () => {
                 teardownSolo();
-                startTriPong();
+                startSoloTriPong('Player1');
             }
         },
         {

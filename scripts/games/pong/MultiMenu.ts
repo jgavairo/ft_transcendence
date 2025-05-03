@@ -2,6 +2,7 @@ import { socket } from './pongGame.js';
 import { displayWaitingScreen } from './WaitingScreen.js';
 import { displayPlayMenu } from './PlayMenu.js';
 import { joinTriQueue } from './TriPong.js';
+import { displayMatchFound } from './DisplayMatchFound.js';
 
 export function displayMultiMenu(): void {
     const canvas = document.getElementById('pongCanvas') as HTMLCanvasElement;
