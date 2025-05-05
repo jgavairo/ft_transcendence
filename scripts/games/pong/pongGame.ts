@@ -1,212 +1,178 @@
-import { io } from 'socket.io-client';
 import { displayMenu } from './DisplayMenu.js';
-import { displayWaitingScreen } from './WaitingScreen.js';
-import { connectTriPong } from './TriPong.js';
-import { displayMatchFound } from './DisplayMatchFound.js';
+import { socket } from './network.js';
 
-export const HOSTNAME = window.location.hostname;
+// Interface de l'état de partie reçue du serveur
+export interface MatchState {
+  roomId: string;
+  paddles: { phi: number; lives: number }[];
+  ball: { x: number; y: number };
+  gameOver: boolean;
+}
 
-export const socket = io(`http://${HOSTNAME}:3000/game`, {
-  withCredentials: true,
-});
+// Variables réseau
+let mySide: number;
+let roomId: string;
+let soloMode = false;
 
-connectTriPong();
+// Canvas et contexte
+let canvas: HTMLCanvasElement;
+let ctx: CanvasRenderingContext2D;
 
-socket.on('connect', () => {
-});
+// Constantes de rendu (synchronisées avec le serveur)
+const CW = 1200;
+const CH = 770;
+const CX = CW / 2;
+const CY = CH / 2;
+const R  = Math.min(CW, CH) / 2 - 45;      // rayon du terrain
+const P_TH = 12;                           // épaisseur des paddles
+const ARC_HALF = Math.PI / 18;      // demi-angle du paddle
 
-export let mode: 'solo' | 'multi' = 'multi';
-export function setMode(m: 'solo' | 'multi') { mode = m; }
-
-export let mySide: 'left' | 'right' = 'left';
-
-socket.on('matchFound', (data: {
-  roomId: string,
-  side: 'left'|'right',
-  you: string,
-  opponent: string
+// Initialise la connexion Socket.IO et les handlers
+export function connectPong() {
+  socket.on('matchFound', (data: {
+    roomId: string;
+    side: number;
+    mode: 'solo' | 'multi';
   }) => {
-  if (mode === 'solo') {
-    mySide = 'left';
+
+    soloMode = (data.mode === 'solo');
+    mySide   = soloMode ? 0 : data.side;
+    roomId   = data.roomId;
+    startPong();
+  });
+
+  socket.on('gameState', (state: MatchState) => {
+    renderPong(state);
+  });
+}
+
+
+export function joinQueue(username: string) {
+  socket.emit('joinQueue', { username });
+}
+
+export function startSoloPong(username: string) {
+  socket.emit('startSolo', { username });
+}
+
+
+// Envoi des commandes paddle au serveur
+function sendMove(side: number, direction: 'up'|'down'|null) {
+  socket.emit('movePaddle', { side, direction });
+}
+
+// Écoute clavier global
+window.addEventListener('keydown', e => {
+  if (soloMode) {
+    if      (e.code === 'KeyD')      sendMove(0, 'up');
+    else if (e.code === 'KeyA')      sendMove(0, 'down');
+    else if (e.code === 'ArrowRight')   sendMove(1, 'up');
+    else if (e.code === 'ArrowLeft') sendMove(1, 'down');
   } else {
-    mySide = data.side;
-  }
-
-  displayWaitingScreen();
-
-  // displayMatchFound(`${data.you} vs ${data.opponent}`);
-  // setTimeout(() => {
-  // }, 1000);
-  
-});
-
-socket.on('gameState', (state: any) => {
-    renderGame(state);
-
-    // Vérifiez si la partie est terminée
-    if (state.leftLives === 0 || state.rightLives === 0) {
-        const winnerId = state.leftLives > 0 ? state.leftPlayerId : state.rightPlayerId;
-        const gameId = state.gameId; // Assurez-vous que l'ID du jeu est inclus dans l'état
-        socket.emit('gameOver', { winnerId, gameId });
+    if (e.code === 'KeyD' || e.code === 'KeyA') {
+      const dir = e.code === 'KeyD' ? 'up' : 'down';
+      sendMove(mySide, dir);
     }
+  }
 });
 
-export let selectedPaddleColor: string = 'white';
-export function setSelectedPaddleColor(c: string) { selectedPaddleColor = c; }
+window.addEventListener('keyup', e => {
+  if (soloMode) {
+    if      (e.code === 'KeyD' || e.code === 'KeyA')       sendMove(0, null);
+    else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') sendMove(1, null);
+  } else {
+    if (e.code === 'KeyD' || e.code === 'KeyA') sendMove(mySide, null);
+  }
+});
 
+// Initialise le canvas et le contexte
+export function startPong() {
+  canvas = document.querySelector('#pongCanvas') as HTMLCanvasElement;
+  ctx    = canvas.getContext('2d')!;
+  canvas.width  = CW;
+  canvas.height = CH;
+}
 
-const paddleSkinImages: { [key: string]: HTMLImageElement } = {
-  Skin1: new Image(),
-  Skin2: new Image(),
-  Skin3: new Image()
-};
+// Dessine l'état de la partie Tri-Pong
+export function renderPong(state: MatchState) {
+  // Efface
+  ctx.clearRect(0, 0, CW, CH);
 
-paddleSkinImages.Skin1.src = '/scripts/games/pong/assets/skin1.png';
-paddleSkinImages.Skin2.src = '/scripts/games/pong/assets/skin2.png';
-paddleSkinImages.Skin3.src = '/scripts/games/pong/assets/skin3.png';
+  // Dessine chaque paddle (arc)
+  ctx.lineWidth = P_TH;
+  state.paddles.forEach(p => {
+    const start = p.phi - ARC_HALF;
+    const end   = p.phi + ARC_HALF;
+    ctx.strokeStyle = p.lives > 0 ? 'white' : 'red';
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, start, end);
+    ctx.stroke();
+  });
 
-export const bgImage = new Image();
-bgImage.src = '/scripts/games/pong/assets/background.png';
+  // Dessine la balle
+  const bx = CX + state.ball.x;
+  const by = CY + state.ball.y;
+  const BALL_R = 8;
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(bx, by, BALL_R, 0, Math.PI * 2);
+  ctx.fill();
 
-export const menuBg = new Image();
-menuBg.src = '/scripts/games/pong/assets/menuBg.png';
+  // Dessine les vies (cœurs) pour chaque paddle
+  state.paddles.forEach(p => {
+    const label = fromPolar(p.phi, R + 20);
+    for (let i = 0; i < 3; i++) {
+      drawHeart(label.x + (i - 1) * 20, label.y, 8, i < p.lives);
+    }
+  });
 
-export const shopBg = new Image();
-shopBg.src = '/scripts/games/pong/assets/shopBg.png';
+  // Optionnel : si gameOver, afficher message
+  if (state.gameOver) {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.font = '36px Arial';
+    ctx.fillText('Game finish', CX, CY - 20);
+  }
+}
 
+// Convertit coordonnées polaires (phi,r) → cartésiennes
+function fromPolar(phi: number, r: number) {
+  return {
+    x: CX + r * Math.cos(phi),
+    y: CY + r * Math.sin(phi)
+  };
+}
 
-let loadingReqId: number | null = null;
-
-function drawHeart(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, filled: boolean): void {
+// Dessine un cœur (pour les vies)
+function drawHeart(x: number, y: number, sz: number, fill: boolean) {
   ctx.save();
   ctx.beginPath();
-  const topCurveHeight = size * 0.3;
-  ctx.moveTo(x, y + topCurveHeight);
+  const t = sz * 0.3;
+  ctx.moveTo(x, y + t);
+  ctx.bezierCurveTo(x, y, x - sz/2, y, x - sz/2, y + t);
   ctx.bezierCurveTo(
-    x, y,
-    x - size / 2, y,
-    x - size / 2, y + topCurveHeight
+    x - sz/2, y + (sz + t) / 2,
+    x,        y + (sz + t) / 2,
+    x,        y + sz
   );
   ctx.bezierCurveTo(
-    x - size / 2, y + (size + topCurveHeight) / 2,
-    x, y + (size + topCurveHeight) / 2,
-    x, y + size
+    x,        y + (sz + t) / 2,
+    x + sz/2, y + (sz + t) / 2,
+    x + sz/2, y + t
   );
-  ctx.bezierCurveTo(
-    x, y + (size + topCurveHeight) / 2,
-    x + size / 2, y + (size + topCurveHeight) / 2,
-    x + size / 2, y + topCurveHeight
-  );
-  ctx.bezierCurveTo(
-    x + size / 2, y,
-    x, y,
-    x, y + topCurveHeight
-  );
+  ctx.bezierCurveTo(x + sz/2, y, x, y, x, y + t);
   ctx.closePath();
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1;
   ctx.strokeStyle = 'white';
   ctx.stroke();
-  if (filled) {
+  if (fill) {
     ctx.fillStyle = 'red';
     ctx.fill();
   }
   ctx.restore();
 }
-
-function drawLives(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, leftLives: number, rightLives: number): void {
-  const heartSize = 20;
-  const gap = 10;
-  const totalLives = 5;
-  if (loadingReqId !== null) cancelAnimationFrame(loadingReqId);
-  const leftStartX = 20;
-  const leftY = 20;
-  for (let i = 0; i < totalLives; i++) {
-    const filled = i < leftLives;
-    drawHeart(ctx, leftStartX + i * (heartSize + gap) + heartSize / 2, leftY, heartSize, filled);
-  }
-
-  const rightStartX = canvas.width - 20 - totalLives * (heartSize + gap) + gap;
-  const rightY = 20;
-  for (let i = 0; i < totalLives; i++) {
-    const filled = i < rightLives;
-    drawHeart(ctx, rightStartX + i * (heartSize + gap) + heartSize / 2, rightY, heartSize, filled);
-  }
-}
-
-
-function renderGame(matchState: any): void {
-  const canvas = document.getElementById('pongCanvas') as HTMLCanvasElement;
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d')!;
-  canvas.width = canvas.clientWidth;
-  canvas.height = canvas.clientHeight;
-  
-  const cw = canvas.clientWidth;
-  const ch = canvas.clientHeight;
-  canvas.width = cw;
-  canvas.height = ch;
-
-  ctx.clearRect(0, 0, cw, ch);
-
-  if (bgImage.complete) {
-    ctx.drawImage(bgImage, 0, 0, cw, ch);
-  } else {
-    bgImage.onload = () => {
-      ctx.drawImage(bgImage, 0, 0, cw, ch);
-    };
-  }
-
-  ctx.fillStyle = 'white';
-  ctx.beginPath();
-  ctx.arc(matchState.ballX, matchState.ballY, 10, 0, Math.PI * 2);
-  ctx.fill();
-
-  const paddleWidth = 10;
-  const paddleHeight = 100;
-  if (selectedPaddleColor.startsWith("Skin") && paddleSkinImages[selectedPaddleColor]) {
-    ctx.drawImage(paddleSkinImages[selectedPaddleColor], 30, matchState.leftPaddleY, paddleWidth, paddleHeight);
-    ctx.drawImage(paddleSkinImages[selectedPaddleColor], canvas.width - 30 - paddleWidth, matchState.rightPaddleY, paddleWidth, paddleHeight);
-  } else {
-    ctx.fillStyle = selectedPaddleColor;
-    ctx.fillRect(30, matchState.leftPaddleY, paddleWidth, paddleHeight);
-    ctx.fillRect(canvas.width - 30 - paddleWidth, matchState.rightPaddleY, paddleWidth, paddleHeight);
-  }
-
-  drawLives(ctx, canvas, matchState.leftLives, matchState.rightLives);
-}
-
-window.addEventListener("keydown", (event) => {
-  if (event.key === "w" || event.key === "W") {
-    socket.emit("movePaddle", { paddle: mySide, direction: "up" });
-  }
-  if (event.key === "s" || event.key === "S") {
-    socket.emit("movePaddle", { paddle: mySide, direction: "down" });
-  }
-});
-
-window.addEventListener("keyup", (event) => {
-  if (event.key === "w" || event.key === "W" || event.key === "s" || event.key === "S") {
-    socket.emit("movePaddle", { paddle: mySide, direction: null });
-  }
-});
-
-window.addEventListener("keydown", (event) => {
-  if (event.key === "ArrowUp") {
-    socket.emit("movePaddle", { paddle: "right", direction: "up" });
-  }
-  if (event.key === "ArrowDown") {
-    socket.emit("movePaddle", { paddle: "right", direction: "down" });
-  }
-});
-
-window.addEventListener("keyup", (event) => {
-  if (event.key === "ArrowUp"|| event.key === "ArrowDown") {
-    socket.emit("movePaddle", { paddle: "right", direction: null });
-  }
-});
-
-
-
 
 document.addEventListener('DOMContentLoaded', () => {
   displayMenu();
@@ -221,4 +187,3 @@ window.addEventListener('keydown', (e) => {
     displayMenu();
   }
 });
-

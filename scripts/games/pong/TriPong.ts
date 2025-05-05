@@ -1,4 +1,4 @@
-import { io, Socket } from 'socket.io-client';
+import { socket } from './network.js';
 
 // Interface de l'état de partie reçue du serveur
 export interface TriMatchState {
@@ -9,7 +9,6 @@ export interface TriMatchState {
 }
 
 // Variables réseau
-let socket: Socket;
 let mySide: number;
 let roomId: string;
 
@@ -28,8 +27,6 @@ const ARC_HALF = Math.PI / 18;      // demi-angle du paddle
 
 // Initialise la connexion Socket.IO et les handlers
 export function connectTriPong() {
-  socket = io('/game');
-
   socket.on('matchFoundTri', (data: { roomId: string; side: number }) => {
     roomId = data.roomId;
     mySide = data.side;
@@ -60,19 +57,19 @@ function sendMove(side: number, direction: 'up'|'down'|null) {
 window.addEventListener('keydown', (e: KeyboardEvent) => {
   if (mySide >= 0) {
     // —— mode multi-tri : votre player (mySide) se déplace avec W/S seulement
-    if (e.code === 'KeyW') {
+    if (e.code === 'KeyD') {
       sendMove(mySide, 'up');
-    } else if (e.code === 'KeyS') {
+    } else if (e.code === 'KeyA') {
       sendMove(mySide, 'down');
     }
   } else {
     // —— mode solo-tri : un seul joueur pilote tout, on garde W/S, I/K, flèches
-    if (['KeyW','KeyS','KeyI','KeyK','ArrowUp','ArrowDown'].includes(e.code)) {
+    if (['KeyD','KeyA','KeyL','KeyJ','ArrowRight','ArrowLeft'].includes(e.code)) {
       let side: number;
-      if (['KeyW','KeyS'].includes(e.code))          side = 0;
-      else if (['KeyI','KeyK'].includes(e.code))     side = 1;
+      if (['KeyA','KeyD'].includes(e.code))          side = 0;
+      else if (['KeyJ','KeyL'].includes(e.code))     side = 1;
       else /* arrows */                              side = 2;
-      const dir = (e.code === 'KeyW' || e.code === 'KeyI' || e.code === 'ArrowUp') 
+      const dir = (e.code === 'KeyD' || e.code === 'KeyL' || e.code === 'ArrowRight') 
                   ? 'up' : 'down';
       sendMove(side, dir);
     }
@@ -82,15 +79,15 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
 window.addEventListener('keyup', (e: KeyboardEvent) => {
   if (mySide >= 0) {
     // —— multi-tri : on arrête toujours avec W/S
-    if (e.code === 'KeyW' || e.code === 'KeyS') {
+    if (e.code === 'KeyD' || e.code === 'KeyA') {
       sendMove(mySide, null);
     }
   } else {
     // —— solo-tri : on arrête le paddle correspondant
-    if (['KeyW','KeyS','KeyI','KeyK','ArrowUp','ArrowDown'].includes(e.code)) {
+    if (['KeyD','KeyA','KeyL','KeyJ','ArrowRight','ArrowLeft'].includes(e.code)) {
       let side: number;
-      if (['KeyW','KeyS'].includes(e.code))          side = 0;
-      else if (['KeyI','KeyK'].includes(e.code))     side = 1;
+      if (['KeyD','KeyA'].includes(e.code))          side = 0;
+      else if (['KeyL','KeyJ'].includes(e.code))     side = 1;
       else /* arrows */                              side = 2;
       sendMove(side, null);
     }

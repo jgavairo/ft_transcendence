@@ -1,8 +1,12 @@
-import { socket } from './pongGame.js';
+// scripts/games/pong/MultiMenu.ts
+import { connectPong, joinQueue } from './pongGame.js';
 import { displayWaitingScreen } from './WaitingScreen.js';
 import { displayPlayMenu } from './PlayMenu.js';
-import { joinTriQueue } from './TriPong.js';
+import { connectTriPong, joinTriQueue } from './TriPong.js';
 export function displayMultiMenu() {
+    // 1) Assure-toi d'être connecté / d'avoir installé les handlers
+    connectPong();
+    connectTriPong();
     const canvas = document.getElementById('pongCanvas');
     if (!canvas)
         return;
@@ -21,33 +25,42 @@ export function displayMultiMenu() {
     const startY = ch * 0.35, x0 = cw / 2 - btnW / 2;
     const buttons = [
         {
-            label: '2 Player', x: x0, y: startY,
-            w: btnW, h: btnH,
+            label: '2 Players',
+            x: x0, y: startY, w: btnW, h: btnH,
             onClick: () => {
+                console.log('2 Players clicked');
                 teardown();
-                socket.emit('joinQueue', { playerId: socket.id, username: 'Player1' });
                 displayWaitingScreen();
+                // socket.once('matchFound', data => {
+                //   displayMatchFound(`${data.you} vs ${data.opponent}`);
+                // });
+                joinQueue('Player1');
             }
         },
         {
-            label: '3 Players', x: x0, y: startY + (btnH + spacing),
+            label: '3 Players',
+            x: x0, y: startY + (btnH + spacing),
             w: btnW, h: btnH,
             onClick: () => {
                 teardown();
-                joinTriQueue('Player1'); // se connecter si pas déjà fait
                 displayWaitingScreen();
+                // socket.once('matchFoundTri', data => {
+                //   displayMatchFound(data.players.join(' vs '));
+                // });
+                joinTriQueue('Player1');
             }
         },
         {
             label: 'Back',
-            x: x0, y: startY + 3 * (btnH + spacing),
+            x: x0, y: startY + 2 * (btnH + spacing),
             w: btnW, h: btnH,
             onClick: () => {
+                teardown();
                 displayPlayMenu();
             }
         }
     ];
-    // Dessin des boutons
+    // Dessin
     buttons.forEach(btn => {
         ctx.fillStyle = '#222';
         ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
@@ -60,7 +73,7 @@ export function displayMultiMenu() {
         ctx.textBaseline = 'middle';
         ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2);
     });
-    // Handler global
+    // Gestion du clic
     const handler = (e) => {
         const rect = canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
