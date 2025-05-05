@@ -19,7 +19,7 @@ export function displayMultiMenu(): void {
     ctx.fillStyle = 'white';
     ctx.font = '36px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Local Mode', cw/2, ch*0.2);
+    ctx.fillText('Multi Mode', cw/2, ch*0.2);
   
     interface Button { label: string; x: number; y: number; w: number; h: number; onClick: () => void; }
     const btnW = 250, btnH = 60, spacing = 30;
