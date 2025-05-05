@@ -268,6 +268,61 @@ export class DatabaseManager
 
     //********************COMMUNITY-PART*******************************
 
+    public async isFriend(userId: number, targetId: number): Promise<boolean>
+    {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.get('SELECT friends FROM users WHERE id = ?', [userId]);
+        if (!result)
+            throw new Error('User not found');
+        
+        return result.friends.includes(targetId);
+    }
+
+    public async isRequesting(userId: number, targetId: number): Promise<boolean>
+    {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.get('SELECT attempting_friend_ids FROM users WHERE id = ?', [userId]);
+        return result.attempting_friend_ids.includes(targetId);
+    }
+
+    public async isRequested(userId: number, targetId: number): Promise<boolean>
+    {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.get('SELECT friend_requests FROM users WHERE id = ?', [userId]);
+        return result.friend_requests.includes(targetId);
+    }
+
+    public async acceptFriendRequest(userId: number, targetId: number): Promise<void>
+    {
+        if (!this.db) throw new Error('Database not initialized');
+
+        // Récupérer les données actuelles
+        const userData = await this.db.get('SELECT friends, friend_requests FROM users WHERE id = ?', [userId]);
+        const targetData = await this.db.get('SELECT friends, attempting_friend_ids FROM users WHERE id = ?', [targetId]);
+
+        if (!userData || !targetData) throw new Error('User not found');
+
+        // Mettre à jour les amis de l'utilisateur
+        const updatedUserFriends = [...userData.friends, targetId];
+        await this.db.run('UPDATE users SET friends = ? WHERE id = ?', 
+            [JSON.stringify(updatedUserFriends), userId]);
+
+        // Mettre à jour les amis de la cible
+        const updatedTargetFriends = [...targetData.friends, userId];
+        await this.db.run('UPDATE users SET friends = ? WHERE id = ?', 
+            [JSON.stringify(updatedTargetFriends), targetId]);
+
+        // Supprimer la demande de l'utilisateur
+        const updatedUserRequests = userData.friend_requests.filter((id: number) => id !== targetId);
+        await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', 
+            [JSON.stringify(updatedUserRequests), userId]);
+
+        // Supprimer l'ID de la liste des tentatives de la cible
+        const updatedTargetAttempting = targetData.attempting_friend_ids.filter((id: number) => id !== userId);
+        await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', 
+            [JSON.stringify(updatedTargetAttempting), targetId]);
+    }
+    
     public async getAllUsernames(): Promise<string[]>
     {
         if (!this.db) throw new Error('Database not initialized');
@@ -281,7 +336,7 @@ export class DatabaseManager
         const result = await this.db.all('SELECT id, username, profile_picture, email, bio FROM users');
         return result;
     }
-
+    
     //********************FRIENDS-PART*******************************
 
     public async sendFriendRequest(senderId: number, receiverId: number): Promise<void>
@@ -303,12 +358,15 @@ export class DatabaseManager
                 throw new Error('User is already friends');
         }
         //ajouter la requete a la base de donnees
-
+        console.log("in database.ts sendFriendRequest 1----1");
         // ajouter senderID dans request de receiverID
         await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', [JSON.stringify([...result.friend_requests, senderId]), receiverId]);
+        console.log("in database.ts sendFriendRequest 2----2");
         // ajouter receiverID dans attemping friends de senderID
         await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', [JSON.stringify([...result.attempting_friend_ids, receiverId]), senderId]);
+        console.log("in database.ts sendFriendRequest 3----3");
         // envoyer la notification par socket a recevierID
+        console.log("in database.ts sendFriendRequest 4----4");
     }
 
     //********************MESSAGES-PART*******************************
@@ -372,6 +430,7 @@ export class DatabaseManager
         );
         return result;
     }
+
 }
 
 export const dbManager = DatabaseManager.getInstance();

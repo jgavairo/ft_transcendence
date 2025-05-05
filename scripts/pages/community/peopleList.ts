@@ -46,8 +46,12 @@ export async function renderPeopleList(filter: string = "") {
 
     container.innerHTML = "";
 
-    filtered.forEach(person => {
-        const isFriend = friends.includes(person.username);
+    filtered.forEach(async (person) => {
+        const isFriend = await FriendsManager.isFriend(person.username);
+        const isRequesting = await FriendsManager.isRequesting(person.username);
+        const isRequested = await FriendsManager.isRequested(person.username);
+
+        console.log(isFriend ? "isFriend" : isRequesting ? "isRequesting" : isRequested ? "isRequested" : "none");
     
         const div = document.createElement("div");
         div.className = "friend-item";
@@ -87,23 +91,46 @@ export async function renderPeopleList(filter: string = "") {
         label.textContent = person.username;
     
         const button = document.createElement("button");
-        button.className = `toggle-button ${isFriend ? "added" : ""}`;
+        if (isFriend) {
+            button.className = "toggle-button added";
+            button.title = "Supprimer des amis";
+            button.textContent = "✖";
+        } else if (isRequesting) {
+            button.className = "toggle-button requesting";
+            button.title = "Demande en attente";
+            button.textContent = "⌛";
+            button.disabled = true;
+        } else if (isRequested) {
+            button.className = "toggle-button requested";
+            button.title = "Accepter la demande";
+            button.textContent = "✓";
+            button.style.color = "green";
+        } else {
+            button.className = "toggle-button";
+            button.title = "Ajouter comme ami";
+            button.textContent = "＋";
+        }
         button.setAttribute("data-name", person.username);
-        button.title = isFriend ? "Supprimer des amis" : "Ajouter comme ami";
-        button.textContent = isFriend ? "✖" : "＋";
     
-        button.addEventListener("click", () => {
-            const updatedFriends = getFriendsFromStorage();
-            if (updatedFriends.includes(person.username)) {
+        button.addEventListener("click", async () => {
+            if (isFriend) {
                 removeFriend(person.username);
-                button.textContent = "＋";
-                button.classList.remove("added");
+                button.className = "toggle-button";
                 button.title = "Ajouter comme ami";
+                button.textContent = "＋";
+            } else if (isRequesting) {
+                // Ne rien faire, demande en attente
+            } else if (isRequested) {
+                // Accepter la demande
+                await acceptFriendRequest(person.username);
+                button.className = "toggle-button added";
+                button.title = "Supprimer des amis";
+                button.textContent = "✖";
             } else {
                 addFriend(person.username);
-                button.textContent = "✖";
-                button.classList.add("added");
-                button.title = "Supprimer des amis";
+                button.className = "toggle-button requesting";
+                button.title = "Demande en attente";
+                button.textContent = "⌛";
             }
         });
     
@@ -113,25 +140,27 @@ export async function renderPeopleList(filter: string = "") {
     });
 }
 
-export function removeFriend(name: string) {
-    const friends = getFriendsFromStorage();
-    const updated = friends.filter(friend => friend !== name);
-    localStorage.setItem("friends", JSON.stringify(updated));
+export function removeFriend(name: string) 
+{
     console.log(`❌ "${name}" supprimé des amis.`);
 }
 
-
-
-export function addFriend(name: string) {
-    const friends = getFriendsFromStorage();
-    if (!friends.includes(name)) {
-        friends.push(name);
-        localStorage.setItem("friends", JSON.stringify(friends));
-        console.log(`✅ "${name}" ajouté aux amis.`);
-        FriendsManager.sendFriendRequest(name);
-        //add name to attempting_friend_ids
-        //add this user to the friend_requests of the other user
+export async function acceptFriendRequest(name: string)
+{
+    console.log('Accepting friend request from:', name);
+    const success = await FriendsManager.acceptFriendRequest(name);
+    if (success) {
+        console.log('Friend request accepted successfully');
+        // Rafraîchir la liste pour mettre à jour l'affichage
+        await renderPeopleList();
+    } else {
+        console.error('Failed to accept friend request');
     }
+}
+
+export function addFriend(name: string) 
+{
+    FriendsManager.sendFriendRequest(name);
 }
 
 export function setupSearchInput() {
