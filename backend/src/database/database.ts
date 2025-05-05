@@ -338,38 +338,48 @@ export class DatabaseManager
         return result;
     }
 
-    public async getVictories(userId: number, gameId: number): Promise<number> {
+    public async incrementPlayerWins(gameId: number, userId: number): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
-        const result = await this.db.get(
-            'SELECT victories FROM game_victories WHERE user_id = ? AND game_id = ?',
-            [userId, gameId]
+
+        // Vérifier si une entrée existe déjà pour ce joueur et ce jeu
+        const existingRanking = await this.db.get(
+            'SELECT id, ranking FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
+            [gameId, userId]
         );
-        return result ? result.victories : 0;
-    }
 
-    public async addVictory(userId: number, gameId: number): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-        const currentVictories = await this.getVictories(userId, gameId);
-
-        if (currentVictories === 0) {
+        if (existingRanking) {
+            // Si une entrée existe, incrémenter le classement
             await this.db.run(
-                'INSERT INTO game_victories (user_id, game_id, victories) VALUES (?, ?, ?)',
-                [userId, gameId, 1]
+                'UPDATE game_user_rankings SET ranking = ranking + 1 WHERE id = ?',
+                [existingRanking.id]
             );
+            console.log(`Updated ranking for user ${userId} in game ${gameId}:`, {
+                id: existingRanking.id,
+                newRanking: existingRanking.ranking + 1,
+            });
         } else {
-            await this.db.run(
-                'UPDATE game_victories SET victories = victories + 1 WHERE user_id = ? AND game_id = ?',
-                [userId, gameId]
+            // Si aucune entrée n'existe, en créer une avec un classement initial de 1
+            const result = await this.db.run(
+                'INSERT INTO game_user_rankings (game_id, user_id, ranking) VALUES (?, ?, ?)',
+                [gameId, userId, 1]
             );
+            console.log(`Created new ranking for user ${userId} in game ${gameId}:`, {
+                id: result.lastID,
+                gameId,
+                userId,
+                ranking: 1,
+            });
         }
     }
 
-    public async getLeaderboard(gameId: number): Promise<{ user_id: number, victories: number }[]> {
+    public async getUserRankingsByGame(gameId: number): Promise<{ userId: number, ranking: number }[]> {
         if (!this.db) throw new Error('Database not initialized');
+
         const result = await this.db.all(
-            'SELECT user_id, victories FROM game_victories WHERE game_id = ? ORDER BY victories DESC',
+            'SELECT user_id AS userId, ranking FROM game_user_rankings WHERE game_id = ? ORDER BY ranking DESC',
             [gameId]
         );
+
         return result;
     }
 }
