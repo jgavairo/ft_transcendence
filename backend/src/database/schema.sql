@@ -29,12 +29,11 @@ CREATE TABLE IF NOT EXISTS games
     user_ids TEXT DEFAULT '[]'
 );
 
-CREATE TABLE IF NOT EXISTS game_victories (
+CREATE TABLE IF NOT EXISTS game_user_rankings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
     game_id INTEGER NOT NULL,
-    victories INTEGER DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (game_id) REFERENCES games(id),
-    UNIQUE(user_id, game_id)
+    user_id INTEGER NOT NULL,
+    ranking INTEGER NOT NULL,
+    FOREIGN KEY (game_id) REFERENCES games (id),
+    FOREIGN KEY (user_id) REFERENCES users (id)
 );

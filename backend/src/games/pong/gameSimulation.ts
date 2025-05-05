@@ -1,154 +1,151 @@
 import type { Socket, Namespace } from 'socket.io';
 
+// État d’un match Bi-Pong circulaire
 export interface MatchState {
   roomId: string;
-  leftPaddleY: number;
-  rightPaddleY: number;
-  ballX: number;
-  ballY: number;
-  ballSpeedX: number;
-  ballSpeedY: number;
-  leftScore: number;
-  rightScore: number;
-  leftLives: number;
-  rightLives: number;
-  leftPaddleDirection: "up" | "down" | null;
-  rightPaddleDirection: "up" | "down" | null;
-  gameOver?: boolean;
+  paddles: Array<{
+    phi: number;                 // angle du paddle
+    lives: number;
+    direction: 'up'|'down'|null;
+  }>;
+  ball: { x: number; y: number; vx: number; vy: number; r: number };
+  gameOver: boolean;
 }
 
-const TICK_RATE = 120; // FPS
-const CANVAS_WIDTH = 1200;
-const CANVAS_HEIGHT = 800;
-const BALL_RADIUS = 10;
-const INITIAL_BALL_SPEED_X = 4;
-const INITIAL_BALL_SPEED_Y = 2;
-const PADDLE_WIDTH = 10;
-const PADDLE_HEIGHT = 100;
-const PADDLE_SPEED = 4;
-const INITIAL_LIVES = 5;
-const LEFT_PX  = 30;
-const RIGHT_PX = CANVAS_WIDTH - 30 - PADDLE_WIDTH;
+// Constantes (→ à synchroniser rigoureusement côté client)
+const BALL_SPEED     = 4;
+const RADIUS         = 340;              // même rayon que le client
+const ARC_HALF       = Math.PI / 18;     // 20° d’arc
+const P_SPEED        = Math.PI/180 * 2;
+const MAX_DEFLECTION = Math.PI / 6;
 
-/**
- * Démarre le match entre deux joueurs et lance la boucle de simulation.
- * Retourne l'état initial du match pour pouvoir le stocker.
- */
+export function startMatch(socks: Socket[], nsp: Namespace): MatchState {
+  const roomId = `circ_${Date.now()}`;
+  socks.forEach(s => s.join(roomId));
 
-export function startMatch(
-  sock1: Socket,
-  sock2: Socket,
-  nsp: Namespace
-): MatchState {
-  const roomId = `${sock1.id}_${sock2.id}`;
-  // 1️⃣ On fait réellement le join
-  sock1.join(roomId);
-  sock2.join(roomId);
+  // Deux paddles à 90° et 270°
+  const paddles = [
+    { phi:  Math.PI/2, lives: 3, direction: null },
+    { phi: -Math.PI/2, lives: 3, direction: null }
+  ];
 
-  // Initialiser l'état du match
-  const matchState: MatchState = {
-    roomId,
-    leftPaddleY: (CANVAS_HEIGHT - PADDLE_HEIGHT) / 2,
-    rightPaddleY: (CANVAS_HEIGHT - PADDLE_HEIGHT) / 2,
-    ballX: CANVAS_WIDTH / 2,
-    ballY: CANVAS_HEIGHT / 2,
-    ballSpeedX: INITIAL_BALL_SPEED_X,
-    ballSpeedY: INITIAL_BALL_SPEED_Y,
-    leftScore: 0,
-    rightScore: 0,
-    leftLives: INITIAL_LIVES,
-    rightLives: INITIAL_LIVES,
-    leftPaddleDirection: null,
-    rightPaddleDirection: null,
+  const ball = { x:0, y:0, vx:0, vy:0, r:8 };
+  resetBall(ball);
+
+  return { roomId, paddles, ball, gameOver: false };
+}
+
+export function updateMatch(match: MatchState) {
+  const normalize = (φ: number) => (φ % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  const signedDiff = (a: number, b: number) => {
+    let d = normalize(a) - normalize(b);
+    if (d >  Math.PI)  d -= 2*Math.PI;
+    if (d <= -Math.PI) d += 2*Math.PI;
+    return d;
   };
+  const ARC_WIDTH = 2 * ARC_HALF;
+  const minSep   = ARC_WIDTH;  // espacement minimal = largeur d’un arc
 
-  nsp.to(roomId).volatile.emit('gameState', matchState);
+  // indices des arcs vivants
+  const alive = match.paddles
+    .map((p,i) => p.lives>0 ? i : -1)
+    .filter(i => i >= 0);
 
-  // Lancer la boucle de jeu côté serveur
-  const intervalId = setInterval(() => {
-    if (matchState.gameOver) {
-      clearInterval(intervalId);
-      nsp.to(roomId).emit('gameOver', {
-        winner: (matchState.leftLives <= 0 ? sock2.id : sock1.id)
-      });
-      return;
+  alive.forEach(i => {
+    const p = match.paddles[i];
+    // 1a) déplacement
+    if (p.direction === 'up')   p.phi -= P_SPEED;
+    if (p.direction === 'down') p.phi += P_SPEED;
+    p.phi = normalize(p.phi);
+
+    // 1b) clamp autour des deux voisins dans l’ordre angulaire
+    const sorted = alive
+      .slice()
+      .sort((a,b) => normalize(match.paddles[a].phi) - normalize(match.paddles[b].phi));
+    const idx   = sorted.indexOf(i)!;
+    const prevI = sorted[(idx - 1 + sorted.length) % sorted.length];
+    const nextI = sorted[(idx + 1) % sorted.length];
+
+    const prevΦ = normalize(match.paddles[prevI].phi);
+    const nextΦ = normalize(match.paddles[nextI].phi);
+
+    // bornes de l’intervalle autorisé pour p.phi
+    const low  = normalize(prevΦ + minSep);
+    const high = normalize(nextΦ - minSep);
+
+    const inInterval = low <= high
+      ? (p.phi >= low && p.phi <= high)
+      : (p.phi >= low || p.phi <= high);
+
+    if (!inInterval) {
+      // ramène sur la borne la plus proche
+      const dLow  = Math.abs(signedDiff(p.phi, low));
+      const dHigh = Math.abs(signedDiff(p.phi, high));
+      p.phi = normalize(dLow < dHigh ? low : high);
     }
-    updateGameState(matchState);
-    nsp.to(roomId).volatile.emit('gameState', matchState)
-  }, 1000 / TICK_RATE);
+  });
 
-  return matchState;
-}
+  // --- 2) BALLE : avance et collision seulement vers l’extérieur ---
+  const b = match.ball;
+  b.x += b.vx;
+  b.y += b.vy;
 
-/**
- * Met à jour l'état du match.
- */
-function updateGameState(matchState: MatchState): void {
-  // 1) Paddles
-  if (matchState.leftPaddleDirection === "up") {
-    matchState.leftPaddleY = Math.max(0, matchState.leftPaddleY - PADDLE_SPEED);
-  } else if (matchState.leftPaddleDirection === "down") {
-    matchState.leftPaddleY = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, matchState.leftPaddleY + PADDLE_SPEED);
-  }
-  if (matchState.rightPaddleDirection === "up") {
-    matchState.rightPaddleY = Math.max(0, matchState.rightPaddleY - PADDLE_SPEED);
-  } else if (matchState.rightPaddleDirection === "down") {
-    matchState.rightPaddleY = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, matchState.rightPaddleY + PADDLE_SPEED);
-  }
+  const dx = b.x, dy = b.y;
+  const dist = Math.hypot(dx, dy);
 
-  // 2) Balle
-  matchState.ballX += matchState.ballSpeedX;
-  matchState.ballY += matchState.ballSpeedY;
+  if (dist + b.r >= RADIUS) {
+    // repositionne à la frontière
+    const nx = dx / dist, ny = dy / dist;
+    const pen = dist + b.r - RADIUS;
+    b.x -= nx * pen;
+    b.y -= ny * pen;
 
-  // 2a) Rebonds haut/bas
-  if (matchState.ballY - BALL_RADIUS <= 0 || matchState.ballY + BALL_RADIUS >= CANVAS_HEIGHT) {
-    matchState.ballSpeedY = -matchState.ballSpeedY;
-  }
+    // recalcule composante radiale
+    const velDot = b.vx * nx + b.vy * ny;
+    if (velDot > 0) {
+      const phiHit = Math.atan2(dy, dx);
+      // cherche arc touché
+      const hit = match.paddles.find(p =>
+        p.lives > 0 && angleDiff(phiHit, p.phi) <= ARC_HALF
+      );
 
-  // 2b) Collision LEFT paddle
-  if (
-    matchState.ballX - BALL_RADIUS <= LEFT_PX + PADDLE_WIDTH &&
-    matchState.ballX - BALL_RADIUS >= LEFT_PX &&
-    matchState.ballY >= matchState.leftPaddleY &&
-    matchState.ballY <= matchState.leftPaddleY + PADDLE_HEIGHT
-  ) {
-    matchState.ballSpeedX = -matchState.ballSpeedX * 1.1;
-    // optionnel : un petit random pour varier l’angle
-    const deltaY = (matchState.ballY - (matchState.leftPaddleY + PADDLE_HEIGHT/2)) / (PADDLE_HEIGHT/2);
-    matchState.ballSpeedY += deltaY * 2; 
-  }
-
-  // 2c) Collision RIGHT paddle
-  if (
-    matchState.ballX + BALL_RADIUS >= RIGHT_PX &&
-    matchState.ballX + BALL_RADIUS <= RIGHT_PX + PADDLE_WIDTH &&
-    matchState.ballY >= matchState.rightPaddleY &&
-    matchState.ballY <= matchState.rightPaddleY + PADDLE_HEIGHT
-  ) {
-    matchState.ballSpeedX = -matchState.ballSpeedX * 1.1;
-    // optionnel : variation selon point d’impact
-    const deltaY = (matchState.ballY - (matchState.rightPaddleY + PADDLE_HEIGHT/2)) / (PADDLE_HEIGHT/2);
-    matchState.ballSpeedY += deltaY * 2;
+      if (hit) {
+        // réflexion + un peu d’aléa
+        let rvx = b.vx - 2 * velDot * nx;
+        let rvy = b.vy - 2 * velDot * ny;
+        let phiR = Math.atan2(rvy, rvx) + (Math.random() * 2 - 1) * MAX_DEFLECTION;
+        const speed = Math.hypot(rvx, rvy) * 1.02;
+        b.vx = speed * Math.cos(phiR);
+        b.vy = speed * Math.sin(phiR);
+      } else {
+        // raté → perte d’une vie du plus proche
+        let idx = -1, best = Infinity;
+        match.paddles.forEach((p, i) => {
+          if (p.lives > 0) {
+            const d = angleDiff(phiHit, p.phi);
+            if (d < best) { best = d; idx = i; }
+          }
+        });
+        if (idx >= 0) match.paddles[idx].lives--;
+        resetBall(b);
+      }
+    }
   }
 
-  // 3) Reprise après score  
-  if (matchState.ballX - BALL_RADIUS <= 0) {
-    matchState.leftLives--;
-    resetBall(matchState, +1);
-  } else if (matchState.ballX + BALL_RADIUS >= CANVAS_WIDTH) {
-    matchState.rightLives--;
-    resetBall(matchState, -1);
-  }
-
-  // 4) Fin de partie ?
-  if (matchState.leftLives <= 0 || matchState.rightLives <= 0) {
-    matchState.gameOver = true;
+  // 4) Fin de partie
+  if (match.paddles.filter(p=>p.lives>0).length <= 1) {
+    match.gameOver = true;
   }
 }
 
-function resetBall(matchState: MatchState, direction: number): void {
-  matchState.ballX = CANVAS_WIDTH / 2;
-  matchState.ballY = CANVAS_HEIGHT / 2;
-  matchState.ballSpeedX = INITIAL_BALL_SPEED_X * direction;
-  matchState.ballSpeedY = INITIAL_BALL_SPEED_Y;
+function resetBall(b: Pick<MatchState,'ball'>['ball']) {
+  b.x = 0; b.y = 0;
+  const a = Math.random()*2*Math.PI;
+  b.vx = BALL_SPEED*Math.cos(a);
+  b.vy = BALL_SPEED*Math.sin(a);
+}
+
+function angleDiff(a: number, b: number): number {
+  let d = Math.abs(a - b) % (2 * Math.PI);
+  return d > Math.PI ? 2 * Math.PI - d : d;
 }
