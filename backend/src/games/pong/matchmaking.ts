@@ -115,14 +115,6 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       triQueue     = triQueue.filter(p => p.id !== socket.id);
     });
 
-    // 7) GAME OVER → enregistrement
-    socket.on('gameOver', async (data: { winnerId: number; gameId: number }) => {
-      try {
-        await dbManager.addVictory(data.winnerId, data.gameId);
-      } catch (err) {
-        console.error('Error adding victory:', err);
-      }
-    });
   });
 
   // --- FONCTION D’ASSOCIATION POUR 3-JOUEURS TRI-PONG ---
