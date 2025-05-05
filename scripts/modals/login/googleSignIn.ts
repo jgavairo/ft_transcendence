@@ -1,5 +1,3 @@
-import api from "../../helpers/api.js";
-import { showNotification, showErrorNotification } from "../../helpers/notifications.js";
 import { HOSTNAME } from "../../main.js";
 export async function googleSignInHandler()
 {

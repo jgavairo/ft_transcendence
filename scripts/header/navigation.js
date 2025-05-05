@@ -7,7 +7,6 @@ import { LoginManager } from '../managers/loginManager.js';
 import { setupProfileModal } from '../modals/profile/profileModal.js';
 import api from '../helpers/api.js';
 import { HOSTNAME } from '../main.js';
-import { socket } from '../sockets/socket.js';
 let boolprofileMenu = false;
 function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');
@@ -102,8 +101,6 @@ export function setupProfileButton() {
                     const data = await response.json();
                     console.log('response:', data);
                     if (data.success) {
-                        socket.emit('disconnect', { userId: data.userId });
-                        socket.disconnect();
                         showNotification("Logged out successfully");
                         const main = document.getElementById('main');
                         if (!main)

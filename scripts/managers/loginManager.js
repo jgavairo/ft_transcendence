@@ -4,7 +4,7 @@ import { showNotification, showErrorNotification } from "../helpers/notification
 import api from "../helpers/api.js";
 import { setupProfileButton } from "../header/navigation.js";
 import { googleSignInHandler } from "../modals/login/googleSignIn.js";
-import { socket } from "../sockets/socket.js";
+import { socket, connectSocket } from "../sockets/socket.js";
 export class LoginManager {
     static removeLoginModal() {
         const modal = document.getElementById('optionnalModal');
@@ -44,12 +44,32 @@ export class LoginManager {
                 .then(data => {
                 console.log('backend response:', data);
                 if (data.success) {
-                    console.log(data.message);
+                    console.log('Login successful, user data:', data);
                     this.removeLoginModal();
                     MainApp.setupHeader();
                     MainApp.setupCurrentPage();
                     setupProfileButton();
-                    socket.emit('authenticate', { userId: data.userId });
+                    console.log('Socket connection status:', socket.connected);
+                    console.log('Socket ID:', socket.id);
+                    const emitAuthenticate = () => {
+                        console.log('Emitting authenticate event with userId:', data.user.id);
+                        socket.emit('authenticate', { userId: data.user.id });
+                    };
+                    // Vérifier si déjà connecté
+                    if (socket.connected) {
+                        console.log('Socket already connected, emitting authenticate');
+                        emitAuthenticate();
+                    }
+                    else {
+                        console.log('Socket not connected, waiting for connection');
+                        // Sinon attendre la connexion
+                        socket.once('connect', () => {
+                            console.log('Socket connected in once handler, emitting authenticate');
+                            emitAuthenticate();
+                        });
+                        console.log('Calling connectSocket()');
+                        connectSocket();
+                    }
                 }
                 else {
                     showErrorNotification(data.message);

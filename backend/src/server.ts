@@ -224,6 +224,24 @@ app.post('/api/friends/sendRequest', { preHandler: authMiddleware }, async (requ
     return friendsRoutes.sendRequest(request, reply);
 });
 
+app.post('/api/friends/isFriend', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return friendsRoutes.isFriend(request, reply);
+});
+
+app.post('/api/friends/isRequesting', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return friendsRoutes.isRequesting(request, reply);
+});
+
+app.post('/api/friends/isRequested', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return friendsRoutes.isRequested(request, reply);
+});
+
+app.post('/api/friends/acceptRequest', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return friendsRoutes.acceptRequest(request, reply);
+});
+
+
+
 /////////////////
 // CHAT ROUTES //
 /////////////////
