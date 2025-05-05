@@ -3,27 +3,7 @@ import { gameModalHTML } from "../../sourcepage.js";
 import { displayMenu } from '../../games/pong/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
-import { HOSTNAME } from "../../main.js"; // Assurez-vous que HOSTNAME est correctement importé
-// Nouvelle fonction pour récupérer le classement des joueurs
-async function fetchLeaderboard(gameId) {
-    try {
-        const response = await fetch(`http://${HOSTNAME}:3000/api/leaderboard/${gameId}`, {
-            credentials: 'include'
-        });
-        const data = await response.json();
-        if (data.leaderboard) {
-            return data.leaderboard;
-        }
-        else {
-            console.error('Failed to fetch leaderboard:', data.error);
-            return [];
-        }
-    }
-    catch (error) {
-        console.error('Error fetching leaderboard:', error);
-        return [];
-    }
-}
+import api from "../../helpers/api.js"; // Import de l'API helper
 export async function showGameDetails(gameIdOrObj) {
     // Récupérer l'objet game complet
     let game;
@@ -40,15 +20,14 @@ export async function showGameDetails(gameIdOrObj) {
     const people = await fetchUsernames();
     // Récupérer l'utilisateur en cours
     const currentUser = await GameManager.getCurrentUser();
-    // Récupérer les user_ids du jeu
-    const userIds = JSON.parse(game.user_ids || '[]'); // Parse user_ids de la table games
-    // Filtrer la liste pour exclure l'utilisateur en cours et vérifier s'ils possèdent le jeu
-    const filteredPeople = people.filter(person => {
-        const personId = person.id; // Temporarily cast to any if id is missing in type
-        return person.username !== currentUser.username && userIds.includes(personId);
+    // Récupérer les rankings depuis l'API
+    const rankingsResponse = await api.get(`/api/games/${game.id}/rankings`);
+    const rankings = await rankingsResponse.json();
+    // Associer les rankings aux utilisateurs
+    const rankedPeople = rankings.map((ranking) => {
+        const person = people.find((p) => p.id === ranking.userId);
+        return Object.assign(Object.assign({}, person), { ranking: ranking.ranking });
     });
-    // Récupérer le classement des joueurs pour ce jeu
-    const leaderboard = await fetchLeaderboard(game.id);
     const details = document.querySelector('.library-details');
     if (!details)
         return;
@@ -64,26 +43,22 @@ export async function showGameDetails(gameIdOrObj) {
       <div class="detail-info">
         <div class="rankingContainer">
           <h3 class="sectionTitle">Player Ranking</h3>
+          <button id="incrementWinsButton" class="incrementWinsButton">Increment Wins</button>
           <ul class="rankingList">
-            ${leaderboard.map((entry, index) => {
-        const player = people.find(person => person.id === entry.user_id);
-        return `
-                  <li class="rankingItem">
-                    <span class="numberRank">${index + 1}</span>
-                    <img src="${(player === null || player === void 0 ? void 0 : player.profile_picture) || '/assets/default-profile.png'}" class="profilePic" alt="Profile">
-                    <div class="playerInfo">
-                      <span class="playerName">${(player === null || player === void 0 ? void 0 : player.username) || 'Unknown'}</span>
-                      <span class="playerWins">Wins: ${entry.victories}</span>
-                    </div>
-                  </li>
-                `;
-    }).join('')}
+          ${rankedPeople.map((person) => `
+            <li class="friendItem">
+              <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
+              <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
+                ${person.username} - Wins: ${person.ranking}
+              </span>
+            </li>
+          `).join('')}
           </ul>
         </div>
         <div class="friendsContainer">
-          <h3 class="sectionTitle">People List</h3>
+          <h3 class="sectionTitle">Friend List</h3>
           <ul class="friendsList">
-            ${filteredPeople.map(person => `
+            ${people.map(person => `
               <li class="friendItem">
                 <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
                 <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
@@ -120,5 +95,25 @@ export async function showGameDetails(gameIdOrObj) {
             return;
         modal.innerHTML = gameModalHTML;
         displayMenu();
+    });
+    // Bouton Increment Wins
+    const incrementWinsBtn = details.querySelector('#incrementWinsButton');
+    incrementWinsBtn.addEventListener('click', async () => {
+        try {
+            const response = await api.post('/api/games/incrementWins', {
+                gameId: game.id,
+                userId: currentUser.id
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('Failed to increment wins:', error);
+                return;
+            }
+            const result = await response.json();
+            console.log('Increment wins successful:', result);
+        }
+        catch (error) {
+            console.error('Error incrementing wins:', error);
+        }
     });
 }

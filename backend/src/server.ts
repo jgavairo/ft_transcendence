@@ -240,6 +240,38 @@ app.get('/api/games/getAll', async (request: FastifyRequest, reply: FastifyReply
     return gameRoutes.getAllGames(request, reply);
 });
 
+app.post('/api/games/incrementWins', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const { gameId, userId } = request.body as { gameId: number; userId: number };
+
+        if (!gameId || !userId) {
+            return reply.status(400).send({ error: 'gameId and userId are required' });
+        }
+
+        await dbManager.incrementPlayerWins(gameId, userId);
+        return reply.status(200).send({ success: true, message: `Player ${userId}'s wins incremented for game ${gameId}` });
+    } catch (error) {
+        console.error('Error incrementing player wins:', error);
+        return reply.status(500).send({ error: 'Failed to increment player wins' });
+    }
+});
+
+app.get('/api/games/:gameId/rankings', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const { gameId } = request.params as { gameId: string };
+
+        if (!gameId) {
+            return reply.status(400).send({ error: 'gameId is required' });
+        }
+
+        const rankings = await dbManager.getUserRankingsByGame(Number(gameId));
+        return reply.status(200).send(rankings);
+    } catch (error) {
+        console.error('Error fetching rankings:', error);
+        return reply.status(500).send({ error: 'Failed to fetch rankings' });
+    }
+});
+
 
 ///////////////////
 // SOCKET ROUTES //
@@ -311,43 +343,3 @@ const start = async () => {
 };
 
 start();
-
-////////////////////
-// VICTORY ROUTES //
-////////////////////
-
-// Route pour récupérer le nombre de victoires d'un utilisateur pour un jeu donné
-app.get('/api/victories/:userId/:gameId', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId, gameId } = request.params as { userId: string, gameId: string };
-    try {
-        const victories = await dbManager.getVictories(parseInt(userId), parseInt(gameId));
-        return reply.send({ victories });
-    } catch (error) {
-        console.error('Error fetching victories:', error);
-        return reply.status(500).send({ error: 'Failed to fetch victories' });
-    }
-});
-
-// Route pour ajouter une victoire pour un utilisateur et un jeu donné
-app.post('/api/victories/add', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId, gameId } = request.body as { userId: number, gameId: number };
-    try {
-        await dbManager.addVictory(userId, gameId);
-        return reply.send({ success: true });
-    } catch (error) {
-        console.error('Error adding victory:', error);
-        return reply.status(500).send({ error: 'Failed to add victory' });
-    }
-});
-
-// Route pour récupérer le classement des utilisateurs pour un jeu donné
-app.get('/api/leaderboard/:gameId', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const { gameId } = request.params as { gameId: string };
-    try {
-        const leaderboard = await dbManager.getLeaderboard(parseInt(gameId));
-        return reply.send({ leaderboard });
-    } catch (error) {
-        console.error('Error fetching leaderboard:', error);
-        return reply.status(500).send({ error: 'Failed to fetch leaderboard' });
-    }
-});

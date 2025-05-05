@@ -103,16 +103,6 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       classicQueue = classicQueue.filter(p => p.id !== socket.id);
       triQueue     = triQueue.filter(p => p.id !== socket.id);
     });
-
-    // -----------------------------------------------------
-    // 6) RÉCUPÉRER L’ÉVÉNEMENT CLIENT “gameOver” POUR AJOUTER LA VICTOIRE
-    socket.on('gameOver', async (data: { winnerId: number; gameId: number }) => {
-      try {
-        await dbManager.addVictory(data.winnerId, data.gameId);
-      } catch (err) {
-        console.error('Error adding victory:', err);
-      }
-    });
   });
 
   // ============================================
