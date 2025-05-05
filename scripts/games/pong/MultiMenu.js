@@ -16,7 +16,7 @@ export function displayMultiMenu() {
     ctx.fillStyle = 'white';
     ctx.font = '36px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Local Mode', cw / 2, ch * 0.2);
+    ctx.fillText('Multi Mode', cw / 2, ch * 0.2);
     const btnW = 250, btnH = 60, spacing = 30;
     const startY = ch * 0.35, x0 = cw / 2 - btnW / 2;
     const buttons = [
