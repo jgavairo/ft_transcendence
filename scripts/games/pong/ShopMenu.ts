@@ -1,4 +1,4 @@
-import { shopBg, setSelectedPaddleColor } from './pongGame.js';
+
 import { displayMenu } from './DisplayMenu.js';
 
 export function displayShopMenu(): void {
@@ -26,13 +26,6 @@ export function displayShopMenu(): void {
     const startX = (canvas.width - totalWidth) / 2 - 20;
     const buttonY = canvas.height / 2 - buttonSize / 2 - 40;
     
-    if (shopBg.complete) {
-      ctx.drawImage(shopBg, 0, 0, canvas.width, canvas.height);
-    } else {
-      shopBg.onload = () => {
-        ctx.drawImage(shopBg, 0, 0, canvas.width, canvas.height);
-      };
-    }
     
     options.forEach((option, index) => {
       const x = startX + index * (buttonSize + spacing);
@@ -62,7 +55,6 @@ export function displayShopMenu(): void {
           mouseY <= buttonY + buttonSize
         ) {
           
-          setSelectedPaddleColor(option.name);
           canvas.removeEventListener('click', onClick);
           displayMenu();
         }

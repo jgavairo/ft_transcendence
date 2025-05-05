@@ -1,6 +1,5 @@
 import { displayWaitingScreen } from './WaitingScreen.js';
 import { displayMultiMenu } from "./MultiMenu.js";
-import { setMode } from './pongGame.js';
 import { displaySoloMenu } from './SoloMenu.js';
 import { displayMenu } from './DisplayMenu.js';
 export function displayPlayMenu() {
@@ -28,7 +27,6 @@ export function displayPlayMenu() {
             x: x0, y: startY,
             w: btnW, h: btnH,
             onClick: () => {
-                setMode('solo');
                 teardown();
                 displaySoloMenu();
             }
@@ -38,7 +36,6 @@ export function displayPlayMenu() {
             x: x0, y: startY + (btnH + spacing),
             w: btnW, h: btnH,
             onClick: () => {
-                setMode('multi');
                 teardown();
                 displayMultiMenu();
             }

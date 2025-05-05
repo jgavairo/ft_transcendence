@@ -1,6 +1,6 @@
-import { socket } from './pongGame.js';
-import { startSoloTriPong } from './TriPong.js';
+import { startSoloTriPong, connectTriPong } from './TriPong.js';
 import { displayPlayMenu } from './PlayMenu.js';
+import { startSoloPong, connectPong } from './pongGame.js';
 
 
 export function displaySoloMenu(): void {
@@ -11,6 +11,9 @@ export function displaySoloMenu(): void {
     ch = canvas.clientHeight;
     canvas.width = cw;
     canvas.height = ch;
+
+    connectPong();
+    connectTriPong();
     
     // Fond & titre
     ctx.fillStyle = 'black';
@@ -39,7 +42,7 @@ export function displaySoloMenu(): void {
         onClick: () => {
           // Lance la partie pour 2 joueurs (reprise du solo)
           teardownSolo();
-          socket.emit('startSolo', { username: 'Player1' });
+          startSoloPong('Player1');
         }
       },
       {

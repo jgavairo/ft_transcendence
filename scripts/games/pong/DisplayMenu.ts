@@ -1,4 +1,4 @@
-import { menuBg } from './pongGame.js';
+
 import { displayPlayMenu } from './PlayMenu.js';
 import { displayShopMenu } from './ShopMenu.js';
 
@@ -12,6 +12,9 @@ import { displayShopMenu } from './ShopMenu.js';
     canvas.width = cw;
     canvas.height = ch;
   
+    const menuBg = new Image();
+    menuBg.src = '/scripts/games/pong/assets/menuBg.png';
+
     if (menuBg.complete) {
       ctx.drawImage(menuBg, 0, 0, cw, ch);
     } else {
