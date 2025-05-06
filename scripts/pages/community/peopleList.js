@@ -1,3 +1,4 @@
+import { showErrorNotification, showNotification } from "../../helpers/notifications.js";
 import { HOSTNAME } from "../../main.js";
 import { FriendsManager } from "../../managers/friendsManager.js";
 const STORAGE_KEY = "people";
@@ -22,12 +23,24 @@ export async function fetchUsernames() {
 }
 export async function renderPeopleList(filter = "") {
     var _a;
+    // Vérifier si le bouton Community est actif
+    const communityButton = document.getElementById('communitybutton');
+    if (!(communityButton === null || communityButton === void 0 ? void 0 : communityButton.classList.contains('activebutton'))) {
+        console.log('Not in community page, skipping renderPeopleList');
+        return;
+    }
     const container = document.getElementById("friendList");
     if (!container) {
         console.error("❌ #friendList introuvable");
         return;
     }
-    const friends = getFriendsFromStorage();
+    // Nettoyer les anciens event listeners
+    const oldButtons = container.querySelectorAll('button');
+    oldButtons.forEach(button => {
+        var _a;
+        const newButton = button.cloneNode(true);
+        (_a = button.parentNode) === null || _a === void 0 ? void 0 : _a.replaceChild(newButton, button);
+    });
     const people = await fetchUsernames();
     // Récupérer l'utilisateur connecté (par exemple, depuis un token ou une API)
     const response = await fetch(`http://${HOSTNAME}:3000/api/user/infos`, {
@@ -74,75 +87,129 @@ export async function renderPeopleList(filter = "") {
         label.className = "friend-name";
         label.textContent = person.username;
         const button = document.createElement("button");
+        const button2 = document.createElement("button");
         if (isFriend) {
             button.className = "toggle-button added";
-            button.title = "Supprimer des amis";
+            button.title = "Delete friend";
             button.textContent = "✖";
         }
         else if (isRequesting) {
             button.className = "toggle-button requesting";
-            button.title = "Demande en attente";
+            button.title = "Requesting - Cancel request";
             button.textContent = "⌛";
-            button.disabled = true;
         }
         else if (isRequested) {
             button.className = "toggle-button requested";
-            button.title = "Accepter la demande";
+            button.title = "Accept request";
             button.textContent = "✓";
-            button.style.color = "green";
+            button2.className = "toggle-button refused";
+            button2.title = "Refuse request";
+            button2.textContent = "✖";
+            button2.setAttribute("data-name", person.username);
+            button2.addEventListener("click", async () => {
+                console.log("Refuse request");
+                await refuseFriendRequest(person.username);
+                await renderPeopleList();
+            });
         }
         else {
             button.className = "toggle-button";
-            button.title = "Ajouter comme ami";
+            button.title = "Add friend";
             button.textContent = "＋";
         }
         button.setAttribute("data-name", person.username);
         button.addEventListener("click", async () => {
             if (isFriend) {
-                removeFriend(person.username);
-                button.className = "toggle-button";
-                button.title = "Ajouter comme ami";
-                button.textContent = "＋";
+                await removeFriend(person.username);
+                await renderPeopleList();
             }
             else if (isRequesting) {
-                // Ne rien faire, demande en attente
+                await cancelFriendRequest(person.username);
+                await renderPeopleList();
             }
             else if (isRequested) {
-                // Accepter la demande
                 await acceptFriendRequest(person.username);
-                button.className = "toggle-button added";
-                button.title = "Supprimer des amis";
-                button.textContent = "✖";
+                await renderPeopleList();
             }
             else {
-                addFriend(person.username);
-                button.className = "toggle-button requesting";
-                button.title = "Demande en attente";
-                button.textContent = "⌛";
+                await addFriend(person.username);
+                await renderPeopleList();
             }
         });
         div.appendChild(label);
         div.appendChild(button);
+        div.appendChild(button2);
         container.appendChild(div);
     });
 }
-export function removeFriend(name) {
-    console.log(`❌ "${name}" supprimé des amis.`);
-}
-export async function acceptFriendRequest(name) {
-    console.log('Accepting friend request from:', name);
-    const success = await FriendsManager.acceptFriendRequest(name);
+export async function refuseFriendRequest(name) {
+    console.log('Refusing friend request from:', name);
+    const success = await FriendsManager.refuseFriendRequest(name);
     if (success) {
-        console.log('Friend request accepted successfully');
-        // Rafraîchir la liste pour mettre à jour l'affichage
-        await renderPeopleList();
+        console.log('Friend request refused successfully');
+        showNotification("Friend request from " + name + " has been refused");
     }
     else {
-        console.error('Failed to accept friend request');
+        console.error('Failed to refuse friend request');
+        showErrorNotification("Failed to refuse friend request");
     }
 }
-export function addFriend(name) {
-    FriendsManager.sendFriendRequest(name);
+export async function cancelFriendRequest(name) {
+    console.log('Cancelling friend request to:', name);
+    const success = await FriendsManager.cancelFriendRequest(name);
+    if (success) {
+        console.log("Friend request cancelled successfully");
+        showNotification(name + " is no longer requesting to be your friend");
+        return true;
+    }
+    else {
+        console.error("Failed to cancel friend request");
+        showErrorNotification("Failed to cancel friend request");
+        return false;
+    }
+}
+export async function removeFriend(name) {
+    try {
+        console.log("removeFriend: " + name);
+        const success = await FriendsManager.removeFriend(name);
+        if (success) {
+            console.log("Friend removed successfully");
+            showNotification(name + " is no longer your friend");
+            return true;
+        }
+        else {
+            console.error("Failed to remove friend");
+            showErrorNotification("Failed to remove friend");
+            return false;
+        }
+    }
+    catch (error) {
+        console.error("Error in removeFriend:", error);
+        return false;
+    }
+}
+export async function acceptFriendRequest(name) {
+    try {
+        console.log('Accepting friend request from:', name);
+        const success = await FriendsManager.acceptFriendRequest(name);
+        if (success) {
+            showNotification(name + " is now your friend");
+        }
+        else {
+            showErrorNotification("Failed to accept friend request");
+        }
+    }
+    catch (error) {
+        console.error("Error in acceptFriendRequest:", error);
+        showErrorNotification("Failed to accept friend request");
+    }
+}
+export async function addFriend(name) {
+    const success = await FriendsManager.sendFriendRequest(name);
+    if (success)
+        showNotification(name + " is now requesting to be your friend");
+    else
+        showErrorNotification("Failed to send friend request");
 }
 export function setupSearchInput() {
     const input = document.getElementById("friendSearch");
@@ -151,9 +218,6 @@ export function setupSearchInput() {
     input.addEventListener("input", () => {
         renderPeopleList(input.value);
     });
-}
-export function getFriendsFromStorage() {
-    return JSON.parse(localStorage.getItem("friends") || "[]");
 }
 export function showProfileCard(username, profilePicture, email, bio) {
     // Vérifiez si une carte existe déjà et la supprimez

@@ -178,39 +178,109 @@
   padding-right: 5rem;
 }
 
-.rankingContainer {
-  width: 75%;
-  background-color: #2a2f37;
-  border-radius: 5px;
-  padding: 1rem;
-  height: 44vh;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+/* Section pour le ranking */
+.rankingSection,
+.friendsSection {
+  width: 100%; /* Les sections prennent toute la largeur */
+  margin-bottom: 2rem; /* Espacement entre les sections */
 }
 
+.rankingContainer,
 .friendsContainer {
-  width: 25%;
-  height: 44vh;
+  width: 100%; /* Les conteneurs prennent toute la largeur */
   background-color: #2a2f37;
   border-radius: 5px;
-  padding: 1rem;
+  padding: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #4a5568;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
+/* Titres des sections */
 .sectionTitle {
   font-size: 1.125rem;
   font-weight: bold;
   color: #ffffff;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem; /* Espacement entre le titre et le conteneur */
+  padding: 0.5rem 1rem;
+  background-color: #2a2f37;
   border-bottom: 1px solid #4a5568;
-  padding-bottom: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  position: relative;
+  z-index: 2;
 }
+
+/* Listes */
 .rankingList,
 .friendsList {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-.rankingItem,
+
+.rankingList {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #ffffff;
+}
+
+/* Éléments de la liste */
+.rankingItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  margin-bottom: 0.75rem;
+  background-color: #2a2f37;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+/* Effet de survol */
+.rankingItem:hover {
+  background-color: #374151;
+  transform: scale(1.02);
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Style pour l'image de profil */
+.profilePic {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 1rem;
+  border: 2px solid #ffffff;
+  object-fit: cover;
+}
+
+/* Nom du joueur */
+.playerName {
+  flex: 1;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+/* Effet de survol pour le nom */
+.playerName:hover {
+  color: #3895eb; /* Couleur de survol */
+  text-decoration: none; /* Supprime le soulignement */
+}
+
+/* Style pour les médailles */
+.medal {
+  font-size: 1.5rem; /* Ajuster la taille des emojis */
+  margin-left: 0.5rem; /* Espacement entre le nom et la médaille */
+  vertical-align: middle; /* Aligner verticalement avec le texte */
+}
+
 .friendItem {
   display: flex;
   align-items: center;
@@ -220,20 +290,7 @@
   border-radius: 5px;
   background-color: #2a2f37;
 }
-.profilePic {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  margin-right: 0.75rem;
-  border: 2px solid #ffffff;
-  object-fit: cover;
-  margin-left: 1rem;
-}
-.playerInfo {
-  display: flex;
-  flex-direction: column;
-}
-.playerName,
+
 .friendName {
   color: #ffffff;
   font-weight: bold;
@@ -246,15 +303,14 @@
   text-decoration: underline;
 }
 
-.playerWins {
-  color: #cbd5e0;
-  font-size: 0.9rem;
-}
-
+/* Numéro de classement */
 .numberRank {
-  color: #ffffff;
   font-size: 1.5rem;
-  margin-left: 10px;
+  font-weight: bold;
+  color: #ffffff;
+  margin-right: 1rem;
+  text-align: center;
+  width: 3rem; /* Largeur fixe pour aligner les numéros */
 }
 
 .close-button {

@@ -240,7 +240,17 @@ app.post('/api/friends/acceptRequest', { preHandler: authMiddleware }, async (re
     return friendsRoutes.acceptRequest(request, reply);
 });
 
+app.post('/api/friends/removeFriend', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return friendsRoutes.removeFriend(request, reply);
+});
 
+app.post('/api/friends/cancelRequest', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return friendsRoutes.cancelRequest(request, reply);
+});
+
+app.post('/api/friends/refuseRequest', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return friendsRoutes.refuseRequest(request, reply);
+});
 
 /////////////////
 // CHAT ROUTES //

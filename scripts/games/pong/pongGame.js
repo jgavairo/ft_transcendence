@@ -1,5 +1,6 @@
 import { displayMenu } from './DisplayMenu.js';
 import { socket } from './network.js';
+import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 // Variables réseau
 let mySide;
 let roomId;
@@ -21,6 +22,7 @@ let firstFrame = false;
 // Initialise la connexion Socket.IO et les handlers
 export function connectPong() {
     socket.on('matchFound', (data) => {
+        soloMode = data.mode === 'solo';
         soloMode = data.mode === 'solo';
         mySide = soloMode ? 0 : data.side;
         lastState = null;
@@ -105,8 +107,16 @@ function sendMove(side, direction) {
     socket.emit('movePaddle', { side, direction });
 }
 // Écoute clavier global
-window.addEventListener('keydown', e => {
+window.addEventListener('keydown', (e) => {
     if (soloMode) {
+        if (e.code === 'KeyD')
+            sendMove(0, 'up');
+        else if (e.code === 'KeyA')
+            sendMove(0, 'down');
+        else if (e.code === 'ArrowRight')
+            sendMove(1, 'up');
+        else if (e.code === 'ArrowLeft')
+            sendMove(1, 'down');
         if (e.code === 'KeyD')
             sendMove(0, 'up');
         else if (e.code === 'KeyA')
@@ -123,8 +133,12 @@ window.addEventListener('keydown', e => {
         }
     }
 });
-window.addEventListener('keyup', e => {
+window.addEventListener('keyup', (e) => {
     if (soloMode) {
+        if (e.code === 'KeyD' || e.code === 'KeyA')
+            sendMove(0, null);
+        else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft')
+            sendMove(1, null);
         if (e.code === 'KeyD' || e.code === 'KeyA')
             sendMove(0, null);
         else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft')
@@ -141,6 +155,51 @@ export function startPong() {
     ctx = canvas.getContext('2d');
     canvas.width = CW;
     canvas.height = CH;
+}
+// Ajout de la gestion du message de fin de partie
+async function renderGameOverMessage(state) {
+    // Affiche le message uniquement en mode multi
+    if (soloMode)
+        return;
+    const player = state.paddles[mySide];
+    const message = player.lives > 0 ? 'You Win!' : 'Game Over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.font = '48px Arial';
+    ctx.fillText(message, CX, CY);
+    // Si le joueur a gagné, appeler l'API incrementWins
+    if (player.lives > 0) {
+        try {
+            // Récupérer l'utilisateur actuel via GameManager
+            const currentUser = await GameManager.getCurrentUser();
+            if (!currentUser || !currentUser.id) {
+                console.error('Impossible de récupérer l\'utilisateur actuel.');
+                return;
+            }
+            const response = await fetch('/api/games/incrementWins', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include', // Utilise les cookies pour l'authentification
+                body: JSON.stringify({
+                    gameId: 1, // ID du jeu (Pong)
+                    userId: currentUser.id, // Utiliser l'ID utilisateur actuel
+                }),
+            });
+            if (response.ok) {
+                console.log('Victoire enregistrée avec succès.');
+            }
+            else {
+                console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
+            }
+        }
+        catch (error) {
+            console.error('Erreur réseau lors de l\'enregistrement de la victoire:', error);
+        }
+    }
 }
 // Dessine l'état de la partie Tri-Pong
 export function renderPong(state) {
@@ -216,7 +275,7 @@ export function renderPong(state) {
 function fromPolar(phi, r) {
     return {
         x: CX + r * Math.cos(phi),
-        y: CY + r * Math.sin(phi)
+        y: CY + r * Math.sin(phi),
     };
 }
 // Dessine un cœur (pour les vies)

@@ -75,10 +75,11 @@ async function sendRequestHandler(request: FastifyRequest, reply: FastifyReply)
                 senderId: userId,
                 senderUsername: sender.username 
             });
-        } else {
+        } 
+        else 
+        {
             console.log('Receiver socket not found for user ID:', receiverId);
         }
-        
         console.log("333333333---------------");
         return reply.status(200).send({
             success: true,
@@ -241,13 +242,52 @@ async function acceptRequestHandler(request: FastifyRequest, reply: FastifyReply
                 message: "User not found"
             });
         }
+        try
+        {
+            await dbManager.acceptFriendRequest(userId, targetUser.id);
+            
+            // Émettre l'événement acceptRequest au destinataire
+            if (!targetUser.id) {
+                console.log('Target user ID is undefined');
+                return reply.status(400).send({
+                    success: false,
+                    message: "Invalid target user ID"
+                });
+            }
 
-        await dbManager.acceptFriendRequest(userId, targetUser.id);
-        return reply.status(200).send
-        ({
-            success: true,
-            message: "Friend request accepted"
-        });
+            const targetSocket = Array.from(generalNs.sockets.values()).find(socket => {
+                const rooms = Array.from(socket.rooms);
+                console.log('Checking socket:', socket.id, 'with rooms:', rooms);
+                return rooms.some(room => {
+                    console.log('Comparing room:', room, 'with targetId:', targetUser.id);
+                    return room.toString() === targetUser?.id?.toString() || '';
+                });
+            });
+            
+            if (targetSocket) {
+                console.log('Found target socket:', targetSocket.id);
+                const sender = await dbManager.getUserById(userId);
+                generalNs.to(targetSocket.id).emit('acceptRequest', { 
+                    senderId: userId,
+                    senderUsername: sender?.username || 'Unknown user'
+                });
+            } else {
+                console.log('Target socket not found for user ID:', targetUser.id);
+            }
+
+            return reply.status(200).send
+            ({
+                success: true,
+                message: "Friend request accepted"
+            });
+        }
+        catch (error)
+        {
+            return reply.status(400).send({
+                success: false,
+                message: "Friend request is no longer valid"
+            });
+        }
     }
     catch (error)
     {
@@ -258,11 +298,182 @@ async function acceptRequestHandler(request: FastifyRequest, reply: FastifyReply
     }
 }
 
+async function removeFriendHandler(request: FastifyRequest, reply: FastifyReply)
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const userId = (request as AuthenticatedRequest).user.id;
+        const { username } = request.body as { username: string };
+
+        if (!username)
+        {
+            return reply.status(400).send({
+                success: false,
+                message: "Username is required"
+            });
+        }
+        
+        const targetUser = await dbManager.getUserByUsername(username);
+        if (!targetUser || !targetUser.id)
+        {
+            return reply.status(404).send({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        try {
+            await dbManager.removeFriend(userId, targetUser.id);
+            return reply.status(200).send({
+                success: true,
+                message: "Friend removed"
+            });
+        } catch (error: any) {
+            if (error.message === 'Users are not friends') {
+                return reply.status(400).send({
+                    success: false,
+                    message: "Users are not friends"
+                });
+            }
+            throw error;
+        }
+    }
+    catch (error)
+    {
+        console.error('Error in removeFriendHandler:', error);
+        return reply.status(500).send({
+            success: false,
+            message: "Error from removeFriendHandler"
+        });
+    }
+}
+
+async function cancelRequestHandler(request: FastifyRequest, reply: FastifyReply)
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const userId = (request as AuthenticatedRequest).user.id;
+        const { username } = request.body as { username: string };
+
+        if (!username)
+        {
+            return reply.status(400).send({
+                success: false,
+                message: "Username is required"
+            });
+        }
+
+        const targetUser = await dbManager.getUserByUsername(username);
+        if (!targetUser || !targetUser.id)
+        {
+            return reply.status(404).send({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const isFriend = await dbManager.isFriend(userId, targetUser.id);
+        if (isFriend)
+        {
+            return reply.status(400).send({
+                success: false,
+                message: "Users are friends"
+            });
+        }
+        await dbManager.cancelFriendRequest(userId, targetUser.id);
+        return reply.status(200).send({
+            success: true,
+            message: "Friend request cancelled"
+        });
+    }
+    catch (error)
+    {
+        return reply.status(500).send({
+            success: false,
+            message: "Error from cancelRequestHandler"
+        });
+    }
+}
+
+async function refuseRequestHandler(request: FastifyRequest, reply: FastifyReply)
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const userId = (request as AuthenticatedRequest).user.id;
+        const { username } = request.body as { username: string };
+
+        if (!username)
+        {
+            return reply.status(400).send({
+                success: false,
+                message: "Username is required"
+            });
+        }
+
+        const targetUser = await dbManager.getUserByUsername(username);
+        if (!targetUser || !targetUser.id)
+        {
+            return reply.status(404).send({
+                success: false,
+                message: "User not found"
+            });
+        }
+        const isRequested = await dbManager.isRequested(userId, targetUser.id);
+        if (!isRequested)
+        {
+            return reply.status(400).send({
+                success: false,
+                message: "Friend request is not valid"
+            });
+        }
+        await dbManager.refuseFriendRequest(userId, targetUser.id);
+
+        // Émettre l'événement refuseRequest au destinataire
+        const targetSocket = Array.from(generalNs.sockets.values()).find(socket => {
+            const rooms = Array.from(socket.rooms);
+            console.log('Checking socket:', socket.id, 'with rooms:', rooms);
+            return rooms.some(room => {
+                console.log('Comparing room:', room, 'with targetId:', targetUser.id);
+                return room.toString() === targetUser?.id?.toString() || '';
+            });
+        });
+        
+        if (targetSocket) {
+            console.log('Found target socket:', targetSocket.id);
+            const sender = await dbManager.getUserById(userId);
+            generalNs.to(targetSocket.id).emit('refuseRequest', { 
+                senderId: userId,
+                senderUsername: sender?.username || 'Unknown user'
+            });
+        } else {
+            console.log('Target socket not found for user ID:', targetUser.id);
+        }
+
+        return reply.status(200).send({
+            success: true,
+            message: "Friend request refused"
+        });
+    }
+    catch (error)
+    {
+        return reply.status(500).send({
+            success: false,
+            message: "Error from refuseRequestHandler"
+        });
+    }
+}
+
 export const friendsRoutes = 
 {
     sendRequest : sendRequestHandler,
     isFriend : isFriendHandler,
     isRequesting : isRequestingHandler,
     isRequested : isRequestedHandler,
-    acceptRequest : acceptRequestHandler
+    acceptRequest : acceptRequestHandler,
+    removeFriend : removeFriendHandler,
+    cancelRequest : cancelRequestHandler,
+    refuseRequest : refuseRequestHandler
 }
