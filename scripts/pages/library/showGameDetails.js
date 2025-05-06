@@ -46,7 +46,7 @@ export async function showGameDetails(gameIdOrObj) {
             <div class="rankingContainer">
               <ul class="rankingList">
                 ${rankedPeople.map((person, index) => `
-                  <li class="rankingItem">
+                  <li class="rankingItem" id="user-${person.username}">
                     <span class="numberRank">${index + 1}</span> <!-- Numéro de classement -->
                     <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
                     <span class="playerName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
@@ -60,6 +60,7 @@ export async function showGameDetails(gameIdOrObj) {
                 `).join('')}
               </ul>
             </div>
+            <button id="scrollToCurrentUser" class="scrollButton">Go to My Rank</button>
           </div>
           <div class="friendsSection">
             <h3 class="sectionTitle">Friend List</h3>
@@ -103,5 +104,20 @@ export async function showGameDetails(gameIdOrObj) {
             return;
         modal.innerHTML = gameModalHTML;
         displayMenu();
+    });
+    // Bouton Go to My Rank
+    const scrollToCurrentUserBtn = details.querySelector('#scrollToCurrentUser');
+    scrollToCurrentUserBtn.addEventListener('click', () => {
+        if (!currentUser || !currentUser.username)
+            return;
+        // Trouver l'élément correspondant à l'utilisateur en cours
+        const userElement = details.querySelector(`#user-${currentUser.username}`);
+        if (userElement) {
+            userElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            userElement.style.backgroundColor = '#4a5568'; // Mettre en surbrillance temporaire
+            setTimeout(() => {
+                userElement.style.backgroundColor = ''; // Retirer la surbrillance après 2 secondes
+            }, 2000);
+        }
     });
 }
