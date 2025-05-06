@@ -1,5 +1,4 @@
 import api from "../helpers/api.js";
-import { showNotification } from "../helpers/notifications.js";
 export class FriendsManager {
     static async sendFriendRequest(username) {
         const response = await api.post('/api/friends/sendRequest', {
@@ -52,7 +51,6 @@ export class FriendsManager {
             else {
                 if (data.message === 'Friend request is no longer valid') {
                     console.log('Friend request is no longer valid');
-                    showNotification(username + ' is no longer requesting to be your friend');
                     return false;
                 }
                 console.error('Error accepting friend request:', data.message);
