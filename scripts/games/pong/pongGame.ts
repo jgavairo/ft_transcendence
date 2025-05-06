@@ -1,5 +1,6 @@
 import { displayMenu } from './DisplayMenu.js';
 import { socket } from './network.js';
+import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 
 // Interface de l'état de partie reçue du serveur
 export interface MatchState {
@@ -23,21 +24,16 @@ const CW = 1200;
 const CH = 770;
 const CX = CW / 2;
 const CY = CH / 2;
-const R  = Math.min(CW, CH) / 2 - 45;      // rayon du terrain
-const P_TH = 12;                           // épaisseur des paddles
-const ARC_HALF = Math.PI / 18;      // demi-angle du paddle
+const R = Math.min(CW, CH) / 2 - 45; // rayon du terrain
+const P_TH = 12; // épaisseur des paddles
+const ARC_HALF = Math.PI / 18; // demi-angle du paddle
 
 // Initialise la connexion Socket.IO et les handlers
 export function connectPong() {
-  socket.on('matchFound', (data: {
-    roomId: string;
-    side: number;
-    mode: 'solo' | 'multi';
-  }) => {
-
-    soloMode = (data.mode === 'solo');
-    mySide   = soloMode ? 0 : data.side;
-    roomId   = data.roomId;
+  socket.on('matchFound', (data: { roomId: string; side: number; mode: 'solo' | 'multi' }) => {
+    soloMode = data.mode === 'solo';
+    mySide = soloMode ? 0 : data.side;
+    roomId = data.roomId;
     startPong();
   });
 
@@ -45,7 +41,6 @@ export function connectPong() {
     renderPong(state);
   });
 }
-
 
 export function joinQueue(username: string) {
   socket.emit('joinQueue', { username });
@@ -55,18 +50,17 @@ export function startSoloPong(username: string) {
   socket.emit('startSolo', { username });
 }
 
-
 // Envoi des commandes paddle au serveur
-function sendMove(side: number, direction: 'up'|'down'|null) {
+function sendMove(side: number, direction: 'up' | 'down' | null) {
   socket.emit('movePaddle', { side, direction });
 }
 
 // Écoute clavier global
-window.addEventListener('keydown', e => {
+window.addEventListener('keydown', (e) => {
   if (soloMode) {
-    if      (e.code === 'KeyD')      sendMove(0, 'up');
-    else if (e.code === 'KeyA')      sendMove(0, 'down');
-    else if (e.code === 'ArrowRight')   sendMove(1, 'up');
+    if (e.code === 'KeyD') sendMove(0, 'up');
+    else if (e.code === 'KeyA') sendMove(0, 'down');
+    else if (e.code === 'ArrowRight') sendMove(1, 'up');
     else if (e.code === 'ArrowLeft') sendMove(1, 'down');
   } else {
     if (e.code === 'KeyD' || e.code === 'KeyA') {
@@ -76,9 +70,9 @@ window.addEventListener('keydown', e => {
   }
 });
 
-window.addEventListener('keyup', e => {
+window.addEventListener('keyup', (e) => {
   if (soloMode) {
-    if      (e.code === 'KeyD' || e.code === 'KeyA')       sendMove(0, null);
+    if (e.code === 'KeyD' || e.code === 'KeyA') sendMove(0, null);
     else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') sendMove(1, null);
   } else {
     if (e.code === 'KeyD' || e.code === 'KeyA') sendMove(mySide, null);
@@ -88,9 +82,58 @@ window.addEventListener('keyup', e => {
 // Initialise le canvas et le contexte
 export function startPong() {
   canvas = document.querySelector('#pongCanvas') as HTMLCanvasElement;
-  ctx    = canvas.getContext('2d')!;
-  canvas.width  = CW;
+  ctx = canvas.getContext('2d')!;
+  canvas.width = CW;
   canvas.height = CH;
+}
+
+// Ajout de la gestion du message de fin de partie
+async function renderGameOverMessage(state: MatchState) {
+  // Affiche le message uniquement en mode multi
+  if (soloMode) return;
+
+  const player = state.paddles[mySide];
+  const message = player.lives > 0 ? 'You Win!' : 'Game Over';
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.fillRect(0, 0, CW, CH);
+
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'center';
+  ctx.font = '48px Arial';
+  ctx.fillText(message, CX, CY);
+
+  // Si le joueur a gagné, appeler l'API incrementWins
+  if (player.lives > 0) {
+    try {
+      // Récupérer l'utilisateur actuel via GameManager
+      const currentUser = await GameManager.getCurrentUser();
+      if (!currentUser || !currentUser.id) {
+        console.error('Impossible de récupérer l\'utilisateur actuel.');
+        return;
+      }
+
+      const response = await fetch('/api/games/incrementWins', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Utilise les cookies pour l'authentification
+        body: JSON.stringify({
+          gameId: 1, // ID du jeu (Pong)
+          userId: currentUser.id, // Utiliser l'ID utilisateur actuel
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Victoire enregistrée avec succès.');
+      } else {
+        console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
+      }
+    } catch (error) {
+      console.error('Erreur réseau lors de l\'enregistrement de la victoire:', error);
+    }
+  }
 }
 
 // Dessine l'état de la partie Tri-Pong
@@ -100,9 +143,9 @@ export function renderPong(state: MatchState) {
 
   // Dessine chaque paddle (arc)
   ctx.lineWidth = P_TH;
-  state.paddles.forEach(p => {
+  state.paddles.forEach((p) => {
     const start = p.phi - ARC_HALF;
-    const end   = p.phi + ARC_HALF;
+    const end = p.phi + ARC_HALF;
     ctx.strokeStyle = p.lives > 0 ? 'white' : 'red';
     ctx.beginPath();
     ctx.arc(CX, CY, R, start, end);
@@ -119,21 +162,16 @@ export function renderPong(state: MatchState) {
   ctx.fill();
 
   // Dessine les vies (cœurs) pour chaque paddle
-  state.paddles.forEach(p => {
+  state.paddles.forEach((p) => {
     const label = fromPolar(p.phi, R + 20);
     for (let i = 0; i < 3; i++) {
       drawHeart(label.x + (i - 1) * 20, label.y, 8, i < p.lives);
     }
   });
 
-  // Optionnel : si gameOver, afficher message
+  // Affiche le message de fin si la partie est terminée
   if (state.gameOver) {
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, 0, CW, CH);
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.font = '36px Arial';
-    ctx.fillText('Game finish', CX, CY - 20);
+    renderGameOverMessage(state);
   }
 }
 
@@ -141,7 +179,7 @@ export function renderPong(state: MatchState) {
 function fromPolar(phi: number, r: number) {
   return {
     x: CX + r * Math.cos(phi),
-    y: CY + r * Math.sin(phi)
+    y: CY + r * Math.sin(phi),
   };
 }
 
@@ -151,18 +189,10 @@ function drawHeart(x: number, y: number, sz: number, fill: boolean) {
   ctx.beginPath();
   const t = sz * 0.3;
   ctx.moveTo(x, y + t);
-  ctx.bezierCurveTo(x, y, x - sz/2, y, x - sz/2, y + t);
-  ctx.bezierCurveTo(
-    x - sz/2, y + (sz + t) / 2,
-    x,        y + (sz + t) / 2,
-    x,        y + sz
-  );
-  ctx.bezierCurveTo(
-    x,        y + (sz + t) / 2,
-    x + sz/2, y + (sz + t) / 2,
-    x + sz/2, y + t
-  );
-  ctx.bezierCurveTo(x + sz/2, y, x, y, x, y + t);
+  ctx.bezierCurveTo(x, y, x - sz / 2, y, x - sz / 2, y + t);
+  ctx.bezierCurveTo(x - sz / 2, y + (sz + t) / 2, x, y + (sz + t) / 2, x, y + sz);
+  ctx.bezierCurveTo(x, y + (sz + t) / 2, x + sz / 2, y + (sz + t) / 2, x + sz / 2, y + t);
+  ctx.bezierCurveTo(x + sz / 2, y, x, y, x, y + t);
   ctx.closePath();
   ctx.lineWidth = 1;
   ctx.strokeStyle = 'white';
