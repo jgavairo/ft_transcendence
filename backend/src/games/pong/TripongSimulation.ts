@@ -29,8 +29,10 @@ export function startTriMatch(socks: Socket[], nsp: Namespace): TriMatchState {
     { phi: 7*Math.PI/6,  lives: 3, direction: null },
   ];
   const ball = { x:0, y:0, vx:0, vy:0, r:8 };
-  resetTriBall(ball);
   const state: TriMatchState = { roomId, paddles, ball, gameOver: false };
+  setTimeout(() => {
+    resetTriBall(ball);
+  }, 3600);
   return state;
 }
 
