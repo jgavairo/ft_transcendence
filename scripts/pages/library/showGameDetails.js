@@ -45,12 +45,17 @@ export async function showGameDetails(gameIdOrObj) {
             <h3 class="sectionTitle">Online 1vs1 Ranking</h3>
             <div class="rankingContainer">
               <ul class="rankingList">
-                ${rankedPeople.map((person) => `
+                ${rankedPeople.map((person, index) => `
                   <li class="rankingItem">
+                    <span class="numberRank">${index + 1}</span> <!-- Numéro de classement -->
                     <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
                     <span class="playerName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
-                      ${person.username} - Wins: ${person.ranking}
+                      ${person.username}
                     </span>
+                    ${index === 0 ? '<span class="medal">🥇</span>' : ''}
+                    ${index === 1 ? '<span class="medal">🥈</span>' : ''}
+                    ${index === 2 ? '<span class="medal">🥉</span>' : ''}
+                    <span class="playerWins">Wins: ${person.ranking}</span>
                   </li>
                 `).join('')}
               </ul>
