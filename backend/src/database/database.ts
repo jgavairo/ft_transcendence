@@ -302,23 +302,34 @@ export class DatabaseManager
 
         if (!userData || !targetData) throw new Error('User not found');
 
+        // S'assurer que nous avons des tableaux valides
+        const userFriends = Array.isArray(userData.friends) ? userData.friends : JSON.parse(userData.friends || '[]');
+        const userRequests = Array.isArray(userData.friend_requests) ? userData.friend_requests : JSON.parse(userData.friend_requests || '[]');
+        const targetFriends = Array.isArray(targetData.friends) ? targetData.friends : JSON.parse(targetData.friends || '[]');
+        const targetAttempting = Array.isArray(targetData.attempting_friend_ids) ? targetData.attempting_friend_ids : JSON.parse(targetData.attempting_friend_ids || '[]');
+
+        // Vérifier que la demande est toujours valide
+        if (!targetAttempting.includes(userId) || !userRequests.includes(targetId)) {
+            throw new Error('Friend request is no longer valid');
+        }
+
         // Mettre à jour les amis de l'utilisateur
-        const updatedUserFriends = [...userData.friends, targetId];
+        const updatedUserFriends = [...userFriends, targetId];
         await this.db.run('UPDATE users SET friends = ? WHERE id = ?', 
             [JSON.stringify(updatedUserFriends), userId]);
 
         // Mettre à jour les amis de la cible
-        const updatedTargetFriends = [...targetData.friends, userId];
+        const updatedTargetFriends = [...targetFriends, userId];
         await this.db.run('UPDATE users SET friends = ? WHERE id = ?', 
             [JSON.stringify(updatedTargetFriends), targetId]);
 
         // Supprimer la demande de l'utilisateur
-        const updatedUserRequests = userData.friend_requests.filter((id: number) => id !== targetId);
+        const updatedUserRequests = userRequests.filter((id: number) => id !== targetId);
         await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', 
             [JSON.stringify(updatedUserRequests), userId]);
 
         // Supprimer l'ID de la liste des tentatives de la cible
-        const updatedTargetAttempting = targetData.attempting_friend_ids.filter((id: number) => id !== userId);
+        const updatedTargetAttempting = targetAttempting.filter((id: number) => id !== userId);
         await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', 
             [JSON.stringify(updatedTargetAttempting), targetId]);
     }
@@ -342,7 +353,6 @@ export class DatabaseManager
     public async sendFriendRequest(senderId: number, receiverId: number): Promise<void>
     {
         if (!this.db) throw new Error('Database not initialized');
-        //verifier si la requete n'existe pas deja 
         const result = await this.db.get('SELECT friend_requests, attempting_friend_ids FROM users WHERE id = ?', [senderId]);
         if (result)
         {
@@ -350,35 +360,82 @@ export class DatabaseManager
                 throw new Error('Friend request already exists');
         }
 
-        //verifier si l'utilisateur est deja ami
         const result2 = await this.db.get('SELECT friends FROM users WHERE id = ?', [receiverId]);
         if (result2)
         {
             if (result2.friends.includes(senderId))
                 throw new Error('User is already friends');
         }
-        //ajouter la requete a la base de donnees
-        console.log("in database.ts sendFriendRequest 1----1");
-        // ajouter senderID dans request de receiverID
         await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', [JSON.stringify([...result.friend_requests, senderId]), receiverId]);
-        console.log("in database.ts sendFriendRequest 2----2");
-        // ajouter receiverID dans attemping friends de senderID
         await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', [JSON.stringify([...result.attempting_friend_ids, receiverId]), senderId]);
-        console.log("in database.ts sendFriendRequest 3----3");
-        // envoyer la notification par socket a recevierID
-        console.log("in database.ts sendFriendRequest 4----4");
     }
-
-    //********************MESSAGES-PART*******************************
-
-    public async saveMessage(author: string, content: string): Promise<void> {
+    
+    public async removeFriend(userId: number, targetId: number): Promise<void>
+    {
         if (!this.db) throw new Error('Database not initialized');
-        await this.db.run(
-            'INSERT INTO messages (author, content) VALUES (?, ?)',
-            [author, content]
-        );
-    }
+        
+        // Vérifier si les utilisateurs sont amis
+        const isFriend = await this.isFriend(userId, targetId);
+        if (!isFriend) {
+            throw new Error('Users are not friends');
+        }
+        
+        // Récupérer les données actuelles
+        const userData = await this.db.get('SELECT friends FROM users WHERE id = ?', [userId]);
+        const targetData = await this.db.get('SELECT friends FROM users WHERE id = ?', [targetId]);
+        
+        if (!userData || !targetData) throw new Error('User not found');
+        
+        // S'assurer que nous avons des tableaux valides
+        const userFriends = Array.isArray(userData.friends) ? userData.friends : JSON.parse(userData.friends || '[]');
+        const targetFriends = Array.isArray(targetData.friends) ? targetData.friends : JSON.parse(targetData.friends || '[]');
+        
+        // Mettre à jour les amis de l'utilisateur
+        const updatedUserFriends = userFriends.filter((id: number) => id !== targetId);
+        await this.db.run('UPDATE users SET friends = ? WHERE id = ?', 
+            [JSON.stringify(updatedUserFriends), userId]);
+            
+            // Mettre à jour les amis de la cible
+            const updatedTargetFriends = targetFriends.filter((id: number) => id !== userId);
+            await this.db.run('UPDATE users SET friends = ? WHERE id = ?', 
+                [JSON.stringify(updatedTargetFriends), targetId]);
+            }
 
+            public async cancelFriendRequest(userId: number, targetId: number): Promise<void>
+            {
+                if (!this.db) throw new Error('Database not initialized');
+
+                // Récupérer les données actuelles
+                const userData = await this.db.get('SELECT attempting_friend_ids FROM users WHERE id = ?', [userId]);
+                const targetData = await this.db.get('SELECT friend_requests FROM users WHERE id = ?', [targetId]);
+
+                if (!userData || !targetData) throw new Error('User not found');
+
+                // S'assurer que nous avons des tableaux valides
+                const userAttempting = Array.isArray(userData.attempting_friend_ids) ? userData.attempting_friend_ids : JSON.parse(userData.attempting_friend_ids || '[]');
+                const targetRequests = Array.isArray(targetData.friend_requests) ? targetData.friend_requests : JSON.parse(targetData.friend_requests || '[]');
+
+                // Supprimer l'ID de la liste des tentatives de l'utilisateur
+                const updatedUserAttempting = userAttempting.filter((id: number) => id !== targetId);
+                await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', 
+                    [JSON.stringify(updatedUserAttempting), userId]);
+
+                // Supprimer l'ID de la liste des demandes de la cible
+                const updatedTargetRequests = targetRequests.filter((id: number) => id !== userId);
+                await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', 
+                    [JSON.stringify(updatedTargetRequests), targetId]);
+            }
+            
+            //********************MESSAGES-PART*******************************
+            
+            public async saveMessage(author: string, content: string): Promise<void> {
+                if (!this.db) throw new Error('Database not initialized');
+                await this.db.run(
+                    'INSERT INTO messages (author, content) VALUES (?, ?)',
+                    [author, content]
+                );
+            }
+    
     public async getLastMessages(limit: number = 10): Promise<{ author: string, content: string, timestamp: string }[]> {
         if (!this.db) throw new Error('Database not initialized');
         const result = await this.db.all(
@@ -439,6 +496,40 @@ export class DatabaseManager
         );
 
         return result;
+    }
+
+    public async refuseFriendRequest(userId: number, targetId: number): Promise<boolean> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        try {
+            // Récupérer les données actuelles des deux utilisateurs
+            const userData = await this.db.get('SELECT friend_requests FROM users WHERE id = ?', [userId]);
+            const targetData = await this.db.get('SELECT attempting_friend_ids FROM users WHERE id = ?', [targetId]);
+
+            if (!userData || !targetData) throw new Error('User not found');
+
+            // S'assurer que les listes sont des tableaux
+            const userRequests = Array.isArray(userData.friend_requests) ? userData.friend_requests : JSON.parse(userData.friend_requests || '[]');
+            const targetAttempting = Array.isArray(targetData.attempting_friend_ids) ? targetData.attempting_friend_ids : JSON.parse(targetData.attempting_friend_ids || '[]');
+
+            // Vérifier que la demande existe
+            if (!userRequests.includes(targetId) || !targetAttempting.includes(userId)) {
+                throw new Error('Friend request does not exist');
+            }
+
+            // Mettre à jour les listes
+            const updatedUserRequests = userRequests.filter((id: number) => id !== targetId);
+            const updatedTargetAttempting = targetAttempting.filter((id: number) => id !== userId);
+
+            // Sauvegarder les modifications
+            await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', [JSON.stringify(updatedUserRequests), userId]);
+            await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', [JSON.stringify(updatedTargetAttempting), targetId]);
+
+            return true;
+        } catch (error) {
+            console.error('Error in refuseFriendRequest:', error);
+            throw error;
+        }
     }
 
 }
