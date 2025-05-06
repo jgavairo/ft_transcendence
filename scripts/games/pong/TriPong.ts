@@ -1,4 +1,5 @@
 import { socket } from './network.js';
+import { createExplosion } from './ballExplosion.js';
 
 // Interface de l'état de partie reçue du serveur
 export interface TriMatchState {
@@ -23,7 +24,7 @@ const CX = CW / 2;
 const CY = CH / 2;
 const R  = Math.min(CW, CH) / 2 - 45;      // rayon du terrain
 const P_TH = 12;                           // épaisseur des paddles
-const ARC_HALF = Math.PI / 18;      // demi-angle du paddle
+const ARC_HALF = Math.PI / 18;             // demi-angle du paddle
 
 let readyTri    = false;
 let firstFrameTri = false;
@@ -241,6 +242,17 @@ export function renderTriPong(state: TriMatchState) {
   ctx.fill();
   ctx.restore();
 
+  explosion.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle   = 'orange';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+
   // 6) static hearts for lives
   state.paddles.forEach((p, i) => {
     const label = fromPolar(p.phi, R + 25);
@@ -263,7 +275,13 @@ export function renderTriPong(state: TriMatchState) {
 }
 
 
+interface Particle { x:number; y:number; vx:number; vy:number; alpha:number }
+let explosion: Particle[] = [];
 
+// Listen for server burst
+socket.on('ballExplode', ({ x, y }: { x:number, y:number }) => {
+  createExplosion(x, y);
+});
 
 // Convertit coordonnées polaires (phi,r) → cartésiennes
 function fromPolar(phi: number, r: number) {

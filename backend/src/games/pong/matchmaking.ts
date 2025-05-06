@@ -26,7 +26,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       socket.join(m.roomId);
       socket.emit('matchFound', { roomId: m.roomId, side: 0, mode: 'solo', you: username, opponent: username });
       const iv = setInterval(() => {
-        updateMatch(m);
+        updateMatch(m, gameNs);
         gameNs.to(m.roomId).emit('gameState', m);
         if (m.gameOver) clearInterval(iv);
       }, 1000 / 60);
@@ -44,7 +44,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         players: [username, username, username]
       });
       const iv = setInterval(() => {
-        updateTriMatch(m);
+        updateTriMatch(m, gameNs);
         gameNs.to(m.roomId).emit('stateUpdateTri', m);
         if (m.gameOver) clearInterval(iv);
       }, 1000 / 60);
@@ -65,12 +65,12 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         s1.join(m.roomId); s2.join(m.roomId);
         s1.emit('matchFound', { roomId: m.roomId, side: 0, mode: 'multi', you: p1.username, opponent: p2.username });
         s2.emit('matchFound', { roomId: m.roomId, side: 1, mode: 'multi', you: p2.username, opponent: p1.username });
-        const iv = setInterval(() => {
-          updateMatch(m);
-          gameNs.to(m.roomId).emit('gameState', m);
-          if (m.gameOver) clearInterval(iv);
-        }, 1000 / 60);
-      }
+          const iv = setInterval(() => {
+            updateMatch(m, gameNs);
+            gameNs.to(m.roomId).emit('gameState', m);
+            if (m.gameOver) clearInterval(iv);
+          }, 1000 / 60);
+        }
     });
 
     // 4) GESTION DES DÉPLACEMENTS PADDLE BI-PONG
@@ -131,8 +131,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         s.emit('matchFoundTri', { roomId: m.roomId, side: i, players });
       });
       const iv = setInterval(() => {
-        updateMatch(m);
-        gameNs.to(m.roomId).emit('stateUpdateTri', m);
+        updateTriMatch(m, gameNs);
+        gameNs.to(m.roomId).emit('gameState', m);
         if (m.gameOver) clearInterval(iv);
       }, 1000 / 60);
     }
