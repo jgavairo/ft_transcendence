@@ -23,11 +23,25 @@ export async function fetchUsernames(): Promise<{ username: string, profile_pict
 }
 
 export async function renderPeopleList(filter: string = "") {
+    // Vérifier si le bouton Community est actif
+    const communityButton = document.getElementById('communitybutton');
+    if (!communityButton?.classList.contains('activebutton')) {
+        console.log('Not in community page, skipping renderPeopleList');
+        return;
+    }
+
     const container = document.getElementById("friendList");
     if (!container) {
         console.error("❌ #friendList introuvable");
         return;
     }
+
+    // Nettoyer les anciens event listeners
+    const oldButtons = container.querySelectorAll('button');
+    oldButtons.forEach(button => {
+        const newButton = button.cloneNode(true);
+        button.parentNode?.replaceChild(newButton, button);
+    });
 
     const people = await fetchUsernames();
 
@@ -131,7 +145,7 @@ export async function renderPeopleList(filter: string = "") {
                 await acceptFriendRequest(person.username);
                 await renderPeopleList();
             } else {
-                addFriend(person.username);
+                await addFriend(person.username);
                 await renderPeopleList();
             }
         });
@@ -198,12 +212,23 @@ export async function removeFriend(name: string)
 
 export async function acceptFriendRequest(name: string)
 {
-    console.log('Accepting friend request from:', name);
-    const success = await FriendsManager.acceptFriendRequest(name);
-    if (success) 
-        showNotification(name + " is now your friend");
-    else
+    try {
+        console.log('Accepting friend request from:', name);
+        const success = await FriendsManager.acceptFriendRequest(name);
+        if (success) 
+        {
+            showNotification(name + " is now your friend");
+        }
+        else
+        {
+            showErrorNotification("Failed to accept friend request");
+        }
+    }
+    catch (error)
+    {
+        console.error("Error in acceptFriendRequest:", error);
         showErrorNotification("Failed to accept friend request");
+    }
 }
 
 export async function addFriend(name: string) 

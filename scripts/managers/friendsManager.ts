@@ -73,7 +73,6 @@ export class FriendsManager
                 if (data.message === 'Friend request is no longer valid')
                 {
                     console.log('Friend request is no longer valid');
-                    showNotification(username + ' is no longer requesting to be your friend');
                     return false;
                 }
                 console.error('Error accepting friend request:', data.message);

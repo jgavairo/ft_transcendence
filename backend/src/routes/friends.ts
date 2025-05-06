@@ -75,10 +75,11 @@ async function sendRequestHandler(request: FastifyRequest, reply: FastifyReply)
                 senderId: userId,
                 senderUsername: sender.username 
             });
-        } else {
+        } 
+        else 
+        {
             console.log('Receiver socket not found for user ID:', receiverId);
         }
-        
         console.log("333333333---------------");
         return reply.status(200).send({
             success: true,
@@ -244,11 +245,41 @@ async function acceptRequestHandler(request: FastifyRequest, reply: FastifyReply
         try
         {
             await dbManager.acceptFriendRequest(userId, targetUser.id);
+            
+            // Émettre l'événement acceptRequest au destinataire
+            if (!targetUser.id) {
+                console.log('Target user ID is undefined');
+                return reply.status(400).send({
+                    success: false,
+                    message: "Invalid target user ID"
+                });
+            }
+
+            const targetSocket = Array.from(generalNs.sockets.values()).find(socket => {
+                const rooms = Array.from(socket.rooms);
+                console.log('Checking socket:', socket.id, 'with rooms:', rooms);
+                return rooms.some(room => {
+                    console.log('Comparing room:', room, 'with targetId:', targetUser.id);
+                    return room.toString() === targetUser?.id?.toString() || '';
+                });
+            });
+            
+            if (targetSocket) {
+                console.log('Found target socket:', targetSocket.id);
+                const sender = await dbManager.getUserById(userId);
+                generalNs.to(targetSocket.id).emit('acceptRequest', { 
+                    senderId: userId,
+                    senderUsername: sender?.username || 'Unknown user'
+                });
+            } else {
+                console.log('Target socket not found for user ID:', targetUser.id);
+            }
+
             return reply.status(200).send
             ({
-            success: true,
-            message: "Friend request accepted"
-        });
+                success: true,
+                message: "Friend request accepted"
+            });
         }
         catch (error)
         {
@@ -343,6 +374,14 @@ async function cancelRequestHandler(request: FastifyRequest, reply: FastifyReply
             });
         }
 
+        const isFriend = await dbManager.isFriend(userId, targetUser.id);
+        if (isFriend)
+        {
+            return reply.status(400).send({
+                success: false,
+                message: "Users are friends"
+            });
+        }
         await dbManager.cancelFriendRequest(userId, targetUser.id);
         return reply.status(200).send({
             success: true,
@@ -391,6 +430,28 @@ async function refuseRequestHandler(request: FastifyRequest, reply: FastifyReply
             });
         }
         await dbManager.refuseFriendRequest(userId, targetUser.id);
+
+        // Émettre l'événement refuseRequest au destinataire
+        const targetSocket = Array.from(generalNs.sockets.values()).find(socket => {
+            const rooms = Array.from(socket.rooms);
+            console.log('Checking socket:', socket.id, 'with rooms:', rooms);
+            return rooms.some(room => {
+                console.log('Comparing room:', room, 'with targetId:', targetUser.id);
+                return room.toString() === targetUser?.id?.toString() || '';
+            });
+        });
+        
+        if (targetSocket) {
+            console.log('Found target socket:', targetSocket.id);
+            const sender = await dbManager.getUserById(userId);
+            generalNs.to(targetSocket.id).emit('refuseRequest', { 
+                senderId: userId,
+                senderUsername: sender?.username || 'Unknown user'
+            });
+        } else {
+            console.log('Target socket not found for user ID:', targetUser.id);
+        }
+
         return reply.status(200).send({
             success: true,
             message: "Friend request refused"
