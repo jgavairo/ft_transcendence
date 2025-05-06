@@ -40,16 +40,14 @@ function sendMove(side, direction) {
 // Écoute clavier global
 window.addEventListener('keydown', e => {
     if (soloMode) {
-        if (['KeyD', 'KeyA', 'ArrowRight', 'ArrowLeft'].includes(e.code)) {
-            let side;
-            if (['KeyA', 'KeyD'].includes(e.code))
-                side = 0;
-            else /* arrows */
-                side = 1;
-            const dir = (e.code === 'KeyD' || e.code === 'KeyL' || e.code === 'ArrowRight')
-                ? 'up' : 'down';
-            sendMove(side, dir);
-        }
+        if (e.code === 'KeyD')
+            sendMove(0, 'up');
+        else if (e.code === 'KeyA')
+            sendMove(0, 'down');
+        else if (e.code === 'ArrowRight')
+            sendMove(1, 'up');
+        else if (e.code === 'ArrowLeft')
+            sendMove(1, 'down');
     }
     else {
         if (e.code === 'KeyD' || e.code === 'KeyA') {
@@ -60,14 +58,10 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => {
     if (soloMode) {
-        if (['KeyD', 'KeyA', 'ArrowRight', 'ArrowLeft'].includes(e.code)) {
-            let side;
-            if (['KeyD', 'KeyA'].includes(e.code))
-                side = 0;
-            else /* arrows */
-                side = 1;
-            sendMove(side, null);
-        }
+        if (e.code === 'KeyD' || e.code === 'KeyA')
+            sendMove(0, null);
+        else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft')
+            sendMove(1, null);
     }
     else {
         if (e.code === 'KeyD' || e.code === 'KeyA')
