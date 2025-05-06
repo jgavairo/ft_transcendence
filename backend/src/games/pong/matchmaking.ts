@@ -131,10 +131,11 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         s.emit('matchFoundTri', { roomId: m.roomId, side: i, players });
       });
       const iv = setInterval(() => {
-        updateTriMatch(m);
+        updateMatch(m);
         gameNs.to(m.roomId).emit('stateUpdateTri', m);
         if (m.gameOver) clearInterval(iv);
       }, 1000 / 60);
     }
   }
 }
+

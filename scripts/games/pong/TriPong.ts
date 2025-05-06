@@ -9,7 +9,7 @@ export interface TriMatchState {
 }
 
 // Variables réseau
-let mySide: number;
+let mySide: number = -1;
 let roomId: string;
 
 // Canvas et contexte
@@ -17,24 +17,107 @@ let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;
 
 // Constantes de rendu (synchronisées avec le serveur)
-const CW = 1200;
-const CH = 770;
+const CW = 1185;
+const CH = 785;
 const CX = CW / 2;
 const CY = CH / 2;
 const R  = Math.min(CW, CH) / 2 - 45;      // rayon du terrain
 const P_TH = 12;                           // épaisseur des paddles
 const ARC_HALF = Math.PI / 18;      // demi-angle du paddle
 
+let readyTri    = false;
+let firstFrameTri = false;
+let lastTriState: TriMatchState | null = null;
+
 // Initialise la connexion Socket.IO et les handlers
 export function connectTriPong() {
   socket.on('matchFoundTri', (data: { roomId: string; side: number }) => {
     roomId = data.roomId;
     mySide = data.side;
+    lastTriState = null;
+    readyTri = false;
+    firstFrameTri = false;
     startTriPong();
+    performCountdown().then(() => {
+      readyTri = true;
+    });
   });
 
   socket.on('stateUpdateTri', (state: TriMatchState) => {
-    renderTriPong(state);
+    lastTriState = state;
+
+    // on n'affiche jamais avant que ready soit true
+    if (!readyTri) return;
+
+    // si c'est la toute première frame, on la met en attente 500 ms
+    if (!firstFrameTri) {
+      firstFrameTri = true;
+      setTimeout(() => {
+        renderTriPong(state);
+      }, 500);
+    } else {
+      // toutes les autres frames passent directement
+      renderTriPong(state);
+    }
+  });
+}
+
+
+async function performCountdown(): Promise<void> {
+  // Si on a déjà un état, on le stocke pour le flouter
+  const backupState = lastTriState;
+  const duration = 1000; // durée de chaque animation en ms
+
+  for (const num of [3, 2, 1] as const) {
+    await animateNumber(num, backupState, duration);
+  }
+
+  // courte pause après le "1"
+  return new Promise(res => setTimeout(res, 200));
+}
+
+function animateNumber(
+  num: number,
+  bgState: TriMatchState | null,
+  duration: number
+): Promise<void> {
+  return new Promise(resolve => {
+    const start = performance.now();
+
+    function frame(now: number) {
+      const t = Math.min(1, (now - start) / duration);
+      // scale : monte de 1→1.5 puis redescend à 1
+      const scale = 1 + 0.5 * Math.sin(Math.PI * t);
+
+      // 1) efface tout
+      ctx.clearRect(0, 0, CW, CH);
+
+      // 2) floute et redessine l’arrière-plan
+      if (bgState) {
+        ctx.filter = 'blur(5px)';
+        renderTriPong(bgState);
+        ctx.filter = 'none';
+      }
+
+      // 3) dessine le chiffre animé
+      ctx.save();
+      ctx.translate(CX, CY);
+      ctx.scale(scale, scale);
+      ctx.fillStyle = 'white';
+      ctx.font = '100px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(num), 0, 0);
+      ctx.restore();
+
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        resolve();
+      }
+    }
+
+    requestAnimationFrame(frame);
   });
 }
 
@@ -102,49 +185,85 @@ export function startTriPong() {
   canvas.height = CH;
 }
 
-// Dessine l'état de la partie Tri-Pong
 export function renderTriPong(state: TriMatchState) {
-  // Efface
-  ctx.clearRect(0, 0, CW, CH);
+  // 1) slight motion-blur background
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+  ctx.fillRect(0, 0, CW, CH);
 
-  // Dessine chaque paddle (arc)
-  ctx.lineWidth = P_TH;
-  state.paddles.forEach(p => {
+  // 2) radial gradient floor
+  const grd = ctx.createRadialGradient(CX, CY, R * 0.1, CX, CY, R);
+  grd.addColorStop(0, '#00111a');
+  grd.addColorStop(1, '#000000');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, CW, CH);
+
+  // 3) glowing map border
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,174,255,0.8)';
+  ctx.lineWidth   = 6;
+  ctx.shadowBlur  = 20;
+  ctx.shadowColor = 'rgba(0,174,255,0.5)';
+  ctx.beginPath();
+  ctx.arc(CX, CY, R, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  // 4) draw the three paddles, with a glow on yours
+  state.paddles.forEach((p, i) => {
     const start = p.phi - ARC_HALF;
     const end   = p.phi + ARC_HALF;
-    ctx.strokeStyle = p.lives > 0 ? 'white' : 'red';
+    const isMine = (i === mySide);
+
+    ctx.save();
+    ctx.lineWidth   = P_TH;
+    ctx.strokeStyle = isMine ? 'cyan' : (p.lives > 0 ? 'white' : 'red');
+
+    if (isMine) {
+      ctx.shadowBlur  = 30;
+      ctx.shadowColor = 'cyan';
+    }
+
     ctx.beginPath();
     ctx.arc(CX, CY, R, start, end);
     ctx.stroke();
+    ctx.restore();
   });
 
-  // Dessine la balle
+  // 5) ball with soft glow
   const bx = CX + state.ball.x;
   const by = CY + state.ball.y;
-  const BALL_R = 8;
-  ctx.fillStyle = 'white';
+  ctx.save();
+  ctx.fillStyle   = 'white';
+  ctx.shadowBlur  = 15;
+  ctx.shadowColor = 'white';
   ctx.beginPath();
-  ctx.arc(bx, by, BALL_R, 0, Math.PI * 2);
+  ctx.arc(bx, by, 8, 0, Math.PI * 2);
   ctx.fill();
+  ctx.restore();
 
-  // Dessine les vies (cœurs) pour chaque paddle
-  state.paddles.forEach(p => {
-    const label = fromPolar(p.phi, R + 20);
-    for (let i = 0; i < 3; i++) {
-      drawHeart(label.x + (i - 1) * 20, label.y, 8, i < p.lives);
+  // 6) static hearts for lives
+  state.paddles.forEach((p, i) => {
+    const label = fromPolar(p.phi, R + 25);
+    for (let h = 0; h < 3; h++) {
+      drawHeart(label.x + (h - 1) * 24, label.y, 12, h < p.lives);
     }
   });
 
-  // Optionnel : si gameOver, afficher message
+  // 7) game-over overlay
   if (state.gameOver) {
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.fillRect(0, 0, CW, CH);
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
-    ctx.font = '36px Arial';
-    ctx.fillText('Game finish', CX, CY - 20);
+    ctx.font = 'bold 48px Arial';
+    ctx.fillText('Game Finish', CX, CY);
+    ctx.restore();
   }
 }
+
+
+
 
 // Convertit coordonnées polaires (phi,r) → cartésiennes
 function fromPolar(phi: number, r: number) {

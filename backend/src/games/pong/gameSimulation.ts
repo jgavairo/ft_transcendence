@@ -30,9 +30,11 @@ export function startMatch(socks: Socket[], nsp: Namespace): MatchState {
   ];
 
   const ball = { x:0, y:0, vx:0, vy:0, r:8 };
-  resetBall(ball);
-
-  return { roomId, paddles, ball, gameOver: false };
+  const state: MatchState = { roomId, paddles, ball, gameOver: false };
+  setTimeout(() => {
+    resetFirstBall(state);   // c’est cette fonction qui met vx/vy ≠ 0
+  }, 3600);
+  return state;
 }
 
 export function updateMatch(match: MatchState) {
@@ -144,6 +146,17 @@ function resetBall(b: Pick<MatchState,'ball'>['ball']) {
   b.vx = BALL_SPEED*Math.cos(a);
   b.vy = BALL_SPEED*Math.sin(a);
 }
+
+function resetFirstBall(m: MatchState) {
+    const φ = m.paddles[1].phi;
+    m.ball.x = RADIUS * Math.cos(φ);
+    m.ball.y = RADIUS * Math.sin(φ);
+
+    const serveAngle = φ + Math.PI;
+    m.ball.vx = BALL_SPEED * Math.cos(serveAngle);
+    m.ball.vy = BALL_SPEED * Math.sin(serveAngle);
+}
+
 
 function angleDiff(a: number, b: number): number {
   let d = Math.abs(a - b) % (2 * Math.PI);
