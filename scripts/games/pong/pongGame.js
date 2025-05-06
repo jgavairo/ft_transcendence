@@ -1,5 +1,6 @@
 import { displayMenu } from './DisplayMenu.js';
 import { socket } from './network.js';
+import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 // Variables réseau
 let mySide;
 let roomId;
@@ -18,7 +19,7 @@ const ARC_HALF = Math.PI / 18; // demi-angle du paddle
 // Initialise la connexion Socket.IO et les handlers
 export function connectPong() {
     socket.on('matchFound', (data) => {
-        soloMode = (data.mode === 'solo');
+        soloMode = data.mode === 'solo';
         mySide = soloMode ? 0 : data.side;
         roomId = data.roomId;
         startPong();
@@ -38,7 +39,7 @@ function sendMove(side, direction) {
     socket.emit('movePaddle', { side, direction });
 }
 // Écoute clavier global
-window.addEventListener('keydown', e => {
+window.addEventListener('keydown', (e) => {
     if (soloMode) {
         if (e.code === 'KeyD')
             sendMove(0, 'up');
@@ -56,7 +57,7 @@ window.addEventListener('keydown', e => {
         }
     }
 });
-window.addEventListener('keyup', e => {
+window.addEventListener('keyup', (e) => {
     if (soloMode) {
         if (e.code === 'KeyD' || e.code === 'KeyA')
             sendMove(0, null);
@@ -75,13 +76,58 @@ export function startPong() {
     canvas.width = CW;
     canvas.height = CH;
 }
+// Ajout de la gestion du message de fin de partie
+async function renderGameOverMessage(state) {
+    // Affiche le message uniquement en mode multi
+    if (soloMode)
+        return;
+    const player = state.paddles[mySide];
+    const message = player.lives > 0 ? 'You Win!' : 'Game Over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.font = '48px Arial';
+    ctx.fillText(message, CX, CY);
+    // Si le joueur a gagné, appeler l'API incrementWins
+    if (player.lives > 0) {
+        try {
+            // Récupérer l'utilisateur actuel via GameManager
+            const currentUser = await GameManager.getCurrentUser();
+            if (!currentUser || !currentUser.id) {
+                console.error('Impossible de récupérer l\'utilisateur actuel.');
+                return;
+            }
+            const response = await fetch('/api/games/incrementWins', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include', // Utilise les cookies pour l'authentification
+                body: JSON.stringify({
+                    gameId: 1, // ID du jeu (Pong)
+                    userId: currentUser.id, // Utiliser l'ID utilisateur actuel
+                }),
+            });
+            if (response.ok) {
+                console.log('Victoire enregistrée avec succès.');
+            }
+            else {
+                console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
+            }
+        }
+        catch (error) {
+            console.error('Erreur réseau lors de l\'enregistrement de la victoire:', error);
+        }
+    }
+}
 // Dessine l'état de la partie Tri-Pong
 export function renderPong(state) {
     // Efface
     ctx.clearRect(0, 0, CW, CH);
     // Dessine chaque paddle (arc)
     ctx.lineWidth = P_TH;
-    state.paddles.forEach(p => {
+    state.paddles.forEach((p) => {
         const start = p.phi - ARC_HALF;
         const end = p.phi + ARC_HALF;
         ctx.strokeStyle = p.lives > 0 ? 'white' : 'red';
@@ -98,27 +144,22 @@ export function renderPong(state) {
     ctx.arc(bx, by, BALL_R, 0, Math.PI * 2);
     ctx.fill();
     // Dessine les vies (cœurs) pour chaque paddle
-    state.paddles.forEach(p => {
+    state.paddles.forEach((p) => {
         const label = fromPolar(p.phi, R + 20);
         for (let i = 0; i < 3; i++) {
             drawHeart(label.x + (i - 1) * 20, label.y, 8, i < p.lives);
         }
     });
-    // Optionnel : si gameOver, afficher message
+    // Affiche le message de fin si la partie est terminée
     if (state.gameOver) {
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(0, 0, CW, CH);
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.font = '36px Arial';
-        ctx.fillText('Game finish', CX, CY - 20);
+        renderGameOverMessage(state);
     }
 }
 // Convertit coordonnées polaires (phi,r) → cartésiennes
 function fromPolar(phi, r) {
     return {
         x: CX + r * Math.cos(phi),
-        y: CY + r * Math.sin(phi)
+        y: CY + r * Math.sin(phi),
     };
 }
 // Dessine un cœur (pour les vies)
