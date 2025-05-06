@@ -178,38 +178,48 @@
   padding-right: 5rem;
 }
 
-.rankingContainer {
-  width: 75%;
-  background-color: #2a2f37;
-  border-radius: 5px;
-  padding: 1rem;
-  height: 44vh;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+/* Section pour le ranking */
+.rankingSection,
+.friendsSection {
+  width: 100%; /* Les sections prennent toute la largeur */
+  margin-bottom: 2rem; /* Espacement entre les sections */
 }
 
+.rankingContainer,
 .friendsContainer {
-  width: 25%;
-  height: 44vh;
+  width: 100%; /* Les conteneurs prennent toute la largeur */
   background-color: #2a2f37;
   border-radius: 5px;
-  padding: 1rem;
+  padding: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #4a5568;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
+/* Titres des sections */
 .sectionTitle {
   font-size: 1.125rem;
   font-weight: bold;
   color: #ffffff;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem; /* Espacement entre le titre et le conteneur */
+  padding: 0.5rem 1rem;
+  background-color: #2a2f37;
   border-bottom: 1px solid #4a5568;
-  padding-bottom: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  position: relative;
+  z-index: 2;
 }
+
+/* Listes */
 .rankingList,
 .friendsList {
   list-style: none;
   padding: 0;
   margin: 0;
 }
+
 .rankingItem,
 .friendItem {
   display: flex;
@@ -220,6 +230,7 @@
   border-radius: 5px;
   background-color: #2a2f37;
 }
+
 .profilePic {
   width: 40px;
   height: 40px;
@@ -227,12 +238,8 @@
   margin-right: 0.75rem;
   border: 2px solid #ffffff;
   object-fit: cover;
-  margin-left: 1rem;
 }
-.playerInfo {
-  display: flex;
-  flex-direction: column;
-}
+
 .playerName,
 .friendName {
   color: #ffffff;
