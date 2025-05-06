@@ -32,45 +32,53 @@ export async function showGameDetails(gameIdOrObj) {
     if (!details)
         return;
     details.innerHTML = `
-    <div class="detail-container">
-      <div class="detail-image">
-        <button class="close-button">&times;</button>
-        <img src="${game.image}" alt="${game.name}">
-        <div class="bannerGameSelect">
-          <button id="launchGameButton" class="playButton">PLAY</button>
+      <div class="detail-container">
+        <div class="detail-image">
+          <button class="close-button">&times;</button>
+          <img src="${game.image}" alt="${game.name}">
+          <div class="bannerGameSelect">
+            <button id="launchGameButton" class="playButton">PLAY</button>
+          </div>
+        </div>
+        <div class="detail-info">
+          <div class="rankingSection">
+            <h3 class="sectionTitle">Online 1vs1 Ranking</h3>
+            <div class="rankingContainer">
+              <ul class="rankingList">
+                ${rankedPeople.map((person, index) => `
+                  <li class="rankingItem">
+                    <span class="numberRank">${index + 1}</span> <!-- Numéro de classement -->
+                    <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
+                    <span class="playerName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
+                      ${person.username}
+                    </span>
+                    ${index === 0 ? '<span class="medal">🥇</span>' : ''}
+                    ${index === 1 ? '<span class="medal">🥈</span>' : ''}
+                    ${index === 2 ? '<span class="medal">🥉</span>' : ''}
+                    <span class="playerWins">Wins: ${person.ranking}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+          <div class="friendsSection">
+            <h3 class="sectionTitle">Friend List</h3>
+            <div class="friendsContainer">
+              <ul class="friendsList">
+                ${people.map(person => `
+                  <li class="friendItem">
+                    <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
+                    <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
+                      ${person.username}
+                    </span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="detail-info">
-        <div class="rankingContainer">
-          <h3 class="sectionTitle">Player Ranking</h3>
-          <button id="incrementWinsButton" class="incrementWinsButton">Increment Wins</button>
-          <ul class="rankingList">
-          ${rankedPeople.map((person) => `
-            <li class="friendItem">
-              <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
-              <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
-                ${person.username} - Wins: ${person.ranking}
-              </span>
-            </li>
-          `).join('')}
-          </ul>
-        </div>
-        <div class="friendsContainer">
-          <h3 class="sectionTitle">Friend List</h3>
-          <ul class="friendsList">
-            ${people.map(person => `
-              <li class="friendItem">
-                <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
-                <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
-                  ${person.username}
-                </span>
-              </li>
-            `).join('')}
-          </ul>
-        </div>
-      </div>
-    </div>
-  `;
+    `;
     // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
     const friendNames = details.querySelectorAll('.friendName');
     friendNames.forEach(friendName => {
@@ -95,25 +103,5 @@ export async function showGameDetails(gameIdOrObj) {
             return;
         modal.innerHTML = gameModalHTML;
         displayMenu();
-    });
-    // Bouton Increment Wins
-    const incrementWinsBtn = details.querySelector('#incrementWinsButton');
-    incrementWinsBtn.addEventListener('click', async () => {
-        try {
-            const response = await api.post('/api/games/incrementWins', {
-                gameId: game.id,
-                userId: currentUser.id
-            });
-            if (!response.ok) {
-                const error = await response.json();
-                console.error('Failed to increment wins:', error);
-                return;
-            }
-            const result = await response.json();
-            console.log('Increment wins successful:', result);
-        }
-        catch (error) {
-            console.error('Error incrementing wins:', error);
-        }
     });
 }
