@@ -3,7 +3,6 @@ import { gameModalHTML } from "../../sourcepage.js";
 import { displayMenu } from '../../games/pong/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
-import { HOSTNAME } from "../../main.js"; // Assurez-vous que HOSTNAME est correctement importé
 import api from "../../helpers/api.js"; // Import de l'API helper
 
 export async function showGameDetails(gameIdOrObj: number | any): Promise<void> {
@@ -50,8 +49,7 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
       </div>
       <div class="detail-info">
         <div class="rankingContainer">
-          <h3 class="sectionTitle">Player Ranking</h3>
-          <button id="incrementWinsButton" class="incrementWinsButton">Increment Wins</button>
+          <h3 class="sectionTitle">Online 1vs1 Ranking</h3>
           <ul class="rankingList">
           ${rankedPeople.map((person: { profile_picture: string; username: string; email: string; bio: string; ranking: number }) => `
             <li class="friendItem">
@@ -105,27 +103,5 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
         if (!modal) return;
         modal.innerHTML = gameModalHTML;
         displayMenu();
-    });
-
-    // Bouton Increment Wins
-    const incrementWinsBtn = details.querySelector('#incrementWinsButton') as HTMLButtonElement;
-    incrementWinsBtn.addEventListener('click', async () => {
-        try {
-            const response = await api.post('/api/games/incrementWins', {
-                gameId: game.id,
-                userId: currentUser.id
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                console.error('Failed to increment wins:', error);
-                return;
-            }
-
-            const result = await response.json();
-            console.log('Increment wins successful:', result);
-        } catch (error) {
-            console.error('Error incrementing wins:', error);
-        }
     });
 }
