@@ -9,23 +9,91 @@ let soloMode = false;
 let canvas;
 let ctx;
 // Constantes de rendu (synchronisées avec le serveur)
-const CW = 1200;
-const CH = 770;
+const CW = 1185;
+const CH = 785;
 const CX = CW / 2;
 const CY = CH / 2;
 const R = Math.min(CW, CH) / 2 - 45; // rayon du terrain
 const P_TH = 12; // épaisseur des paddles
 const ARC_HALF = Math.PI / 18; // demi-angle du paddle
+let ready = false; // on ne dessine qu'une fois le countdown fini
+let lastState = null;
+let firstFrame = false;
 // Initialise la connexion Socket.IO et les handlers
 export function connectPong() {
     socket.on('matchFound', (data) => {
         soloMode = data.mode === 'solo';
+        soloMode = data.mode === 'solo';
         mySide = soloMode ? 0 : data.side;
-        roomId = data.roomId;
+        lastState = null;
+        ready = false;
+        firstFrame = false;
         startPong();
+        performCountdown().then(() => {
+            ready = true;
+        });
     });
     socket.on('gameState', (state) => {
-        renderPong(state);
+        lastState = state;
+        // on n'affiche jamais avant que ready soit true
+        if (!ready)
+            return;
+        // si c'est la toute première frame, on la met en attente 500 ms
+        if (!firstFrame) {
+            firstFrame = true;
+            setTimeout(() => {
+                renderPong(state);
+            }, 500);
+        }
+        else {
+            // toutes les autres frames passent directement
+            renderPong(state);
+        }
+    });
+}
+async function performCountdown() {
+    // Si on a déjà un état, on le stocke pour le flouter
+    const backupState = lastState;
+    const duration = 1000; // durée de chaque animation en ms
+    for (const num of [3, 2, 1]) {
+        await animateNumber(num, backupState, duration);
+    }
+    // courte pause après le "1"
+    return new Promise(res => setTimeout(res, 200));
+}
+function animateNumber(num, bgState, duration) {
+    return new Promise(resolve => {
+        const start = performance.now();
+        function frame(now) {
+            const t = Math.min(1, (now - start) / duration);
+            // scale : monte de 1→1.5 puis redescend à 1
+            const scale = 1 + 0.5 * Math.sin(Math.PI * t);
+            // 1) efface tout
+            ctx.clearRect(0, 0, CW, CH);
+            // 2) floute et redessine l’arrière-plan
+            if (bgState) {
+                ctx.filter = 'blur(5px)';
+                renderPong(bgState);
+                ctx.filter = 'none';
+            }
+            // 3) dessine le chiffre animé
+            ctx.save();
+            ctx.translate(CX, CY);
+            ctx.scale(scale, scale);
+            ctx.fillStyle = 'white';
+            ctx.font = '100px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(num), 0, 0);
+            ctx.restore();
+            if (t < 1) {
+                requestAnimationFrame(frame);
+            }
+            else {
+                resolve();
+            }
+        }
+        requestAnimationFrame(frame);
     });
 }
 export function joinQueue(username) {
@@ -49,6 +117,14 @@ window.addEventListener('keydown', (e) => {
             sendMove(1, 'up');
         else if (e.code === 'ArrowLeft')
             sendMove(1, 'down');
+        if (e.code === 'KeyD')
+            sendMove(0, 'up');
+        else if (e.code === 'KeyA')
+            sendMove(0, 'down');
+        else if (e.code === 'ArrowRight')
+            sendMove(1, 'up');
+        else if (e.code === 'ArrowLeft')
+            sendMove(1, 'down');
     }
     else {
         if (e.code === 'KeyD' || e.code === 'KeyA') {
@@ -59,6 +135,10 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => {
     if (soloMode) {
+        if (e.code === 'KeyD' || e.code === 'KeyA')
+            sendMove(0, null);
+        else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft')
+            sendMove(1, null);
         if (e.code === 'KeyD' || e.code === 'KeyA')
             sendMove(0, null);
         else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft')
@@ -123,36 +203,72 @@ async function renderGameOverMessage(state) {
 }
 // Dessine l'état de la partie Tri-Pong
 export function renderPong(state) {
-    // Efface
-    ctx.clearRect(0, 0, CW, CH);
-    // Dessine chaque paddle (arc)
-    ctx.lineWidth = P_TH;
-    state.paddles.forEach((p) => {
+    // 1) motion blur: on dessine un calque semi-transparent au lieu de tout clear
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, 0, CW, CH);
+    // 2) fond radial
+    const grd = ctx.createRadialGradient(CX, CY, R * 0.1, CX, CY, R);
+    grd.addColorStop(0, '#00111a');
+    grd.addColorStop(1, '#000000');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, CW, CH);
+    // 3) bordure de la map
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,174,255,0.8)';
+    ctx.lineWidth = 6;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = 'rgba(0,174,255,0.5)';
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+    // 4) paddles avec glow pour le tien
+    state.paddles.forEach((p, i) => {
         const start = p.phi - ARC_HALF;
         const end = p.phi + ARC_HALF;
-        ctx.strokeStyle = p.lives > 0 ? 'white' : 'red';
+        const isMine = i === mySide;
+        ctx.save();
+        ctx.lineWidth = P_TH;
+        ctx.strokeStyle = isMine
+            ? 'cyan'
+            : (p.lives > 0 ? '#eee' : 'red');
+        if (isMine) {
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = 'cyan';
+        }
         ctx.beginPath();
         ctx.arc(CX, CY, R, start, end);
         ctx.stroke();
+        ctx.restore();
     });
-    // Dessine la balle
+    // 5) balle avec ombre portée
     const bx = CX + state.ball.x;
     const by = CY + state.ball.y;
-    const BALL_R = 8;
+    ctx.save();
     ctx.fillStyle = 'white';
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = 'white';
     ctx.beginPath();
-    ctx.arc(bx, by, BALL_R, 0, Math.PI * 2);
+    ctx.arc(bx, by, 8, 0, Math.PI * 2);
     ctx.fill();
-    // Dessine les vies (cœurs) pour chaque paddle
-    state.paddles.forEach((p) => {
-        const label = fromPolar(p.phi, R + 20);
-        for (let i = 0; i < 3; i++) {
-            drawHeart(label.x + (i - 1) * 20, label.y, 8, i < p.lives);
+    ctx.restore();
+    // 6) vies (cœurs) avec effet de scale
+    state.paddles.forEach((p, i) => {
+        const label = fromPolar(p.phi, R + 25);
+        for (let h = 0; h < 3; h++) {
+            drawHeart(label.x + (h - 1) * 24, label.y, 12, h < p.lives);
         }
     });
-    // Affiche le message de fin si la partie est terminée
+    // 7) overlay game over
     if (state.gameOver) {
-        renderGameOverMessage(state);
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, CW, CH);
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 48px Arial';
+        ctx.fillText('Game Finish', CX, CY);
+        ctx.restore();
     }
 }
 // Convertit coordonnées polaires (phi,r) → cartésiennes
