@@ -3,7 +3,6 @@ import { gameModalHTML } from "../../sourcepage.js";
 import { displayMenu } from '../../games/pong/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
-import { HOSTNAME } from "../../main.js"; // Assurez-vous que HOSTNAME est correctement importé
 import api from "../../helpers/api.js"; // Import de l'API helper
 
 export async function showGameDetails(gameIdOrObj: number | any): Promise<void> {
