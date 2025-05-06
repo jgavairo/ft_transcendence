@@ -23,7 +23,6 @@ let firstFrame = false;
 export function connectPong() {
     socket.on('matchFound', (data) => {
         soloMode = data.mode === 'solo';
-        soloMode = data.mode === 'solo';
         mySide = soloMode ? 0 : data.side;
         lastState = null;
         ready = false;
@@ -117,14 +116,6 @@ window.addEventListener('keydown', (e) => {
             sendMove(1, 'up');
         else if (e.code === 'ArrowLeft')
             sendMove(1, 'down');
-        if (e.code === 'KeyD')
-            sendMove(0, 'up');
-        else if (e.code === 'KeyA')
-            sendMove(0, 'down');
-        else if (e.code === 'ArrowRight')
-            sendMove(1, 'up');
-        else if (e.code === 'ArrowLeft')
-            sendMove(1, 'down');
     }
     else {
         if (e.code === 'KeyD' || e.code === 'KeyA') {
@@ -135,10 +126,6 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => {
     if (soloMode) {
-        if (e.code === 'KeyD' || e.code === 'KeyA')
-            sendMove(0, null);
-        else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft')
-            sendMove(1, null);
         if (e.code === 'KeyD' || e.code === 'KeyA')
             sendMove(0, null);
         else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft')
@@ -269,6 +256,7 @@ export function renderPong(state) {
         ctx.font = 'bold 48px Arial';
         ctx.fillText('Game Finish', CX, CY);
         ctx.restore();
+        renderGameOverMessage(state);
     }
 }
 // Convertit coordonnées polaires (phi,r) → cartésiennes

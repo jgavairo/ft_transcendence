@@ -33,7 +33,7 @@ export function startMatch(socks: Socket[], nsp: Namespace): MatchState {
   const state: MatchState = { roomId, paddles, ball, gameOver: false };
   setTimeout(() => {
     resetFirstBall(state);   // c’est cette fonction qui met vx/vy ≠ 0
-  }, 3600);
+  }, 4000);
   return state;
 }
 
