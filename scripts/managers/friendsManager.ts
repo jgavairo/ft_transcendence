@@ -1,60 +1,92 @@
 import api from "../helpers/api.js";
-import { showNotification } from "../helpers/notifications.js";
 
 export class FriendsManager
 {
     public static async sendFriendRequest(username: string)
     {
-        const response = await api.post('/api/friends/sendRequest', 
+        try
         {
-            username: username
-        });
-        const data = await response.json();
-        if (data.success)
-        {
-            console.log('Friend request sent');
-            return true;
+            const response = await api.post('/api/friends/sendRequest', 
+            {
+                username: username
+            });
+            const data = await response.json();
+            if (data.success)
+            {
+                console.log('Friend request sent');
+                return true;
+            }
+            else
+            {
+                console.error('Error sending friend request:', data.message);
+                return false;
+            }
         }
-        else
+        catch (error)
         {
-            console.error('Error sending friend request:', data.message);
+            console.error('Exception in sendFriendRequest:', error);
             return false;
         }
     }
 
     public static async isFriend(username: string)
     {
-        const response = await api.post('/api/friends/isFriend', 
+        try
         {
-            username: username
-        });
-        const data = await response.json();
-        return data.isFriend;
+            const response = await api.post('/api/friends/isFriend', 
+            {
+                username: username
+            });
+            const data = await response.json();
+            return data.isFriend;
+        }
+        catch (error)
+        {
+            console.error('Exception in isFriend:', error);
+            return false;
+        }
     }
 
     public static async isRequesting(username: string)
     {
-        const response = await api.post('/api/friends/isRequesting', 
+        try
         {
-            username: username
-        });
-        const data = await response.json();
-        return data.isRequesting;
+            const response = await api.post('/api/friends/isRequesting', 
+            {
+                username: username
+            });
+            const data = await response.json();
+            return data.isRequesting;
+        }
+        catch (error)
+        {
+            console.error('Exception in isRequesting:', error);
+            return false;
+        }
     }
 
     public static async isRequested(username: string)
     {
-        const response = await api.post('/api/friends/isRequested', 
+        try
         {
-            username: username
-        });
-        const data = await response.json();
-        return data.isRequested;
+            const response = await api.post('/api/friends/isRequested', 
+            {
+                username: username
+            });
+            const data = await response.json();
+            return data.isRequested;
+        }
+        catch (error)
+        {
+            console.error('Exception in isRequested:', error);
+            return false;
+        }
     }
 
     public static async acceptFriendRequest(username: string)
     {
-        try {
+        try 
+        {
             console.log('Sending acceptRequest for username:', username);
             const response = await api.post('/api/friends/acceptRequest', 
             {
@@ -70,15 +102,12 @@ export class FriendsManager
             }
             else
             {
-                if (data.message === 'Friend request is no longer valid')
-                {
-                    console.log('Friend request is no longer valid');
-                    return false;
-                }
                 console.error('Error accepting friend request:', data.message);
                 return false;
             }
-        } catch (error) {
+        } 
+        catch (error) 
+        {
             console.error('Exception in acceptFriendRequest:', error);
             return false;
         }
@@ -86,7 +115,8 @@ export class FriendsManager
 
     public static async removeFriend(username: string)
     {
-        try {
+            try 
+            {
             console.log('Sending removeFriend request for username:', username);
             const response = await api.post('/api/friends/removeFriend', 
             {
@@ -105,7 +135,9 @@ export class FriendsManager
                 console.error('Error removing friend:', data.message);
                 return false;
             }
-        } catch (error) {
+        } 
+        catch (error) 
+        {
             console.error('Exception in removeFriend:', error);
             return false;
         }
@@ -134,20 +166,28 @@ export class FriendsManager
     }
 
     public static async refuseFriendRequest(username: string)
-    {
-        const response = await api.post('/api/friends/refuseRequest', 
+    {   
+        try
         {
-            username: username
-        });
-        const data = await response.json();
-        if (data.success)
-        {
-            console.log('Friend request refused successfully');
-            return true;
+            const response = await api.post('/api/friends/refuseRequest', 
+            {
+                username: username
+            });
+            const data = await response.json();
+            if (data.success)
+            {
+                console.log('Friend request refused successfully');
+                return true;
+            }
+            else
+            {
+                console.error('Error refusing friend request:', data.message);
+                return false;
+            }
         }
-        else
+        catch (error)
         {
-            console.error('Error refusing friend request:', data.message);
+            console.error('Exception in refuseFriendRequest:', error);
             return false;
         }
     }

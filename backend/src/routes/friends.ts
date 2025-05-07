@@ -3,7 +3,9 @@ import { FastifyRequest } from "fastify";
 import { AuthenticatedRequest } from "./user";
 import { authMiddleware } from "../middleware/auth.js";
 import { dbManager } from "../database/database.js";
-import { generalNs } from "../server.js";
+
+
+
 
 async function sendRequestHandler(request: FastifyRequest, reply: FastifyReply) 
 {
@@ -20,67 +22,19 @@ async function sendRequestHandler(request: FastifyRequest, reply: FastifyReply)
                 message: "Username is required"
             });
         }
-        const sender = await dbManager.getUserById(userId);
+
         const receiver = await dbManager.getUserByUsername(username);
-        if (!sender)
-        {
-            return reply.status(404).send({
-                success: false,
-                message: "User not found (sender)"
-            });
-        }
-        if (!receiver)
+
+        if (!receiver || !receiver.id)
         {
             return reply.status(404).send({
                 success: false,
                 message: "User not found (receiver)"
             });
         }
-        const receiverId = receiver.id;
-        if (!receiverId)
-        {
-            return reply.status(404).send({
-                success: false,
-                message: "User not found (receiverId)"
-            });
-        }
-        console.log("111111111---------------");
-        await dbManager.sendFriendRequest(userId, receiverId);
-        console.log("222222222---------------");
-        
-        // Chercher tous les sockets connectés
-        const allSockets = Array.from(generalNs.sockets.values());
-        console.log('All connected sockets:', allSockets.map(s => s.id));
-        
-        // Afficher les rooms de chaque socket
-        allSockets.forEach(socket => {
-            const rooms = Array.from(socket.rooms);
-            console.log(`Socket ${socket.id} is in rooms:`, rooms);
-        });
-        
-        // Trouver le socket du destinataire
-        const receiverSocket = Array.from(generalNs.sockets.values()).find(socket => {
-            const rooms = Array.from(socket.rooms);
-            console.log('Checking socket:', socket.id, 'with rooms:', rooms);
-            return rooms.some(room => {
-                console.log('Comparing room:', room, 'with receiverId:', receiverId);
-                return room.toString() === receiverId.toString();
-            });
-        });
-        
-        if (receiverSocket) {
-            console.log('Found receiver socket:', receiverSocket.id);
-            // Émettre directement au socket du destinataire
-            generalNs.to(receiverSocket.id).emit('sendRequest', { 
-                senderId: userId,
-                senderUsername: sender.username 
-            });
-        } 
-        else 
-        {
-            console.log('Receiver socket not found for user ID:', receiverId);
-        }
-        console.log("333333333---------------");
+
+        await dbManager.sendFriendRequest(userId, receiver.id);
+
         return reply.status(200).send({
             success: true,
             message: "Friend request sent"
@@ -88,6 +42,7 @@ async function sendRequestHandler(request: FastifyRequest, reply: FastifyReply)
     }
     catch (error)
     {
+        console.error('Error in sendRequestHandler:', error);
         return reply.status(500).send({
             success: false,
             message: "Error from sendRequestHandler"
@@ -112,6 +67,7 @@ async function isFriendHandler(request: FastifyRequest, reply: FastifyReply)
         }
 
         const targetUser = await dbManager.getUserByUsername(username);
+        
         if (!targetUser || !targetUser.id)
         {
             return reply.status(404).send({
@@ -121,6 +77,7 @@ async function isFriendHandler(request: FastifyRequest, reply: FastifyReply)
         }
 
         const isFriend = await dbManager.isFriend(userId, targetUser.id);
+
         return reply.status(200).send
         ({
             success: true,
@@ -242,55 +199,18 @@ async function acceptRequestHandler(request: FastifyRequest, reply: FastifyReply
                 message: "User not found"
             });
         }
-        try
-        {
-            await dbManager.acceptFriendRequest(userId, targetUser.id);
-            
-            // Émettre l'événement acceptRequest au destinataire
-            if (!targetUser.id) {
-                console.log('Target user ID is undefined');
-                return reply.status(400).send({
-                    success: false,
-                    message: "Invalid target user ID"
-                });
-            }
 
-            const targetSocket = Array.from(generalNs.sockets.values()).find(socket => {
-                const rooms = Array.from(socket.rooms);
-                console.log('Checking socket:', socket.id, 'with rooms:', rooms);
-                return rooms.some(room => {
-                    console.log('Comparing room:', room, 'with targetId:', targetUser.id);
-                    return room.toString() === targetUser?.id?.toString() || '';
-                });
-            });
-            
-            if (targetSocket) {
-                console.log('Found target socket:', targetSocket.id);
-                const sender = await dbManager.getUserById(userId);
-                generalNs.to(targetSocket.id).emit('acceptRequest', { 
-                    senderId: userId,
-                    senderUsername: sender?.username || 'Unknown user'
-                });
-            } else {
-                console.log('Target socket not found for user ID:', targetUser.id);
-            }
-
-            return reply.status(200).send
-            ({
-                success: true,
-                message: "Friend request accepted"
-            });
-        }
-        catch (error)
-        {
-            return reply.status(400).send({
-                success: false,
-                message: "Friend request is no longer valid"
-            });
-        }
+        await dbManager.acceptFriendRequest(userId, targetUser.id);
+        
+    
+        return reply.status(200).send({
+            success: true,
+            message: "Friend request accepted"
+        });
     }
     catch (error)
     {
+        console.error('Error in acceptRequestHandler:', error);
         return reply.status(500).send({
             success: false,
             message: "Error from acceptRequestHandler"
@@ -431,27 +351,6 @@ async function refuseRequestHandler(request: FastifyRequest, reply: FastifyReply
         }
         await dbManager.refuseFriendRequest(userId, targetUser.id);
 
-        // Émettre l'événement refuseRequest au destinataire
-        const targetSocket = Array.from(generalNs.sockets.values()).find(socket => {
-            const rooms = Array.from(socket.rooms);
-            console.log('Checking socket:', socket.id, 'with rooms:', rooms);
-            return rooms.some(room => {
-                console.log('Comparing room:', room, 'with targetId:', targetUser.id);
-                return room.toString() === targetUser?.id?.toString() || '';
-            });
-        });
-        
-        if (targetSocket) {
-            console.log('Found target socket:', targetSocket.id);
-            const sender = await dbManager.getUserById(userId);
-            generalNs.to(targetSocket.id).emit('refuseRequest', { 
-                senderId: userId,
-                senderUsername: sender?.username || 'Unknown user'
-            });
-        } else {
-            console.log('Target socket not found for user ID:', targetUser.id);
-        }
-
         return reply.status(200).send({
             success: true,
             message: "Friend request refused"
@@ -459,6 +358,7 @@ async function refuseRequestHandler(request: FastifyRequest, reply: FastifyReply
     }
     catch (error)
     {
+        console.error('Error in refuseRequestHandler:', error);
         return reply.status(500).send({
             success: false,
             message: "Error from refuseRequestHandler"
