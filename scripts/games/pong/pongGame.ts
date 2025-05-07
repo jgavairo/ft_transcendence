@@ -6,7 +6,7 @@ import { createExplosion, explosion, animateGameOver } from './ballExplosion.js'
 // Interface de l'état de partie reçue du serveur
 export interface MatchState {
   roomId: string;
-  paddles: { phi: number; lives: number }[];
+  paddles: { id: string; phi: number; lives: number }[];
   ball: { x: number; y: number };
   gameOver: boolean;
 }
@@ -39,6 +39,10 @@ export let gameover = false;
 let user1Id: string | null = null; // ID du joueur 1
 let user2Id: string | null = null; // ID du joueur 2
 
+// Noms des joueurs
+let playerName: string = ""; // Nom du joueur local
+let opponentName: string = ""; // Nom de l'adversaire
+
 // Initialise la connexion Socket.IO et les handlers
 export function connectPong() {
   socket.on('matchFound', (data) => {
@@ -51,8 +55,12 @@ export function connectPong() {
     // Stocker les IDs des joueurs
     user1Id = data.user1Id;
     user2Id = data.user2Id;
-
-    console.log('Match found:', { user1Id, user2Id });
+    
+    // Stocker les noms des joueurs
+    playerName = data.you || "Player";
+    opponentName = data.opponent || "Opponent";
+    
+    console.log('Match found:', { user1Id, user2Id, playerName, opponentName });
 
     startPong();
     performCountdown().then(() => {
@@ -192,6 +200,13 @@ async function renderGameOverMessage(state: MatchState) {
   if (soloMode) return;
 
   const player = state.paddles[mySide];
+  const opponent = state.paddles.find((_, index) => index !== mySide);
+
+  if (!opponent) {
+    console.error('Impossible de récupérer les informations de l\'adversaire.');
+    return;
+  }
+
   const message = player.lives > 0 ? 'You Win!' : 'Game Over';
 
   ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -279,23 +294,58 @@ export function renderPong(state: MatchState) {
   ctx.stroke();
   ctx.restore();
 
-  // 4) paddles avec glow pour le tien
+  // 4) paddles avec glow pour le tien - Style amélioré avec effet de dégradé
   state.paddles.forEach((p, i) => {
     const start = p.phi - ARC_HALF;
     const end   = p.phi + ARC_HALF;
     const isMine = i === mySide;
 
     ctx.save();
-    ctx.lineWidth   = P_TH;
-    ctx.strokeStyle = isMine
-      ? 'cyan'
-      : (p.lives > 0 ? '#eee' : 'red');
-
+    
+    // Augmentation de l'épaisseur des raquettes pour meilleure visibilité
+    ctx.lineWidth = P_TH + 2;
+    
+    // Création d'un dégradé pour les raquettes
+    const gradient = ctx.createLinearGradient(
+      CX + (R - 20) * Math.cos(p.phi), 
+      CY + (R - 20) * Math.sin(p.phi),
+      CX + (R + 20) * Math.cos(p.phi), 
+      CY + (R + 20) * Math.sin(p.phi)
+    );
+    
     if (isMine) {
-      ctx.shadowBlur  = 30;
-      ctx.shadowColor = 'cyan';
+      // Dégradé bleu-cyan pour ma raquette
+      gradient.addColorStop(0, '#00BFFF'); // DeepSkyBlue
+      gradient.addColorStop(0.5, '#00FFFF'); // Cyan
+      gradient.addColorStop(1, '#00BFFF'); // DeepSkyBlue
+      
+      // Effet de lueur plus doux et plus large
+      ctx.shadowBlur = 35;
+      ctx.shadowColor = 'rgba(0, 255, 255, 0.8)';
+    } else if (p.lives > 0) {
+      // Dégradé blanc-gris pour la raquette de l'adversaire
+      gradient.addColorStop(0, '#FFFFFF');
+      gradient.addColorStop(0.5, '#F0F0F0');
+      gradient.addColorStop(1, '#CCCCCC');
+      
+      // Légère lueur pour la raquette de l'adversaire
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
+    } else {
+      // Dégradé rouge pour une raquette sans vie
+      gradient.addColorStop(0, '#FF0000');
+      gradient.addColorStop(0.5, '#FF4444');
+      gradient.addColorStop(1, '#FF0000');
+      
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(255, 0, 0, 0.6)';
     }
-
+    
+    ctx.strokeStyle = gradient;
+    
+    // Ajouter des extrémités arrondies aux raquettes
+    ctx.lineCap = 'round';
+    
     ctx.beginPath();
     ctx.arc(CX, CY, R, start, end);
     ctx.stroke();
@@ -324,12 +374,84 @@ export function renderPong(state: MatchState) {
     ctx.restore();
   });
 
-  // 6) vies (cœurs) avec effet de scale
+  // 6) vies (cœurs) et noms combinés dans un seul bloc - Style amélioré
   state.paddles.forEach((p, i) => {
-    const label = fromPolar(p.phi, R + 25);
-    for (let h = 0; h < 3; h++) {
-      drawHeart(label.x + (h - 1) * 24, label.y, 12, h < p.lives);
+    const isMine = i === mySide;
+    const baseRadius = R + 30; // Augmenté légèrement pour plus d'espace
+    const phi = p.phi;
+    
+    // Position de base pour le bloc d'informations
+    const basePos = fromPolar(phi, baseRadius);
+    
+    // Assurons-nous que le bloc reste à l'intérieur de la fenêtre
+    const margin = 30;
+    const blockX = Math.max(margin, Math.min(CW - margin, basePos.x));
+    const blockY = Math.max(margin, Math.min(CH - margin, basePos.y));
+    
+    // Dessiner le fond du bloc - Ajout d'un fond subtil avec coins arrondis
+    const name = isMine ? playerName : opponentName;
+    ctx.save();
+    
+    // Police améliorée pour meilleure lisibilité
+    ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
+    
+    const textWidth = ctx.measureText(name).width;
+    const blockWidth = Math.max(textWidth, 3 * 25) + 20; // Légèrement plus large
+    const blockHeight = 55; // Légèrement plus haut
+    
+    // Fond semi-transparent avec coins arrondis
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    roundRect(
+      ctx,
+      blockX - blockWidth/2, 
+      blockY - blockHeight/2, 
+      blockWidth, 
+      blockHeight,
+      8 // Rayon des coins arrondis
+    );
+    
+    // Dessiner le nom avec ombre portée pour meilleure lisibilité
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+    ctx.shadowBlur = 3;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    
+    // Dégradé pour le texte du nom
+    if (isMine) {
+      const textGradient = ctx.createLinearGradient(
+        blockX - textWidth/2, blockY - 12,
+        blockX + textWidth/2, blockY - 12
+      );
+      textGradient.addColorStop(0, '#FFD700'); // Or
+      textGradient.addColorStop(0.5, '#FFF380'); // Or plus clair
+      textGradient.addColorStop(1, '#FFD700'); // Or
+      ctx.fillStyle = textGradient;
+    } else {
+      const textGradient = ctx.createLinearGradient(
+        blockX - textWidth/2, blockY - 12,
+        blockX + textWidth/2, blockY - 12
+      );
+      textGradient.addColorStop(0, '#FF69B4'); // Rose vif
+      textGradient.addColorStop(0.5, '#FFB6C1'); // Rose clair
+      textGradient.addColorStop(1, '#FF69B4'); // Rose vif
+      ctx.fillStyle = textGradient;
     }
+    
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name, blockX, blockY - 12);
+    
+    // Réinitialiser l'ombre pour les cœurs
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowBlur = 0;
+    
+    // Dessiner les cœurs en bas du bloc - Plus grands et mieux espacés
+    for (let h = 0; h < 3; h++) {
+      drawHeart(blockX + (h - 1) * 26, blockY + 12, 13, h < p.lives);
+    }
+    
+    ctx.restore();
   });
 
   // 7) overlay game over
@@ -352,7 +474,30 @@ function fromPolar(phi: number, r: number) {
   };
 }
 
-// Dessine un cœur (pour les vies)
+// Ajout d'une fonction pour dessiner des rectangles arrondis
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// Dessine un cœur (pour les vies) - Version améliorée avec dégradé
 function drawHeart(x: number, y: number, sz: number, fill: boolean) {
   ctx.save();
   ctx.beginPath();
@@ -363,25 +508,34 @@ function drawHeart(x: number, y: number, sz: number, fill: boolean) {
   ctx.bezierCurveTo(x, y + (sz + t) / 2, x + sz / 2, y + (sz + t) / 2, x + sz / 2, y + t);
   ctx.bezierCurveTo(x + sz / 2, y, x, y, x, y + t);
   ctx.closePath();
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = 'white';
-  ctx.stroke();
+  
   if (fill) {
-    ctx.fillStyle = 'red';
+    // Créer un dégradé pour le cœur rempli
+    const heartGradient = ctx.createRadialGradient(
+      x, y + sz/2, sz * 0.2,
+      x, y + sz/2, sz * 1.2
+    );
+    heartGradient.addColorStop(0, '#FF5555'); // Rouge plus clair
+    heartGradient.addColorStop(0.7, '#FF0000'); // Rouge
+    heartGradient.addColorStop(1, '#CC0000'); // Rouge plus foncé
+    
+    ctx.fillStyle = heartGradient;
+    ctx.shadowBlur = 5;
+    ctx.shadowColor = 'rgba(255, 0, 0, 0.5)';
     ctx.fill();
   }
+  
+  // Contour plus élégant
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = fill ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)';
+  ctx.stroke();
   ctx.restore();
 }
-
-// A simple particle‐based explosion with random colors & sizes
-
 
 // Listen for server burst
 socket.on('ballExplode', ({ x, y }: { x:number, y:number }) => {
   createExplosion(x, y);
 });
-
-
 
 document.addEventListener('DOMContentLoaded', () => {
   displayMenu();

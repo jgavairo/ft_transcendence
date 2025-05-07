@@ -1,6 +1,7 @@
-import { startSoloTriPong, connectTriPong } from './TriPong.js';
+import { startSoloTriPong } from './TriPong.js';
 import { displayPlayMenu } from './PlayMenu.js';
-import { startSoloPong, connectPong } from './pongGame.js';
+import { startSoloPong } from './pongGame.js';
+import { GameManager } from '../../managers/gameManager.js';
 
 
 export function displaySoloMenu(): void {
@@ -12,8 +13,8 @@ export function displaySoloMenu(): void {
     canvas.width = cw;
     canvas.height = ch;
 
-    connectPong();
-    connectTriPong();
+    // connectPong();
+    // connectTriPong();
     
     // Fond & titre
     ctx.fillStyle = 'black';
@@ -39,18 +40,34 @@ export function displaySoloMenu(): void {
       {
         label: '2 Players', x: x0, y: startY + (btnH + spacing),
         w: btnW, h: btnH,
-        onClick: () => {
+        onClick: async () => {
           // Lance la partie pour 2 joueurs (reprise du solo)
           teardownSolo();
-          startSoloPong('Player1');
+          try {
+            const currentUser = await GameManager.getCurrentUser();
+            const username = currentUser?.username || "Player1";
+            console.log('Current user for solo 2 players:', username);
+            startSoloPong(username);
+          } catch (error) {
+            console.error('Error getting current user:', error);
+            startSoloPong("Player1"); // Fallback au nom par défaut en cas d'erreur
+          }
         }
       },
       {
         label: '3 Players', x: x0, y: startY + 2*(btnH + spacing),
         w: btnW, h: btnH,
-        onClick: () => {
+        onClick: async () => {
           teardownSolo();
-          startSoloTriPong('Player1');
+          try {
+            const currentUser = await GameManager.getCurrentUser();
+            const username = currentUser?.username || "Player1";
+            console.log('Current user for solo 3 players:', username);
+            startSoloTriPong(username);
+          } catch (error) {
+            console.error('Error getting current user:', error);
+            startSoloTriPong("Player1"); // Fallback au nom par défaut en cas d'erreur
+          }
         }
       },
       {
@@ -92,4 +109,3 @@ export function displaySoloMenu(): void {
       canvas.removeEventListener('click', handler);
     }
   }
-  
