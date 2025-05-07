@@ -46,6 +46,25 @@ let opponentName: string = ""; // Nom de l'adversaire
 window.addEventListener('keydown', onKeyDown);
 window.addEventListener('keyup',   onKeyUp);
 
+// Fonction pour récupérer l'ID utilisateur à partir d'un socket_id
+export function getUserIdFromSocketId(socketId: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    socket.emit('getUserIdFromSocketId', { socketId }, (userId: string | null) => {
+      resolve(userId);
+    });
+  });
+}
+
+// Fonction pour récupérer le user1Id
+export function getUser1Id(): string | null {
+  return user1Id;
+}
+
+// Fonction pour récupérer le user2Id
+export function getUser2Id(): string | null {
+  return user2Id;
+}
+
 // Initialise la connexion Socket.IO et les handlers
 export function connectPong() {
   socket.on('matchFound', (data) => {
@@ -150,12 +169,65 @@ function animateNumber(
 
 
 
-export function joinQueue(username: string) {
-  socket.emit('joinQueue', { username });
+export async function joinQueue(username: string) {
+  // Récupérer l'utilisateur actuel et son ID si disponible
+  try {
+    const currentUser = await GameManager.getCurrentUser();
+    const userId = currentUser?.id;
+    
+    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
+    socket.emit('joinQueue', { username, userId });
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+    // En cas d'erreur, envoyer seulement le nom d'utilisateur
+    socket.emit('joinQueue', { username });
+  }
 }
 
-export function startSoloPong(username: string) {
-  socket.emit('startSolo', { username });
+export async function startSoloPong(username: string) {
+  // Récupérer l'utilisateur actuel et son ID si disponible
+  try {
+    const currentUser = await GameManager.getCurrentUser();
+    const userId = currentUser?.id;
+    
+    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
+    socket.emit('startSolo', { username, userId });
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+    // En cas d'erreur, envoyer seulement le nom d'utilisateur
+    socket.emit('startSolo', { username });
+  }
+}
+
+// Ajout d'une fonction pour le mode Tri-Pong
+export async function joinTriQueue(username: string) {
+  // Récupérer l'utilisateur actuel et son ID si disponible
+  try {
+    const currentUser = await GameManager.getCurrentUser();
+    const userId = currentUser?.id;
+    
+    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
+    socket.emit('joinTriQueue', { username, userId });
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+    // En cas d'erreur, envoyer seulement le nom d'utilisateur
+    socket.emit('joinTriQueue', { username });
+  }
+}
+
+export async function startSoloTri(username: string) {
+  // Récupérer l'utilisateur actuel et son ID si disponible
+  try {
+    const currentUser = await GameManager.getCurrentUser();
+    const userId = currentUser?.id;
+    
+    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
+    socket.emit('startSoloTri', { username, userId });
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+    // En cas d'erreur, envoyer seulement le nom d'utilisateur
+    socket.emit('startSoloTri', { username });
+  }
 }
 
 // Envoi des commandes paddle au serveur
@@ -200,6 +272,176 @@ export function startPong() {
 function endPong() {
   window.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('keyup',   onKeyUp);
+}
+
+// Ajout de la gestion du message de fin de partie
+async function renderGameOverMessage(state: MatchState) {
+  // Affiche le message uniquement en mode multi
+  if (soloMode) return;
+
+  const player = state.paddles[mySide];
+  const opponent = state.paddles.find((_, index) => index !== mySide);
+
+  if (!opponent) {
+    console.error('Impossible de récupérer les informations de l\'adversaire.');
+    return;
+  }
+
+  const message = player.lives > 0 ? 'You Win!' : 'Game Over';
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.fillRect(0, 0, CW, CH);
+
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'center';
+  ctx.font = '48px Arial';
+  ctx.fillText(message, CX, CY);
+
+  try {
+    // Récupérer l'utilisateur actuel via GameManager
+    const currentUser = await GameManager.getCurrentUser();
+    if (!currentUser || !currentUser.id) {
+      console.error('Impossible de récupérer l\'utilisateur actuel.');
+      return;
+    }
+
+    // Appeler l'API en fonction du résultat
+    if (player.lives > 0) {
+      // Victoire : appeler incrementWins
+      const response = await fetch('/api/games/incrementWins', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Utilise les cookies pour l'authentification
+        body: JSON.stringify({
+          gameId: 1, // ID du jeu (Pong)
+          userId: currentUser.id, // Utiliser l'ID utilisateur actuel
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Victoire enregistrée avec succès.');
+      } else {
+        console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
+      }
+    } else {
+      // Défaite : appeler incrementLosses
+      const response = await fetch('/api/games/incrementLosses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Utilise les cookies pour l'authentification
+        body: JSON.stringify({
+          gameId: 1, // ID du jeu (Pong)
+          userId: currentUser.id, // Utiliser l'ID utilisateur actuel
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Défaite enregistrée avec succès.');
+      } else {
+        console.error('Erreur lors de l\'enregistrement de la défaite:', await response.json());
+      }
+    }
+
+    // Ajouter le match à l'historique (seulement en mode multijoueur)
+    if (!soloMode) {
+      try {
+        // Récupérer les IDs d'utilisateur à partir des joueurs connectés
+        // Cette partie est critique pour résoudre le problème des socket_id vs user_id
+        
+        // 1. Utiliser l'ID de l'utilisateur courant (qui est toujours fiable)
+        const myUserId = currentUser.id;
+        
+        // 2. Essayer de récupérer l'ID du deuxième joueur
+        let opponentUserId = null;
+        
+        // Fonction utilitaire pour vérifier si un ID ressemble à un socket_id
+        const isSocketId = (id: string | null): boolean => {
+          if (!id) return true;
+          return typeof id === 'string' && (
+            id.includes('_') || 
+            id.includes('-') || 
+            id.length > 10 ||
+            isNaN(Number(id))
+          );
+        };
+        
+        // Chercher l'ID stocké dans les variables user1Id/user2Id selon qui est l'adversaire
+        if (mySide === 0 && user2Id && !isSocketId(user2Id)) {
+          opponentUserId = user2Id;
+        } else if (mySide === 1 && user1Id && !isSocketId(user1Id)) {
+          opponentUserId = user1Id;
+        }
+        
+        // Si aucun ID valide trouvé, essayer de récupérer via le socket_id
+        if (!opponentUserId || isSocketId(opponentUserId)) {
+          const opponentSocketId = state.paddles[mySide === 0 ? 1 : 0].id;
+          try {
+            opponentUserId = await getUserIdFromSocketId(opponentSocketId);
+            console.log('ID récupéré pour l\'adversaire via socket:', opponentUserId);
+          } catch (error) {
+            console.error('Erreur lors de la récupération de l\'ID via socket:', error);
+          }
+        }
+        
+        // Si toujours aucun ID valide, ne pas envoyer l'historique
+        if (!opponentUserId || isSocketId(opponentUserId)) {
+          console.error('Impossible d\'obtenir un ID utilisateur valide pour l\'adversaire');
+          return;
+        }
+        
+        // Déterminer qui est user1 et user2 selon le côté du joueur
+        let finalUser1Id, finalUser2Id, user1Lives, user2Lives;
+        
+        if (mySide === 0) {
+          finalUser1Id = myUserId;
+          finalUser2Id = opponentUserId;
+          user1Lives = player.lives;
+          user2Lives = opponent.lives;
+        } else {
+          finalUser1Id = opponentUserId;
+          finalUser2Id = myUserId;
+          user1Lives = opponent.lives;
+          user2Lives = player.lives;
+        }
+        
+        console.log('Ajout du match à l\'historique:', {
+          user1Id: finalUser1Id, 
+          user2Id: finalUser2Id, 
+          user1Lives, 
+          user2Lives
+        });
+        
+        const historyResponse = await fetch('/api/match/addToHistory', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            user1Id: finalUser1Id,
+            user2Id: finalUser2Id,
+            user1Lives,
+            user2Lives,
+          }),
+        });
+        
+        if (historyResponse.ok) {
+          console.log('Match ajouté à l\'historique avec succès.');
+        } else {
+          const errorData = await historyResponse.json();
+          console.error('Erreur lors de l\'ajout du match à l\'historique:', errorData);
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'ajout du match à l\'historique:', error);
+      }
+    }
+  } catch (error) {
+    console.error('Erreur réseau lors de l\'enregistrement du résultat:', error);
+  }
 }
 
 // Dessine l'état de la partie Tri-Pong

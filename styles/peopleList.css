@@ -142,7 +142,9 @@
     align-items: center;
     gap: 1rem;
     z-index: 1000;
-    width: 300px;
+    width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
     color: white;
 }
 
@@ -212,6 +214,82 @@
     margin: 0.3rem 0;
     font-size: 0.9rem;
     color: #ccc;
+}
+
+/* Styles pour l'historique des matchs dans la carte profil */
+.profile-card-match-history {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #2a3b4c;
+    border-radius: 8px;
+    color: white;
+    text-align: left;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto; /* Ajouter défilement si trop d'éléments */
+}
+
+.profile-card-match-history h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ffffff;
+    text-align: center;
+}
+
+.match-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.match-history-table th,
+.match-history-table td {
+    padding: 0.5rem;
+    text-align: center;
+    border-bottom: 1px solid #3a5b87;
+}
+
+.match-history-table th {
+    font-weight: bold;
+    color: #8ab4f8;
+}
+
+/* Styles pour les différents résultats */
+.match-history-table tr.victory {
+    background-color: rgba(40, 167, 69, 0.2);
+}
+
+.match-history-table tr.defeat {
+    background-color: rgba(220, 53, 69, 0.2);
+}
+
+.match-history-table td.victory {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.match-history-table td.defeat {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Liens pour voir plus/moins de matchs */
+.view-more-matches,
+.view-less-matches {
+    display: block;
+    text-align: center;
+    margin-top: 0.5rem;
+    color: #8ab4f8;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.view-more-matches:hover,
+.view-less-matches:hover {
+    text-decoration: underline;
+    color: #afd0ff;
 }
 
 /* Overlay pour la carte "profil" */

@@ -594,6 +594,22 @@ export class DatabaseManager
         if (!this.db) throw new Error('Database not initialized');
 
         try {
+            // Vérifier si un match similaire a été ajouté dans les dernières secondes
+            const recentMatch = await this.db.get(
+                `SELECT * FROM match_history 
+                 WHERE user1_id = ? AND user2_id = ? 
+                 AND user1_lives = ? AND user2_lives = ? 
+                 AND datetime(match_date) >= datetime('now', '-5 seconds')
+                 LIMIT 1`,
+                [user1Id, user2Id, user1Lives, user2Lives]
+            );
+
+            // Si un match similaire existe déjà, ne pas l'ajouter
+            if (recentMatch) {
+                console.log(`Match similar to User1 (${user1Id}) vs User2 (${user2Id}) already exists, skipping`);
+                return;
+            }
+
             await this.db.run(
                 `INSERT INTO match_history (user1_id, user2_id, user1_lives, user2_lives, match_date)
                  VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
