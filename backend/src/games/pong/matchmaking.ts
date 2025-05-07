@@ -12,14 +12,26 @@ interface Player { id: string; username: string; }
 
 export function setupGameMatchmaking(gameNs: Namespace) {
   const playerInfo = new Map<string, PlayerInfo>();
+  // Nouvelle Map pour stocker l'association socket_id -> user_id
+  const socketToUserId = new Map<string, string>();
   let classicQueue: Player[] = [];
   let triQueue: Player[] = [];
   const matchStates = new Map<string, MatchState>();
   const triMatchStates = new Map<string, TriMatchState>();
 
+  // Fonction utilitaire pour récupérer l'ID utilisateur à partir d'un socket_id
+  function getUserIdFromSocketId(socketId: string): string | undefined {
+    return socketToUserId.get(socketId);
+  }
+
   gameNs.on('connection', socket => {
     // 1) SOLO CLASSIC
-    socket.on('startSolo', ({ username }: { username: string }) => {
+    socket.on('startSolo', ({ username, userId }: { username: string, userId?: string }) => {
+      // Stocker l'association socket_id -> user_id si disponible
+      if (userId) {
+        socketToUserId.set(socket.id, userId);
+      }
+      
       const m = startMatch([socket, socket], gameNs);
       matchStates.set(m.roomId, m);
       playerInfo.set(socket.id, { side: 0, mode: 'solo' });
@@ -33,7 +45,12 @@ export function setupGameMatchmaking(gameNs: Namespace) {
     });
 
     // 2) SOLO TRI-PONG
-    socket.on('startSoloTri', ({ username }: { username: string }) => {
+    socket.on('startSoloTri', ({ username, userId }: { username: string, userId?: string }) => {
+      // Stocker l'association socket_id -> user_id si disponible
+      if (userId) {
+        socketToUserId.set(socket.id, userId);
+      }
+      
       const m = startTriMatch([socket, socket, socket], gameNs);
       triMatchStates.set(m.roomId, m);
       playerInfo.set(socket.id, { side: -1, mode: 'solo-tri' });
@@ -51,7 +68,12 @@ export function setupGameMatchmaking(gameNs: Namespace) {
     });
 
     // 3) 2-JOUEURS MATCHMAKING
-    socket.on('joinQueue', ({ username }: { username: string }) => {
+    socket.on('joinQueue', ({ username, userId }: { username: string, userId?: string }) => {
+      // Stocker l'association socket_id -> user_id si disponible
+      if (userId) {
+        socketToUserId.set(socket.id, userId);
+      }
+      
       if (!classicQueue.some(p => p.id === socket.id)) {
         classicQueue.push({ id: socket.id, username });
       }
@@ -76,8 +98,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
           mode: 'multi',
           you: p1.username,
           opponent: p2.username,
-          user1Id: p1.id, // ID du joueur 1
-          user2Id: p2.id  // ID du joueur 2
+          user1Id: getUserIdFromSocketId(p1.id) || p1.id, // ID du joueur 1
+          user2Id: getUserIdFromSocketId(p2.id) || p2.id  // ID du joueur 2
         });
 
         s2.emit('matchFound', {
@@ -86,8 +108,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
           mode: 'multi',
           you: p2.username,
           opponent: p1.username,
-          user1Id: p1.id, // ID du joueur 1
-          user2Id: p2.id  // ID du joueur 2
+          user1Id: getUserIdFromSocketId(p1.id) || p1.id, // ID du joueur 1
+          user2Id: getUserIdFromSocketId(p2.id) || p2.id  // ID du joueur 2
         });
 
         const iv = setInterval(() => {
@@ -115,7 +137,12 @@ export function setupGameMatchmaking(gameNs: Namespace) {
     });
 
     // 5) 3-JOUEURS TRIPONG MATCHMAKING
-    socket.on('joinTriQueue', ({ username }: { username: string }) => {
+    socket.on('joinTriQueue', ({ username, userId }: { username: string, userId?: string }) => {
+      // Stocker l'association socket_id -> user_id si disponible
+      if (userId) {
+        socketToUserId.set(socket.id, userId);
+      }
+      
       if (!triQueue.some(p => p.id === socket.id)) {
         triQueue.push({ id: socket.id, username });
       }
@@ -133,16 +160,22 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       m.paddles[data.side].direction = data.direction;
     });
 
+    // Nouvel événement pour récupérer l'ID utilisateur à partir d'un socket_id
+    socket.on('getUserIdFromSocketId', (data: { socketId: string }, callback: (userId: string | null) => void) => {
+      const userId = getUserIdFromSocketId(data.socketId);
+      callback(userId || null);
+    });
+
     // 6) DÉCONNEXION
     socket.on('disconnect', () => {
       playerInfo.delete(socket.id);
+      socketToUserId.delete(socket.id); // Supprimer l'association lors de la déconnexion
       classicQueue = classicQueue.filter(p => p.id !== socket.id);
       triQueue     = triQueue.filter(p => p.id !== socket.id);
     });
-
   });
 
-  // --- FONCTION D’ASSOCIATION POUR 3-JOUEURS TRI-PONG ---
+  // --- FONCTION D'ASSOCIATION POUR 3-JOUEURS TRI-PONG ---
   function attemptTriMatch() {
     while (triQueue.length >= 3) {
       const trio = triQueue.splice(0, 3);
