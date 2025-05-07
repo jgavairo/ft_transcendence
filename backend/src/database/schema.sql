@@ -33,7 +33,21 @@ CREATE TABLE IF NOT EXISTS game_user_rankings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     game_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
-    ranking INTEGER NOT NULL,
+    win INTEGER NOT NULL,
+    loss INTEGER NOT NULL,
     FOREIGN KEY (game_id) REFERENCES games (id),
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
+
+CREATE TABLE IF NOT EXISTS match_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user1_id INTEGER NOT NULL,
+    user2_id INTEGER NOT NULL,
+    user1_lives INTEGER NOT NULL,
+    user2_lives INTEGER NOT NULL,
+    match_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user1_id) REFERENCES users (id),
+    FOREIGN KEY (user2_id) REFERENCES users (id)
+);
+
+

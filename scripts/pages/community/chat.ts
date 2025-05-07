@@ -82,7 +82,8 @@ export async function setupChat() {
                 user?.username || author,
                 user?.profile_picture || "default-profile.png",
                 user?.email || "Email not available",
-                user?.bio || "No bio available"
+                user?.bio || "No bio available",
+                user?.id || 0
             );
         });
     

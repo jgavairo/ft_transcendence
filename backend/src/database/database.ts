@@ -231,7 +231,7 @@ export class DatabaseManager
             );
         }
 
-        // Ajouter une entrée dans game_user_rankings avec un score initial de 0
+        // Initialiser les statistiques de classement (wins et losses) à zéro
         const existingRanking = await this.db.get(
             'SELECT * FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
             [gameId, userId]
@@ -239,10 +239,12 @@ export class DatabaseManager
 
         if (!existingRanking) {
             await this.db.run(
-                'INSERT INTO game_user_rankings (game_id, user_id, ranking) VALUES (?, ?, ?)',
-                [gameId, userId, 0]
+                'INSERT INTO game_user_rankings (game_id, user_id, win, loss) VALUES (?, ?, ?, ?)',
+                [gameId, userId, 0, 0]
             );
-            console.log(`User ${userId} added to rankings for game ${gameId} with a score of 0.`);
+            console.log(`Initialized stats for user ${userId} in game ${gameId} (wins: 0, losses: 0).`);
+        } else {
+            console.log(`Stats already exist for user ${userId} in game ${gameId}.`);
         }
     }
 
@@ -462,40 +464,76 @@ export class DatabaseManager
 
         // Vérifier si une entrée existe déjà pour ce joueur et ce jeu
         const existingRanking = await this.db.get(
-            'SELECT id, ranking FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
+            'SELECT id, win FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
             [gameId, userId]
         );
 
         if (existingRanking) {
             // Si une entrée existe, incrémenter le classement
             await this.db.run(
-                'UPDATE game_user_rankings SET ranking = ranking + 1 WHERE id = ?',
+                'UPDATE game_user_rankings SET win = win + 1 WHERE id = ?',
                 [existingRanking.id]
             );
-            console.log(`Updated ranking for user ${userId} in game ${gameId}:`, {
+            console.log(`Updated win for user ${userId} in game ${gameId}:`, {
                 id: existingRanking.id,
-                newRanking: existingRanking.ranking + 1,
+                newRanking: existingRanking.win + 1,
             });
         } else {
             // Si aucune entrée n'existe, en créer une avec un classement initial de 1
             const result = await this.db.run(
-                'INSERT INTO game_user_rankings (game_id, user_id, ranking) VALUES (?, ?, ?)',
-                [gameId, userId, 1]
+                'INSERT INTO game_user_rankings (game_id, user_id, win, loss) VALUES (?, ?, ?, ?)',
+                [gameId, userId, 1, 0]
+            );
+            console.log(`Created new win for user ${userId} in game ${gameId}:`, {
+                id: result.lastID,
+                gameId,
+                userId,
+                win: 1,
+                loss: 0,
+            });
+        }
+    }
+
+    public async incrementPlayerLosses(gameId: number, userId: number): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        // Vérifier si une entrée existe déjà pour ce joueur et ce jeu
+        const existingRanking = await this.db.get(
+            'SELECT id, loss FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
+            [gameId, userId]
+        );
+
+        if (existingRanking) {
+            // Si une entrée existe, incrémenter les défaites
+            await this.db.run(
+                'UPDATE game_user_rankings SET loss = loss + 1 WHERE id = ?',
+                [existingRanking.id]
+            );
+            console.log(`Updated losses for user ${userId} in game ${gameId}:`, {
+                id: existingRanking.id,
+                newLosses: existingRanking.loss + 1,
+            });
+        } else {
+            // Si aucune entrée n'existe, en créer une avec un nombre initial de défaites de 1
+            const result = await this.db.run(
+                'INSERT INTO game_user_rankings (game_id, user_id, win, loss) VALUES (?, ?, ?, ?)',
+                [gameId, userId, 0, 1]
             );
             console.log(`Created new ranking for user ${userId} in game ${gameId}:`, {
                 id: result.lastID,
                 gameId,
                 userId,
-                ranking: 1,
+                win: 0,
+                loss: 1,
             });
         }
     }
 
-    public async getUserRankingsByGame(gameId: number): Promise<{ userId: number, ranking: number }[]> {
+    public async getUserRankingsByGame(gameId: number): Promise<{ userId: number, win: number }[]> {
         if (!this.db) throw new Error('Database not initialized');
 
         const result = await this.db.all(
-            'SELECT user_id AS userId, ranking FROM game_user_rankings WHERE game_id = ? ORDER BY ranking DESC',
+            'SELECT user_id AS userId, win FROM game_user_rankings WHERE game_id = ? ORDER BY win DESC',
             [gameId]
         );
 
@@ -536,6 +574,46 @@ export class DatabaseManager
         }
     }
 
+    public async addMatchToHistory(
+        user1Id: number,
+        user2Id: number,
+        user1Lives: number,
+        user2Lives: number
+    ): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        try {
+            await this.db.run(
+                `INSERT INTO match_history (user1_id, user2_id, user1_lives, user2_lives, match_date)
+                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                [user1Id, user2Id, user1Lives, user2Lives]
+            );
+            console.log(`Match added to history: User1 (${user1Id}) vs User2 (${user2Id})`);
+        } catch (error) {
+            console.error('Error adding match to history:', error);
+            throw error;
+        }
+    }
+
+    public async getLastMatchForUser(userId: number): Promise<any | null> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        try {
+            const result = await this.db.get(
+                `SELECT * 
+                 FROM match_history 
+                 WHERE user1_id = ? OR user2_id = ? 
+                 ORDER BY match_date DESC 
+                 LIMIT 1`,
+                [userId, userId]
+            );
+
+            return result || null;
+        } catch (error) {
+            console.error('Error fetching last match for user:', error);
+            throw error;
+        }
+    }
 }
 
 export const dbManager = DatabaseManager.getInstance();
