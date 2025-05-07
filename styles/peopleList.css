@@ -191,6 +191,29 @@
     font-style: italic;
 }
 
+.profile-card-last-match {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #2a3b4c;
+    border-radius: 8px;
+    color: white;
+    text-align: left;
+    width: 100%;
+}
+
+.profile-card-last-match h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.profile-card-last-match p {
+    margin: 0.3rem 0;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
 /* Overlay pour la carte "profil" */
 .profile-overlay {
     position: fixed;

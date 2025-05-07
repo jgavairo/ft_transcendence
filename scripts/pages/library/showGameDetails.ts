@@ -27,11 +27,12 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
     const rankings = await rankingsResponse.json();
 
     // Associer les rankings aux utilisateurs
-    const rankedPeople = rankings.map((ranking: { userId: number; ranking: number }) => {
+    const rankedPeople = rankings.map((ranking: { userId: number; win: number; loss: number }) => {
         const person = people.find((p: any) => p.id === ranking.userId);
         return {
             ...person,
-            ranking: ranking.ranking
+            wins: ranking.win, // Utilisez le champ `win` pour les victoires
+            losses: ranking.loss, // Utilisez le champ `loss` pour les défaites
         };
     });
 
@@ -52,7 +53,7 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
             <h3 class="sectionTitle">Online 1vs1 Ranking</h3>
             <div class="rankingContainer">
               <ul class="rankingList">
-                ${rankedPeople.map((person: { profile_picture: string; username: string; email: string; bio: string; ranking: number }, index: number) => `
+                ${rankedPeople.map((person: { profile_picture: string; username: string; email: string; bio: string; wins: number; losses: number }, index: number) => `
                   <li class="rankingItem" id="user-${person.username}">
                     <span class="numberRank">${index + 1}</span> <!-- Numéro de classement -->
                     <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
@@ -62,7 +63,7 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
                     ${index === 0 ? '<span class="medal">🥇</span>' : ''}
                     ${index === 1 ? '<span class="medal">🥈</span>' : ''}
                     ${index === 2 ? '<span class="medal">🥉</span>' : ''}
-                    <span class="playerWins">Wins: ${person.ranking}</span>
+                    <span class="playerWins">Wins: ${person.wins}</span>
                   </li>
                 `).join('')}
               </ul>
@@ -96,7 +97,8 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
             const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
             const email = friendName.getAttribute('data-email')!;
             const bio = friendName.getAttribute('data-bio') || 'No bio available';
-            showProfileCard(username, profilePicture, email, bio);
+            const userId = people.find(person => person.username === username)?.id || 0;
+            showProfileCard(username, profilePicture, email, bio, userId);
         });
     });
 
