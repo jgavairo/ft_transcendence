@@ -71,7 +71,7 @@ export async function setupChat() {
         overlay.appendChild(overlayText);
         // Ajouter un événement de clic pour afficher la carte de profil
         profileContainer.addEventListener("click", () => {
-            showProfileCard((user === null || user === void 0 ? void 0 : user.username) || author, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.email) || "Email not available", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available");
+            showProfileCard((user === null || user === void 0 ? void 0 : user.username) || author, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.email) || "Email not available", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
         });
         // Ajouter les éléments au conteneur
         profileContainer.appendChild(profileImg);

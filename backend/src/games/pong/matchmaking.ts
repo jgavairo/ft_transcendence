@@ -56,21 +56,46 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         classicQueue.push({ id: socket.id, username });
       }
       if (classicQueue.length >= 2) {
-        const p1 = classicQueue.shift()!, p2 = classicQueue.shift()!;
-        const s1 = gameNs.sockets.get(p1.id)!, s2 = gameNs.sockets.get(p2.id)!;
+        const p1 = classicQueue.shift()!;
+        const p2 = classicQueue.shift()!;
+        const s1 = gameNs.sockets.get(p1.id)!;
+        const s2 = gameNs.sockets.get(p2.id)!;
         const m = startMatch([s1, s2], gameNs);
+
         matchStates.set(m.roomId, m);
         playerInfo.set(p1.id, { side: 0, mode: 'multi' });
         playerInfo.set(p2.id, { side: 1, mode: 'multi' });
-        s1.join(m.roomId); s2.join(m.roomId);
-        s1.emit('matchFound', { roomId: m.roomId, side: 0, mode: 'multi', you: p1.username, opponent: p2.username });
-        s2.emit('matchFound', { roomId: m.roomId, side: 1, mode: 'multi', you: p2.username, opponent: p1.username });
-          const iv = setInterval(() => {
-            updateMatch(m, gameNs);
-            gameNs.to(m.roomId).emit('gameState', m);
-            if (m.gameOver) clearInterval(iv);
-          }, 1000 / 60);
-        }
+
+        s1.join(m.roomId);
+        s2.join(m.roomId);
+
+        // Inclure les IDs des joueurs dans l'événement `matchFound`
+        s1.emit('matchFound', {
+          roomId: m.roomId,
+          side: 0,
+          mode: 'multi',
+          you: p1.username,
+          opponent: p2.username,
+          user1Id: p1.id, // ID du joueur 1
+          user2Id: p2.id  // ID du joueur 2
+        });
+
+        s2.emit('matchFound', {
+          roomId: m.roomId,
+          side: 1,
+          mode: 'multi',
+          you: p2.username,
+          opponent: p1.username,
+          user1Id: p1.id, // ID du joueur 1
+          user2Id: p2.id  // ID du joueur 2
+        });
+
+        const iv = setInterval(() => {
+          updateMatch(m, gameNs);
+          gameNs.to(m.roomId).emit('gameState', m);
+          if (m.gameOver) clearInterval(iv);
+        }, 1000 / 60);
+      }
     });
 
     // 4) GESTION DES DÉPLACEMENTS PADDLE BI-PONG

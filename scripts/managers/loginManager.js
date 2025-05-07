@@ -4,6 +4,7 @@ import { showNotification, showErrorNotification } from "../helpers/notification
 import api from "../helpers/api.js";
 import { setupProfileButton } from "../header/navigation.js";
 import { googleSignInHandler } from "../modals/login/googleSignIn.js";
+import { disconnectNotificationSocket } from "../header/navigation.js";
 export class LoginManager {
     static removeLoginModal() {
         const modal = document.getElementById('optionnalModal');
@@ -18,6 +19,7 @@ export class LoginManager {
     }
     static async showLoginModal() {
         if (!await this.isLoggedIn()) {
+            disconnectNotificationSocket();
             const optionnalModal = document.getElementById('optionnalModal');
             if (!optionnalModal)
                 return;
