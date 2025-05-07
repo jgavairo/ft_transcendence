@@ -1,11 +1,12 @@
 import { socket } from './network.js';
-import { createExplosion } from './ballExplosion.js';
+import { createExplosion, animateGameOver } from './ballExplosion.js';
 // Variables réseau
 let mySide = -1;
 let roomId;
 // Canvas et contexte
 let canvas;
 let ctx;
+export let gameoverT = false;
 // Constantes de rendu (synchronisées avec le serveur)
 const CW = 1185;
 const CH = 785;
@@ -226,11 +227,9 @@ export function renderTriPong(state) {
     if (state.gameOver) {
         ctx.save();
         ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(0, 0, CW, CH);
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.font = 'bold 48px Arial';
-        ctx.fillText('Game Finish', CX, CY);
+        gameoverT = true;
+        animateGameOver();
+        gameoverT = false;
         ctx.restore();
     }
 }

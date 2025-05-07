@@ -1,7 +1,7 @@
 import { displayMenu } from './DisplayMenu.js';
 import { socket } from './network.js';
-import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
+import { showGameOverOverlay } from './DisplayFinishGame.js';
 // Variables réseau
 let mySide;
 let roomId;
@@ -21,6 +21,8 @@ let ready = false; // on ne dessine qu'une fois le countdown fini
 let lastState = null;
 let firstFrame = false;
 export let gameover = false;
+window.addEventListener('keydown', onKeyDown);
+window.addEventListener('keyup', onKeyUp);
 // Initialise la connexion Socket.IO et les handlers
 export function connectPong() {
     socket.on('matchFound', (data) => {
@@ -107,8 +109,10 @@ export function startSoloPong(username) {
 function sendMove(side, direction) {
     socket.emit('movePaddle', { side, direction });
 }
-// Écoute clavier global
-window.addEventListener('keydown', (e) => {
+// En haut du fichier
+function onKeyDown(e) {
+    if (!ready || gameover)
+        return;
     if (soloMode) {
         if (e.code === 'KeyD')
             sendMove(0, 'up');
@@ -125,8 +129,10 @@ window.addEventListener('keydown', (e) => {
             sendMove(mySide, dir);
         }
     }
-});
-window.addEventListener('keyup', (e) => {
+}
+function onKeyUp(e) {
+    if (!ready || gameover)
+        return;
     if (soloMode) {
         if (e.code === 'KeyD' || e.code === 'KeyA')
             sendMove(0, null);
@@ -137,7 +143,7 @@ window.addEventListener('keyup', (e) => {
         if (e.code === 'KeyD' || e.code === 'KeyA')
             sendMove(mySide, null);
     }
-});
+}
 // Initialise le canvas et le contexte
 export function startPong() {
     canvas = document.querySelector('#pongCanvas');
@@ -145,50 +151,9 @@ export function startPong() {
     canvas.width = CW;
     canvas.height = CH;
 }
-// Ajout de la gestion du message de fin de partie
-async function renderGameOverMessage(state) {
-    // Affiche le message uniquement en mode multi
-    if (soloMode)
-        return;
-    const player = state.paddles[mySide];
-    const message = player.lives > 0 ? 'You Win!' : 'Game Over';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(0, 0, CW, CH);
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.font = '48px Arial';
-    ctx.fillText(message, CX, CY);
-    // Si le joueur a gagné, appeler l'API incrementWins
-    if (player.lives > 0) {
-        try {
-            // Récupérer l'utilisateur actuel via GameManager
-            const currentUser = await GameManager.getCurrentUser();
-            if (!currentUser || !currentUser.id) {
-                console.error('Impossible de récupérer l\'utilisateur actuel.');
-                return;
-            }
-            const response = await fetch('/api/games/incrementWins', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include', // Utilise les cookies pour l'authentification
-                body: JSON.stringify({
-                    gameId: 1, // ID du jeu (Pong)
-                    userId: currentUser.id, // Utiliser l'ID utilisateur actuel
-                }),
-            });
-            if (response.ok) {
-                console.log('Victoire enregistrée avec succès.');
-            }
-            else {
-                console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
-            }
-        }
-        catch (error) {
-            console.error('Erreur réseau lors de l\'enregistrement de la victoire:', error);
-        }
-    }
+function endPong() {
+    window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('keyup', onKeyUp);
 }
 // Dessine l'état de la partie Tri-Pong
 export function renderPong(state) {
@@ -220,11 +185,10 @@ export function renderPong(state) {
         ctx.lineWidth = P_TH;
         ctx.strokeStyle = isMine
             ? 'cyan'
-            : (p.lives > 0 ? '#eee' : 'red');
-        if (isMine) {
-            ctx.shadowBlur = 30;
-            ctx.shadowColor = 'cyan';
-        }
+            : 'rgb(255, 0, 200)';
+        // : (p.lives > 0 ? '#eee' : 'red');
+        ctx.shadowBlur = isMine ? 30 : 20;
+        ctx.shadowColor = isMine ? 'cyan' : 'rgb(255, 0, 200)';
         ctx.beginPath();
         ctx.arc(CX, CY, R, start, end);
         ctx.stroke();
@@ -259,12 +223,12 @@ export function renderPong(state) {
     });
     // 7) overlay game over
     if (state.gameOver) {
-        ctx.save();
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         gameover = true;
         animateGameOver();
-        ctx.restore();
-        renderGameOverMessage(state);
+        setTimeout(() => {
+            showGameOverOverlay();
+        }, 1500);
+        return;
     }
 }
 // Convertit coordonnées polaires (phi,r) → cartésiennes
@@ -299,6 +263,14 @@ function drawHeart(x, y, sz, fill) {
 socket.on('ballExplode', ({ x, y }) => {
     createExplosion(x, y);
 });
+export function resetGame() {
+    ready = false;
+    gameover = false;
+    firstFrame = false;
+    lastState = null;
+    explosion.length = 0;
+    displayMenu();
+}
 document.addEventListener('DOMContentLoaded', () => {
     displayMenu();
 });
