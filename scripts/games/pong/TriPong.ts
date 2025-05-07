@@ -1,5 +1,6 @@
 import { socket } from './network.js';
-import { createExplosion } from './ballExplosion.js';
+import { createExplosion, animateGameOver } from './ballExplosion.js';
+import { gameover } from './pongGame.js';
 
 // Interface de l'état de partie reçue du serveur
 export interface TriMatchState {
@@ -16,6 +17,8 @@ let roomId: string;
 // Canvas et contexte
 let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;
+
+export let gameoverT = false;
 
 // Constantes de rendu (synchronisées avec le serveur)
 const CW = 1185;
@@ -265,11 +268,9 @@ export function renderTriPong(state: TriMatchState) {
   if (state.gameOver) {
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-    ctx.fillRect(0, 0, CW, CH);
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 48px Arial';
-    ctx.fillText('Game Finish', CX, CY);
+    gameoverT = true;
+    animateGameOver();
+    gameoverT = false;
     ctx.restore();
   }
 }
