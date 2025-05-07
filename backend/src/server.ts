@@ -22,7 +22,6 @@ import type { FastifyPluginAsync } from 'fastify';
 import { friendsRoutes } from './routes/friends.js';
 export const JWT_SECRET = process.env.JWT_SECRET || ''
 export const HOSTNAME = process.env.HOSTNAME || 'localhost'
-import { setupGeneralSocket } from './sockets/generalSocket.js';
 
 // Créer l'application Fastify
 const app = fastify({
@@ -305,8 +304,6 @@ app.get('/api/games/:gameId/rankings', async (request: FastifyRequest, reply: Fa
 // SOCKET ROUTES //
 ///////////////////
 
-export const generalNs = app.io.of('/general');
-setupGeneralSocket();
 
 ////////////////////////////////////////////////
 //                Matchmaking                 //

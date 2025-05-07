@@ -7,7 +7,6 @@ import { LoginManager } from '../managers/loginManager.js';
 import { setupProfileModal } from '../modals/profile/profileModal.js';
 import api from '../helpers/api.js';
 import { HOSTNAME } from '../main.js';
-import { socket } from '../sockets/socket.js';
 
 let boolprofileMenu = false;
 function changeActiveButton(newButton: HTMLElement, newActiveButton: HTMLElement)

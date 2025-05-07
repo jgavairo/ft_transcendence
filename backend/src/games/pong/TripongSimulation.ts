@@ -32,7 +32,7 @@ export function startTriMatch(socks: Socket[], nsp: Namespace): TriMatchState {
   const state: TriMatchState = { roomId, paddles, ball, gameOver: false };
   setTimeout(() => {
     resetTriBall(ball);
-  }, 3600);
+  }, 4000);
   return state;
 }
 

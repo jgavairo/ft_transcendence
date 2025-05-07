@@ -13,15 +13,7 @@ export class UserLibraryManager {
         if (stored) {
             return JSON.parse(stored);
         }
-        const newLibrary = {
-            id: 0,
-            userName: 'jgavairo',
-            email: 'jgavairo@student.42.fr',
-            profilePicture: '../assets/profile_pictures/default.png',
-            library: [],
-        };
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newLibrary));
-        return newLibrary;
+        return null;
     }
     static async hasGame(gameId) {
         console.log("Checking if game is in library:", gameId);
