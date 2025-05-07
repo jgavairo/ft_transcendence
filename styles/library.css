@@ -337,3 +337,32 @@
   cursor: pointer;
   z-index: 10;
 }
+
+/* Centrer le bouton "Go to My Rank" */
+.scrollButton {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #ffffff;
+  background: linear-gradient(to right, #3895eb, #195887);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin: 1rem auto; /* Centrer horizontalement avec auto */
+  display: block; /* Nécessaire pour que le margin auto fonctionne */
+  text-align: center;
+}
+
+.scrollButton:hover {
+  background: linear-gradient(to right, #195887, #3895eb);
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.scrollButton:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}

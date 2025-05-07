@@ -37,7 +37,7 @@ export function startTriMatch(socks: Socket[], nsp: Namespace): TriMatchState {
 }
 
 
-export function updateTriMatch(match: TriMatchState) {
+export function updateTriMatch(match: TriMatchState, nsp: Namespace): void {
     // --- 1) PADDLES : mouvement + collision entre paddles ---
     const ARC_WIDTH = 2 * ARC_HALF;
     const minSep = ARC_WIDTH;
@@ -138,7 +138,7 @@ export function updateTriMatch(match: TriMatchState) {
           }
         });
         if (idx >= 0) match.paddles[idx].lives--;
-
+        nsp.to(match.roomId).emit('ballExplode', { x: b.x, y: b.y });
         resetTriBall(b);
       }
     }

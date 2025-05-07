@@ -1,4 +1,5 @@
 import { socket } from './network.js';
+import { createExplosion } from './ballExplosion.js';
 // Variables réseau
 let mySide = -1;
 let roomId;
@@ -205,6 +206,15 @@ export function renderTriPong(state) {
     ctx.arc(bx, by, 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+    explosion.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = 'orange';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
     // 6) static hearts for lives
     state.paddles.forEach((p, i) => {
         const label = fromPolar(p.phi, R + 25);
@@ -224,6 +234,11 @@ export function renderTriPong(state) {
         ctx.restore();
     }
 }
+let explosion = [];
+// Listen for server burst
+socket.on('ballExplode', ({ x, y }) => {
+    createExplosion(x, y);
+});
 // Convertit coordonnées polaires (phi,r) → cartésiennes
 function fromPolar(phi, r) {
     return {
