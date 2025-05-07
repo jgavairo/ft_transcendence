@@ -7,14 +7,49 @@ import { LoginManager } from '../managers/loginManager.js';
 import { setupProfileModal } from '../modals/profile/profileModal.js';
 import api from '../helpers/api.js';
 import { HOSTNAME } from '../main.js';
-let boolprofileMenu = false;
+import { io } from 'socket.io-client';
+import { renderPeopleList } from '../pages/community/peopleList.js';
+export let boolprofileMenu = false;
 function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');
     newActiveButton.classList.replace('button', 'activebutton');
 }
-export function setupHeader() {
+let notificationSocket = null;
+export async function setupHeader() {
     attachNavigationListeners();
     setupProfileButton();
+    const response = await api.get(`http://${HOSTNAME}:3000/api/user/infos`);
+    const data = await response.json();
+    notificationSocket = io(`http://${HOSTNAME}:3000/notification`, {
+        transports: ['websocket', 'polling'],
+        withCredentials: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+    });
+    notificationSocket.on("connect", () => {
+        console.log("Connected to Socket.IO server");
+    });
+    notificationSocket.on("connect_error", (error) => {
+        console.error("Socket.IO connection error:", error);
+    });
+    notificationSocket.on("error", (error) => {
+        console.error("Socket.IO error:", error);
+    });
+    notificationSocket.on("friendNotification", (data) => {
+        console.log("friendNotification", data.message);
+        if (data.message)
+            showNotification(data.message);
+        renderPeopleList();
+    });
+    if (data && data.success)
+        notificationSocket.emit('register', { username: data.user.username });
+}
+export function disconnectNotificationSocket() {
+    if (notificationSocket) {
+        notificationSocket.disconnect();
+        notificationSocket = null;
+    }
 }
 function attachNavigationListeners() {
     const profilewindow = document.getElementById('profileMenu');
@@ -106,6 +141,7 @@ export function setupProfileButton() {
                         if (!main)
                             return;
                         main.innerHTML = "";
+                        disconnectNotificationSocket();
                         LoginManager.showLoginModal();
                     }
                     else {
@@ -131,6 +167,3 @@ export function setupProfileButton() {
         }
     });
 }
-document.addEventListener('DOMContentLoaded', () => {
-    setupHeader();
-});

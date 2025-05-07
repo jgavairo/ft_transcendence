@@ -9,8 +9,6 @@ import { dbManager } from "./database/database.js";
 import { userRoutes, ChangePasswordRequest } from "./routes/user.js";
 import { authRoutes, googleAuthHandler } from "./routes/authentification.js";
 import { profileRoutes } from './routes/profile.js';
-import { startMatch, MatchState } from "./games/pong/gameSimulation.js";
-import { startTriMatch, updateTriMatch, TriMatchState } from './games/pong/TripongSimulation.js';
 import fs from 'fs';
 import { authMiddleware } from './middleware/auth.js';
 import { chatRoutes } from './routes/chat.js';
@@ -24,7 +22,7 @@ export const JWT_SECRET = process.env.JWT_SECRET || ''
 export const HOSTNAME = process.env.HOSTNAME || 'localhost'
 
 // Créer l'application Fastify
-const app = fastify({
+export const app = fastify({
     logger: true,
     bodyLimit: 10 * 1024 * 1024 // 10MB
 });
@@ -321,6 +319,8 @@ app.get('/api/hostname', async (request: FastifyRequest, reply: FastifyReply) =>
 //              SERVER START              //
 ////////////////////////////////////////////
 
+export const userSocketMap = new Map<string, string>();
+
 const start = async () => {
     try 
     {
@@ -330,12 +330,15 @@ const start = async () => {
         await app.listen({ port: 3000, host: '0.0.0.0' });
         console.log('Fastify server + Socket.IO OK sur port 3000');
 
-        // Gestion des événements Socket.IO
+        ////////////////////////////////
+        //         CHAT SOCKET        //
+        ////////////////////////////////
         const chatNs = app.io.of('/chat');
         chatNs.on('connection', (socket: Socket) => {
 
             socket.on('sendMessage', async (data, callback) => {
-                try {
+                try 
+                {
                     // Sauvegarder le message dans la base de données
                     await dbManager.saveMessage(data.author, data.content);
                     
@@ -361,6 +364,38 @@ const start = async () => {
                 console.log('Client disconnected:', socket.id);
             });
         });
+        /////////////////////////////////////////////////////////////////////////
+
+        ////////////////////////////////
+        //    NOTIFICATION SOCKET     //
+        ////////////////////////////////
+        const notificationNs = app.io.of('/notification');
+
+
+        notificationNs.on('connection', (socket: Socket) => {
+
+            console.log("Notification namespace connected:", socket.id);
+
+            socket.on('disconnect', () => {
+                console.log('Client disconnected in notification namespace:', socket.id);
+                for (const [username, id] of userSocketMap.entries())
+                {
+                    if (id === socket.id)
+                    {
+                        userSocketMap.delete(username);
+                        console.log('User [', username, '] removed from userSocketMap, socketID [', socket.id, ']');
+                        break;
+                    }
+                }
+            });
+
+            socket.on('register', (data) => {
+                console.log("Register event received in notification namespace:", data);
+                userSocketMap.set(data.username, socket.id);
+                console.log("notification namespace userSocketMap:", JSON.stringify(Array.from(userSocketMap.entries())));
+            });
+        });
+        /////////////////////////////////////////////////////////////////////////
     } catch (err) {
         console.error('Error while starting the server:', err);
         process.exit(1);
