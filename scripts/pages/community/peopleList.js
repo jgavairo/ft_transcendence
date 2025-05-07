@@ -73,7 +73,7 @@ export async function renderPeopleList(filter = "") {
             overlay.appendChild(overlayText);
             // Ajouter un événement pour afficher la carte "profil"
             profileContainer.addEventListener("click", () => {
-                showProfileCard(person.username, person.profile_picture, person.email, person.bio);
+                showProfileCard(person.username, person.profile_picture, person.email, person.bio, person.id);
             });
             // Ajouter les éléments au conteneur
             profileContainer.appendChild(img);
@@ -217,7 +217,7 @@ export function setupSearchInput() {
         renderPeopleList(input.value);
     });
 }
-export function showProfileCard(username, profilePicture, email, bio) {
+export async function showProfileCard(username, profilePicture, email, bio, userId) {
     // Vérifiez si une carte existe déjà et la supprimez
     let existingCard = document.getElementById("profileOverlay");
     if (existingCard) {
@@ -261,12 +261,44 @@ export function showProfileCard(username, profilePicture, email, bio) {
     closeButton.addEventListener("click", () => {
         overlay.remove();
     });
+    // Ajoutez une section pour les statistiques
+    const statsSection = document.createElement("div");
+    statsSection.className = "profile-card-stats";
+    statsSection.textContent = "Loading stats...";
+    // Récupérez les statistiques de l'utilisateur
+    try {
+        const response = await fetch(`http://${HOSTNAME}:3000/api/games/1/rankings`, {
+            credentials: 'include',
+        });
+        const rankings = await response.json();
+        const userStats = rankings.find((ranking) => ranking.userId === userId);
+        if (userStats) {
+            const { win, loss } = userStats;
+            const playedGames = win + loss;
+            const ratio = loss === 0 ? win : (win / loss).toFixed(2);
+            statsSection.innerHTML = `
+                <h4>1vs1 Online Stats</h4>
+                <p><strong>Wins:</strong> ${win}</p>
+                <p><strong>Losses:</strong> ${loss}</p>
+                <p><strong>Games Played:</strong> ${playedGames}</p>
+                <p><strong>Win/Loss Ratio:</strong> ${ratio}</p>
+            `;
+        }
+        else {
+            statsSection.textContent = "No stats available.";
+        }
+    }
+    catch (error) {
+        console.error("Error fetching user stats:", error);
+        statsSection.textContent = "Failed to load stats.";
+    }
     // Ajoutez les éléments à la carte
     card.appendChild(closeButton);
     card.appendChild(img);
     card.appendChild(name);
     card.appendChild(emailElement);
     card.appendChild(bioElement);
+    card.appendChild(statsSection);
     // Ajoutez la carte à l'overlay
     overlay.appendChild(card);
     // Ajoutez l'overlay au body

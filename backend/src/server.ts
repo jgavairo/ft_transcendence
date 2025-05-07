@@ -281,6 +281,22 @@ app.post('/api/games/incrementWins', { preHandler: authMiddleware }, async (requ
     }
 });
 
+app.post('/api/games/incrementLosses', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const { gameId, userId } = request.body as { gameId: number; userId: number };
+
+        if (!gameId || !userId) {
+            return reply.status(400).send({ error: 'gameId and userId are required' });
+        }
+
+        await dbManager.incrementPlayerLosses(gameId, userId);
+        return reply.status(200).send({ success: true, message: `Player ${userId}'s losses incremented for game ${gameId}` });
+    } catch (error) {
+        console.error('Error incrementing player losses:', error);
+        return reply.status(500).send({ error: 'Failed to increment player losses' });
+    }
+});
+
 app.get('/api/games/:gameId/rankings', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
         const { gameId } = request.params as { gameId: string };
@@ -403,3 +419,24 @@ const start = async () => {
 };
 
 start();
+
+app.post('/api/match/addToHistory', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const { user1Id, user2Id, user1Lives, user2Lives } = request.body as {
+            user1Id: number;
+            user2Id: number;
+            user1Lives: number;
+            user2Lives: number;
+        };
+
+        if (!user1Id || !user2Id || user1Lives === undefined || user2Lives === undefined) {
+            return reply.status(400).send({ error: 'Missing required fields' });
+        }
+
+        await dbManager.addMatchToHistory(user1Id, user2Id, user1Lives, user2Lives);
+        return reply.status(200).send({ success: true, message: 'Match added to history' });
+    } catch (error) {
+        console.error('Error adding match to history:', error);
+        return reply.status(500).send({ error: 'Failed to add match to history' });
+    }
+});
