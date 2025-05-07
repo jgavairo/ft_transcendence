@@ -35,14 +35,24 @@ let firstFrame = false;
 
 export let gameover = false;
 
+// ID des joueurs
+let user1Id: string | null = null; // ID du joueur 1
+let user2Id: string | null = null; // ID du joueur 2
+
 // Initialise la connexion Socket.IO et les handlers
 export function connectPong() {
   socket.on('matchFound', (data) => {
     soloMode = data.mode === 'solo';
-    mySide   = soloMode ? 0 : data.side;
+    mySide = soloMode ? 0 : data.side;
     lastState = null;
     ready = false;
     firstFrame = false;
+
+    // Stocker les IDs des joueurs
+    user1Id = data.user1Id;
+    user2Id = data.user2Id;
+
+    console.log('Match found:', { user1Id, user2Id });
 
     startPong();
     performCountdown().then(() => {
@@ -192,16 +202,17 @@ async function renderGameOverMessage(state: MatchState) {
   ctx.font = '48px Arial';
   ctx.fillText(message, CX, CY);
 
-  // Si le joueur a gagné, appeler l'API incrementWins
-  if (player.lives > 0) {
-    try {
-      // Récupérer l'utilisateur actuel via GameManager
-      const currentUser = await GameManager.getCurrentUser();
-      if (!currentUser || !currentUser.id) {
-        console.error('Impossible de récupérer l\'utilisateur actuel.');
-        return;
-      }
+  try {
+    // Récupérer l'utilisateur actuel via GameManager
+    const currentUser = await GameManager.getCurrentUser();
+    if (!currentUser || !currentUser.id) {
+      console.error('Impossible de récupérer l\'utilisateur actuel.');
+      return;
+    }
 
+    // Appeler l'API en fonction du résultat
+    if (player.lives > 0) {
+      // Victoire : appeler incrementWins
       const response = await fetch('/api/games/incrementWins', {
         method: 'POST',
         headers: {
@@ -219,9 +230,28 @@ async function renderGameOverMessage(state: MatchState) {
       } else {
         console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
       }
-    } catch (error) {
-      console.error('Erreur réseau lors de l\'enregistrement de la victoire:', error);
+    } else {
+      // Défaite : appeler incrementLosses
+      const response = await fetch('/api/games/incrementLosses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Utilise les cookies pour l'authentification
+        body: JSON.stringify({
+          gameId: 1, // ID du jeu (Pong)
+          userId: currentUser.id, // Utiliser l'ID utilisateur actuel
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Défaite enregistrée avec succès.');
+      } else {
+        console.error('Erreur lors de l\'enregistrement de la défaite:', await response.json());
+      }
     }
+  } catch (error) {
+    console.error('Erreur réseau lors de l\'enregistrement du résultat:', error);
   }
 }
 
