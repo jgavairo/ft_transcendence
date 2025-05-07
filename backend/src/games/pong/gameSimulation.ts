@@ -20,7 +20,7 @@ const P_SPEED        = Math.PI/180 * 2;
 const MAX_DEFLECTION = Math.PI / 6;
 
 export function startMatch(socks: Socket[], nsp: Namespace): MatchState {
-  const roomId = `circ_${Date.now()}`;
+  const roomId = `${Date.now()}`;
   socks.forEach(s => s.join(roomId));
 
   // Deux paddles à 90° et 270°
@@ -37,7 +37,7 @@ export function startMatch(socks: Socket[], nsp: Namespace): MatchState {
   return state;
 }
 
-export function updateMatch(match: MatchState) {
+export function updateMatch(match: MatchState, nsp: Namespace): void {
   const normalize = (φ: number) => (φ % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
   const signedDiff = (a: number, b: number) => {
     let d = normalize(a) - normalize(b);
@@ -121,6 +121,7 @@ export function updateMatch(match: MatchState) {
         b.vy = speed * Math.sin(phiR);
       } else {
         // raté → perte d’une vie du plus proche
+        const explosion = { x: match.ball.x, y: match.ball.y };
         let idx = -1, best = Infinity;
         match.paddles.forEach((p, i) => {
           if (p.lives > 0) {
@@ -129,6 +130,7 @@ export function updateMatch(match: MatchState) {
           }
         });
         if (idx >= 0) match.paddles[idx].lives--;
+        nsp.to(match.roomId).emit('ballExplode', { x: b.x, y: b.y });
         resetBall(b);
       }
     }

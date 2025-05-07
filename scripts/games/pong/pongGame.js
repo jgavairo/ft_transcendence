@@ -1,13 +1,14 @@
 import { displayMenu } from './DisplayMenu.js';
 import { socket } from './network.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
+import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
 // Variables réseau
 let mySide;
 let roomId;
 let soloMode = false;
 // Canvas et contexte
 let canvas;
-let ctx;
+export let ctx;
 // Constantes de rendu (synchronisées avec le serveur)
 const CW = 1185;
 const CH = 785;
@@ -19,6 +20,7 @@ const ARC_HALF = Math.PI / 18; // demi-angle du paddle
 let ready = false; // on ne dessine qu'une fois le countdown fini
 let lastState = null;
 let firstFrame = false;
+export let gameover = false;
 // Initialise la connexion Socket.IO et les handlers
 export function connectPong() {
     socket.on('matchFound', (data) => {
@@ -239,6 +241,15 @@ export function renderPong(state) {
     ctx.arc(bx, by, 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+    explosion.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = 'orange';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
     // 6) vies (cœurs) avec effet de scale
     state.paddles.forEach((p, i) => {
         const label = fromPolar(p.phi, R + 25);
@@ -250,11 +261,8 @@ export function renderPong(state) {
     if (state.gameOver) {
         ctx.save();
         ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(0, 0, CW, CH);
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.font = 'bold 48px Arial';
-        ctx.fillText('Game Finish', CX, CY);
+        gameover = true;
+        animateGameOver();
         ctx.restore();
         renderGameOverMessage(state);
     }
@@ -286,6 +294,11 @@ function drawHeart(x, y, sz, fill) {
     }
     ctx.restore();
 }
+// A simple particle‐based explosion with random colors & sizes
+// Listen for server burst
+socket.on('ballExplode', ({ x, y }) => {
+    createExplosion(x, y);
+});
 document.addEventListener('DOMContentLoaded', () => {
     displayMenu();
 });

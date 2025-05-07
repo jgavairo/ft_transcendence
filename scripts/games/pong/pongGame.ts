@@ -1,6 +1,7 @@
 import { displayMenu } from './DisplayMenu.js';
 import { socket } from './network.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
+import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
 
 // Interface de l'état de partie reçue du serveur
 export interface MatchState {
@@ -17,7 +18,7 @@ let soloMode = false;
 
 // Canvas et contexte
 let canvas: HTMLCanvasElement;
-let ctx: CanvasRenderingContext2D;
+export let ctx: CanvasRenderingContext2D;
 
 // Constantes de rendu (synchronisées avec le serveur)
 const CW = 1185;
@@ -31,6 +32,8 @@ const ARC_HALF = Math.PI / 18;      // demi-angle du paddle
 let ready = false;  // on ne dessine qu'une fois le countdown fini
 let lastState: MatchState | null = null;
 let firstFrame = false;
+
+export let gameover = false;
 
 // Initialise la connexion Socket.IO et les handlers
 export function connectPong() {
@@ -281,6 +284,16 @@ export function renderPong(state: MatchState) {
   ctx.fill();
   ctx.restore();
 
+  explosion.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle   = 'orange';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+
   // 6) vies (cœurs) avec effet de scale
   state.paddles.forEach((p, i) => {
     const label = fromPolar(p.phi, R + 25);
@@ -293,11 +306,8 @@ export function renderPong(state: MatchState) {
   if (state.gameOver) {
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-    ctx.fillRect(0, 0, CW, CH);
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 48px Arial';
-    ctx.fillText('Game Finish', CX, CY);
+    gameover = true;
+    animateGameOver();
     ctx.restore();
     renderGameOverMessage(state);
   }
@@ -332,6 +342,16 @@ function drawHeart(x: number, y: number, sz: number, fill: boolean) {
   }
   ctx.restore();
 }
+
+// A simple particle‐based explosion with random colors & sizes
+
+
+// Listen for server burst
+socket.on('ballExplode', ({ x, y }: { x:number, y:number }) => {
+  createExplosion(x, y);
+});
+
+
 
 document.addEventListener('DOMContentLoaded', () => {
   displayMenu();

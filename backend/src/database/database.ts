@@ -69,7 +69,7 @@ export class DatabaseManager
                         id: 1,
                         name: "Pong",
                         price: 0,
-                        description: "Pong is a two-dimensional sports game that simulates table tennis. The player controls an in-game paddle by moving it vertically along the left or right side of the screen, and can use the paddle to hit a ball back and forth across the screen. The goal is to manoeuvre the ball past the opponent's paddle and into the opposing side's court, and to prevent the ball from being hit back into their own court.",
+                        description: "Pong is a two-dimensional sports game that simulates table tennis. The player controls an in-game paddle by moving it vertically along the left or right side of the screen, and can use the paddle to hit a ball back and forth across the screen. The goal is to manoeuvre the ball past the opponent's paddle and into the opposing side's court, and to prevent the ball from being hit back into their own court",
                         image: "../../assets/games/pong/pong.png",
                     },
                     {
@@ -195,21 +195,14 @@ export class DatabaseManager
         }
     }
 
-    public async addGameToLibrary(userId: number, gameId: number): Promise<void>
-    {
+    public async addGameToLibrary(userId: number, gameId: number): Promise<void> {
         if (!this.db)
             throw new Error('Database not initialized');
         
         // Ajouter le jeu à la bibliothèque de l'utilisateur
         const library = await this.getUserLibrary(userId);
-        console.log("Library before adding game:", library);
-        
-        if (!library.includes(gameId)) 
-        {  // Éviter les doublons
+        if (!library.includes(gameId)) { // Éviter les doublons
             library.push(gameId);
-            console.log("Library after adding game:", library);
-            
-            // Mettre à jour la bibliothèque de l'utilisateur
             await this.db.run(
                 'UPDATE users SET library = ? WHERE id = ?',
                 [JSON.stringify(library), userId]
@@ -232,13 +225,24 @@ export class DatabaseManager
 
         if (!userIds.includes(userId)) {
             userIds.push(userId);
-            console.log("Updated user_ids for game:", userIds);
-
-            // Mettre à jour la colonne user_ids dans la table games
             await this.db.run(
                 'UPDATE games SET user_ids = ? WHERE id = ?',
                 [JSON.stringify(userIds), gameId]
             );
+        }
+
+        // Ajouter une entrée dans game_user_rankings avec un score initial de 0
+        const existingRanking = await this.db.get(
+            'SELECT * FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
+            [gameId, userId]
+        );
+
+        if (!existingRanking) {
+            await this.db.run(
+                'INSERT INTO game_user_rankings (game_id, user_id, ranking) VALUES (?, ?, ?)',
+                [gameId, userId, 0]
+            );
+            console.log(`User ${userId} added to rankings for game ${gameId} with a score of 0.`);
         }
     }
 
