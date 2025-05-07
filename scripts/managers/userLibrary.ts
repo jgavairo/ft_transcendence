@@ -21,24 +21,14 @@ export class UserLibraryManager
         return null;
     }
 
-    static getUser(): UserLibrary
+    static getUser(): UserLibrary | null
     {
         const stored = localStorage.getItem(this.STORAGE_KEY);
         if (stored) 
         {
             return JSON.parse(stored);
         }
-
-        const newLibrary: UserLibrary = {
-            id: 0,
-            userName: 'jgavairo',
-            email: 'jgavairo@student.42.fr',
-            profilePicture: '../assets/profile_pictures/default.png',
-            library: [],
-        };
-
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newLibrary));
-        return newLibrary;
+        return null;
     }
     
 

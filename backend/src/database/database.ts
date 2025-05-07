@@ -268,9 +268,27 @@ export class DatabaseManager
 
     //********************COMMUNITY-PART*******************************
 
+    
+    public async getAllUsernames(): Promise<string[]>
+    {
+        if (!this.db) throw new Error('Database not initialized');
+        
+        const result = await this.db.all('SELECT username FROM users');
+        return result.map((row: { username: string }) => row.username);
+    }
+
+    public async getAllUsernamesWithIds(): Promise<{ id: number, username: string, profile_picture: string, email: string, bio: string }[]> {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.all('SELECT id, username, profile_picture, email, bio FROM users');
+        return result;
+    }
+    
+    //********************FRIENDS-PART*******************************
+    
     public async isFriend(userId: number, targetId: number): Promise<boolean>
     {
         if (!this.db) throw new Error('Database not initialized');
+
         const result = await this.db.get('SELECT friends FROM users WHERE id = ?', [userId]);
         if (!result)
             throw new Error('User not found');
@@ -281,14 +299,22 @@ export class DatabaseManager
     public async isRequesting(userId: number, targetId: number): Promise<boolean>
     {
         if (!this.db) throw new Error('Database not initialized');
+
         const result = await this.db.get('SELECT attempting_friend_ids FROM users WHERE id = ?', [userId]);
+        if (!result)
+            throw new Error('User not found');
+
         return result.attempting_friend_ids.includes(targetId);
     }
 
     public async isRequested(userId: number, targetId: number): Promise<boolean>
     {
         if (!this.db) throw new Error('Database not initialized');
+
         const result = await this.db.get('SELECT friend_requests FROM users WHERE id = ?', [userId]);
+        if (!result)
+            throw new Error('User not found');
+
         return result.friend_requests.includes(targetId);
     }
 
@@ -302,139 +328,124 @@ export class DatabaseManager
 
         if (!userData || !targetData) throw new Error('User not found');
 
-        // S'assurer que nous avons des tableaux valides
         const userFriends = Array.isArray(userData.friends) ? userData.friends : JSON.parse(userData.friends || '[]');
         const userRequests = Array.isArray(userData.friend_requests) ? userData.friend_requests : JSON.parse(userData.friend_requests || '[]');
         const targetFriends = Array.isArray(targetData.friends) ? targetData.friends : JSON.parse(targetData.friends || '[]');
         const targetAttempting = Array.isArray(targetData.attempting_friend_ids) ? targetData.attempting_friend_ids : JSON.parse(targetData.attempting_friend_ids || '[]');
 
-        // Vérifier que la demande est toujours valide
-        if (!targetAttempting.includes(userId) || !userRequests.includes(targetId)) {
+        if (!targetAttempting.includes(userId) || !userRequests.includes(targetId)) 
             throw new Error('Friend request is no longer valid');
-        }
 
-        // Mettre à jour les amis de l'utilisateur
         const updatedUserFriends = [...userFriends, targetId];
-        await this.db.run('UPDATE users SET friends = ? WHERE id = ?', 
-            [JSON.stringify(updatedUserFriends), userId]);
-
-        // Mettre à jour les amis de la cible
         const updatedTargetFriends = [...targetFriends, userId];
-        await this.db.run('UPDATE users SET friends = ? WHERE id = ?', 
-            [JSON.stringify(updatedTargetFriends), targetId]);
-
-        // Supprimer la demande de l'utilisateur
         const updatedUserRequests = userRequests.filter((id: number) => id !== targetId);
-        await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', 
-            [JSON.stringify(updatedUserRequests), userId]);
-
-        // Supprimer l'ID de la liste des tentatives de la cible
         const updatedTargetAttempting = targetAttempting.filter((id: number) => id !== userId);
-        await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', 
-            [JSON.stringify(updatedTargetAttempting), targetId]);
+        
+        await Promise.all
+        ([    
+            this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', [JSON.stringify(updatedTargetAttempting), targetId]),
+            this.db.run('UPDATE users SET friends = ? WHERE id = ?', [JSON.stringify(updatedUserFriends), userId]),
+            this.db.run('UPDATE users SET friends = ? WHERE id = ?', [JSON.stringify(updatedTargetFriends), targetId]),
+            this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', [JSON.stringify(updatedUserRequests), userId])
+        ]);
     }
-    
-    public async getAllUsernames(): Promise<string[]>
-    {
-        if (!this.db) throw new Error('Database not initialized');
-
-        const result = await this.db.all('SELECT username FROM users');
-        return result.map((row: { username: string }) => row.username);
-    }
-
-    public async getAllUsernamesWithIds(): Promise<{ id: number, username: string, profile_picture: string, email: string, bio: string }[]> {
-        if (!this.db) throw new Error('Database not initialized');
-        const result = await this.db.all('SELECT id, username, profile_picture, email, bio FROM users');
-        return result;
-    }
-    
-    //********************FRIENDS-PART*******************************
 
     public async sendFriendRequest(senderId: number, receiverId: number): Promise<void>
     {
-        if (!this.db) throw new Error('Database not initialized');
-        const result = await this.db.get('SELECT friend_requests, attempting_friend_ids FROM users WHERE id = ?', [senderId]);
-        if (result)
-        {
-            if (result.friend_requests.includes(receiverId) || result.attempting_friend_ids.includes(receiverId))
-                throw new Error('Friend request already exists');
-        }
+        if (!this.db) 
+            throw new Error('Database not initialized');
 
-        const result2 = await this.db.get('SELECT friends FROM users WHERE id = ?', [receiverId]);
-        if (result2)
-        {
-            if (result2.friends.includes(senderId))
-                throw new Error('User is already friends');
-        }
-        await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', [JSON.stringify([...result.friend_requests, senderId]), receiverId]);
-        await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', [JSON.stringify([...result.attempting_friend_ids, receiverId]), senderId]);
+        const userData = await this.db.get('SELECT friends, friend_requests, attempting_friend_ids FROM users WHERE id = ?', [senderId]);
+        const targetData = await this.db.get('SELECT friends, friend_requests, attempting_friend_ids FROM users WHERE id = ?', [receiverId]);
+
+        if (!userData || !targetData)
+            throw new Error('User not found');
+
+        const userFriends = Array.isArray(userData.friends) ? userData.friends : JSON.parse(userData.friends || '[]');
+        const userAttemptingFriends = Array.isArray(userData.attempting_friend_ids) ? userData.attempting_friend_ids : JSON.parse(userData.attempting_friend_ids || '[]');
+
+        const targetFriends = Array.isArray(targetData.friends) ? targetData.friends : JSON.parse(targetData.friends || '[]');
+        const targetFriendRequests = Array.isArray(targetData.friend_requests) ? targetData.friend_requests : JSON.parse(targetData.friend_requests || '[]');
+        const targetAttemptingFriends = Array.isArray(targetData.attempting_friend_ids) ? targetData.attempting_friend_ids : JSON.parse(targetData.attempting_friend_ids || '[]');
+    
+        if (userAttemptingFriends.includes(receiverId) || targetFriendRequests.includes(senderId))
+            throw new Error('Friend request already exists');
+
+        if (targetFriends.includes(senderId) || userFriends.includes(receiverId))
+            throw new Error('Already friends');
+
+        if (targetAttemptingFriends.includes(senderId))
+            throw new Error('Request already received from this user');
+
+        await Promise.all
+        ([
+            this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', [JSON.stringify([...targetFriendRequests, senderId]), receiverId]),
+            this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', [JSON.stringify([...userAttemptingFriends, receiverId]), senderId])
+        ]);
     }
     
     public async removeFriend(userId: number, targetId: number): Promise<void>
     {
         if (!this.db) throw new Error('Database not initialized');
         
-        // Vérifier si les utilisateurs sont amis
-        const isFriend = await this.isFriend(userId, targetId);
-        if (!isFriend) {
-            throw new Error('Users are not friends');
-        }
+        const userData = await this.db.get('SELECT friends, friend_requests, attempting_friend_ids FROM users WHERE id = ?', [userId]);
+        const targetData = await this.db.get('SELECT friends, friend_requests, attempting_friend_ids FROM users WHERE id = ?', [targetId]);
         
-        // Récupérer les données actuelles
-        const userData = await this.db.get('SELECT friends FROM users WHERE id = ?', [userId]);
-        const targetData = await this.db.get('SELECT friends FROM users WHERE id = ?', [targetId]);
-        
-        if (!userData || !targetData) throw new Error('User not found');
-        
-        // S'assurer que nous avons des tableaux valides
+        if (!userData || !targetData)
+            throw new Error('User not found');
+
         const userFriends = Array.isArray(userData.friends) ? userData.friends : JSON.parse(userData.friends || '[]');
+        const userAttemptingFriends = Array.isArray(userData.attempting_friend_ids) ? userData.attempting_friend_ids : JSON.parse(userData.attempting_friend_ids || '[]');
+
         const targetFriends = Array.isArray(targetData.friends) ? targetData.friends : JSON.parse(targetData.friends || '[]');
+        const targetFriendRequests = Array.isArray(targetData.friend_requests) ? targetData.friend_requests : JSON.parse(targetData.friend_requests || '[]');
+        const targetAttemptingFriends = Array.isArray(targetData.attempting_friend_ids) ? targetData.attempting_friend_ids : JSON.parse(targetData.attempting_friend_ids || '[]');
+
+        if (!userFriends.includes(targetId) || !targetFriends.includes(userId))
+            throw new Error('Not friends');
         
-        // Mettre à jour les amis de l'utilisateur
         const updatedUserFriends = userFriends.filter((id: number) => id !== targetId);
-        await this.db.run('UPDATE users SET friends = ? WHERE id = ?', 
-            [JSON.stringify(updatedUserFriends), userId]);
+        const updatedTargetFriends = targetFriends.filter((id: number) => id !== userId);
+        
+        await Promise.all
+        ([
+            this.db.run('UPDATE users SET friends = ? WHERE id = ?', [JSON.stringify(updatedUserFriends), userId]),
+            this.db.run('UPDATE users SET friends = ? WHERE id = ?', [JSON.stringify(updatedTargetFriends), targetId])
+        ]);
+    }
+
+    public async cancelFriendRequest(userId: number, targetId: number): Promise<void>
+    {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const userData = await this.db.get('SELECT friends, friend_requests, attempting_friend_ids FROM users WHERE id = ?', [userId]);
+        const targetData = await this.db.get('SELECT friends, friend_requests, attempting_friend_ids FROM users WHERE id = ?', [targetId]);
+
+        if (!userData || !targetData)
+            throw new Error('User not found');
+
+        const userAttempting = Array.isArray(userData.attempting_friend_ids) ? userData.attempting_friend_ids : JSON.parse(userData.attempting_friend_ids || '[]');
+        const targetRequests = Array.isArray(targetData.friend_requests) ? targetData.friend_requests : JSON.parse(targetData.friend_requests || '[]');
+
+        const updatedUserAttempting = userAttempting.filter((id: number) => id !== targetId);
+        const updatedTargetRequests = targetRequests.filter((id: number) => id !== userId);
+
+        await Promise.all
+        ([
+            this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', [JSON.stringify(updatedUserAttempting), userId]),
+            this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', [JSON.stringify(updatedTargetRequests), targetId])
+        ]);
+    }
             
-            // Mettre à jour les amis de la cible
-            const updatedTargetFriends = targetFriends.filter((id: number) => id !== userId);
-            await this.db.run('UPDATE users SET friends = ? WHERE id = ?', 
-                [JSON.stringify(updatedTargetFriends), targetId]);
-            }
-
-            public async cancelFriendRequest(userId: number, targetId: number): Promise<void>
-            {
-                if (!this.db) throw new Error('Database not initialized');
-
-                // Récupérer les données actuelles
-                const userData = await this.db.get('SELECT attempting_friend_ids FROM users WHERE id = ?', [userId]);
-                const targetData = await this.db.get('SELECT friend_requests FROM users WHERE id = ?', [targetId]);
-
-                if (!userData || !targetData) throw new Error('User not found');
-
-                // S'assurer que nous avons des tableaux valides
-                const userAttempting = Array.isArray(userData.attempting_friend_ids) ? userData.attempting_friend_ids : JSON.parse(userData.attempting_friend_ids || '[]');
-                const targetRequests = Array.isArray(targetData.friend_requests) ? targetData.friend_requests : JSON.parse(targetData.friend_requests || '[]');
-
-                // Supprimer l'ID de la liste des tentatives de l'utilisateur
-                const updatedUserAttempting = userAttempting.filter((id: number) => id !== targetId);
-                await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', 
-                    [JSON.stringify(updatedUserAttempting), userId]);
-
-                // Supprimer l'ID de la liste des demandes de la cible
-                const updatedTargetRequests = targetRequests.filter((id: number) => id !== userId);
-                await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', 
-                    [JSON.stringify(updatedTargetRequests), targetId]);
-            }
-            
-            //********************MESSAGES-PART*******************************
-            
-            public async saveMessage(author: string, content: string): Promise<void> {
-                if (!this.db) throw new Error('Database not initialized');
-                await this.db.run(
-                    'INSERT INTO messages (author, content) VALUES (?, ?)',
-                    [author, content]
-                );
-            }
+    //********************MESSAGES-PART*******************************
+    
+    public async saveMessage(author: string, content: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        await this.db.run(
+            'INSERT INTO messages (author, content) VALUES (?, ?)',
+            [author, content]
+        );
+    }
     
     public async getLastMessages(limit: number = 10): Promise<{ author: string, content: string, timestamp: string }[]> {
         if (!this.db) throw new Error('Database not initialized');
