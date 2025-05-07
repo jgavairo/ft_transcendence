@@ -540,14 +540,14 @@ export class DatabaseManager
         }
     }
 
-    public async getUserRankingsByGame(gameId: number): Promise<{ userId: number, win: number }[]> {
+    public async getUserRankingsByGame(gameId: number): Promise<{ userId: number, win: number, loss: number }[]> {
         if (!this.db) throw new Error('Database not initialized');
-
+    
         const result = await this.db.all(
-            'SELECT user_id AS userId, win FROM game_user_rankings WHERE game_id = ? ORDER BY win DESC',
+            'SELECT user_id AS userId, win, loss FROM game_user_rankings WHERE game_id = ? ORDER BY win DESC',
             [gameId]
         );
-
+    
         return result;
     }
 
