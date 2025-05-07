@@ -3,6 +3,7 @@ import { FastifyRequest } from "fastify";
 import { AuthenticatedRequest } from "./user";
 import { authMiddleware } from "../middleware/auth.js";
 import { dbManager } from "../database/database.js";
+import { app, userSocketMap } from "../server.js";
 
 
 
@@ -34,6 +35,21 @@ async function sendRequestHandler(request: FastifyRequest, reply: FastifyReply)
         }
 
         await dbManager.sendFriendRequest(userId, receiver.id);
+
+        const socketId = userSocketMap.get(receiver.username);
+        if (socketId)
+        {
+            app.io.of('/notification').to(socketId).emit('friendNotification', 
+            {
+                sender: userId,
+                receiver: receiver.username,
+                message: "You have a new friend request"
+            });
+        }
+        else
+        {
+            console.error('No socketId found for receiver:', receiver.username);
+        }
 
         return reply.status(200).send({
             success: true,
@@ -191,8 +207,9 @@ async function acceptRequestHandler(request: FastifyRequest, reply: FastifyReply
             });
         }
         
+        const sender = await dbManager.getUserById(userId);
         const targetUser = await dbManager.getUserByUsername(username);
-        if (!targetUser || !targetUser.id)
+        if (!targetUser || !targetUser.id || !sender || !sender.username)
         {
             return reply.status(404).send({
                 success: false,
@@ -202,6 +219,20 @@ async function acceptRequestHandler(request: FastifyRequest, reply: FastifyReply
 
         await dbManager.acceptFriendRequest(userId, targetUser.id);
         
+        const socketId = userSocketMap.get(targetUser.username);
+        if (socketId)
+        {
+            app.io.of('/notification').to(socketId).emit('friendNotification', 
+            {
+                sender: userId,
+                receiver: targetUser.username,
+                message: sender.username + " accepted your friend request",
+            });
+        }
+        else
+        {
+            console.error('No socketId found for receiver:', targetUser.username);
+        }
     
         return reply.status(200).send({
             success: true,
@@ -243,8 +274,24 @@ async function removeFriendHandler(request: FastifyRequest, reply: FastifyReply)
             });
         }
 
-        try {
+        try 
+        {
             await dbManager.removeFriend(userId, targetUser.id);
+
+            const socketId = userSocketMap.get(targetUser.username);
+            if (socketId)
+            {
+                app.io.of('/notification').to(socketId).emit('friendNotification', 
+                {
+                    sender: userId,
+                    receiver: targetUser.username
+                });
+            }
+            else
+            {
+                console.error('No socketId found for receiver:', targetUser.username);
+            }
+
             return reply.status(200).send({
                 success: true,
                 message: "Friend removed"
@@ -302,7 +349,23 @@ async function cancelRequestHandler(request: FastifyRequest, reply: FastifyReply
                 message: "Users are friends"
             });
         }
+
         await dbManager.cancelFriendRequest(userId, targetUser.id);
+        
+        const socketId = userSocketMap.get(targetUser.username);
+        if (socketId)
+        {
+            app.io.of('/notification').to(socketId).emit('friendNotification', 
+            {
+                sender: userId,
+                receiver: targetUser.username
+            });
+        }
+        else
+        {
+            console.error('No socketId found for receiver:', targetUser.username);
+        }
+        
         return reply.status(200).send({
             success: true,
             message: "Friend request cancelled"
@@ -350,6 +413,20 @@ async function refuseRequestHandler(request: FastifyRequest, reply: FastifyReply
             });
         }
         await dbManager.refuseFriendRequest(userId, targetUser.id);
+
+        const socketId = userSocketMap.get(targetUser.username);
+        if (socketId)
+        {
+            app.io.of('/notification').to(socketId).emit('friendNotification', 
+            {
+                sender: userId,
+                receiver: targetUser.username
+            });
+        }
+        else
+        {
+            console.error('No socketId found for receiver:', targetUser.username);
+        }
 
         return reply.status(200).send({
             success: true,

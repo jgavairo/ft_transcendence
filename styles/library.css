@@ -366,3 +366,9 @@
   transform: scale(0.95);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+
+.playerWins {
+    font-weight: bold;
+    color: #4caf50; /* Vert pour les victoires */
+    margin-left: 10px;
+}

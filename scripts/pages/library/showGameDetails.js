@@ -26,7 +26,7 @@ export async function showGameDetails(gameIdOrObj) {
     // Associer les rankings aux utilisateurs
     const rankedPeople = rankings.map((ranking) => {
         const person = people.find((p) => p.id === ranking.userId);
-        return Object.assign(Object.assign({}, person), { ranking: ranking.ranking });
+        return Object.assign(Object.assign({}, person), { wins: ranking.win, losses: ranking.loss });
     });
     const details = document.querySelector('.library-details');
     if (!details)
@@ -55,7 +55,7 @@ export async function showGameDetails(gameIdOrObj) {
                     ${index === 0 ? '<span class="medal">🥇</span>' : ''}
                     ${index === 1 ? '<span class="medal">🥈</span>' : ''}
                     ${index === 2 ? '<span class="medal">🥉</span>' : ''}
-                    <span class="playerWins">Wins: ${person.ranking}</span>
+                    <span class="playerWins">Wins: ${person.wins}</span>
                   </li>
                 `).join('')}
               </ul>
@@ -84,11 +84,13 @@ export async function showGameDetails(gameIdOrObj) {
     const friendNames = details.querySelectorAll('.friendName');
     friendNames.forEach(friendName => {
         friendName.addEventListener('click', () => {
+            var _a;
             const username = friendName.getAttribute('data-username');
             const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
             const email = friendName.getAttribute('data-email');
             const bio = friendName.getAttribute('data-bio') || 'No bio available';
-            showProfileCard(username, profilePicture, email, bio);
+            const userId = ((_a = people.find(person => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
+            showProfileCard(username, profilePicture, email, bio, userId);
         });
     });
     // Bouton de fermeture
