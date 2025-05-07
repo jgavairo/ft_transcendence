@@ -439,7 +439,7 @@ async function fetchMatchHistory(userId: number): Promise<any[]> {
             }
             
             // Trier par date décroissante
-            matches.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            matches.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
             
             return matches;
         }
