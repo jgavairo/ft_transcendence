@@ -52,7 +52,6 @@ export function showGameOverOverlay() {
   document.body.appendChild(gameOverOverlay);
 
   btnMenu.addEventListener('click', () => {
-    console.log('🧹 Clean up before returning to menu');
 
     resetGame();
 
