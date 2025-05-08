@@ -6,6 +6,7 @@ import { dbManager } from '../database/database.js';
 export interface AuthenticatedRequest extends FastifyRequest 
 {
     user?: any;
+    body: any;
 }
 
 export const authMiddleware = async (request: AuthenticatedRequest, reply: FastifyReply) => {
@@ -45,4 +46,4 @@ export const authMiddleware = async (request: AuthenticatedRequest, reply: Fasti
             message: "Token invalide"
         });
     }
-}; 
+};
