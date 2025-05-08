@@ -6,10 +6,17 @@ import { setupProfileButton } from "../header/navigation.js";
 import { googleSignInHandler } from "../modals/login/googleSignIn.js";
 import { disconnectNotificationSocket } from "../header/navigation.js";
 export class LoginManager {
-    static removeLoginModal() {
+    static async removeLoginModal() {
         const modal = document.getElementById('optionnalModal');
         if (modal)
             modal.innerHTML = "";
+        const user = await MainApp.getUserInfo();
+        if (user && user.id) {
+            console.log('user id:', user.id);
+        }
+        else {
+            console.log('user id not found');
+        }
         showNotification("Logged in successfully");
     }
     static async isLoggedIn() {
