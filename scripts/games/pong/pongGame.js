@@ -3,7 +3,6 @@ import { socket } from './network.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
 import { showGameOverOverlay } from './DisplayFinishGame.js';
-import { showGameDetails } from '../../pages/library/showGameDetails.js'; // Import de showGameDetails
 // Variables réseau
 let mySide;
 let roomId;
@@ -584,14 +583,7 @@ window.addEventListener('keydown', (e) => {
     if (!modal)
         return;
     if (modal.innerHTML.trim() !== '') {
-        const libraryDetails = document.querySelector('.library-details');
-        if (libraryDetails) {
-            // S'il y a un élément library-details, on est dans la vue détaillée, donc on actualise
-            showGameDetails(1);
-        }
-        // Vider le contenu du modal
         modal.innerHTML = '';
-        // Réinitialiser le jeu
-        resetGame();
+        displayMenu();
     }
 });
