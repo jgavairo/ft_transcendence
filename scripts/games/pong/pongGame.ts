@@ -287,16 +287,6 @@ async function renderGameOverMessage(state: MatchState) {
     return;
   }
 
-  const message = player.lives > 0 ? 'You Win!' : 'Game Over';
-
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-  ctx.fillRect(0, 0, CW, CH);
-
-  ctx.fillStyle = 'white';
-  ctx.textAlign = 'center';
-  ctx.font = '48px Arial';
-  ctx.fillText(message, CX, CY);
-
   try {
     // Récupérer l'utilisateur actuel via GameManager
     const currentUser = await GameManager.getCurrentUser();
@@ -596,6 +586,7 @@ export function renderPong(state: MatchState) {
   if (state.gameOver) {
     gameover = true;
     animateGameOver();
+    renderGameOverMessage(state);
     setTimeout(() => {
       showGameOverOverlay();
     }, 1500);
