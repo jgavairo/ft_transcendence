@@ -4,6 +4,7 @@ import { displayMenu } from '../../games/pong/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
 import api from "../../helpers/api.js"; // Import de l'API helper
+import { FriendsManager } from "../../managers/friendsManager.js";
 
 export async function showGameDetails(gameIdOrObj: number | any): Promise<void> {
     // Récupérer l'objet game complet
@@ -27,14 +28,14 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
     const rankings = await rankingsResponse.json();
 
     // Associer les rankings aux utilisateurs
-    const rankedPeople = rankings.map((ranking: { userId: number; win: number; loss: number }) => {
+    const rankedPeople = await Promise.all(rankings.map(async (ranking: { userId: number; win: number; loss: number }) => {
         const person = people.find((p: any) => p.id === ranking.userId);
         return {
             ...person,
             wins: ranking.win, // Utilisez le champ `win` pour les victoires
             losses: ranking.loss, // Utilisez le champ `loss` pour les défaites
         };
-    });
+    }));
 
     const details = document.querySelector('.library-details') as HTMLElement;
     if (!details) return;
@@ -74,9 +75,9 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
             <h3 class="sectionTitle">Friend List</h3>
             <div class="friendsContainer">
               <ul class="friendsList">
-                ${people.map(person => `
+                ${people.map((person: { id: number; username: string; profile_picture: string; email: string; bio: string; isOnline?: boolean }) => `
                   <li class="friendItem">
-                    <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
+                    <img src="${person.profile_picture || 'default-profile.png'}" class=" ${person.isOnline ? 'profilePicOnline' : 'profilePic'}" alt="${person.username}">
                     <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
                       ${person.username}
                     </span>
