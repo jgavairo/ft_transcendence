@@ -24,10 +24,10 @@ export async function showGameDetails(gameIdOrObj) {
     const rankingsResponse = await api.get(`/api/games/${game.id}/rankings`);
     const rankings = await rankingsResponse.json();
     // Associer les rankings aux utilisateurs
-    const rankedPeople = rankings.map((ranking) => {
+    const rankedPeople = await Promise.all(rankings.map(async (ranking) => {
         const person = people.find((p) => p.id === ranking.userId);
         return Object.assign(Object.assign({}, person), { wins: ranking.win, losses: ranking.loss });
-    });
+    }));
     const details = document.querySelector('.library-details');
     if (!details)
         return;
@@ -66,9 +66,9 @@ export async function showGameDetails(gameIdOrObj) {
             <h3 class="sectionTitle">Friend List</h3>
             <div class="friendsContainer">
               <ul class="friendsList">
-                ${people.map(person => `
+                ${people.map((person) => `
                   <li class="friendItem">
-                    <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
+                    <img src="${person.profile_picture || 'default-profile.png'}" class=" ${person.isOnline ? 'profilePicOnline' : 'profilePic'}" alt="${person.username}">
                     <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
                       ${person.username}
                     </span>

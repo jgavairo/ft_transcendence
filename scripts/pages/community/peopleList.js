@@ -1,15 +1,15 @@
 import { showErrorNotification, showNotification } from "../../helpers/notifications.js";
 import { HOSTNAME } from "../../main.js";
 import { FriendsManager } from "../../managers/friendsManager.js";
+import api from "../../helpers/api.js";
 const STORAGE_KEY = "people";
 export async function fetchUsernames() {
     try {
-        const response = await fetch(`http://${HOSTNAME}:3000/api/users`, {
-            credentials: 'include'
-        });
+        const response = await api.get(`http://${HOSTNAME}:3000/api/users`);
         const data = await response.json();
         if (data.success) {
-            return data.users; // Retourne les utilisateurs avec leurs bios
+            const users = data.users.map(async (user) => (Object.assign(Object.assign({}, user), { isOnline: await FriendsManager.isOnline(user.username) })));
+            return Promise.all(users);
         }
         else {
             console.error('Failed to fetch usernames:', data.message);
@@ -62,7 +62,11 @@ export async function renderPeopleList(filter = "") {
             profileContainer.className = "profile-picture-container";
             // Ajouter l'image de profil
             const img = document.createElement("img");
-            img.className = "profile-picture";
+            const isOnline = await FriendsManager.isOnline(person.username);
+            if (isOnline)
+                img.className = "profile-picture online";
+            else
+                img.className = "profile-picture";
             img.src = person.profile_picture || "default-profile.png";
             img.alt = `${person.username}'s profile picture`;
             // Ajouter la couche de survol
