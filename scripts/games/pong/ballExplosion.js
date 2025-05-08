@@ -1,4 +1,5 @@
 import { gameover, ctx } from "./pongGame.js";
+import { gameoverT } from "./TriPong.js";
 const CW = 1185;
 const CH = 785;
 const CX = CW / 2;
@@ -48,7 +49,7 @@ function animateExplosion() {
         ctx.restore();
     });
     // 3) suite de l’animation
-    if (explosion.length && !gameover)
+    if (explosion.length && !gameover && !gameoverT)
         requestAnimationFrame(animateExplosion);
 }
 let goFrame = 0;
@@ -127,20 +128,8 @@ export function animateGameOver() {
             ctx.shadowColor = 'rgba(255,20,20,0.6)';
             ctx.shadowBlur = 20;
             ctx.fillStyle = '#ff4d4d';
-            ctx.fillText('GAME OVER', 0, 0);
+            ctx.fillText('PAS PELUS', 0, 0);
             ctx.restore();
-        }
-        // 5) Glitch RGB (frames 100→140)
-        if (goFrame >= 100 && goFrame < 140) {
-            const tG = ((goFrame - 100) % 4) / 4;
-            ['#ff0000', '#00ff00', '#0000ff'].forEach((col, idx) => {
-                ctx.save();
-                ctx.fillStyle = col;
-                ctx.globalAlpha = 0.6;
-                const offset = (idx - 1) * 5 * (1 - tG);
-                ctx.fillText('GAME OVER', CX + offset, CY);
-                ctx.restore();
-            });
         }
         // 6) Fade out final (frames 140→180)
         if (goFrame >= 140) {

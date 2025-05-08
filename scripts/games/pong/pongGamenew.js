@@ -3,7 +3,6 @@ import { socket } from './network.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
 import { showGameOverOverlay } from './DisplayFinishGame.js';
-import { showGameDetails } from '../../pages/library/showGameDetails.js'; // Import de showGameDetails
 // Variables réseau
 let mySide;
 let roomId;
@@ -247,6 +246,13 @@ async function renderGameOverMessage(state) {
         console.error('Impossible de récupérer les informations de l\'adversaire.');
         return;
     }
+    const message = player.lives > 0 ? 'You Win!' : 'Game Over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.font = '48px Arial';
+    ctx.fillText(message, CX, CY);
     try {
         // Récupérer l'utilisateur actuel via GameManager
         const currentUser = await GameManager.getCurrentUser();
@@ -505,7 +511,6 @@ export function renderPong(state) {
     if (state.gameOver) {
         gameover = true;
         animateGameOver();
-        renderGameOverMessage(state);
         setTimeout(() => {
             showGameOverOverlay();
         }, 1500);
@@ -584,21 +589,7 @@ window.addEventListener('keydown', (e) => {
     if (!modal)
         return;
     if (modal.innerHTML.trim() !== '') {
-        // Vider le contenu du modal
         modal.innerHTML = '';
-        // Réinitialiser le jeu
-        resetGame();
-        // Obtenir le jeu actuel (Pong a l'ID 1)
-        const PONG_GAME_ID = 1;
-        // Actualiser les rankings dans l'affichage des détails du jeu
-        // Utiliser setTimeout pour s'assurer que la mise à jour des stats est terminée
-        setTimeout(() => {
-            // Trouver l'élément library-details qui contient les détails du jeu
-            const libraryDetails = document.querySelector('.library-details');
-            if (libraryDetails) {
-                // S'il y a un élément library-details, on est dans la vue détaillée, donc on actualise
-                showGameDetails(PONG_GAME_ID);
-            }
-        }, 500);
+        displayMenu();
     }
 });

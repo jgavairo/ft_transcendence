@@ -4,6 +4,7 @@ import { displayWaitingScreen } from './WaitingScreen.js';
 import { displayPlayMenu } from './PlayMenu.js';
 import { displayMatchFound } from './DisplayMatchFound.js';
 import { connectTriPong, joinTriQueue } from './TriPong.js';
+import { GameManager } from '../../managers/gameManager.js';
 
 export function displayMultiMenu(): void {
   // 1) Assure-toi d'être connecté / d'avoir installé les handlers
@@ -32,27 +33,41 @@ export function displayMultiMenu(): void {
     {
       label: '2 Players',
       x: x0, y: startY, w: btnW, h: btnH,
-      onClick: () => {
+      onClick: async () => {
         console.log('2 Players clicked');
         teardown();
         displayWaitingScreen();
-        // socket.once('matchFound', data => {
-        //   displayMatchFound(`${data.you} vs ${data.opponent}`);
-        // });
-        joinQueue('Player1');
+        
+        // Récupérer le nom réel de l'utilisateur actuel
+        try {
+          const currentUser = await GameManager.getCurrentUser();
+          const username = currentUser?.username || "Player1";
+          console.log('Current user for matchmaking:', username);
+          joinQueue(username);
+        } catch (error) {
+          console.error('Error getting current user:', error);
+          joinQueue("Player1"); // Fallback au nom par défaut en cas d'erreur
+        }
       }
     },
     {
       label: '3 Players',
       x: x0, y: startY + (btnH + spacing),
       w: btnW, h: btnH,
-      onClick: () => {
+      onClick: async () => {
         teardown();
         displayWaitingScreen();
-        // socket.once('matchFoundTri', data => {
-        //   displayMatchFound(data.players.join(' vs '));
-        // });
-        joinTriQueue('Player1');
+        
+        // Récupérer le nom réel de l'utilisateur actuel
+        try {
+          const currentUser = await GameManager.getCurrentUser();
+          const username = currentUser?.username || "Player1";
+          console.log('Current user for tri-matchmaking:', username);
+          joinTriQueue(username);
+        } catch (error) {
+          console.error('Error getting current user:', error);
+          joinTriQueue("Player1"); // Fallback au nom par défaut en cas d'erreur
+        }
       }
     },
     {

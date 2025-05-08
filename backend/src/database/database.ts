@@ -473,70 +473,96 @@ export class DatabaseManager
     public async incrementPlayerWins(gameId: number, userId: number): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
-        // Vérifier si une entrée existe déjà pour ce joueur et ce jeu
-        const existingRanking = await this.db.get(
-            'SELECT id, win FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
-            [gameId, userId]
-        );
+        // Vérifier que les paramètres sont des nombres valides
+        const numericGameId = Number(gameId);
+        const numericUserId = Number(userId);
+        
+        if (isNaN(numericGameId) || isNaN(numericUserId)) {
+            throw new Error(`Invalid parameters: gameId=${gameId}, userId=${userId}`);
+        }
 
-        if (existingRanking) {
-            // Si une entrée existe, incrémenter le classement
-            await this.db.run(
-                'UPDATE game_user_rankings SET win = win + 1 WHERE id = ?',
-                [existingRanking.id]
+        try {
+            // Vérifier si une entrée existe déjà pour ce joueur et ce jeu
+            const existingRanking = await this.db.get(
+                'SELECT id, win FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
+                [numericGameId, numericUserId]
             );
-            console.log(`Updated win for user ${userId} in game ${gameId}:`, {
-                id: existingRanking.id,
-                newRanking: existingRanking.win + 1,
-            });
-        } else {
-            // Si aucune entrée n'existe, en créer une avec un classement initial de 1
-            const result = await this.db.run(
-                'INSERT INTO game_user_rankings (game_id, user_id, win, loss) VALUES (?, ?, ?, ?)',
-                [gameId, userId, 1, 0]
-            );
-            console.log(`Created new win for user ${userId} in game ${gameId}:`, {
-                id: result.lastID,
-                gameId,
-                userId,
-                win: 1,
-                loss: 0,
-            });
+
+            if (existingRanking) {
+                // Si une entrée existe, incrémenter le classement
+                await this.db.run(
+                    'UPDATE game_user_rankings SET win = win + 1 WHERE id = ?',
+                    [existingRanking.id]
+                );
+                console.log(`Updated win for user ${numericUserId} in game ${numericGameId}:`, {
+                    id: existingRanking.id,
+                    newRanking: existingRanking.win + 1,
+                });
+            } else {
+                // Si aucune entrée n'existe, en créer une avec un classement initial de 1
+                const result = await this.db.run(
+                    'INSERT INTO game_user_rankings (game_id, user_id, win, loss) VALUES (?, ?, ?, ?)',
+                    [numericGameId, numericUserId, 1, 0]
+                );
+                console.log(`Created new win for user ${numericUserId} in game ${numericGameId}:`, {
+                    id: result.lastID,
+                    gameId: numericGameId,
+                    userId: numericUserId,
+                    win: 1,
+                    loss: 0,
+                });
+            }
+        } catch (error) {
+            console.error(`Error incrementing wins for user ${numericUserId} in game ${numericGameId}:`, error);
+            throw error;
         }
     }
 
     public async incrementPlayerLosses(gameId: number, userId: number): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
-        // Vérifier si une entrée existe déjà pour ce joueur et ce jeu
-        const existingRanking = await this.db.get(
-            'SELECT id, loss FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
-            [gameId, userId]
-        );
+        // Vérifier que les paramètres sont des nombres valides
+        const numericGameId = Number(gameId);
+        const numericUserId = Number(userId);
+        
+        if (isNaN(numericGameId) || isNaN(numericUserId)) {
+            throw new Error(`Invalid parameters: gameId=${gameId}, userId=${userId}`);
+        }
 
-        if (existingRanking) {
-            // Si une entrée existe, incrémenter les défaites
-            await this.db.run(
-                'UPDATE game_user_rankings SET loss = loss + 1 WHERE id = ?',
-                [existingRanking.id]
+        try {
+            // Vérifier si une entrée existe déjà pour ce joueur et ce jeu
+            const existingRanking = await this.db.get(
+                'SELECT id, loss FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
+                [numericGameId, numericUserId]
             );
-            console.log(`Updated losses for user ${userId} in game ${gameId}:`, {
-                id: existingRanking.id,
-                newLosses: existingRanking.loss + 1,
-            });
-        } else {
-            // Si aucune entrée n'existe, en créer une avec un nombre initial de défaites de 1
-            const result = await this.db.run(
-                'INSERT INTO game_user_rankings (game_id, user_id, win, loss) VALUES (?, ?, ?, ?)',
-                [gameId, userId, 0, 1]
-            );
-            console.log(`Created new ranking for user ${userId} in game ${gameId}:`, {
-                id: result.lastID,
-                gameId,
-                userId,
-                win: 0,
-                loss: 1,
-            });
+
+            if (existingRanking) {
+                // Si une entrée existe, incrémenter les défaites
+                await this.db.run(
+                    'UPDATE game_user_rankings SET loss = loss + 1 WHERE id = ?',
+                    [existingRanking.id]
+                );
+                console.log(`Updated losses for user ${numericUserId} in game ${numericGameId}:`, {
+                    id: existingRanking.id,
+                    newLosses: existingRanking.loss + 1,
+                });
+            } else {
+                // Si aucune entrée n'existe, en créer une avec un nombre initial de défaites de 1
+                const result = await this.db.run(
+                    'INSERT INTO game_user_rankings (game_id, user_id, win, loss) VALUES (?, ?, ?, ?)',
+                    [numericGameId, numericUserId, 0, 1]
+                );
+                console.log(`Created new ranking for user ${numericUserId} in game ${numericGameId}:`, {
+                    id: result.lastID,
+                    gameId: numericGameId,
+                    userId: numericUserId,
+                    win: 0,
+                    loss: 1,
+                });
+            }
+        } catch (error) {
+            console.error(`Error incrementing losses for user ${numericUserId} in game ${numericGameId}:`, error);
+            throw error;
         }
     }
 
@@ -594,6 +620,22 @@ export class DatabaseManager
         if (!this.db) throw new Error('Database not initialized');
 
         try {
+            // Vérifier si un match similaire a été ajouté dans les dernières secondes
+            const recentMatch = await this.db.get(
+                `SELECT * FROM match_history 
+                 WHERE user1_id = ? AND user2_id = ? 
+                 AND user1_lives = ? AND user2_lives = ? 
+                 AND datetime(match_date) >= datetime('now', '-5 seconds')
+                 LIMIT 1`,
+                [user1Id, user2Id, user1Lives, user2Lives]
+            );
+
+            // Si un match similaire existe déjà, ne pas l'ajouter
+            if (recentMatch) {
+                console.log(`Match similar to User1 (${user1Id}) vs User2 (${user2Id}) already exists, skipping`);
+                return;
+            }
+
             await this.db.run(
                 `INSERT INTO match_history (user1_id, user2_id, user1_lives, user2_lives, match_date)
                  VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
@@ -622,6 +664,26 @@ export class DatabaseManager
             return result || null;
         } catch (error) {
             console.error('Error fetching last match for user:', error);
+            throw error;
+        }
+    }
+
+    public async getMatchHistoryForUser(userId: number): Promise<any[]> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        try {
+            const results = await this.db.all(
+                `SELECT * 
+                 FROM match_history 
+                 WHERE user1_id = ? OR user2_id = ? 
+                 ORDER BY match_date DESC 
+                 LIMIT 20`,
+                [userId, userId]
+            );
+
+            return results || [];
+        } catch (error) {
+            console.error('Error fetching match history for user:', error);
             throw error;
         }
     }
