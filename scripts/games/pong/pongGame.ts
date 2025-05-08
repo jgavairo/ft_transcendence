@@ -3,6 +3,7 @@ import { socket } from './network.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
 import { showGameOverOverlay } from './DisplayFinishGame.js';
+import { showGameDetails } from '../../pages/library/showGameDetails.js'; // Import de showGameDetails
 
 // Interface de l'état de partie reçue du serveur
 export interface MatchState {
@@ -687,7 +688,24 @@ window.addEventListener('keydown', (e) => {
   const modal = document.getElementById('optionnalModal');
   if (!modal) return;
   if (modal.innerHTML.trim() !== '') {
+    // Vider le contenu du modal
     modal.innerHTML = '';
-    displayMenu();
+    
+    // Réinitialiser le jeu
+    resetGame();
+    
+    // Obtenir le jeu actuel (Pong a l'ID 1)
+    const PONG_GAME_ID = 1;
+    
+    // Actualiser les rankings dans l'affichage des détails du jeu
+    // Utiliser setTimeout pour s'assurer que la mise à jour des stats est terminée
+    setTimeout(() => {
+      // Trouver l'élément library-details qui contient les détails du jeu
+      const libraryDetails = document.querySelector('.library-details');
+      if (libraryDetails) {
+        // S'il y a un élément library-details, on est dans la vue détaillée, donc on actualise
+        showGameDetails(PONG_GAME_ID);
+      }
+    }, 500);
   }
 });
