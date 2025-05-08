@@ -584,21 +584,14 @@ window.addEventListener('keydown', (e) => {
     if (!modal)
         return;
     if (modal.innerHTML.trim() !== '') {
+        const libraryDetails = document.querySelector('.library-details');
+        if (libraryDetails) {
+            // S'il y a un élément library-details, on est dans la vue détaillée, donc on actualise
+            showGameDetails(1);
+        }
         // Vider le contenu du modal
         modal.innerHTML = '';
         // Réinitialiser le jeu
         resetGame();
-        // Obtenir le jeu actuel (Pong a l'ID 1)
-        const PONG_GAME_ID = 1;
-        // Actualiser les rankings dans l'affichage des détails du jeu
-        // Utiliser setTimeout pour s'assurer que la mise à jour des stats est terminée
-        setTimeout(() => {
-            // Trouver l'élément library-details qui contient les détails du jeu
-            const libraryDetails = document.querySelector('.library-details');
-            if (libraryDetails) {
-                // S'il y a un élément library-details, on est dans la vue détaillée, donc on actualise
-                showGameDetails(PONG_GAME_ID);
-            }
-        }, 500);
     }
 });
