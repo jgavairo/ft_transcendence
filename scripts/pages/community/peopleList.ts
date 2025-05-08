@@ -367,81 +367,18 @@ export async function showProfileCard(username: string, profilePicture: string, 
 // Fonction pour récupérer l'historique des matchs d'un utilisateur
 async function fetchMatchHistory(userId: number): Promise<any[]> {
     try {
-        // Essayer d'abord d'utiliser l'API pour récupérer l'historique des matchs
-        try {
-            const response = await fetch(`http://${HOSTNAME}:3000/api/match/history/${userId}`, {
-                credentials: 'include',
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                return data.matches || [];
-            } else {
-                console.log("API match history endpoint not available, using fallback");
-                // Si l'API n'est pas disponible, utiliser la méthode alternative
-                throw new Error('API endpoint not available');
-            }
-        } catch (error) {
-            console.log("Using fallback method for match history");
-            
-            // Récupérer les classements pour avoir les statistiques de victoires/défaites
-            const rankingsResponse = await fetch(`http://${HOSTNAME}:3000/api/games/1/rankings`, {
-                credentials: 'include',
-            });
-            
-            if (!rankingsResponse.ok) {
-                throw new Error(`Failed to fetch rankings: ${rankingsResponse.status}`);
-            }
-            
-            const rankings = await rankingsResponse.json();
-            const userStats = rankings.find((ranking: any) => Number(ranking.userId) === Number(userId));
-            
-            if (!userStats) {
-                return []; // Pas de stats, donc pas d'historique
-            }
-            
-            // Créer un historique fictif basé sur les statistiques
-            const { win, loss } = userStats;
-            const totalMatches = win + loss;
-            const matches = [];
-            
-            // Créer un certain nombre de matchs fictifs basés sur les stats de victoires/défaites
-            const now = new Date();
-            
-            // Créer d'abord les victoires
-            for (let i = 0; i < Math.min(win, 10); i++) {
-                const matchDate = new Date(now);
-                matchDate.setDate(matchDate.getDate() - i);
-                
-                matches.push({
-                    user1Id: userId,
-                    user2Id: 9999, // ID fictif pour l'adversaire
-                    user1Lives: 3,
-                    user2Lives: Math.floor(Math.random() * 3), // 0-2 vies
-                    created_at: matchDate.toISOString(),
-                    user2Name: `Opponent ${i+1}`
-                });
-            }
-            
-            // Puis les défaites
-            for (let i = 0; i < Math.min(loss, 10); i++) {
-                const matchDate = new Date(now);
-                matchDate.setDate(matchDate.getDate() - win - i);
-                
-                matches.push({
-                    user1Id: userId,
-                    user2Id: 8888, // ID fictif pour l'adversaire
-                    user1Lives: Math.floor(Math.random() * 3), // 0-2 vies
-                    user2Lives: 3,
-                    created_at: matchDate.toISOString(),
-                    user2Name: `Opponent ${win+i+1}`
-                });
-            }
-            
-            // Trier par date décroissante
-            matches.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-            
-            return matches;
+        // Utiliser l'API pour récupérer l'historique des matchs avec les noms des joueurs
+        const response = await fetch(`http://${HOSTNAME}:3000/api/match/history/${userId}`, {
+            credentials: 'include',
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Match history data:", data);
+            return data.matches || [];
+        } else {
+            console.error("Failed to fetch match history:", await response.text());
+            return [];
         }
     } catch (error) {
         console.error("Error fetching match history:", error);
@@ -476,6 +413,9 @@ function displayMatchHistory(matches: any[], userId: number) {
         return;
     }
 
+    // Récupérer le nom du profil affiché
+    const profileName = document.querySelector(".profile-card-name")?.textContent || "User";
+
     // Limiter à 5 matchs maximum pour ne pas surcharger l'interface
     const recentMatches = matches.slice(0, 5);
     
@@ -483,12 +423,13 @@ function displayMatchHistory(matches: any[], userId: number) {
     const matchTable = document.createElement("table");
     matchTable.className = "match-history-table";
     
-    // Créer l'en-tête du tableau
+    // Créer l'en-tête du tableau avec le nouveau format
     const tableHeader = document.createElement("tr");
     tableHeader.innerHTML = `
-        <th>Opponent</th>
         <th>Result</th>
+        <th>Player</th>
         <th>Score</th>
+        <th>Opponent</th>
         <th>Date</th>
     `;
     matchTable.appendChild(tableHeader);
@@ -497,28 +438,33 @@ function displayMatchHistory(matches: any[], userId: number) {
     for (const match of recentMatches) {
         try {
             // Déterminer si l'utilisateur affiché est user1 ou user2
-            const isUser1 = match.user1Id === userId;
-            const userLives = isUser1 ? match.user1Lives : match.user2Lives;
-            const opponentLives = isUser1 ? match.user2Lives : match.user1Lives;
+            const isUser1 = match.user1_id === userId;
+            const userLives = isUser1 ? match.user1_lives : match.user2_lives;
+            const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
+            
+            // Calculer les points marqués (3 vies au départ, points = 3 - vies de l'adversaire)
+            const userPoints = 3 - opponentLives;
+            const opponentPoints = 3 - userLives;
             
             // Déterminer le résultat
             const result = userLives > opponentLives ? "Victory" : "Defeat";
             
-            // Récupérer le nom de l'adversaire
-            const opponentId = isUser1 ? match.user2Id : match.user1Id;
-            const opponentName = match.user2Name || match.user1Name || `User #${opponentId}`;
+            // Récupérer le nom de l'adversaire en utilisant les noms réels des joueurs
+            const opponentName = isUser1 ? match.user2Name : match.user1Name;
+            const userName = isUser1 ? match.user1Name : match.user2Name;
             
             // Formater la date
-            const matchDate = new Date(match.created_at || match.date).toLocaleDateString();
+            const matchDate = new Date(match.match_date).toLocaleDateString();
             
-            // Créer la ligne du tableau
+            // Créer la ligne du tableau avec le nouveau format et les points marqués
             const row = document.createElement("tr");
             row.className = result.toLowerCase();
             row.innerHTML = `
-                <td>${opponentName}</td>
                 <td class="${result.toLowerCase()}">${result}</td>
-                <td>${userLives}-${opponentLives}</td>
-                <td>${matchDate}</td>
+                <td class="player-name">${userName}</td>
+                <td class="score-cell"><span class="user-score">${userPoints}</span> - <span class="opponent-score">${opponentPoints}</span></td>
+                <td class="opponent-name">${opponentName}</td>
+                <td class="match-date">${matchDate}</td>
             `;
             matchTable.appendChild(row);
         } catch (error) {
@@ -546,21 +492,27 @@ function displayMatchHistory(matches: any[], userId: number) {
             
             for (const match of matches) {
                 try {
-                    const isUser1 = match.user1Id === userId;
-                    const userLives = isUser1 ? match.user1Lives : match.user2Lives;
-                    const opponentLives = isUser1 ? match.user2Lives : match.user1Lives;
+                    const isUser1 = match.user1_id === userId;
+                    const userLives = isUser1 ? match.user1_lives : match.user2_lives;
+                    const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
+                    
+                    // Calculer les points marqués (3 vies au départ, points = 3 - vies de l'adversaire)
+                    const userPoints = 3 - opponentLives;
+                    const opponentPoints = 3 - userLives;
+                    
                     const result = userLives > opponentLives ? "Victory" : "Defeat";
-                    const opponentId = isUser1 ? match.user2Id : match.user1Id;
-                    const opponentName = match.user2Name || match.user1Name || `User #${opponentId}`;
-                    const matchDate = new Date(match.created_at || match.date).toLocaleDateString();
+                    const opponentName = isUser1 ? match.user2Name : match.user1Name;
+                    const userName = isUser1 ? match.user1Name : match.user2Name;
+                    const matchDate = new Date(match.match_date).toLocaleDateString();
                     
                     const row = document.createElement("tr");
                     row.className = result.toLowerCase();
                     row.innerHTML = `
-                        <td>${opponentName}</td>
                         <td class="${result.toLowerCase()}">${result}</td>
-                        <td>${userLives}-${opponentLives}</td>
-                        <td>${matchDate}</td>
+                        <td class="player-name">${userName}</td>
+                        <td class="score-cell"><span class="user-score">${userPoints}</span> - <span class="opponent-score">${opponentPoints}</span></td>
+                        <td class="opponent-name">${opponentName}</td>
+                        <td class="match-date">${matchDate}</td>
                     `;
                     fullMatchTable.appendChild(row);
                 } catch (error) {
