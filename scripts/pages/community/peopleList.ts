@@ -312,9 +312,19 @@ export async function showProfileCard(username: string, profilePicture: string, 
             credentials: 'include',
         });
         const rankings = await response.json();
-        const userStats = rankings.find((ranking: { userId: number }) => ranking.userId === userId);
-
+        
+        // Convertir en nombre pour s'assurer que la comparaison fonctionne
+        const userIdAsNumber = Number(userId);
+        
+        // Afficher les données pour le débogage
+        console.log("Rankings data:", rankings);
+        console.log("Looking for userId:", userIdAsNumber);
+        
+        // Trouver les stats de l'utilisateur en s'assurant que les types correspondent
+        const userStats = rankings.find((ranking: any) => Number(ranking.userId) === userIdAsNumber);
+        
         if (userStats) {
+            console.log("Found user stats:", userStats);
             const { win, loss } = userStats;
             const playedGames = win + loss;
             const ratio = loss === 0 ? win : (win / loss).toFixed(2);
@@ -327,6 +337,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
                 <p><strong>Win/Loss Ratio:</strong> ${ratio}</p>
             `;
         } else {
+            console.log("No stats found for userId:", userIdAsNumber);
             statsSection.textContent = "No stats available.";
         }
     } catch (error) {
@@ -347,4 +358,181 @@ export async function showProfileCard(username: string, profilePicture: string, 
 
     // Ajoutez l'overlay au body
     document.body.appendChild(overlay);
+
+    // Récupérez et affichez l'historique des matchs
+    const matchHistory = await fetchMatchHistory(userId);
+    displayMatchHistory(matchHistory, userId);
+}
+
+// Fonction pour récupérer l'historique des matchs d'un utilisateur
+async function fetchMatchHistory(userId: number): Promise<any[]> {
+    try {
+        // Utiliser l'API pour récupérer l'historique des matchs avec les noms des joueurs
+        const response = await fetch(`http://${HOSTNAME}:3000/api/match/history/${userId}`, {
+            credentials: 'include',
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Match history data:", data);
+            return data.matches || [];
+        } else {
+            console.error("Failed to fetch match history:", await response.text());
+            return [];
+        }
+    } catch (error) {
+        console.error("Error fetching match history:", error);
+        return [];
+    }
+}
+
+// Fonction pour afficher l'historique des matchs dans la carte de profil
+function displayMatchHistory(matches: any[], userId: number) {
+    const card = document.getElementById("profileCard");
+    if (!card) return;
+
+    // Vérifier s'il y a déjà une section d'historique des matchs, sinon en créer une nouvelle
+    let historySection = document.querySelector(".profile-card-match-history");
+    if (!historySection) {
+        historySection = document.createElement("div");
+        historySection.className = "profile-card-match-history";
+        card.appendChild(historySection);
+    } else {
+        historySection.innerHTML = ""; // Vider la section si elle existe déjà
+    }
+
+    // Définir le titre de la section
+    const historyTitle = document.createElement("h4");
+    historyTitle.textContent = "Match History";
+    historySection.appendChild(historyTitle);
+
+    if (matches.length === 0) {
+        const noMatches = document.createElement("p");
+        noMatches.textContent = "No match history available.";
+        historySection.appendChild(noMatches);
+        return;
+    }
+
+    // Récupérer le nom du profil affiché
+    const profileName = document.querySelector(".profile-card-name")?.textContent || "User";
+
+    // Limiter à 5 matchs maximum pour ne pas surcharger l'interface
+    const recentMatches = matches.slice(0, 5);
+    
+    // Créer un tableau pour les matchs
+    const matchTable = document.createElement("table");
+    matchTable.className = "match-history-table";
+    
+    // Créer l'en-tête du tableau avec le nouveau format
+    const tableHeader = document.createElement("tr");
+    tableHeader.innerHTML = `
+        <th>Result</th>
+        <th>Player</th>
+        <th>Score</th>
+        <th>Opponent</th>
+        <th>Date</th>
+    `;
+    matchTable.appendChild(tableHeader);
+
+    // Ajouter chaque match au tableau
+    for (const match of recentMatches) {
+        try {
+            // Déterminer si l'utilisateur affiché est user1 ou user2
+            const isUser1 = match.user1_id === userId;
+            const userLives = isUser1 ? match.user1_lives : match.user2_lives;
+            const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
+            
+            // Calculer les points marqués (3 vies au départ, points = 3 - vies de l'adversaire)
+            const userPoints = 3 - opponentLives;
+            const opponentPoints = 3 - userLives;
+            
+            // Déterminer le résultat
+            const result = userLives > opponentLives ? "Victory" : "Defeat";
+            
+            // Récupérer le nom de l'adversaire en utilisant les noms réels des joueurs
+            const opponentName = isUser1 ? match.user2Name : match.user1Name;
+            const userName = isUser1 ? match.user1Name : match.user2Name;
+            
+            // Formater la date
+            const matchDate = new Date(match.match_date).toLocaleDateString();
+            
+            // Créer la ligne du tableau avec le nouveau format et les points marqués
+            const row = document.createElement("tr");
+            row.className = result.toLowerCase();
+            row.innerHTML = `
+                <td class="${result.toLowerCase()}">${result}</td>
+                <td class="player-name">${userName}</td>
+                <td class="score-cell"><span class="user-score">${userPoints}</span> - <span class="opponent-score">${opponentPoints}</span></td>
+                <td class="opponent-name">${opponentName}</td>
+                <td class="match-date">${matchDate}</td>
+            `;
+            matchTable.appendChild(row);
+        } catch (error) {
+            console.error("Error displaying match:", error, match);
+        }
+    }
+
+    historySection.appendChild(matchTable);
+    
+    // Ajouter un lien pour voir tous les matchs si nécessaire
+    if (matches.length > 5) {
+        const viewMoreLink = document.createElement("a");
+        viewMoreLink.textContent = "View all matches";
+        viewMoreLink.href = "#";
+        viewMoreLink.className = "view-more-matches";
+        viewMoreLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            // Afficher tous les matchs en élargissant la liste existante
+            historySection.innerHTML = "";
+            historySection.appendChild(historyTitle);
+            
+            const fullMatchTable = document.createElement("table");
+            fullMatchTable.className = "match-history-table";
+            fullMatchTable.appendChild(tableHeader.cloneNode(true));
+            
+            for (const match of matches) {
+                try {
+                    const isUser1 = match.user1_id === userId;
+                    const userLives = isUser1 ? match.user1_lives : match.user2_lives;
+                    const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
+                    
+                    // Calculer les points marqués (3 vies au départ, points = 3 - vies de l'adversaire)
+                    const userPoints = 3 - opponentLives;
+                    const opponentPoints = 3 - userLives;
+                    
+                    const result = userLives > opponentLives ? "Victory" : "Defeat";
+                    const opponentName = isUser1 ? match.user2Name : match.user1Name;
+                    const userName = isUser1 ? match.user1Name : match.user2Name;
+                    const matchDate = new Date(match.match_date).toLocaleDateString();
+                    
+                    const row = document.createElement("tr");
+                    row.className = result.toLowerCase();
+                    row.innerHTML = `
+                        <td class="${result.toLowerCase()}">${result}</td>
+                        <td class="player-name">${userName}</td>
+                        <td class="score-cell"><span class="user-score">${userPoints}</span> - <span class="opponent-score">${opponentPoints}</span></td>
+                        <td class="opponent-name">${opponentName}</td>
+                        <td class="match-date">${matchDate}</td>
+                    `;
+                    fullMatchTable.appendChild(row);
+                } catch (error) {
+                    console.error("Error displaying full match:", error, match);
+                }
+            }
+            
+            historySection.appendChild(fullMatchTable);
+            
+            // Ajouter un lien pour revenir à la vue réduite
+            const showLessLink = document.createElement("a");
+            showLessLink.textContent = "Show less";
+            showLessLink.href = "#";
+            showLessLink.className = "view-less-matches";
+            showLessLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                displayMatchHistory(matches, userId);
+            });
+            historySection.appendChild(showLessLink);
+        });
+        historySection.appendChild(viewMoreLink);
+    }
 }

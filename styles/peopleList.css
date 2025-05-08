@@ -142,7 +142,9 @@
     align-items: center;
     gap: 1rem;
     z-index: 1000;
-    width: 300px;
+    width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
     color: white;
 }
 
@@ -212,6 +214,135 @@
     margin: 0.3rem 0;
     font-size: 0.9rem;
     color: #ccc;
+}
+
+/* Styles pour l'historique des matchs dans la carte profil */
+.profile-card-match-history {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.profile-card-match-history h4 {
+    margin-top: 0;
+    color: #f0f0f0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.1em;
+    letter-spacing: 0.5px;
+}
+
+.match-history-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.match-history-table th,
+.match-history-table td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.match-history-table th {
+    font-weight: bold;
+    color: #f0f0f0;
+    background-color: rgba(0, 0, 0, 0.3);
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 0.5px;
+}
+
+.match-history-table tr {
+    transition: background-color 0.2s ease;
+}
+
+.match-history-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.match-history-table .victory {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.match-history-table .defeat {
+    color: #f44336;
+    font-weight: bold;
+}
+
+.match-history-table tr.victory {
+    background-color: rgba(76, 175, 80, 0.08);
+}
+
+.match-history-table tr.defeat {
+    background-color: rgba(244, 67, 54, 0.08);
+}
+
+.match-history-table tr.victory:hover {
+    background-color: rgba(76, 175, 80, 0.15);
+}
+
+.match-history-table tr.defeat:hover {
+    background-color: rgba(244, 67, 54, 0.15);
+}
+
+.match-history-table .score-cell {
+    font-weight: bold;
+    padding: 8px 12px;
+    position: relative;
+}
+
+.match-history-table .user-score,
+.match-history-table .opponent-score {
+    font-size: 1.1em;
+}
+
+.match-history-table tr.victory .user-score {
+    color: #4caf50;
+}
+
+.match-history-table tr.defeat .opponent-score {
+    color: #f44336;
+}
+
+.match-history-table .player-name,
+.match-history-table .opponent-name {
+    font-weight: 500;
+}
+
+.match-history-table .match-date {
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Liens pour voir plus/moins de matchs */
+.view-more-matches,
+.view-less-matches {
+    display: block;
+    text-align: center;
+    margin-top: 10px;
+    color: #4b9cd3;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 5px 0;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+}
+
+.view-more-matches:hover,
+.view-less-matches:hover {
+    color: #6fb7e9;
+    text-decoration: underline;
 }
 
 /* Overlay pour la carte "profil" */
