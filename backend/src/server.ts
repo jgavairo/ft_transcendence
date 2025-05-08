@@ -249,6 +249,10 @@ app.post('/api/friends/refuseRequest', { preHandler: authMiddleware }, async (re
     return friendsRoutes.refuseRequest(request, reply);
 });
 
+app.post('/api/user/isOnline', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return friendsRoutes.isOnline(request, reply);
+});
+
 /////////////////
 // CHAT ROUTES //
 /////////////////

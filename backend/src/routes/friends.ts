@@ -443,6 +443,29 @@ async function refuseRequestHandler(request: FastifyRequest, reply: FastifyReply
     }
 }
 
+async function isOnlineHandler(request: FastifyRequest, reply: FastifyReply)
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const { username } = request.body as { username: string };
+        const isOnline = userSocketMap.has(username);
+        return reply.status(200).send
+        ({
+            success: true,
+            isOnline: isOnline
+        });
+    }
+    catch (error)
+    {
+        console.error('Error in isOnlineHandler:', error);
+        return reply.status(500).send({
+            success: false,
+            message: "Error from isOnlineHandler"
+        });
+    }
+}
+
 export const friendsRoutes = 
 {
     sendRequest : sendRequestHandler,
@@ -452,5 +475,6 @@ export const friendsRoutes =
     acceptRequest : acceptRequestHandler,
     removeFriend : removeFriendHandler,
     cancelRequest : cancelRequestHandler,
-    refuseRequest : refuseRequestHandler
+    refuseRequest : refuseRequestHandler,
+    isOnline : isOnlineHandler
 }

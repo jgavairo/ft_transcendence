@@ -191,4 +191,11 @@ export class FriendsManager
             return false;
         }
     }
+
+    public static async isOnline(username: string)
+    {
+        const response = await api.post('/api/user/isOnline', { username: username });
+        const data = await response.json();
+        return data.isOnline;
+    }
 }
