@@ -571,7 +571,6 @@ export function resetGame() {
     firstFrame = false;
     lastState = null;
     explosion.length = 0;
-    displayMenu();
 }
 document.addEventListener('DOMContentLoaded', () => {
     displayMenu();
