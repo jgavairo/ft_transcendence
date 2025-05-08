@@ -667,6 +667,26 @@ export class DatabaseManager
             throw error;
         }
     }
+
+    public async getMatchHistoryForUser(userId: number): Promise<any[]> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        try {
+            const results = await this.db.all(
+                `SELECT * 
+                 FROM match_history 
+                 WHERE user1_id = ? OR user2_id = ? 
+                 ORDER BY match_date DESC 
+                 LIMIT 20`,
+                [userId, userId]
+            );
+
+            return results || [];
+        } catch (error) {
+            console.error('Error fetching match history for user:', error);
+            throw error;
+        }
+    }
 }
 
 export const dbManager = DatabaseManager.getInstance();
