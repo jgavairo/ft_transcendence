@@ -184,7 +184,8 @@ export const googleAuthHandler = async (userInfo: { email?: string; name?: strin
         return { success: false, message: "Google n'a pas renvoyé d'email, impossible de créer le compte." };
     }
 
-    const username = name && name.trim() !== '' ? name : email.split('@')[0];
+    let username = email.split('@')[0];
+    username = username.replace(/[^a-zA-Z0-9]/g, '');
     console.log("Generated username:", username);
 
     let user = await dbManager.getUserByEmail(email);

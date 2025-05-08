@@ -9,11 +9,20 @@ export class LoginManager
 {
     private static readonly AUTH_KEY = "isauthed";
 
-    private static removeLoginModal(): void
+    private static async removeLoginModal(): Promise<void>
     {
         const modal = document.getElementById('optionnalModal');
         if (modal)
             modal.innerHTML = "";
+        const user = await MainApp.getUserInfo();
+        if (user && user.id)
+        {
+            console.log('user id:', user.id);
+        }
+        else
+        {
+            console.log('user id not found');
+        }
         showNotification("Logged in successfully");
     }
 
