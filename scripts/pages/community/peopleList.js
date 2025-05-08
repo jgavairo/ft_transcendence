@@ -243,8 +243,12 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     card.className = "profile-card";
     // Ajoutez l'image de profil
     const img = document.createElement("img");
-    img.className = "profile-card-picture";
-    img.src = profilePicture || "default-profile.png";
+    const isOnline = await FriendsManager.isOnline(username);
+    if (isOnline)
+        img.className = "profile-card-picture-online";
+    else
+        img.className = "profile-card-picture";
+    img.src = profilePicture;
     img.alt = `${username}'s profile picture`;
     // Ajoutez le nom d'utilisateur
     const name = document.createElement("h3");
@@ -265,10 +269,10 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     closeButton.addEventListener("click", () => {
         overlay.remove();
     });
-    // Ajoutez une section pour les statistiques
+    // Ajoutez une section pour les statistiques dans le style Call of Duty
     const statsSection = document.createElement("div");
-    statsSection.className = "profile-card-stats";
-    statsSection.textContent = "Loading stats...";
+    statsSection.className = "cod-combat-report";
+    statsSection.innerHTML = `<div class="cod-loading">LOADING COMBAT RECORD...</div>`;
     // Récupérez les statistiques de l'utilisateur
     try {
         const response = await fetch(`http://${HOSTNAME}:3000/api/games/1/rankings`, {
@@ -287,22 +291,99 @@ export async function showProfileCard(username, profilePicture, email, bio, user
             const { win, loss } = userStats;
             const playedGames = win + loss;
             const ratio = loss === 0 ? win : (win / loss).toFixed(2);
+            const accuracy = Math.floor(Math.random() * 30) + 60; // Simuler une précision entre 60% et 90%
+            const killStreak = Math.floor(Math.random() * 5) + 3; // Simuler une série d'éliminations entre 3 et 8
+            const rank = Math.floor(win / 3) + 1; // Calculer un rang basé sur les victoires
+            // Générer un surnom de combat basé sur les statistiques
+            let codename = "Rookie";
+            if (ratio > 3)
+                codename = "Legendary";
+            else if (ratio > 2)
+                codename = "Veteran";
+            else if (ratio > 1.5)
+                codename = "Expert";
+            else if (ratio > 1)
+                codename = "Specialist";
+            // Créer une section de statistiques inspirée du style CoD Black Ops 2
             statsSection.innerHTML = `
-                <h4>1vs1 Online Stats</h4>
-                <p><strong>Wins:</strong> ${win}</p>
-                <p><strong>Losses:</strong> ${loss}</p>
-                <p><strong>Games Played:</strong> ${playedGames}</p>
-                <p><strong>Win/Loss Ratio:</strong> ${ratio}</p>
+                <div class="cod-header">
+                    <div class="cod-title">COMBAT RECORD</div>
+                    <div class="cod-classification">CLASSIFIED</div>
+                </div>
+                <div class="cod-player-info">
+                    <div class="cod-rank-container">
+                        <div class="cod-rank">${rank}</div>
+                        <div class="cod-codename">${codename}</div>
+                    </div>
+                    <div class="cod-stats-primary">
+                        <div class="cod-stat-group">
+                            <div class="cod-stat-value">${playedGames}</div>
+                            <div class="cod-stat-label">MISSIONS</div>
+                        </div>
+                        <div class="cod-stat-group">
+                            <div class="cod-stat-value cod-win">${win}</div>
+                            <div class="cod-stat-label">VICTORIES</div>
+                        </div>
+                        <div class="cod-stat-group">
+                            <div class="cod-stat-value cod-loss">${loss}</div>
+                            <div class="cod-stat-label">DEFEATS</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cod-stats-secondary">
+                    <div class="cod-stat-bar">
+                        <div class="cod-bar-label">W/L RATIO</div>
+                        <div class="cod-bar-container">
+                            <div class="cod-bar-fill" style="width: ${Math.min(ratio * 25, 100)}%"></div>
+                            <span class="cod-bar-value">${ratio}</span>
+                        </div>
+                    </div>
+                    <div class="cod-stat-bar">
+                        <div class="cod-bar-label">ACCURACY</div>
+                        <div class="cod-bar-container">
+                            <div class="cod-bar-fill" style="width: ${accuracy}%"></div>
+                            <span class="cod-bar-value">${accuracy}%</span>
+                        </div>
+                    </div>
+                    <div class="cod-stat-bar">
+                        <div class="cod-bar-label">BEST STREAK</div>
+                        <div class="cod-bar-container">
+                            <div class="cod-bar-fill" style="width: ${killStreak * 10}%"></div>
+                            <span class="cod-bar-value">${killStreak}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="cod-footer">
+                    <div class="cod-timestamp">LAST UPDATED: ${new Date().toLocaleDateString()}</div>
+                </div>
             `;
         }
         else {
             console.log("No stats found for userId:", userIdAsNumber);
-            statsSection.textContent = "No stats available.";
+            statsSection.innerHTML = `
+                <div class="cod-header">
+                    <div class="cod-title">COMBAT RECORD</div>
+                    <div class="cod-classification">CLASSIFIED</div>
+                </div>
+                <div class="cod-no-data">NO COMBAT DATA AVAILABLE</div>
+                <div class="cod-footer">
+                    <div class="cod-timestamp">LAST UPDATED: ${new Date().toLocaleDateString()}</div>
+                </div>
+            `;
         }
     }
     catch (error) {
         console.error("Error fetching user stats:", error);
-        statsSection.textContent = "Failed to load stats.";
+        statsSection.innerHTML = `
+            <div class="cod-header">
+                <div class="cod-title">COMBAT RECORD</div>
+                <div class="cod-classification">CLASSIFIED</div>
+            </div>
+            <div class="cod-error">ERROR ACCESSING COMBAT DATABASE</div>
+            <div class="cod-footer">
+                <div class="cod-timestamp">SYSTEM FAILURE: ${new Date().toLocaleDateString()}</div>
+            </div>
+        `;
     }
     // Ajoutez les éléments à la carte
     card.appendChild(closeButton);
