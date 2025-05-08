@@ -243,8 +243,12 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     card.className = "profile-card";
     // Ajoutez l'image de profil
     const img = document.createElement("img");
-    img.className = "profile-card-picture";
-    img.src = profilePicture || "default-profile.png";
+    const isOnline = await FriendsManager.isOnline(username);
+    if (isOnline)
+        img.className = "profile-card-picture-online";
+    else
+        img.className = "profile-card-picture";
+    img.src = profilePicture;
     img.alt = `${username}'s profile picture`;
     // Ajoutez le nom d'utilisateur
     const name = document.createElement("h3");
