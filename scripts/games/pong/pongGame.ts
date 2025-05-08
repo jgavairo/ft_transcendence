@@ -166,9 +166,6 @@ function animateNumber(
   });
 }
 
-
-
-
 export async function joinQueue(username: string) {
   // Récupérer l'utilisateur actuel et son ID si disponible
   try {
@@ -674,7 +671,6 @@ export function resetGame()
   firstFrame = false;
   lastState  = null;
   explosion.length = 0;
-  displayMenu();
 }
 
 

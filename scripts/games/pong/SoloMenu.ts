@@ -1,6 +1,6 @@
-import { startSoloTriPong } from './TriPong.js';
+import { startSoloTriPong, connectTriPong } from './TriPong.js';
 import { displayPlayMenu } from './PlayMenu.js';
-import { startSoloPong } from './pongGame.js';
+import { startSoloPong, connectPong } from './pongGame.js';
 import { GameManager } from '../../managers/gameManager.js';
 
 
@@ -13,8 +13,8 @@ export function displaySoloMenu(): void {
     canvas.width = cw;
     canvas.height = ch;
 
-    // connectPong();
-    // connectTriPong();
+    connectPong();
+    connectTriPong();
     
     // Fond & titre
     ctx.fillStyle = 'black';

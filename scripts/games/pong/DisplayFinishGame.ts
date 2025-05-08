@@ -1,4 +1,6 @@
-import { resetGame } from './pongGame.js';
+import { resetGame, connectPong } from './pongGame.js';
+import { socket } from './network.js';
+import { displayMenu } from './DisplayMenu.js';
 
 let gameOverOverlay: HTMLDivElement | null = null;
 
@@ -50,8 +52,19 @@ export function showGameOverOverlay() {
   document.body.appendChild(gameOverOverlay);
 
   btnMenu.addEventListener('click', () => {
+    console.log('🧹 Clean up before returning to menu');
+
+    resetGame();
+
+    socket.removeAllListeners();
+    socket.disconnect();
+
     gameOverOverlay!.remove();
     gameOverOverlay = null;
-    resetGame();
+
+    displayMenu();
+
+    socket.connect();
+    connectPong();
   });
 }

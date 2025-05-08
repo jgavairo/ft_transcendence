@@ -1,4 +1,6 @@
-import { resetGame } from './pongGame.js';
+import { resetGame, connectPong } from './pongGame.js';
+import { socket } from './network.js';
+import { displayMenu } from './DisplayMenu.js';
 let gameOverOverlay = null;
 export function showGameOverOverlay() {
     if (gameOverOverlay)
@@ -43,8 +45,19 @@ export function showGameOverOverlay() {
     gameOverOverlay.appendChild(panel);
     document.body.appendChild(gameOverOverlay);
     btnMenu.addEventListener('click', () => {
+        console.log('🧹 Clean up before returning to menu');
+        // 1) Stoppe la boucle de jeu en mémoire
+        resetGame();
+        // 2) Déconnecte vraiment la socket et enlève **tous** ses listeners
+        socket.removeAllListeners();
+        socket.disconnect();
+        // 3) Supprime l’overlay
         gameOverOverlay.remove();
         gameOverOverlay = null;
-        resetGame();
+        // 4) Remets le menu principal à l’écran
+        displayMenu();
+        // (re)crée une connexion toute propre
+        socket.connect();
+        connectPong();
     });
 }
