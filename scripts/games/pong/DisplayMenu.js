@@ -1,7 +1,7 @@
 import { displayPlayMenu } from './PlayMenu.js';
 import { displayShopMenu } from './ShopMenu.js';
 export function displayMenu() {
-    const canvas = document.getElementById('pongCanvas');
+    const canvas = document.getElementById('gameCanvas');
     if (!canvas)
         return;
     const ctx = canvas.getContext('2d');

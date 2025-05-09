@@ -1,5 +1,5 @@
 export function displayWaitingScreen(): void {
-    const canvas = document.getElementById('pongCanvas') as HTMLCanvasElement;
+    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
     if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
     canvas.width = canvas.clientWidth;

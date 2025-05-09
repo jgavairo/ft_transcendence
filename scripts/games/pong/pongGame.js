@@ -226,7 +226,7 @@ function onKeyUp(e) {
 }
 // Initialise le canvas et le contexte
 export function startPong() {
-    canvas = document.querySelector('#pongCanvas');
+    canvas = document.querySelector('#gameCanvas');
     ctx = canvas.getContext('2d');
     canvas.width = CW;
     canvas.height = CH;
@@ -583,6 +583,6 @@ window.addEventListener('keydown', (e) => {
         return;
     if (modal.innerHTML.trim() !== '') {
         modal.innerHTML = '';
-        displayMenu();
+        // displayMenu();
     }
 });

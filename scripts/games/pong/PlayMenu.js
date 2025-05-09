@@ -3,7 +3,7 @@ import { displayMultiMenu } from "./MultiMenu.js";
 import { displaySoloMenu } from './SoloMenu.js';
 import { displayMenu } from './DisplayMenu.js';
 export function displayPlayMenu() {
-    const canvas = document.getElementById('pongCanvas');
+    const canvas = document.getElementById('gameCanvas');
     if (!canvas)
         return;
     const ctx = canvas.getContext('2d');

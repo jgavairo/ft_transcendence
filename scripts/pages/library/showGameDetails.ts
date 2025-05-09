@@ -4,7 +4,7 @@ import { displayMenu } from '../../games/pong/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
 import api from "../../helpers/api.js"; // Import de l'API helper
-import { FriendsManager } from "../../managers/friendsManager.js";
+import { launchPong } from "../../games/pong/main.js";
 
 export async function showGameDetails(gameIdOrObj: number | any): Promise<void> {
     // Récupérer l'objet game complet
@@ -112,10 +112,7 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
     // Bouton PLAY
     const playBtn = details.querySelector('#launchGameButton') as HTMLButtonElement;
     playBtn.addEventListener('click', () => {
-        const modal = document.getElementById('optionnalModal');
-        if (!modal) return;
-        modal.innerHTML = gameModalHTML;
-        displayMenu();
+        launchPong();
     });
 
     // Bouton Go to My Rank

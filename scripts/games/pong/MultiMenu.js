@@ -8,7 +8,7 @@ export function displayMultiMenu() {
     // 1) Assure-toi d'être connecté / d'avoir installé les handlers
     connectPong();
     connectTriPong();
-    const canvas = document.getElementById('pongCanvas');
+    const canvas = document.getElementById('gameCanvas');
     if (!canvas)
         return;
     const ctx = canvas.getContext('2d');

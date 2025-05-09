@@ -260,7 +260,7 @@ function onKeyUp(e: KeyboardEvent) {
 
 // Initialise le canvas et le contexte
 export function startPong() {
-  canvas = document.querySelector('#pongCanvas') as HTMLCanvasElement;
+  canvas = document.querySelector('#gameCanvas') as HTMLCanvasElement;
   ctx = canvas.getContext('2d')!;
   canvas.width = CW;
   canvas.height = CH;
@@ -678,13 +678,14 @@ document.addEventListener('DOMContentLoaded', () => {
   displayMenu();
 });
 
-window.addEventListener('keydown', (e) => {
+window.addEventListener('keydown', (e) => 
+{
   if (e.key !== 'Escape') return;
   const modal = document.getElementById('optionnalModal');
   if (!modal) return;
-  if (modal.innerHTML.trim() !== '') {
+  if (modal.innerHTML.trim() !== '') 
+  {
     modal.innerHTML = '';
-    displayMenu();
-
+    // displayMenu();
   }
 });
