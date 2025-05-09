@@ -45,18 +45,12 @@ export function showGameOverOverlay() {
     gameOverOverlay.appendChild(panel);
     document.body.appendChild(gameOverOverlay);
     btnMenu.addEventListener('click', () => {
-        console.log('🧹 Clean up before returning to menu');
-        // 1) Stoppe la boucle de jeu en mémoire
         resetGame();
-        // 2) Déconnecte vraiment la socket et enlève **tous** ses listeners
         socket.removeAllListeners();
         socket.disconnect();
-        // 3) Supprime l’overlay
         gameOverOverlay.remove();
         gameOverOverlay = null;
-        // 4) Remets le menu principal à l’écran
         displayMenu();
-        // (re)crée une connexion toute propre
         socket.connect();
         connectPong();
     });

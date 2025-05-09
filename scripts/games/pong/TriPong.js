@@ -154,7 +154,7 @@ window.addEventListener('keyup', (e) => {
 });
 // Initialise le canvas et le contexte
 export function startTriPong() {
-    canvas = document.querySelector('#pongCanvas');
+    canvas = document.querySelector('#gameCanvas');
     ctx = canvas.getContext('2d');
     canvas.width = CW;
     canvas.height = CH;

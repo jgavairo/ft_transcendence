@@ -4,7 +4,7 @@ import { displaySoloMenu } from './SoloMenu.js';
 import { displayMenu } from './DisplayMenu.js';
 
 export function displayPlayMenu(): void {
-    const canvas = document.getElementById('pongCanvas') as HTMLCanvasElement;
+    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
     if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
     const cw = canvas.clientWidth;

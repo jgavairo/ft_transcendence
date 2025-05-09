@@ -3,7 +3,7 @@ import { displayPlayMenu } from './PlayMenu.js';
 import { startSoloPong, connectPong } from './pongGame.js';
 import { GameManager } from '../../managers/gameManager.js';
 export function displaySoloMenu() {
-    const canvas = document.getElementById('pongCanvas');
+    const canvas = document.getElementById('gameCanvas');
     if (!canvas)
         return;
     const ctx = canvas.getContext('2d');

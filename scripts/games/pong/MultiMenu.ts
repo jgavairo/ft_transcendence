@@ -11,7 +11,7 @@ export function displayMultiMenu(): void {
   connectPong();
   connectTriPong();
 
-  const canvas = document.getElementById('pongCanvas') as HTMLCanvasElement;
+  const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
   if (!canvas) return;
   const ctx = canvas.getContext('2d')!;
   const cw = canvas.clientWidth, ch = canvas.clientHeight;

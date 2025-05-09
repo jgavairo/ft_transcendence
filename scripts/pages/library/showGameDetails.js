@@ -1,9 +1,8 @@
 import { fetchUsernames, showProfileCard } from "../community/peopleList.js"; // Import de showProfileCard
-import { gameModalHTML } from "../../sourcepage.js";
-import { displayMenu } from '../../games/pong/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
 import api from "../../helpers/api.js"; // Import de l'API helper
+import { launchPong } from "../../games/pong/main.js";
 export async function showGameDetails(gameIdOrObj) {
     // Récupérer l'objet game complet
     let game;
@@ -101,11 +100,7 @@ export async function showGameDetails(gameIdOrObj) {
     // Bouton PLAY
     const playBtn = details.querySelector('#launchGameButton');
     playBtn.addEventListener('click', () => {
-        const modal = document.getElementById('optionnalModal');
-        if (!modal)
-            return;
-        modal.innerHTML = gameModalHTML;
-        displayMenu();
+        launchPong();
     });
     // Bouton Go to My Rank
     const scrollToCurrentUserBtn = details.querySelector('#scrollToCurrentUser');

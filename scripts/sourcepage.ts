@@ -174,7 +174,7 @@ const changePasswordModalHTML = `
 const gameModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="game-modal" id="games-modal">
-          <canvas id="pongCanvas" width="1184" height="784"></canvas>
+          <canvas id="gameCanvas" width="1200" height="800"></canvas>
         </div>
     </div>
 `;

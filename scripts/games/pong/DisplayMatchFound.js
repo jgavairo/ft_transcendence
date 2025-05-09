@@ -1,5 +1,5 @@
 export function displayMatchFound(message) {
-    const canvas = document.getElementById('pongCanvas');
+    const canvas = document.getElementById('gameCanvas');
     if (!canvas)
         return;
     const ctx = canvas.getContext('2d');
