@@ -1,15 +1,14 @@
 // scripts/games/pong/MultiMenu.ts
-import { connectPong, joinQueue } from './pongGame.js';
+import { connectPong } from './pongGame.js';
 import { displayWaitingScreen } from './WaitingScreen.js';
 import { displayPlayMenu } from './PlayMenu.js';
 import { displayMatchFound } from './DisplayMatchFound.js';
-import { connectTriPong, joinTriQueue } from './TriPong.js';
 import { GameManager } from '../../managers/gameManager.js';
+import { joinQueue, joinTriQueue } from './SocketEmit.js';
 
 export function displayMultiMenu(): void {
   // 1) Assure-toi d'être connecté / d'avoir installé les handlers
   connectPong();
-  connectTriPong();
 
   const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
   if (!canvas) return;

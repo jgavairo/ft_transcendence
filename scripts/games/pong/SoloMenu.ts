@@ -1,6 +1,6 @@
-import { startSoloTriPong, connectTriPong } from './TriPong.js';
 import { displayPlayMenu } from './PlayMenu.js';
-import { startSoloPong, connectPong } from './pongGame.js';
+import { connectPong } from './pongGame.js';
+import { startSoloPong, startSoloTri } from './SocketEmit.js';
 import { GameManager } from '../../managers/gameManager.js';
 
 
@@ -14,7 +14,6 @@ export function displaySoloMenu(): void {
     canvas.height = ch;
 
     connectPong();
-    connectTriPong();
     
     // Fond & titre
     ctx.fillStyle = 'black';
@@ -63,10 +62,10 @@ export function displaySoloMenu(): void {
             const currentUser = await GameManager.getCurrentUser();
             const username = currentUser?.username || "Player1";
             console.log('Current user for solo 3 players:', username);
-            startSoloTriPong(username);
+            startSoloTri(username);
           } catch (error) {
             console.error('Error getting current user:', error);
-            startSoloTriPong("Player1"); // Fallback au nom par défaut en cas d'erreur
+            startSoloTri("Player1"); // Fallback au nom par défaut en cas d'erreur
           }
         }
       },

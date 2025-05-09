@@ -1,5 +1,4 @@
 import { gameover, ctx } from "./pongGame.js";
-import { gameoverT } from "./TriPong.js";
 const CW = 1185;
 const CH = 785;
 const CX = CW / 2;
@@ -49,7 +48,7 @@ function animateExplosion() {
         ctx.restore();
     });
     // 3) suite de l’animation
-    if (explosion.length && !gameover && !gameoverT)
+    if (explosion.length && !gameover)
         requestAnimationFrame(animateExplosion);
 }
 let goFrame = 0;

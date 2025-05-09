@@ -3,6 +3,7 @@ import { socket } from './network.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
 import { showGameOverOverlay } from './DisplayFinishGame.js';
+import { sendMove } from './SocketEmit.js'
 
 // Interface de l'état de partie reçue du serveur
 export interface MatchState {
@@ -22,8 +23,8 @@ let canvas: HTMLCanvasElement;
 export let ctx: CanvasRenderingContext2D;
 
 // Constantes de rendu (synchronisées avec le serveur)
-const CW = 1185;
-const CH = 785;
+const CW = 1200;
+const CH = 800;
 const CX = CW / 2;
 const CY = CH / 2;
 const R  = Math.min(CW, CH) / 2 - 45;      // rayon du terrain
@@ -65,48 +66,55 @@ export function getUser2Id(): string | null {
   return user2Id;
 }
 
-// Initialise la connexion Socket.IO et les handlers
-export function connectPong() {
-  socket.on('matchFound', (data) => {
-    soloMode = data.mode === 'solo';
-    mySide = soloMode ? 0 : data.side;
-    lastState = null;
-    ready = false;
-    firstFrame = false;
+console.log('pongGame.ts chargé, prête à connectPong');
 
-    // Stocker les IDs des joueurs
-    user1Id = data.user1Id;
-    user2Id = data.user2Id;
-    
-    // Stocker les noms des joueurs
-    playerName = data.you || "Player";
-    opponentName = data.opponent || "Opponent";
+function onMatchFound(data: any) {
+  console.log('📥 onMatchFound', data);
+  soloMode   = data.mode === 'solo';
+  mySide     = soloMode ? 0 : data.side;
+  lastState  = null;
+  ready      = false;
+  firstFrame = false;
 
-    startPong();
-    performCountdown().then(() => {
-      ready = true;
-    });
-  });
+  user1Id    = data.user1Id;
+  user2Id    = data.user2Id;
+  playerName = data.you || 'Player';
+  opponentName = data.opponent || 'Opponent';
 
-  socket.on('gameState', (state: MatchState) => {
-    lastState = state;
-
-    // on n'affiche jamais avant que ready soit true
-    if (!ready) return;
-
-    // si c'est la toute première frame, on la met en attente 500 ms
-    if (!firstFrame) {
-      firstFrame = true;
-      setTimeout(() => {
-        renderPong(state);
-      }, 500);
-    } else {
-      // toutes les autres frames passent directement
-      renderPong(state);
-    }
-  });
+  startPong();
+  performCountdown().then(() => { ready = true; });
 }
 
+function onGameState(state: MatchState) {
+  console.log('📦 full state:', state);
+  console.log('🎮 paddles raw:', state.paddles);
+  console.log('🎮 paddles entries:', state.paddles.map((p,i) => [i, p]));
+  lastState = state;
+  if (!ready) return;
+  if (!firstFrame) {
+    firstFrame = true;
+    setTimeout(() => renderPong(state), 500);
+  } else {
+    renderPong(state);
+  }
+}
+
+
+export function connectPong() {
+  console.log('ℹ️ connectPong() appelé');
+  // Pong classique
+  socket.off('matchFound').on('matchFound', onMatchFound);
+  socket.off('gameState'  ).on('gameState',   onGameState);
+
+  // Tri-Pong → on branche exactement les mêmes handlers
+  socket.off('matchFoundTri').on('matchFoundTri', onMatchFound);
+  socket.off('stateUpdateTri').on('stateUpdateTri', onGameState);
+
+  // Explosion de balle
+  socket.off('ballExplode').on('ballExplode', ({ x, y }) => {
+    createExplosion(x, y);
+  });
+}
 
 async function performCountdown(): Promise<void> {
   // Si on a déjà un état, on le stocke pour le flouter
@@ -166,71 +174,6 @@ function animateNumber(
   });
 }
 
-export async function joinQueue(username: string) {
-  // Récupérer l'utilisateur actuel et son ID si disponible
-  try {
-    const currentUser = await GameManager.getCurrentUser();
-    const userId = currentUser?.id;
-    
-    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
-    socket.emit('joinQueue', { username, userId });
-  } catch (error) {
-    console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-    // En cas d'erreur, envoyer seulement le nom d'utilisateur
-    socket.emit('joinQueue', { username });
-  }
-}
-
-export async function startSoloPong(username: string) {
-  // Récupérer l'utilisateur actuel et son ID si disponible
-  try {
-    const currentUser = await GameManager.getCurrentUser();
-    const userId = currentUser?.id;
-    
-    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
-    socket.emit('startSolo', { username, userId });
-  } catch (error) {
-    console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-    // En cas d'erreur, envoyer seulement le nom d'utilisateur
-    socket.emit('startSolo', { username });
-  }
-}
-
-// Ajout d'une fonction pour le mode Tri-Pong
-export async function joinTriQueue(username: string) {
-  // Récupérer l'utilisateur actuel et son ID si disponible
-  try {
-    const currentUser = await GameManager.getCurrentUser();
-    const userId = currentUser?.id;
-    
-    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
-    socket.emit('joinTriQueue', { username, userId });
-  } catch (error) {
-    console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-    // En cas d'erreur, envoyer seulement le nom d'utilisateur
-    socket.emit('joinTriQueue', { username });
-  }
-}
-
-export async function startSoloTri(username: string) {
-  // Récupérer l'utilisateur actuel et son ID si disponible
-  try {
-    const currentUser = await GameManager.getCurrentUser();
-    const userId = currentUser?.id;
-    
-    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
-    socket.emit('startSoloTri', { username, userId });
-  } catch (error) {
-    console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-    // En cas d'erreur, envoyer seulement le nom d'utilisateur
-    socket.emit('startSoloTri', { username });
-  }
-}
-
-// Envoi des commandes paddle au serveur
-function sendMove(side: number, direction: 'up' | 'down' | null) {
-  socket.emit('movePaddle', { side, direction });
-}
 
 // En haut du fichier
 function onKeyDown(e: KeyboardEvent) {
@@ -266,10 +209,6 @@ export function startPong() {
   canvas.height = CH;
 }
 
-function endPong() {
-  window.removeEventListener('keydown', onKeyDown);
-  window.removeEventListener('keyup',   onKeyUp);
-}
 
 // Ajout de la gestion du message de fin de partie
 async function renderGameOverMessage(state: MatchState) {
@@ -457,8 +396,9 @@ export function renderPong(state: MatchState) {
 
   // 4) paddles avec glow pour le tien - Style amélioré avec effet de dégradé
   state.paddles.forEach((p, i) => {
-    const start = p.phi - ARC_HALF;
-    const end   = p.phi + ARC_HALF;
+    const phi = (typeof p.phi === 'number' ? p.phi : (p as any).angle);
+    const start = phi - ARC_HALF;
+    const end   = phi + ARC_HALF;
     const isMine = i === mySide;
 
     ctx.save();
@@ -503,7 +443,7 @@ export function renderPong(state: MatchState) {
   state.paddles.forEach((p, i) => {
     const isMine = i === mySide;
     const baseRadius = R + 30; // Augmenté légèrement pour plus d'espace
-    const phi = p.phi;
+    const phi = typeof p.phi === 'number' ? p.phi : (p as any).angle;
     
     // Position de base pour le bloc d'informations
     const basePos = fromPolar(phi, baseRadius);
@@ -678,14 +618,17 @@ document.addEventListener('DOMContentLoaded', () => {
   displayMenu();
 });
 
-window.addEventListener('keydown', (e) => 
-{
-  if (e.key !== 'Escape') return;
-  const modal = document.getElementById('optionnalModal');
-  if (!modal) return;
-  if (modal.innerHTML.trim() !== '') 
-  {
-    modal.innerHTML = '';
-    // displayMenu();
-  }
+window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const modal = document.getElementById('optionnalModal');
+    if (!modal) return;
+    if (modal.innerHTML.trim() !== '') {
+      modal.innerHTML = '';
+      return;
+    }
+    resetGame();
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket.connect();
+    connectPong();
 });

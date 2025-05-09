@@ -95,7 +95,6 @@ export function displayPlayMenu(): void {
     };
     
     canvas.addEventListener('click', handler);
-    
     // Permet de nettoyer le listener lorsqu'on quitte ce menu
     function teardown() {
       canvas.removeEventListener('click', handler);
