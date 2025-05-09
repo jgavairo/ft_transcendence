@@ -3,6 +3,7 @@ import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
 import api from "../../helpers/api.js"; // Import de l'API helper
 import { launchPong } from "../../games/pong/main.js";
+import { showErrorNotification } from "../../helpers/notifications.js";
 export async function showGameDetails(gameIdOrObj) {
     // Récupérer l'objet game complet
     let game;
@@ -100,7 +101,20 @@ export async function showGameDetails(gameIdOrObj) {
     // Bouton PLAY
     const playBtn = details.querySelector('#launchGameButton');
     playBtn.addEventListener('click', () => {
-        launchPong();
+        switch (game.name) {
+            case 'Pong':
+                launchPong();
+                break;
+            case 'TriPong':
+                showErrorNotification('This game is not available yet');
+                break;
+            case 'TicTacToe':
+                showErrorNotification('This game is not available yet');
+                break;
+            default:
+                showErrorNotification('This game is not available yet');
+                break;
+        }
     });
     // Bouton Go to My Rank
     const scrollToCurrentUserBtn = details.querySelector('#scrollToCurrentUser');
