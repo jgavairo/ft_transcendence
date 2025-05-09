@@ -1,4 +1,4 @@
-
+import { initTriPong } from './TriPong.js';
 import { displayPlayMenu } from './PlayMenu.js';
 import { displayShopMenu } from './ShopMenu.js';
 
@@ -46,5 +46,18 @@ import { displayShopMenu } from './ShopMenu.js';
     canvas.addEventListener('click', handler);
   }
   
-  
-  
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const btnTri = document.getElementById('btnTriPong');
+    if (!btnTri) {
+      console.warn('btnTriPong introuvable dans le DOM');
+      return;
+    }
+    btnTri.addEventListener('click', () => {
+      const input = document.getElementById('usernameInput') as HTMLInputElement;
+      const username = input && input.value.trim() !== '' 
+                       ? input.value.trim() 
+                       : 'Player';
+      initTriPong(username);
+    });
+  });
