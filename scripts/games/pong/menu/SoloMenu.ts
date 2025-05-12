@@ -1,4 +1,4 @@
-import { displayPlayMenu } from './PlayMenu.js';
+import { displayPlayMenu } from './menu/PlayMenu.js';
 import { connectPong } from './pongGame.js';
 import { startSoloPong, startSoloTri } from './SocketEmit.js';
 import { GameManager } from '../../managers/gameManager.js';
