@@ -5,7 +5,6 @@ import { GameManager } from '../../managers/gameManager.js'; // Import de GameMa
 import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
 import { showGameOverOverlay } from './DisplayFinishGame.js';
 import { sendMove } from './SocketEmit.js';
-import { gameOverOverlay, setGameOverOverlayNull } from './DisplayFinishGame.js';
 // Variables réseau
 let mySide;
 let roomId;
@@ -535,9 +534,4 @@ window.addEventListener('keydown', (e) => {
     resetGame();
     socket.removeAllListeners();
     socket.disconnect();
-    gameOverOverlay.remove();
-    setGameOverOverlayNull();
-    displayMenu();
-    socket.connect();
-    connectPong();
 });

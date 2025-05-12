@@ -1,10 +1,7 @@
 import { resetGame, connectPong } from './pongGame.js';
 import { socket } from './network.js';
 import { displayMenu } from './DisplayMenu.js';
-export let gameOverOverlay = null;
-export function setGameOverOverlayNull() {
-    gameOverOverlay = null;
-}
+let gameOverOverlay = null;
 export function showGameOverOverlay() {
     if (gameOverOverlay)
         return;
