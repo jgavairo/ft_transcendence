@@ -16,6 +16,8 @@
     "install": "^0.13.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
     "tsc": "^2.0.4"
   },
   "devDependencies": {
