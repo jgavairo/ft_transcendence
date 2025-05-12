@@ -150,6 +150,29 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
     // Récupérer l'utilisateur en cours
     const currentUser = await GameManager.getCurrentUser();
 
+    // Récupérer les user_ids du jeu (utilisateurs possédant ce jeu)
+    let userIds: number[] = [];
+    try {
+        userIds = JSON.parse((game as any).user_ids || '[]');
+    } catch {
+        userIds = [];
+    }
+
+    // Récupérer les ids des amis via l'API
+    let friendIds: number[] = [];
+    try {
+        const res = await api.get('/api/friends/allFriendIds');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.ids)) {
+            friendIds = data.ids;
+        }
+    } catch (e) {
+        friendIds = [];
+    }
+
+    // Filtrer la friendlist pour n'afficher que les users possédant le jeu, qui ne sont pas l'utilisateur courant, et qui sont amis
+    const filteredPeople = people.filter(person => userIds.includes(person.id) && person.id !== currentUser.id && friendIds.includes(person.id));
+
     const details = document.querySelector('.library-details') as HTMLElement;
     if (!details) return;
 
@@ -164,7 +187,7 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
         </div>
         <div class="detail-info">
           <div id="rankings-container"></div>
-          ${renderFriendList(people)}
+          ${renderFriendList(filteredPeople)}
         </div>
       </div>
     `;

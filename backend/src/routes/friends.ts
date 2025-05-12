@@ -466,6 +466,16 @@ async function isOnlineHandler(request: FastifyRequest, reply: FastifyReply)
     }
 }
 
+async function getAllFriendIdsHandler(request: FastifyRequest, reply: FastifyReply) {
+    try {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const ids = await dbManager.getAllFriendIds();
+        return reply.status(200).send({ success: true, ids });
+    } catch (error) {
+        return reply.status(500).send({ success: false, message: "Error from getAllFriendIdsHandler" });
+    }
+}
+
 export const friendsRoutes = 
 {
     sendRequest : sendRequestHandler,
@@ -476,6 +486,6 @@ export const friendsRoutes =
     removeFriend : removeFriendHandler,
     cancelRequest : cancelRequestHandler,
     refuseRequest : refuseRequestHandler,
-    isOnline : isOnlineHandler
-        
+    isOnline : isOnlineHandler,
+    getAllFriendIds: getAllFriendIdsHandler
 }
