@@ -51,6 +51,13 @@ export async function setupHeader()
 		renderPeopleList();
 	});
 
+	notificationSocket.on("matchEnd", (data) => {
+		console.log("match ended", data.message);
+		if (data.message)
+			showNotification(data.message);
+		renderPeopleList();
+	});
+
 	if (data && data.success)
 		notificationSocket.emit('register', {username: data.user.username});
 }

@@ -5,6 +5,77 @@ import api from "../../helpers/api.js"; // Import de l'API helper
 import { launchPong } from "../../games/pong/main.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
 import { launchSpaceInvader } from "../../games/spaceInvader/main.js";
+/**
+ * Rend le HTML pour afficher le classement des joueurs pour un jeu spécifique
+ * @param gameId - L'ID du jeu dont on veut afficher le classement
+ * @param container - L'élément HTML dans lequel insérer le classement
+ * @param currentUser - L'utilisateur actuellement connecté
+ */
+export async function renderRankings(gameId, container, currentUser) {
+    // Récupérer les utilisateurs
+    const people = await fetchUsernames();
+    // Récupérer les rankings depuis l'API
+    const rankingsResponse = await api.get(`/api/games/${gameId}/rankings`);
+    const rankings = await rankingsResponse.json();
+    // Associer les rankings aux utilisateurs
+    const rankedPeople = await Promise.all(rankings.map(async (ranking) => {
+        const person = people.find((p) => p.id === ranking.userId);
+        return Object.assign(Object.assign({}, person), { wins: ranking.win, losses: ranking.loss });
+    }));
+    // Générer le HTML pour le classement
+    container.innerHTML = `
+        <div class="rankingSection">
+            <h3 class="sectionTitle">Online 1vs1 Ranking</h3>
+            <div class="rankingContainer">
+                <ul class="rankingList">
+                    ${rankedPeople.map((person, index) => `
+                        <li class="rankingItem" id="user-${person.username}">
+                            <span class="numberRank">${index + 1}</span> <!-- Numéro de classement -->
+                            <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
+                            <span class="playerName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
+                                ${person.username}
+                            </span>
+                            ${index === 0 ? '<span class="medal">🥇</span>' : ''}
+                            ${index === 1 ? '<span class="medal">🥈</span>' : ''}
+                            ${index === 2 ? '<span class="medal">🥉</span>' : ''}
+                            <span class="playerWins">Wins: ${person.wins}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+            <button id="scrollToCurrentUser" class="scrollButton">Go to My Rank</button>
+        </div>
+    `;
+    // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
+    const playerNames = container.querySelectorAll('.playerName');
+    playerNames.forEach(playerName => {
+        playerName.addEventListener('click', () => {
+            var _a;
+            const username = playerName.getAttribute('data-username');
+            const profilePicture = playerName.getAttribute('data-profile-picture') || 'default-profile.png';
+            const email = playerName.getAttribute('data-email');
+            const bio = playerName.getAttribute('data-bio') || 'No bio available';
+            const userId = ((_a = people.find(person => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
+            showProfileCard(username, profilePicture, email, bio, userId);
+        });
+    });
+    // Bouton Go to My Rank
+    const scrollToCurrentUserBtn = container.querySelector('#scrollToCurrentUser');
+    if (scrollToCurrentUserBtn && currentUser && currentUser.username) {
+        scrollToCurrentUserBtn.addEventListener('click', () => {
+            // Trouver l'élément correspondant à l'utilisateur en cours
+            const userElement = container.querySelector(`#user-${currentUser.username}`);
+            if (userElement) {
+                userElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                userElement.style.backgroundColor = '#4a5568'; // Mettre en surbrillance temporaire
+                setTimeout(() => {
+                    userElement.style.backgroundColor = ''; // Retirer la surbrillance après 2 secondes
+                }, 2000);
+            }
+        });
+    }
+    return rankedPeople;
+}
 export async function showGameDetails(gameIdOrObj) {
     // Récupérer l'objet game complet
     let game;
@@ -21,14 +92,6 @@ export async function showGameDetails(gameIdOrObj) {
     const people = await fetchUsernames();
     // Récupérer l'utilisateur en cours
     const currentUser = await GameManager.getCurrentUser();
-    // Récupérer les rankings depuis l'API
-    const rankingsResponse = await api.get(`/api/games/${game.id}/rankings`);
-    const rankings = await rankingsResponse.json();
-    // Associer les rankings aux utilisateurs
-    const rankedPeople = await Promise.all(rankings.map(async (ranking) => {
-        const person = people.find((p) => p.id === ranking.userId);
-        return Object.assign(Object.assign({}, person), { wins: ranking.win, losses: ranking.loss });
-    }));
     const details = document.querySelector('.library-details');
     if (!details)
         return;
@@ -42,27 +105,7 @@ export async function showGameDetails(gameIdOrObj) {
           </div>
         </div>
         <div class="detail-info">
-          <div class="rankingSection">
-            <h3 class="sectionTitle">Online 1vs1 Ranking</h3>
-            <div class="rankingContainer">
-              <ul class="rankingList">
-                ${rankedPeople.map((person, index) => `
-                  <li class="rankingItem" id="user-${person.username}">
-                    <span class="numberRank">${index + 1}</span> <!-- Numéro de classement -->
-                    <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
-                    <span class="playerName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
-                      ${person.username}
-                    </span>
-                    ${index === 0 ? '<span class="medal">🥇</span>' : ''}
-                    ${index === 1 ? '<span class="medal">🥈</span>' : ''}
-                    ${index === 2 ? '<span class="medal">🥉</span>' : ''}
-                    <span class="playerWins">Wins: ${person.wins}</span>
-                  </li>
-                `).join('')}
-              </ul>
-            </div>
-            <button id="scrollToCurrentUser" class="scrollButton">Go to My Rank</button>
-          </div>
+          <div id="rankings-container"></div>
           <div class="friendsSection">
             <h3 class="sectionTitle">Friend List</h3>
             <div class="friendsContainer">
@@ -81,6 +124,9 @@ export async function showGameDetails(gameIdOrObj) {
         </div>
       </div>
     `;
+    // Afficher le classement en utilisant la nouvelle fonction
+    const rankingsContainer = details.querySelector('#rankings-container');
+    await renderRankings(game.id, rankingsContainer, currentUser);
     // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
     const friendNames = details.querySelectorAll('.friendName');
     friendNames.forEach(friendName => {
@@ -115,21 +161,6 @@ export async function showGameDetails(gameIdOrObj) {
             default:
                 showErrorNotification("This game is not available yet");
                 break;
-        }
-    });
-    // Bouton Go to My Rank
-    const scrollToCurrentUserBtn = details.querySelector('#scrollToCurrentUser');
-    scrollToCurrentUserBtn.addEventListener('click', () => {
-        if (!currentUser || !currentUser.username)
-            return;
-        // Trouver l'élément correspondant à l'utilisateur en cours
-        const userElement = details.querySelector(`#user-${currentUser.username}`);
-        if (userElement) {
-            userElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            userElement.style.backgroundColor = '#4a5568'; // Mettre en surbrillance temporaire
-            setTimeout(() => {
-                userElement.style.backgroundColor = ''; // Retirer la surbrillance après 2 secondes
-            }, 2000);
         }
     });
 }

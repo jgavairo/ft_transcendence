@@ -49,7 +49,7 @@ export function startMatch(socks: Socket[], nsp: Namespace): MatchState {
   return state;
 }
 
-export function updateMatch(match: MatchState, nsp: Namespace): void {
+export async function updateMatch(match: MatchState, nsp: Namespace): Promise<void> {
   const normalizeAngle360 = (angle: number) =>
     ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
@@ -156,6 +156,8 @@ export function updateMatch(match: MatchState, nsp: Namespace): void {
   // --- 4) FIN DE PARTIE ---
   if (match.paddles.filter(p => p.lives > 0).length <= 1) {
     match.gameOver = true;
+    // Émettre l'événement de fin de partie pour rafraîchir le classement côté client
+    nsp.to(match.roomId).emit('pongGameEnded', { gameId: 1 }); // 1 = id du jeu Pong
   }
 }
 
