@@ -1,8 +1,11 @@
 import { initTriPong } from '../TriPong.js';
 import { displayPlayMenu } from './PlayMenu.js';
 
+export const menuBg = new Image();
+menuBg.src = '../../../../assets/games/pong/background.png';
 
-  export function displayMenu(): void {
+  export function displayMenu(): void 
+  {
     const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
     if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
@@ -11,11 +14,10 @@ import { displayPlayMenu } from './PlayMenu.js';
     canvas.width = cw;
     canvas.height = ch;
   
-    const menuBg = new Image();
-    menuBg.src = '../../../../assets/games/pong/background.png';
 
     // Fonction pour dessiner le menu complet (fond + boutons)
-    function drawMenu() {
+    function drawMenu() 
+    {
         ctx.clearRect(0, 0, cw, ch);
         ctx.drawImage(menuBg, 0, 0, cw, ch);
 
@@ -84,7 +86,6 @@ import { displayPlayMenu } from './PlayMenu.js';
     canvas.addEventListener('click', handler);
   }
   
-
   window.addEventListener('DOMContentLoaded', () => {
     const btnTri = document.getElementById('btnTriPong');
     if (!btnTri) {
