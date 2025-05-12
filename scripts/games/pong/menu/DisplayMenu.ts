@@ -1,6 +1,5 @@
-import { initTriPong } from './TriPong.js';
+import { initTriPong } from '../TriPong.js';
 import { displayPlayMenu } from './PlayMenu.js';
-import { displayShopMenu } from './ShopMenu.js';
 
 
   export function displayMenu(): void {
@@ -39,7 +38,6 @@ import { displayShopMenu } from './ShopMenu.js';
           displayPlayMenu();
         } else if (y >= shopY && y <= shopY+buttonHeight) {
           canvas.removeEventListener('click', handler);
-          displayShopMenu();
         }
       }
     };
