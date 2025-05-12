@@ -1,4 +1,4 @@
-import { displayMenu } from './menu/DisplayMenu.js';
+import { displayMenu, stopAnimations } from './menu/DisplayMenu.js';
 import { socket } from './network.js';
 import { renderRankings } from '../../pages/library/showGameDetails.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
@@ -201,7 +201,7 @@ function animateNumber(
       // 1) efface tout
       ctx.clearRect(0, 0, CW, CH);
 
-      // 2) floute et redessine l’arrière-plan
+      // 2) floute et redessine l'arrière-plan
       if (bgState) {
         ctx.filter = 'blur(5px)';
         renderPong(bgState);
@@ -736,10 +736,17 @@ window.addEventListener('keydown', (e) => {
     const modal = document.getElementById('optionnalModal');
     if (!modal) return;
     if (modal.innerHTML.trim() !== '') {
-      modal.innerHTML = '';
-      return;
+        modal.innerHTML = '';
+        return;
     }
     resetGame();
+    stopAnimations();
+    // Nettoyer le canvas principal
+    if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
     socket.removeAllListeners();
     socket.disconnect();
 });

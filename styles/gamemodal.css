@@ -5,4 +5,11 @@
     width: 1216px;
 	height: 816px;
     color: white;
+    position: relative;
+}
+
+.game-modal canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
 }

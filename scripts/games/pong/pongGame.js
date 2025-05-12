@@ -1,4 +1,4 @@
-import { displayMenu } from './menu/DisplayMenu.js';
+import { displayMenu, stopAnimations } from './menu/DisplayMenu.js';
 import { socket } from './network.js';
 import { renderRankings } from '../../pages/library/showGameDetails.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
@@ -162,7 +162,7 @@ function animateNumber(num, bgState, duration) {
             const scale = 1 + 0.5 * Math.sin(Math.PI * t);
             // 1) efface tout
             ctx.clearRect(0, 0, CW, CH);
-            // 2) floute et redessine l’arrière-plan
+            // 2) floute et redessine l'arrière-plan
             if (bgState) {
                 ctx.filter = 'blur(5px)';
                 renderPong(bgState);
@@ -315,9 +315,9 @@ async function renderGameOverMessage(state) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include', // Utilise les cookies pour l'authentification
+                credentials: 'include',
                 body: JSON.stringify({
-                    gameId: 1, // ID du jeu (Pong)
+                    gameId: 1,
                     userId: currentUser.id, // Utiliser l'ID utilisateur actuel
                 }),
             });
@@ -335,9 +335,9 @@ async function renderGameOverMessage(state) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include', // Utilise les cookies pour l'authentification
+                credentials: 'include',
                 body: JSON.stringify({
-                    gameId: 1, // ID du jeu (Pong)
+                    gameId: 1,
                     userId: currentUser.id, // Utiliser l'ID utilisateur actuel
                 }),
             });
@@ -641,6 +641,13 @@ window.addEventListener('keydown', (e) => {
         return;
     }
     resetGame();
+    stopAnimations();
+    // Nettoyer le canvas principal
+    if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
     socket.removeAllListeners();
     socket.disconnect();
 });

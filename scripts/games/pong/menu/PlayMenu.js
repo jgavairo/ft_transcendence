@@ -55,6 +55,10 @@ export function displayPlayMenu() {
             x: x0, y: startY + 3 * (btnH + spacing),
             w: btnW, h: btnH,
             onClick: () => {
+                const particlesCanvas = document.getElementById('particlesCanvas');
+                if (particlesCanvas) {
+                    particlesCanvas.style.display = 'block';
+                }
                 teardown();
                 displayMenu();
             }

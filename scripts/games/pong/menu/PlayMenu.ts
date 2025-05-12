@@ -1,7 +1,7 @@
 import { displayWaitingScreen } from './WaitingScreen.js';
 import { displayMultiMenu } from "./MultiMenu.js";
 import { displaySoloMenu } from './SoloMenu.js';
-import { displayMenu, menuBg } from './DisplayMenu.js';
+import { displayMenu, menuBg, stopAnimations } from './DisplayMenu.js';
 
 export function displayPlayMenu(): void {
     const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -61,6 +61,10 @@ export function displayPlayMenu(): void {
         x: x0, y: startY + 3*(btnH+spacing),
         w: btnW, h: btnH,
         onClick: () => {
+          const particlesCanvas = document.getElementById('particlesCanvas') as HTMLCanvasElement;
+          if (particlesCanvas) {
+            particlesCanvas.style.display = 'block';
+          }
           teardown();
           displayMenu();
         }
