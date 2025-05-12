@@ -3,20 +3,11 @@ import type { Socket, Namespace } from 'socket.io';
 // État d’un match Bi-Pong circulaire
 export interface MatchState {
   roomId: string;
-  paddles: Array<{
-    phi: number;                   // angle du paddle
-    lives: number;
-    direction: 'up'|'down'|null;
-  }>;
-  ball: { x: number; y: number; vx: number; vy: number; r: number };
+  paddles: { phi: number; lives: number; direction: 'up'|'down'|null }[];
+  ball: { x:number; y:number; vx:number; vy:number; r:number };
   gameOver: boolean;
 }
 
-export interface MatchHandles {
-  state: MatchState;
-  serveTimer: NodeJS.Timeout;
-  loopTimer: NodeJS.Timer;
-}
 
 // Constantes (à synchroniser rigoureusement côté client)
 const BALL_SPEED        = 4;
@@ -43,9 +34,6 @@ export function startMatch(socks: Socket[], nsp: Namespace): MatchState {
   setTimeout(() => {
     resetFirstBall(state);
   }, 4000);
-
-  
-
   return state;
 }
 

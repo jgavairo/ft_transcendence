@@ -67,10 +67,8 @@ export function getUser2Id(): string | null {
   return user2Id;
 }
 
-console.log('pongGame.ts chargé, prête à connectPong');
 
 function onMatchFound(data: any) {
-  console.log('📥 onMatchFound', data);
   soloMode   = data.mode === 'solo';
   mySide     = soloMode ? 0 : data.side;
   lastState  = null;
@@ -87,9 +85,6 @@ function onMatchFound(data: any) {
 }
 
 function onGameState(state: MatchState) {
-  console.log('📦 full state:', state);
-  console.log('🎮 paddles raw:', state.paddles);
-  console.log('🎮 paddles entries:', state.paddles.map((p,i) => [i, p]));
   lastState = state;
   if (!ready) return;
   if (!firstFrame) {
@@ -102,7 +97,6 @@ function onGameState(state: MatchState) {
 
 
 export function connectPong() {
-  console.log('ℹ️ connectPong() appelé');
   // Pong classique
   socket.off('matchFound').on('matchFound', onMatchFound);
   socket.off('gameState'  ).on('gameState',   onGameState);
@@ -639,6 +633,4 @@ window.addEventListener('keydown', (e) => {
     resetGame();
     socket.removeAllListeners();
     socket.disconnect();
-    socket.connect();
-    connectPong();
 });
