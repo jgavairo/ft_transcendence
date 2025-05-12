@@ -76,6 +76,30 @@ export async function renderRankings(gameId, container, currentUser) {
     }
     return rankedPeople;
 }
+/**
+ * Génère le HTML de la friend list pour la bibliothèque de jeux
+ * @param people - Liste des utilisateurs
+ * @returns string - HTML de la friend list
+ */
+export function renderFriendList(people) {
+    return `
+        <div class="friendsSection">
+            <h3 class="sectionTitle">Friend List</h3>
+            <div class="friendsContainer">
+                <ul class="friendsList">
+                    ${people.map((person) => `
+                        <li class="friendItem">
+                            <img src="${person.profile_picture || 'default-profile.png'}" class="${person.isOnline ? 'profilePicOnline' : 'profilePic'}" alt="${person.username}">
+                            <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
+                                ${person.username}
+                            </span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        </div>
+    `;
+}
 export async function showGameDetails(gameIdOrObj) {
     // Récupérer l'objet game complet
     let game;
@@ -106,21 +130,7 @@ export async function showGameDetails(gameIdOrObj) {
         </div>
         <div class="detail-info">
           <div id="rankings-container"></div>
-          <div class="friendsSection">
-            <h3 class="sectionTitle">Friend List</h3>
-            <div class="friendsContainer">
-              <ul class="friendsList">
-                ${people.map((person) => `
-                  <li class="friendItem">
-                    <img src="${person.profile_picture || 'default-profile.png'}" class=" ${person.isOnline ? 'profilePicOnline' : 'profilePic'}" alt="${person.username}">
-                    <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
-                      ${person.username}
-                    </span>
-                  </li>
-                `).join('')}
-              </ul>
-            </div>
-          </div>
+          ${renderFriendList(people)}
         </div>
       </div>
     `;
@@ -164,3 +174,4 @@ export async function showGameDetails(gameIdOrObj) {
         }
     });
 }
+export { fetchUsernames };
