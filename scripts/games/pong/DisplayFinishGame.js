@@ -1,7 +1,10 @@
 import { resetGame, connectPong } from './pongGame.js';
 import { socket } from './network.js';
 import { displayMenu } from './DisplayMenu.js';
-let gameOverOverlay = null;
+export let gameOverOverlay = null;
+export function setGameOverOverlayNull() {
+    gameOverOverlay = null;
+}
 export function showGameOverOverlay() {
     if (gameOverOverlay)
         return;
@@ -10,10 +13,11 @@ export function showGameOverOverlay() {
     gameOverOverlay.id = 'gameOverOverlay';
     Object.assign(gameOverOverlay.style, {
         position: 'fixed',
-        top: '0',
-        left: '0',
-        width: '100vw',
-        height: '100vh',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '1200px',
+        height: '800px',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
