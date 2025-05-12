@@ -5,6 +5,7 @@ import { GameManager } from '../../managers/gameManager.js'; // Import de GameMa
 import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
 import { showGameOverOverlay } from './DisplayFinishGame.js';
 import { sendMove } from './SocketEmit.js';
+import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
 // Variables réseau
 let mySide;
 let roomId;
@@ -84,12 +85,41 @@ export function connectPong() {
     socket.off('ballExplode').on('ballExplode', ({ x, y }) => {
         createExplosion(x, y);
     });
-    // Rafraîchir le classement à la fin d'une partie de Pong
+    // Rafraîchir le classement et la friend list à la fin d'une partie de Pong
     socket.on('pongGameEnded', async ({ gameId }) => {
         const rankingsContainer = document.querySelector('#rankings-container');
         if (rankingsContainer && rankingsContainer.offsetParent !== null) {
             const currentUser = await GameManager.getCurrentUser();
             await renderRankings(gameId, rankingsContainer, currentUser);
+        }
+        // Actualiser la friend list si elle est présente
+        const details = document.querySelector('.library-details');
+        if (details) {
+            const people = await fetchUsernames();
+            const friendsSection = details.querySelector('.friendsSection');
+            if (friendsSection) {
+                friendsSection.outerHTML = renderFriendList(people);
+                // Réattacher les listeners sur les nouveaux éléments friendName
+                const newFriendsSection = details.querySelector('.friendsSection');
+                if (newFriendsSection) {
+                    const friendNames = newFriendsSection.querySelectorAll('.friendName');
+                    friendNames.forEach(friendName => {
+                        friendName.addEventListener('click', () => {
+                            var _a;
+                            const username = friendName.getAttribute('data-username');
+                            const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
+                            const email = friendName.getAttribute('data-email');
+                            const bio = friendName.getAttribute('data-bio') || 'No bio available';
+                            // On ne peut pas récupérer userId ici sans accès à people, donc on le cherche à nouveau
+                            const userId = ((_a = people.find((person) => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
+                            // showProfileCard est importé indirectement via showGameDetails
+                            import('../../pages/community/peopleList.js').then(mod => {
+                                mod.showProfileCard(username, profilePicture, email, bio, userId);
+                            });
+                        });
+                    });
+                }
+            }
         }
     });
 }

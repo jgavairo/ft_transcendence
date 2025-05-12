@@ -108,6 +108,31 @@ export async function renderRankings(gameId: number, container: HTMLElement, cur
     return rankedPeople;
 }
 
+/**
+ * Génère le HTML de la friend list pour la bibliothèque de jeux
+ * @param people - Liste des utilisateurs
+ * @returns string - HTML de la friend list
+ */
+export function renderFriendList(people: { id: number; username: string; profile_picture: string; email: string; bio: string; isOnline?: boolean }[]): string {
+    return `
+        <div class="friendsSection">
+            <h3 class="sectionTitle">Friend List</h3>
+            <div class="friendsContainer">
+                <ul class="friendsList">
+                    ${people.map((person) => `
+                        <li class="friendItem">
+                            <img src="${person.profile_picture || 'default-profile.png'}" class="${person.isOnline ? 'profilePicOnline' : 'profilePic'}" alt="${person.username}">
+                            <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
+                                ${person.username}
+                            </span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        </div>
+    `;
+}
+
 export async function showGameDetails(gameIdOrObj: number | any): Promise<void> {
     // Récupérer l'objet game complet
     let game: Game;
@@ -139,21 +164,7 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
         </div>
         <div class="detail-info">
           <div id="rankings-container"></div>
-          <div class="friendsSection">
-            <h3 class="sectionTitle">Friend List</h3>
-            <div class="friendsContainer">
-              <ul class="friendsList">
-                ${people.map((person: { id: number; username: string; profile_picture: string; email: string; bio: string; isOnline?: boolean }) => `
-                  <li class="friendItem">
-                    <img src="${person.profile_picture || 'default-profile.png'}" class=" ${person.isOnline ? 'profilePicOnline' : 'profilePic'}" alt="${person.username}">
-                    <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
-                      ${person.username}
-                    </span>
-                  </li>
-                `).join('')}
-              </ul>
-            </div>
-          </div>
+          ${renderFriendList(people)}
         </div>
       </div>
     `;
@@ -200,3 +211,5 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
       }
     });
 }
+
+export { fetchUsernames };
