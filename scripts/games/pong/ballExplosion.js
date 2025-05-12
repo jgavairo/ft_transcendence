@@ -1,6 +1,6 @@
 import { gameover, ctx } from "./pongGame.js";
-const CW = 1185;
-const CH = 785;
+const CW = 1200;
+const CH = 800;
 const CX = CW / 2;
 const CY = CH / 2;
 const R = Math.min(CW, CH) / 2 - 45;
