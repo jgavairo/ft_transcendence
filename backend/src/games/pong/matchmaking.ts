@@ -188,7 +188,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       socks.forEach((s, i) => {
         playerInfo.set(s.id, { side: i, mode: 'tri' });
         s.join(m.roomId);
-        s.emit('matchFoundTri', { roomId: m.roomId, side: i, players });
+        s.emit('matchFoundTri', { roomId: m.roomId, side: i, players, mode:'multi' });
       });
       const iv = setInterval(() => {
         updateTriMatch(m, gameNs);

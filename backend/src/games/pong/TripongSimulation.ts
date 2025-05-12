@@ -13,11 +13,6 @@ export interface TriMatchState {
 
 // constantes du terrain (doivent matcher le client)
 const BALL_SPEED       = 4;
-const RADIUS           = 340;               // même rayon que le client
-const ARC_HALF         = Math.PI / 18;      // 10° de chaque côté
-const PADDLE_SPEED     = Math.PI / 180 * 2; // vitesse de rotation
-const MAX_DEFLECTION   = Math.PI / 6;
-const SPEED_MULTIPLIER = 1.05;
 
 export function startTriMatch(sockets: Socket[], nsp: Namespace): TriMatchState {
   const roomId = `tri_${Date.now()}`;

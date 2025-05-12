@@ -4,7 +4,7 @@ import { renderRankings } from '../../pages/library/showGameDetails.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
 import { showGameOverOverlay } from './DisplayFinishGame.js';
-import { sendMove } from './SocketEmit.js'
+import { sendMove, sendMoveTri } from './SocketEmit.js'
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
 
 // Interface de l'état de partie reçue du serveur
@@ -19,6 +19,8 @@ export interface MatchState {
 let mySide: number;
 let roomId: string;
 let soloMode = false;
+let modePong = false;
+let soloTri  = false;
 
 // Canvas et contexte
 let canvas: HTMLCanvasElement;
@@ -70,19 +72,40 @@ export function getUser2Id(): string | null {
 
 
 function onMatchFound(data: any) {
-  soloMode   = data.mode === 'solo';
-  mySide     = soloMode ? 0 : data.side;
-  lastState  = null;
-  ready      = false;
-  firstFrame = false;
+  modePong  = true;
+  soloTri   = false;
+  soloMode  = data.mode === 'solo';
+  mySide    = soloMode ? 0 : data.side;
+  lastState = null;
+  ready     = false;
+  firstFrame= false;
 
-  user1Id    = data.user1Id;
-  user2Id    = data.user2Id;
-  playerName = data.you || 'Player';
-  opponentName = data.opponent || 'Opponent';
+  user1Id     = data.user1Id;
+  user2Id     = data.user2Id;
+  playerName  = data.you   || 'Player';
+  opponentName= data.opponent || 'Opponent';
 
   startPong();
-  performCountdown().then(() => { ready = true; });
+  performCountdown().then(() => ready = true);
+}
+
+function onTriMatchFound(data: any) {
+  modePong  = false;
+  soloTri   = data.mode === 'solo';
+  soloMode  = false;            // pas utilisé ici
+  mySide    = soloTri ? 0 : data.side;
+  lastState = null;
+  ready     = false;
+  firstFrame= false;
+
+  // si tu veux stocker user1/user2 pour l'historique, fais-le ici aussi
+  user1Id     = data.user1Id;
+  user2Id     = data.user2Id;
+  playerName  = data.you       || 'Player';
+  opponentName= data.opponent  || 'Opponent';
+
+  startPong();
+  performCountdown().then(() => ready = true);
 }
 
 function onGameState(state: MatchState) {
@@ -103,7 +126,7 @@ export function connectPong() {
   socket.off('gameState'  ).on('gameState',   onGameState);
 
   // Tri-Pong → on branche exactement les mêmes handlers
-  socket.off('matchFoundTri').on('matchFoundTri', onMatchFound);
+  socket.off('matchFoundTri').on('matchFoundTri', onTriMatchFound);
   socket.off('stateUpdateTri').on('stateUpdateTri', onGameState);
 
   // Explosion de balle
@@ -211,27 +234,84 @@ function animateNumber(
 // En haut du fichier
 function onKeyDown(e: KeyboardEvent) {
   if (!ready || gameover) return;
-  if (soloMode) {
-    if (e.code === 'KeyD') sendMove(0, 'up');
-    else if (e.code === 'KeyA') sendMove(0, 'down');
-    else if (e.code === 'ArrowRight') sendMove(1, 'up');
-    else if (e.code === 'ArrowLeft') sendMove(1, 'down');
-  } else {
-    if (e.code === 'KeyD' || e.code === 'KeyA') {
-      const dir = e.code === 'KeyD' ? 'up' : 'down';
-      sendMove(mySide, dir);
+
+  // --- PONG CLASSIQUE ---
+  // solo-mode ou multi-mode (2 joueurs)
+  console.log('')
+  if (modePong) {
+    if (soloMode) {
+      // 2 paddles joués localement : 0→A/D, 1→←/→
+      if (e.code === 'KeyD')      sendMove(0, 'up');
+      else if (e.code === 'KeyA') sendMove(0, 'down');
+      else if (e.code === 'ArrowRight') sendMove(1, 'up');
+      else if (e.code === 'ArrowLeft')  sendMove(1, 'down');
+    } else {
+      // multi : chacun pilote SON side
+      if (mySide === 0) {
+        if (e.code === 'KeyD')      sendMove(0, 'up');
+        else if (e.code === 'KeyA') sendMove(0, 'down');
+      } else {
+        if (e.code === 'ArrowRight') sendMove(1, 'up');
+        else if (e.code === 'ArrowLeft')  sendMove(1, 'down');
+      }
     }
+    return;
   }
+
+  // --- TRI-PONG ---
+  // solo-tri ou multi-tri
+  // solo-tri : tout le monde local
+  // multi-tri : seul mySide
+  if (!soloTri) {
+    // multi-Tri : chaque client ne pilote que SON side EN A/D
+    if (e.code === 'KeyD') sendMoveTri(mySide, 'up');
+    else if (e.code === 'KeyA') sendMoveTri(mySide, 'down');
+    return;
+  }
+
+  // solo-Tri : pilotage de 3 pads avec A/D, J/L, Fleches
+  const codes = ['KeyA','KeyD','KeyJ','KeyL','ArrowLeft','ArrowRight'];
+  if (!codes.includes(e.code)) return;
+
+  let side = ['KeyA','KeyD'].includes(e.code) ? 0
+           : ['KeyJ','KeyL'].includes(e.code) ? 1
+           : 2;
+  const dir = ['KeyD','KeyL','ArrowRight'].includes(e.code) ? 'up' : 'down';
+  sendMoveTri(side, dir);
 }
+
 
 function onKeyUp(e: KeyboardEvent) {
   if (!ready || gameover) return;
-  if (soloMode) {
-    if (e.code === 'KeyD' || e.code === 'KeyA') sendMove(0, null);
-    else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') sendMove(1, null);
-  } else {
-    if (e.code === 'KeyD' || e.code === 'KeyA') sendMove(mySide, null);
+
+  // --- PONG CLASSIQUE ---
+  if (modePong) {
+    if (soloMode) {
+      if (['KeyD','KeyA'].includes(e.code))      sendMove(0, null);
+      else if (['ArrowRight','ArrowLeft'].includes(e.code)) sendMove(1, null);
+    } else {
+      if (mySide === 0 && ['KeyD','KeyA'].includes(e.code)) sendMove(0, null);
+      if (mySide === 1 && ['ArrowRight','ArrowLeft'].includes(e.code)) sendMove(1, null);
+    }
+    return;
   }
+  
+  console.log("solo =", soloTri);
+  // ── TRI-PONG ──
+  if (!soloTri) {
+    // multi-Tri : arrête SON side en A/D
+    if (e.code === 'KeyD' || e.code === 'KeyA') sendMoveTri(mySide, null);
+    return;
+  }
+
+  // solo-Tri : arrêts avec les mêmes touches
+  const codes = ['KeyA','KeyD','KeyJ','KeyL','ArrowLeft','ArrowRight'];
+  if (!codes.includes(e.code)) return;
+
+  let side = ['KeyA','KeyD'].includes(e.code) ? 0
+           : ['KeyJ','KeyL'].includes(e.code) ? 1
+           : 2;
+  sendMoveTri(side, null);
 }
 
 // Initialise le canvas et le contexte
