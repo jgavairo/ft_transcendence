@@ -74,15 +74,15 @@ export class DatabaseManager
                     },
                     {
                         id: 3,
-                        name: "Valorant",
-                        price: 29.99,
-                        description: "Une pale copie de Counter-Strike, mais avec des personnages de la série Rick and Morty",
-                        image: "../../assets/games/valorant/valorant.png",
+                        name: "Space Defense",
+                        price: 0,
+                        description: "SpaceDefense est un jeu d’arcade explosif où vous incarnez un soleil en péril, attaqué par des vagues d’astéroïdes. Défendez votre orbite en tirant des lasers sur les menaces galactiques avant qu’elles ne vous percutent. Reflexes, précision et survie sont vos seules armes dans ce combat cosmique !",
+                        image: "../../assets/games/SpaceDefense/SpaceDefense.png",
                     },
                     {
                         id: 2,
                         name: "Francis the Loony",
-                        price: 299.99,
+                        price: 0,
                         description: "Recevez une invitation mystérieuse à la soirée de Francis le Tordu (YOUPiiIIII). Dans ce jeu psychologique troublant, naviguez à travers une demeure victorienne où les règles changent constamment et où vos choix ont des conséquences... imprévisibles. Les autres invités semblent connaître les règles, mais personne ne veut les partager. Évitez les regards tordus de Francis, découvrez pourquoi certains invités disparaissent après avoir bu le cocktail du chef, et tentez de survivre jusqu'au matin. Mais attention : Francis déteste quand on refuse de danser la valse inversée",
                         image: "../../assets/games/snake/snake.png",
                     }

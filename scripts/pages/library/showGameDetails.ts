@@ -6,15 +6,24 @@ import { setupLibrary } from "./library.js";
 import api from "../../helpers/api.js"; // Import de l'API helper
 import { launchPong } from "../../games/pong/main.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
+import { launchSpaceInvader } from "../../games/spaceInvader/main.js";
+
+interface Game {
+    id: number;
+    name: string;
+    image: string;
+    description?: string;
+    // ... autres propriétés du jeu
+}
 
 export async function showGameDetails(gameIdOrObj: number | any): Promise<void> {
     // Récupérer l'objet game complet
-    let game;
+    let game: Game;
     if (typeof gameIdOrObj === 'number') {
         const allGames = await GameManager.getGameList();
-        game = allGames.find(g => g.id === gameIdOrObj);
+        game = allGames.find(g => g.id === gameIdOrObj) as Game;
     } else {
-        game = gameIdOrObj;
+        game = gameIdOrObj as Game;
     }
     if (!game) return;
 
@@ -117,14 +126,14 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
         case 'Pong':
           launchPong();
           break;
-        case 'TriPong':
-          showErrorNotification('This game is not available yet');
+        case 'Space Defense':
+          launchSpaceInvader();
           break;
         case 'TicTacToe':
-          showErrorNotification('This game is not available yet');
+          showErrorNotification("This game is not available yet");
           break;
         default:
-          showErrorNotification('This game is not available yet');
+          showErrorNotification("This game is not available yet");
           break;
       }
     });

@@ -358,17 +358,19 @@ function displayMatchHistory(matches, userId) {
         historySection.className = "profile-card-match-history";
         card.appendChild(historySection);
     }
-    else {
-        historySection.innerHTML = ""; // Vider la section si elle existe déjà
-    }
     // Définir le titre de la section
     const historyTitle = document.createElement("h4");
     historyTitle.textContent = "Match History";
-    historySection.appendChild(historyTitle);
+    if (historySection) {
+        historySection.innerHTML = "";
+        historySection.appendChild(historyTitle);
+    }
     if (matches.length === 0) {
         const noMatches = document.createElement("p");
         noMatches.textContent = "No match history available.";
-        historySection.appendChild(noMatches);
+        if (historySection) {
+            historySection.appendChild(noMatches);
+        }
         return;
     }
     // Récupérer le nom du profil affiché
@@ -421,7 +423,9 @@ function displayMatchHistory(matches, userId) {
             console.error("Error displaying match:", error, match);
         }
     }
-    historySection.appendChild(matchTable);
+    if (historySection) {
+        historySection.appendChild(matchTable);
+    }
     // Ajouter un lien pour voir tous les matchs si nécessaire
     if (matches.length > 5) {
         const viewMoreLink = document.createElement("a");
@@ -430,51 +434,53 @@ function displayMatchHistory(matches, userId) {
         viewMoreLink.className = "view-more-matches";
         viewMoreLink.addEventListener("click", (e) => {
             e.preventDefault();
-            // Afficher tous les matchs en élargissant la liste existante
-            historySection.innerHTML = "";
-            historySection.appendChild(historyTitle);
-            const fullMatchTable = document.createElement("table");
-            fullMatchTable.className = "match-history-table";
-            fullMatchTable.appendChild(tableHeader.cloneNode(true));
-            for (const match of matches) {
-                try {
-                    const isUser1 = match.user1_id === userId;
-                    const userLives = isUser1 ? match.user1_lives : match.user2_lives;
-                    const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
-                    // Calculer les points marqués (3 vies au départ, points = 3 - vies de l'adversaire)
-                    const userPoints = 3 - opponentLives;
-                    const opponentPoints = 3 - userLives;
-                    const result = userLives > opponentLives ? "Victory" : "Defeat";
-                    const opponentName = isUser1 ? match.user2Name : match.user1Name;
-                    const userName = isUser1 ? match.user1Name : match.user2Name;
-                    const matchDate = new Date(match.match_date).toLocaleDateString();
-                    const row = document.createElement("tr");
-                    row.className = result.toLowerCase();
-                    row.innerHTML = `
-                        <td class="${result.toLowerCase()}">${result}</td>
-                        <td class="player-name">${userName}</td>
-                        <td class="score-cell"><span class="user-score">${userPoints}</span> - <span class="opponent-score">${opponentPoints}</span></td>
-                        <td class="opponent-name">${opponentName}</td>
-                        <td class="match-date">${matchDate}</td>
-                    `;
-                    fullMatchTable.appendChild(row);
+            if (historySection) {
+                historySection.innerHTML = "";
+                historySection.appendChild(historyTitle);
+                const fullMatchTable = document.createElement("table");
+                fullMatchTable.className = "match-history-table";
+                fullMatchTable.appendChild(tableHeader.cloneNode(true));
+                for (const match of matches) {
+                    try {
+                        const isUser1 = match.user1_id === userId;
+                        const userLives = isUser1 ? match.user1_lives : match.user2_lives;
+                        const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
+                        // Calculer les points marqués (3 vies au départ, points = 3 - vies de l'adversaire)
+                        const userPoints = 3 - opponentLives;
+                        const opponentPoints = 3 - userLives;
+                        const result = userLives > opponentLives ? "Victory" : "Defeat";
+                        const opponentName = isUser1 ? match.user2Name : match.user1Name;
+                        const userName = isUser1 ? match.user1Name : match.user2Name;
+                        const matchDate = new Date(match.match_date).toLocaleDateString();
+                        const row = document.createElement("tr");
+                        row.className = result.toLowerCase();
+                        row.innerHTML = `
+                            <td class="${result.toLowerCase()}">${result}</td>
+                            <td class="player-name">${userName}</td>
+                            <td class="score-cell"><span class="user-score">${userPoints}</span> - <span class="opponent-score">${opponentPoints}</span></td>
+                            <td class="opponent-name">${opponentName}</td>
+                            <td class="match-date">${matchDate}</td>
+                        `;
+                        fullMatchTable.appendChild(row);
+                    }
+                    catch (error) {
+                        console.error("Error displaying full match:", error, match);
+                    }
                 }
-                catch (error) {
-                    console.error("Error displaying full match:", error, match);
-                }
+                historySection.appendChild(fullMatchTable);
+                const showLessLink = document.createElement("a");
+                showLessLink.textContent = "Show less";
+                showLessLink.href = "#";
+                showLessLink.className = "view-less-matches";
+                showLessLink.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    displayMatchHistory(matches, userId);
+                });
+                historySection.appendChild(showLessLink);
             }
-            historySection.appendChild(fullMatchTable);
-            // Ajouter un lien pour revenir à la vue réduite
-            const showLessLink = document.createElement("a");
-            showLessLink.textContent = "Show less";
-            showLessLink.href = "#";
-            showLessLink.className = "view-less-matches";
-            showLessLink.addEventListener("click", (e) => {
-                e.preventDefault();
-                displayMatchHistory(matches, userId);
-            });
-            historySection.appendChild(showLessLink);
         });
-        historySection.appendChild(viewMoreLink);
+        if (historySection) {
+            historySection.appendChild(viewMoreLink);
+        }
     }
 }
