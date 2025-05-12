@@ -445,24 +445,21 @@ export class DatabaseManager
 
     //********************FRIENDS-PART*******************************
     
-    public async getAllFriendIds(): Promise<number[]> {
+    public async getAllFriends(userId: number): Promise<number[]> {
         if (!this.db) throw new Error('Database not initialized');
-        const result = await this.db.all('SELECT friends FROM users');
-        const allIds = new Set<number>();
-        for (const row of result) {
-            let friendsArr: number[] = [];
-            if (Array.isArray(row.friends)) {
-                friendsArr = row.friends;
-            } else if (typeof row.friends === 'string') {
-                try {
-                    friendsArr = JSON.parse(row.friends);
-                } catch (e) {
-                    friendsArr = [];
-                }
+        const result = await this.db.get('SELECT friends FROM users WHERE id = ?', [userId]);
+        if (!result) throw new Error('User not found');
+        let friendsArr: number[] = [];
+        if (Array.isArray(result.friends)) {
+            friendsArr = result.friends;
+        } else if (typeof result.friends === 'string') {
+            try {
+                friendsArr = JSON.parse(result.friends);
+            } catch (e) {
+                friendsArr = [];
             }
-            friendsArr.forEach(id => allIds.add(id));
         }
-        return Array.from(allIds);
+        return friendsArr;
     }
     
     //********************MESSAGES-PART*******************************
