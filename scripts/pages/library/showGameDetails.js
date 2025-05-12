@@ -116,6 +116,16 @@ export async function showGameDetails(gameIdOrObj) {
     const people = await fetchUsernames();
     // Récupérer l'utilisateur en cours
     const currentUser = await GameManager.getCurrentUser();
+    // Récupérer les user_ids du jeu (utilisateurs possédant ce jeu)
+    let userIds = [];
+    try {
+        userIds = JSON.parse(game.user_ids || '[]');
+    }
+    catch (_a) {
+        userIds = [];
+    }
+    // Filtrer la friendlist pour n'afficher que les users possédant le jeu et qui ne sont pas l'utilisateur courant
+    const filteredPeople = people.filter(person => userIds.includes(person.id) && person.id !== currentUser.id);
     const details = document.querySelector('.library-details');
     if (!details)
         return;
@@ -130,7 +140,7 @@ export async function showGameDetails(gameIdOrObj) {
         </div>
         <div class="detail-info">
           <div id="rankings-container"></div>
-          ${renderFriendList(people)}
+          ${renderFriendList(filteredPeople)}
         </div>
       </div>
     `;
