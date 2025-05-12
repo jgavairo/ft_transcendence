@@ -1,6 +1,4 @@
 import { fetchUsernames, showProfileCard } from "../community/peopleList.js"; // Import de showProfileCard
-import { gameModalHTML } from "../../sourcepage.js";
-import { displayMenu } from '../../games/pong/menu/DisplayMenu.js';
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
 import api from "../../helpers/api.js"; // Import de l'API helper

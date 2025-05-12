@@ -51,6 +51,10 @@ export function showGameOverOverlay() {
         socket.disconnect();
         gameOverOverlay.remove();
         gameOverOverlay = null;
+        const particlesCanvas = document.getElementById('particlesCanvas');
+        if (particlesCanvas) {
+            particlesCanvas.style.display = 'block';
+        }
         displayMenu();
         socket.connect();
         connectPong();

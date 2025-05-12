@@ -62,6 +62,10 @@ export function showGameOverOverlay() {
     gameOverOverlay!.remove();
     gameOverOverlay = null;
 
+    const particlesCanvas = document.getElementById('particlesCanvas') as HTMLCanvasElement;
+    if (particlesCanvas) {
+        particlesCanvas.style.display = 'block';
+    }
     displayMenu();
 
     socket.connect();

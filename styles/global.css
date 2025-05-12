@@ -730,3 +730,23 @@ body
 	background-color: #113d5e;
 }
 
+#menuCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+}
+
+#particlesCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
