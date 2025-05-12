@@ -40,7 +40,9 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       const iv = setInterval(() => {
         updateMatch(m, gameNs);
         gameNs.to(m.roomId).emit('gameState', m);
-        if (m.gameOver) clearInterval(iv);
+        if (m.gameOver) {
+          clearInterval(iv);
+        }
       }, 1000 / 60);
     });
 

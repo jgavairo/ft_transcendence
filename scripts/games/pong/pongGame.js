@@ -1,5 +1,6 @@
 import { displayMenu } from './DisplayMenu.js';
 import { socket } from './network.js';
+import { renderRankings } from '../../pages/library/showGameDetails.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 import { createExplosion, explosion, animateGameOver } from './ballExplosion.js';
 import { showGameOverOverlay } from './DisplayFinishGame.js';
@@ -88,6 +89,14 @@ export function connectPong() {
     // Explosion de balle
     socket.off('ballExplode').on('ballExplode', ({ x, y }) => {
         createExplosion(x, y);
+    });
+    // Rafraîchir le classement à la fin d'une partie de Pong
+    socket.on('pongGameEnded', async ({ gameId }) => {
+        const rankingsContainer = document.querySelector('#rankings-container');
+        if (rankingsContainer && rankingsContainer.offsetParent !== null) {
+            const currentUser = await GameManager.getCurrentUser();
+            await renderRankings(gameId, rankingsContainer, currentUser);
+        }
     });
 }
 async function performCountdown() {
@@ -203,9 +212,9 @@ async function renderGameOverMessage(state) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include',
+                credentials: 'include', // Utilise les cookies pour l'authentification
                 body: JSON.stringify({
-                    gameId: 1,
+                    gameId: 1, // ID du jeu (Pong)
                     userId: currentUser.id, // Utiliser l'ID utilisateur actuel
                 }),
             });
@@ -223,9 +232,9 @@ async function renderGameOverMessage(state) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include',
+                credentials: 'include', // Utilise les cookies pour l'authentification
                 body: JSON.stringify({
-                    gameId: 1,
+                    gameId: 1, // ID du jeu (Pong)
                     userId: currentUser.id, // Utiliser l'ID utilisateur actuel
                 }),
             });
