@@ -4,6 +4,7 @@ import { displayWaitingScreen } from './WaitingScreen.js';
 import { displayPlayMenu } from './PlayMenu.js';
 import { GameManager } from '../../../managers/gameManager.js';
 import { joinQueue, joinTriQueue } from '../SocketEmit.js';
+import { menuBg } from './DisplayMenu.js';
 export function displayMultiMenu() {
     // 1) Assure-toi d'être connecté / d'avoir installé les handlers
     connectPong();
@@ -15,8 +16,7 @@ export function displayMultiMenu() {
     canvas.width = cw;
     canvas.height = ch;
     // Fond & titre
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, cw, ch);
+    ctx.drawImage(menuBg, 0, 0, cw, ch);
     ctx.fillStyle = 'white';
     ctx.font = '36px Arial';
     ctx.textAlign = 'center';
