@@ -12,20 +12,55 @@ import { displayPlayMenu } from './PlayMenu.js';
     canvas.height = ch;
   
     const menuBg = new Image();
-    menuBg.src = '/scripts/games/pong/assets/menuBg.png';
+    menuBg.src = '../../../../assets/games/pong/background.png';
+
+    // Fonction pour dessiner le menu complet (fond + boutons)
+    function drawMenu() {
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.drawImage(menuBg, 0, 0, cw, ch);
+
+        // Paramètres des boutons
+        const buttonWidth = 300;
+        const buttonHeight = 100;
+        const playY = ch / 2 - 60;
+        const quitY = ch / 2 + 90;
+        const centerX = (cw - buttonWidth) / 2 - 10;
+
+        // Dessiner le bouton PLAY
+        ctx.fillStyle = "#294162";
+        ctx.fillRect(centerX, playY, buttonWidth, buttonHeight);
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(centerX, playY, buttonWidth, buttonHeight);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 40px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("PLAY", centerX + buttonWidth / 2, playY + buttonHeight / 2);
+
+        // Dessiner le bouton SHOP
+        ctx.fillStyle = "#294162";
+        ctx.fillRect(centerX, quitY, buttonWidth, buttonHeight);
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(centerX, quitY, buttonWidth, buttonHeight);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 40px Arial";
+        ctx.fillText("QUIT", centerX + buttonWidth / 2, quitY + buttonHeight / 2);
+    }
 
     if (menuBg.complete) {
-      ctx.drawImage(menuBg, 0, 0, cw, ch);
+        drawMenu();
     } else {
-      menuBg.onload = () => {
-        ctx.drawImage(menuBg, 0, 0, cw, ch);
-      };
+        menuBg.onload = () => {
+            drawMenu();
+        };
     }
   
     const buttonWidth = 300;
     const buttonHeight = 100;
     const playY = ch / 2 - 60;
-    const shopY = ch / 2 + 90;
+    const quitY = ch / 2 + 90;
     const centerX = (cw - buttonWidth) / 2 - 10;
   
     const handler = (e: MouseEvent) => {
@@ -36,8 +71,13 @@ import { displayPlayMenu } from './PlayMenu.js';
         if (y >= playY && y <= playY+buttonHeight) {
           canvas.removeEventListener('click', handler);
           displayPlayMenu();
-        } else if (y >= shopY && y <= shopY+buttonHeight) {
+        } else if (y >= quitY && y <= quitY+buttonHeight) {
           canvas.removeEventListener('click', handler);
+          const modal = document.getElementById('optionnalModal');
+          if (!modal) 
+            return;
+          modal.innerHTML = '';
+          return;
         }
       }
     };
