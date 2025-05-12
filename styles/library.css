@@ -181,8 +181,10 @@
 /* Section pour le ranking */
 .rankingSection,
 .friendsSection {
-  width: 100%; /* Les sections prennent toute la largeur */
-  margin-bottom: 2rem; /* Espacement entre les sections */
+    flex: 1;
+    gap: 0.5rem;
+    padding-right: 10px;
+    margin-bottom: 1rem;
 }
 
 .rankingContainer,
