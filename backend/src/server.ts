@@ -253,6 +253,10 @@ app.post('/api/user/isOnline', { preHandler: authMiddleware }, async (request: F
     return friendsRoutes.isOnline(request, reply);
 });
 
+app.get('/api/friends/allFriendIds', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return friendsRoutes.getAllFriendIds(request, reply);
+});
+
 /////////////////
 // CHAT ROUTES //
 /////////////////
