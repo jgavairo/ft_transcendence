@@ -31,11 +31,7 @@ export async function setupGameList() {
                         </div>
                     </div>
                     <h3 class="gametitle" id="${game.name}title">${game.name}</h3>
-                    <button 
-                        class="${inLibrary ? 'owned-button' : 'buybutton'}" 
-                        id="${game.name}buybutton"
-                        ${inLibrary ? 'disabled' : ''}
-                    >
+                    <button class="${inLibrary ? 'owned-button' : 'buybutton'}" id="${game.name}buybutton" ${inLibrary ? 'disabled' : ''}>
                         ${inLibrary ? 'Already in library' : `Add to library ${game.price === 0 ? 'Free' : `${game.price}$`}`}
                     </button>
                 </div>

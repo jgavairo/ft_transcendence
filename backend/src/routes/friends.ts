@@ -477,4 +477,5 @@ export const friendsRoutes =
     cancelRequest : cancelRequestHandler,
     refuseRequest : refuseRequestHandler,
     isOnline : isOnlineHandler
+        
 }
