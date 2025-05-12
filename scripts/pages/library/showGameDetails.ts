@@ -157,8 +157,21 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
     } catch {
         userIds = [];
     }
-    // Filtrer la friendlist pour n'afficher que les users possédant le jeu et qui ne sont pas l'utilisateur courant
-    const filteredPeople = people.filter(person => userIds.includes(person.id) && person.id !== currentUser.id);
+
+    // Récupérer les ids des amis via l'API
+    let friendIds: number[] = [];
+    try {
+        const res = await api.get('/api/friends/allFriendIds');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.ids)) {
+            friendIds = data.ids;
+        }
+    } catch (e) {
+        friendIds = [];
+    }
+
+    // Filtrer la friendlist pour n'afficher que les users possédant le jeu, qui ne sont pas l'utilisateur courant, et qui sont amis
+    const filteredPeople = people.filter(person => userIds.includes(person.id) && person.id !== currentUser.id && friendIds.includes(person.id));
 
     const details = document.querySelector('.library-details') as HTMLElement;
     if (!details) return;

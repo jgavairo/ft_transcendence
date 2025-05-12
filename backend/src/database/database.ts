@@ -442,7 +442,29 @@ export class DatabaseManager
             this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', [JSON.stringify(updatedTargetRequests), targetId])
         ]);
     }
-            
+
+    //********************FRIENDS-PART*******************************
+    
+    public async getAllFriendIds(): Promise<number[]> {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.all('SELECT friends FROM users');
+        const allIds = new Set<number>();
+        for (const row of result) {
+            let friendsArr: number[] = [];
+            if (Array.isArray(row.friends)) {
+                friendsArr = row.friends;
+            } else if (typeof row.friends === 'string') {
+                try {
+                    friendsArr = JSON.parse(row.friends);
+                } catch (e) {
+                    friendsArr = [];
+                }
+            }
+            friendsArr.forEach(id => allIds.add(id));
+        }
+        return Array.from(allIds);
+    }
+    
     //********************MESSAGES-PART*******************************
     
     public async saveMessage(author: string, content: string): Promise<void> {
