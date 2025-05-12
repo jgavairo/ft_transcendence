@@ -1,7 +1,7 @@
 // matchmaking.ts
 import type { Namespace, Socket } from 'socket.io';
-import { startMatch, updateMatch, MatchState } from './gameSimulation.js';
-import { startTriMatch, updateTriMatch, TriMatchState } from './TripongSimulation.js';
+import { updateMatch as updateTriMatch, startMatch, updateMatch, MatchState } from './gameSimulation.js';
+import { startTriMatch, TriMatchState } from './TripongSimulation.js';
 import { dbManager } from '../../database/database.js';
 
 interface PlayerInfo {
@@ -63,7 +63,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         players: [username, username, username]
       });
       const iv = setInterval(() => {
-        updateTriMatch(m, gameNs);
+        updateMatch(m, gameNs);
         gameNs.to(m.roomId).emit('stateUpdateTri', m);
         if (m.gameOver) clearInterval(iv);
       }, 1000 / 60);
