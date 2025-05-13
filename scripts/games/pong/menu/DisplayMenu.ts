@@ -358,171 +358,65 @@ export class PongMenuManager
 
     }
 
-    async launchLocalPong(nbPlayers: number)
+async function launchLocalPong(nbPlayers: number)
+{
+    try 
     {
-        try 
+        const modal = document.getElementById("games-modal");
+        if (modal) 
         {
-            const modal = document.getElementById("games-modal");
-            if (modal) 
+            const currentUser = await GameManager.getCurrentUser();
+            const username = currentUser?.username || "Player";
+            modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
+            console.log('Current user for solo 2 players:', username);
+            connectPong();
+            switch (nbPlayers)
             {
-                const currentUser = await GameManager.getCurrentUser();
-                const username = currentUser?.username || "Player";
-                console.log('Current user for solo 2 players:', username);
-                switch (nbPlayers)
-                {
-                    case 2:
-                        startSoloPong(username);
-                        break;
-                    case 3:
-                        startSoloTri(username);
-                        break;
-                }
+                case 2:
+                    startSoloPong(username);
+                    break;
+                case 3:
+                    startSoloTri(username);
+                    break;
             }
         }
-        catch (error)
-        {
-            console.error('Error getting current user:', error);
-            startSoloPong("Player1"); // Fallback au nom par défaut en cas d'erreur
-        }
     }
-
-    public static matchFound2Players(data: any) : void
+    catch (error)
     {
-        console.log("match found 2 players");
-        const menu = PongMenuManager.instance;
-        
-        // Nettoyage des éléments existants
-        menu.buttons.forEach(button => button.group.destroy());
-        menu.buttons = [];
-        menu.menuLayer.destroyChildren();
-
-        // Affichage des joueurs
-        const player1Text = new Konva.Text({
-            text: `Player 1: ${data.you}`,
-            fontFamily: 'Press Start 2P',
-            fontSize: 20,
-            fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
-            y: 400,
-            width: 400,
-            align: 'center'
-        });
-
-        const player2Text = new Konva.Text({
-            text: `Player 2: ${data.opponent}`,
-            fontFamily: 'Press Start 2P',
-            fontSize: 20,
-            fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
-            y: 450,
-            width: 400,
-            align: 'center'
-        });
-
-        const countdownText = new Konva.Text({
-            text: 'Game starting in 5',
-            fontFamily: 'Press Start 2P',
-            fontSize: 24,
-            fill: '#fc4cfc',
-            x: gameWidth / 2 - 200,
-            y: 520,
-            width: 400,
-            align: 'center'
-        });
-
-        menu.menuLayer.add(player1Text);
-        menu.menuLayer.add(player2Text);
-        menu.menuLayer.add(countdownText);
-
-        // Décompte
-        let count = 5;
-        const countdown = setInterval(() => {
-            count--;
-            if (count > 0) {
-                countdownText.text(`Game starting in ${count}`);
-                menu.menuLayer.batchDraw();
-            } else {
-                clearInterval(countdown);
-                onMatchFound(data);
-            }
-        }, 1000);
-    }
-
-    public static matchFound3Players(data: any) : void
-    {
-        console.log("match found 2 players");
-        const menu = PongMenuManager.instance;
-        
-        // Nettoyage des éléments existants
-        menu.buttons.forEach(button => button.group.destroy());
-        menu.buttons = [];
-        menu.menuLayer.destroyChildren();
-
-        // Affichage des joueurs
-        const player1Text = new Konva.Text({
-            text: `Player 1: ${data.players[0]}`,
-            fontFamily: 'Press Start 2P',
-            fontSize: 20,
-            fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
-            y: 400,
-            width: 400,
-            align: 'center'
-        });
-
-        const player2Text = new Konva.Text({
-            text: `Player 2: ${data.players[1]}`,
-            fontFamily: 'Press Start 2P',
-            fontSize: 20,
-            fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
-            y: 450,
-            width: 400,
-            align: 'center'
-        });
-
-        const player3Text = new Konva.Text({
-            text: `Player 3: ${data.players[2]}`,
-            fontFamily: 'Press Start 2P',
-            fontSize: 20,
-            fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
-            y: 500,
-            width: 400,
-            align: 'center'
-        });
-
-        const countdownText = new Konva.Text({
-            text: 'Game starting in 5',
-            fontFamily: 'Press Start 2P',
-            fontSize: 24,
-            fill: '#fc4cfc',
-            x: gameWidth / 2 - 200,
-            y: 570,
-            width: 400,
-            align: 'center'
-        });
-
-        menu.menuLayer.add(player1Text);
-        menu.menuLayer.add(player2Text);
-        menu.menuLayer.add(player3Text);
-        menu.menuLayer.add(countdownText);
-
-        // Décompte
-        let count = 5;
-        const countdown = setInterval(() => {
-            count--;
-            if (count > 0) {
-                countdownText.text(`Game starting in ${count}`);
-                menu.menuLayer.batchDraw();
-            } else {
-                clearInterval(countdown);
-                onTriMatchFound(data);
-            }
-        }, 1000);
+        console.error('Error getting current user:', error);
+        startSoloPong("Player1"); // Fallback au nom par défaut en cas d'erreur
     }
 }
 
+async function launchOnlinePong(nbPlayers: number)
+{
+    try 
+    {
+        const modal = document.getElementById("games-modal");
+        if (modal) 
+        {
+            const currentUser = await GameManager.getCurrentUser();
+            const username = currentUser?.username || "Player";
+            modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
+            console.log('Current user for solo 2 players:', username);
+            connectPong();
+            switch (nbPlayers)
+            {
+                case 2:
+                    joinQueue(username);
+                    break;
+                case 3:
+                    joinTriQueue(username);
+                    break;
+            }
+        }
+    }
+    catch (error)
+    {
+        console.error('Error getting current user:', error);
+        displayMenu();
+    }
+}
 
 export function displayMenu() : void
 {

@@ -9,6 +9,8 @@ import api from '../helpers/api.js';
 import { HOSTNAME } from '../main.js';
 import { io } from 'socket.io-client';
 import { renderPeopleList } from '../pages/community/peopleList.js';
+import { setupChatWidget, removeChatWidget } from '../pages/community/chatWidget.js';
+import { updateChatWidgetVisibility } from "../main.js";
 
 export let boolprofileMenu = false;
 function changeActiveButton(newButton: HTMLElement, newActiveButton: HTMLElement)
@@ -101,18 +103,20 @@ function attachNavigationListeners()
 					changeActiveButton(currentActiveButton, libraryButton);
                     mainElement.innerHTML = libraryPage;
 					setupLibrary();
+					setupChatWidget(); // Affiche la bulle de chat
                     break;
-					case 'storebutton':
-						if (currentActiveButton.id === 'storebutton')
-							return;
-						if (boolprofileMenu)
-						{
-							profilewindow.innerHTML = "";
-							boolprofileMenu = false;
-						}
-						changeActiveButton(currentActiveButton, storeButton);
+				case 'storebutton':
+					if (currentActiveButton.id === 'storebutton')
+						return;
+					if (boolprofileMenu)
+					{
+						profilewindow.innerHTML = "";
+						boolprofileMenu = false;
+					}
+					changeActiveButton(currentActiveButton, storeButton);
 					mainElement.innerHTML = storePage;
 					setupStore();
+					setupChatWidget(); // Affiche la bulle de chat
                     break;
 				case 'communitybutton':
 					if (currentActiveButton.id === 'communitybutton')
@@ -125,6 +129,7 @@ function attachNavigationListeners()
 					changeActiveButton(currentActiveButton, communityButton);
 					mainElement.innerHTML = communityPage;
 					showCommunityPage();
+					removeChatWidget(); // Supprime la bulle de chat
 					break;
 			}
 		});
@@ -166,6 +171,7 @@ export function setupProfileButton()
 							return;
 						main.innerHTML = "";
 						disconnectNotificationSocket();
+						updateChatWidgetVisibility(); // Masque le chat après logout
 						LoginManager.showLoginModal();
 					} else {
 						showErrorNotification(data.message);
