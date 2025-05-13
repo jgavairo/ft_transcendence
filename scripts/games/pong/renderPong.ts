@@ -1,5 +1,5 @@
 import { ctx, MatchState, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
-import { animateGameOver, explosion } from "./ballExplosion.js";
+import { animateGameOver, animateWin, explosion } from "./ballExplosion.js";
 import { showGameOverOverlay } from './DisplayFinishGame.js';
 import { displayParticles } from "./menu/DisplayMenu.js";
 
@@ -165,20 +165,28 @@ export function renderPong(state: MatchState) {
       }
       
       ctx.restore();
+      // 7) overlay game over
     });
-  
-    // 7) overlay game over
     if (state.gameOver) {
       setGameoverTrue();
-      animateGameOver();
+  
+      // si c'est un match solo, on peut toujours considérer un "win" pour le seul joueur
+      const myLives = state.paddles[mySide]?.lives ?? 0;
+      if (myLives > 0) {
+        animateWin();
+      } else {
+        animateGameOver();
+      }
+  
       renderGameOverMessage(state);
-      start = false;
-      setTimeout(() => {
-        showGameOverOverlay();
-      }, 1500);
-    
-      return;
+      start = false;  // pour remettre la particule en pause si tu veux
+    //   setTimeout(() => {
+    //     showGameOverOverlay();
+    //   }, 1500);
+  
+      return;  // on arrête le render ici
     }
+  
   }
   
   
