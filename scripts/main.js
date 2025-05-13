@@ -4,6 +4,7 @@ import { setupHeader } from "./header/navigation.js";
 import { setupStore } from "./pages/store/store.js";
 import api from "./helpers/api.js";
 import { LoginManager } from "./managers/loginManager.js";
+import { setupChatWidget } from "./pages/community/chatWidget.js";
 export const HOSTNAME = window.location.hostname;
 export class MainApp {
     static async init() {
@@ -11,6 +12,7 @@ export class MainApp {
         document.addEventListener('DOMContentLoaded', async () => {
             await this.setupHeader();
             this.setupCurrentPage();
+            setupChatWidget(); // Ajoute le widget de chat partout
         });
     }
     static async setupHeader() {
