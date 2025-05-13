@@ -4,7 +4,7 @@ import { sendMoveTri } from './SocketEmit.js';
 /**
  * Lancement du Tri-Pong (à appeler sur le clic du bouton).
  */
-export function initTriPong(username) {
+export function initPong(username) {
     connectPong(); // branche matchFoundTri → startPong → renderPong
     startPong(); // configure canvas + clavier
     console.log('=> joinTriQueue', username);

@@ -171,21 +171,11 @@ const changePasswordModalHTML = `
         </div>
 `;
 
-const pongModalHTML = `
-    <div class="modal-overlay" id="modalWindow">
-        <div class="game-modal" id="games-modal">
-          <canvas id="gameCanvas" width="1200" height="800"></canvas>
-          <canvas id="particlesCanvas" width="1200" height="800"></canvas>
-        </div>
-    </div>
-`;
-
 const gameModalHTML = `
     <div class="modal-overlay" id="modalWindow">
-        <div class="game-modal" id="games-modal">
-          <canvas id="gameCanvas" width="1200" height="800"></canvas>
+        <div class="game-modal" id="games-modal" style="width: 1216px; height: 816px;">
         </div>
     </div>
 `;
 
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, pongModalHTML };
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML };

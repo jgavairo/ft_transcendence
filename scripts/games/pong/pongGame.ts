@@ -1,4 +1,4 @@
-import { displayMenu, stopAnimations } from './menu/DisplayMenu.js';
+import { displayMenu, } from './menu/DisplayMenu.js';
 import { socket } from './network.js';
 import { renderRankings } from '../../pages/library/showGameDetails.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
@@ -740,7 +740,6 @@ window.addEventListener('keydown', (e) => {
         return;
     }
     resetGame();
-    stopAnimations();
     // Nettoyer le canvas principal
     if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);

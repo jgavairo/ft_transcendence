@@ -2,7 +2,6 @@ import { displayPlayMenu } from './PlayMenu.js';
 import { connectPong } from '../pongGame.js';
 import { startSoloPong, startSoloTri } from '../SocketEmit.js';
 import { GameManager } from '../../../managers/gameManager.js';
-import { menuBg } from './DisplayMenu.js';
 
 export function displaySoloMenu(): void {
     const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -16,7 +15,6 @@ export function displaySoloMenu(): void {
     connectPong();
     
     // Fond & titre
-    ctx.drawImage(menuBg, 0, 0, cw, ch);
     ctx.fillStyle = 'white';
     ctx.font = '36px Arial';
     ctx.textAlign = 'center';

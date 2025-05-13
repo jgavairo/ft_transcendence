@@ -1,7 +1,6 @@
 import { displayWaitingScreen } from './WaitingScreen.js';
 import { displayMultiMenu } from "./MultiMenu.js";
 import { displaySoloMenu } from './SoloMenu.js';
-import { displayMenu, menuBg } from './DisplayMenu.js';
 export function displayPlayMenu() {
     const canvas = document.getElementById('gameCanvas');
     if (!canvas)
@@ -12,7 +11,6 @@ export function displayPlayMenu() {
     canvas.width = cw;
     canvas.height = ch;
     // — Fond & titre —
-    ctx.drawImage(menuBg, 0, 0, cw, ch);
     ctx.fillStyle = 'white';
     ctx.font = '36px Arial';
     ctx.textAlign = 'center';
@@ -60,7 +58,6 @@ export function displayPlayMenu() {
                     particlesCanvas.style.display = 'block';
                 }
                 teardown();
-                displayMenu();
             }
         }
     ];
