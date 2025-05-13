@@ -10,6 +10,7 @@ import { HOSTNAME } from '../main.js';
 import { io } from 'socket.io-client';
 import { renderPeopleList } from '../pages/community/peopleList.js';
 import { setupChatWidget, removeChatWidget } from '../pages/community/chatWidget.js';
+import { updateChatWidgetVisibility } from "../main.js";
 export let boolprofileMenu = false;
 function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');
@@ -146,6 +147,7 @@ export function setupProfileButton() {
                             return;
                         main.innerHTML = "";
                         disconnectNotificationSocket();
+                        updateChatWidgetVisibility(); // Masque le chat après logout
                         LoginManager.showLoginModal();
                     }
                     else {
