@@ -1,4 +1,4 @@
-import { displayMenu, } from './menu/DisplayMenu.js';
+import { displayMenu, PongMenuManager} from './menu/DisplayMenu.js';
 import { socket } from './network.js';
 import { renderRankings } from '../../pages/library/showGameDetails.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
@@ -79,13 +79,13 @@ export let playerName: string = "";
 export let opponentName: string = "";
 export let playerNames: string[] = [];
 
-function onMatchFound(data: any) {
+export function onMatchFound(data: any) {
   modePong  = true;
   soloTri   = false;
   soloMode  = data.mode === 'solo';
   mySide    = soloMode ? 0 : data.side;
   lastState = null;
-  ready     = false;
+  ready     = true;
   firstFrame= false;
 
   user1Id     = data.user1Id;
@@ -94,16 +94,15 @@ function onMatchFound(data: any) {
   opponentName= data.opponent || 'Opponent';
 
   startPong();
-  performCountdown().then(() => ready = true);
 }
 
-function onTriMatchFound(data: any) {
+export function onTriMatchFound(data: any) {
   modePong  = false;
   soloTri   = data.mode === 'solo';
   soloMode  = false;            // pas utilisé ici
   mySide    = soloTri ? 0 : data.side;
   lastState = null;
-  ready     = false;
+  ready     = true;
   firstFrame= false;
 
   // si tu veux stocker user1/user2 pour l'historique, fais-le ici aussi
@@ -114,7 +113,6 @@ function onTriMatchFound(data: any) {
   playerNames = Array.isArray(data.players) ? data.players : [];
 
   startPong();
-  performCountdown().then(() => ready = true);
 }
 
 function onGameState(state: MatchState) {
@@ -132,11 +130,11 @@ function onGameState(state: MatchState) {
 
 export function connectPong() {
   // Pong classique
-  socket.off('matchFound').on('matchFound', onMatchFound);
+  socket.off('matchFound').on('matchFound', PongMenuManager.matchFound2Players);
   socket.off('gameState'  ).on('gameState',   onGameState);
 
   // Tri-Pong → on branche exactement les mêmes handlers
-  socket.off('matchFoundTri').on('matchFoundTri', onTriMatchFound);
+  socket.off('matchFoundTri').on('matchFoundTri', PongMenuManager.matchFound3Players);
   socket.off('stateUpdateTri').on('stateUpdateTri', onGameState);
 
   // Explosion de balle
@@ -339,6 +337,9 @@ function onKeyUp(e: KeyboardEvent) {
 
 // Initialise le canvas et le contexte
 export function startPong() {
+  const modal = document.getElementById("games-modal");
+  if (modal) 
+    modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
   canvas = document.querySelector('#gameCanvas') as HTMLCanvasElement;
   ctx = canvas.getContext('2d')!;
   canvas.width = CW;
