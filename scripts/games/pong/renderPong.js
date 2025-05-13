@@ -1,5 +1,6 @@
 import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
-import { animateGameOver, animateWin, explosion } from "./ballExplosion.js";
+import { explosion } from "./ballExplosion.js";
+import { animateGameOver, animateWin } from "./menu/DisplayFinishGame.js";
 import { displayParticles } from "./menu/DisplayMenu.js";
 const CW = 1200;
 const CH = 800;

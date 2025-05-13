@@ -25,7 +25,7 @@ let modePong = false;
 let soloTri  = false;
 
 // Canvas et contexte
-let canvas: HTMLCanvasElement;
+export let canvas: HTMLCanvasElement;
 export let ctx: CanvasRenderingContext2D;
 
 // Constantes de rendu (synchronisées avec le serveur)
@@ -55,6 +55,7 @@ let user2Id: string | null = null; // ID du joueur 2
 
 window.addEventListener('keydown', onKeyDown);
 window.addEventListener('keyup',   onKeyUp);
+
 
 // Fonction pour récupérer l'ID utilisateur à partir d'un socket_id
 export function getUserIdFromSocketId(socketId: string): Promise<string | null> {
