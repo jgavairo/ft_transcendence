@@ -1,6 +1,15 @@
 import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
 import { explosion } from "./ballExplosion.js";
 import { animateEnd } from "./menu/DisplayFinishGame.js";
+;
+const FLASH_FRAMES = 20; // nombre de frames de l’animation
+const EXPANSION = 30; // de combien l’anneau s’agrandit
+const MAX_ALPHA = 0.6; // opacité initiale
+let prevLives = [];
+let lifeFlashes = [];
+const DEATH_FRAMES = 30; // frames totales de l’animation
+const DEATH_EXP = 60; // expansion max du ring gris
+let deathFlashes = [];
 const CW = 1200;
 const CH = 800;
 const CX = CW / 2;
@@ -37,13 +46,63 @@ export function renderPong(state) {
     ctx.arc(CX, CY, R, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
+    if (prevLives.length === 0) {
+        prevLives = state.paddles.map(p => p.lives);
+    }
+    state.paddles.forEach((p, i) => {
+        if (prevLives[i] === 1 && p.lives === 0) {
+            deathFlashes.push({ index: i, frame: 0 });
+        }
+        if (p.lives < prevLives[i]) {
+            lifeFlashes.push({ index: i, frame: 0 });
+        }
+        prevLives[i] = p.lives;
+    });
     // 4) paddles avec glow pour le tien - chaque raquette a sa couleur
     state.paddles.forEach((p, i) => {
         const phi = (typeof p.phi === 'number' ? p.phi : p.angle);
         const start = phi - ARC_HALF;
         const end = phi + ARC_HALF;
         const isMine = i === mySide;
-        const paddleColor = PADDLE_COLORS[i % PADDLE_COLORS.length];
+        const paddleColor = p.lives > 0
+            ? PADDLE_COLORS[i % PADDLE_COLORS.length]
+            : '#888888';
+        const death = deathFlashes.find(f => f.index === i);
+        if (death) {
+            const prog = death.frame / DEATH_FRAMES; // 0→1
+            const radius = R + P_TH / 2 + 5 + prog * DEATH_EXP;
+            const alpha = 1 - prog;
+            // a) ring gris
+            ctx.save();
+            ctx.lineWidth = P_TH + 4;
+            ctx.strokeStyle = `rgba(200,200,200,${alpha * 0.6})`;
+            ctx.beginPath();
+            ctx.arc(CX, CY, radius, start, end);
+            ctx.stroke();
+            ctx.restore();
+            // b) skull/ghost au bout de la raquette
+            if (prog > 0.2 && prog < 1) {
+                const angleMid = phi;
+                const sx = CX + Math.cos(angleMid) * (radius - 10);
+                const sy = CY + Math.sin(angleMid) * (radius - 10);
+                drawSkull(ctx, sx, sy, (1 - prog) * 20); // taille qui décroît
+            }
+            death.frame++;
+        }
+        const flash = lifeFlashes.find(f => f.index === i);
+        if (flash) {
+            const progress = flash.frame / FLASH_FRAMES; // 0 → 1
+            const radius = R + P_TH / 2 + 5 + progress * EXPANSION;
+            const alpha = (1 - progress) * MAX_ALPHA;
+            ctx.save();
+            ctx.lineWidth = P_TH + 4;
+            ctx.strokeStyle = `rgba(255,0,0,${alpha})`;
+            ctx.beginPath();
+            ctx.arc(CX, CY, radius, start, end);
+            ctx.stroke();
+            ctx.restore();
+            flash.frame++;
+        }
         ctx.save();
         ctx.lineWidth = P_TH;
         ctx.strokeStyle = paddleColor;
@@ -54,6 +113,8 @@ export function renderPong(state) {
         ctx.stroke();
         ctx.restore();
     });
+    deathFlashes = deathFlashes.filter(f => f.frame < DEATH_FRAMES);
+    lifeFlashes = lifeFlashes.filter(f => f.frame < FLASH_FRAMES);
     // 5) balle avec ombre portée
     const bx = CX + state.ball.x;
     const by = CY + state.ball.y;
@@ -215,4 +276,33 @@ function hexToRgba(hex, alpha) {
         b = parseInt(hex.substring(4, 6), 16);
     }
     return `rgba(${r},${g},${b},${alpha})`;
+}
+function drawSkull(ctx, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(size / 50, size / 50); // base 50px
+    // Crâne
+    ctx.beginPath();
+    ctx.arc(0, 0, 20, Math.PI * 0.15, Math.PI * 0.85, false);
+    ctx.quadraticCurveTo(20, 30, 0, 40);
+    ctx.quadraticCurveTo(-20, 30, -20, 10);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(220,220,220,0.9)';
+    ctx.fill();
+    // Yeux
+    ctx.fillStyle = 'black';
+    ctx.beginPath();
+    ctx.arc(-8, 10, 4, 0, Math.PI * 2);
+    ctx.arc(8, 10, 4, 0, Math.PI * 2);
+    ctx.fill();
+    // Croix d’os sous le crâne
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(180,180,180,0.8)';
+    ctx.beginPath();
+    ctx.moveTo(-25, 35);
+    ctx.lineTo(25, 35);
+    ctx.moveTo(0, 25);
+    ctx.lineTo(0, 45);
+    ctx.stroke();
+    ctx.restore();
 }
