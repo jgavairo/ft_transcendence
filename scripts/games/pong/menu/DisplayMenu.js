@@ -2,7 +2,7 @@
 import Konva from "https://cdn.skypack.dev/konva";
 import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong, startSoloTri } from "../SocketEmit.js";
-import { initPong } from "../TriPong.js";
+import { connectPong } from "../pongGame.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 class PongMenuManager {
@@ -230,7 +230,7 @@ async function launchLocalPong(nbPlayers) {
             const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
             modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
             console.log('Current user for solo 2 players:', username);
-            initPong(username);
+            connectPong();
             switch (nbPlayers) {
                 case 2:
                     startSoloPong(username);
@@ -254,7 +254,7 @@ async function launchOnlinePong(nbPlayers) {
             const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
             modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
             console.log('Current user for solo 2 players:', username);
-            initPong(username);
+            connectPong();
             switch (nbPlayers) {
                 case 2:
                     joinQueue(username);

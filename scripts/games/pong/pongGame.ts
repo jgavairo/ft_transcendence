@@ -6,8 +6,7 @@ import { createExplosion, explosion } from './ballExplosion.js';
 import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js'
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
-import { initPauseMenu } from './pauseMenu.js';
-
+import { initPauseMenu, showPauseMenu, drawPauseMenu } from './pauseMenu.js';
 
 // Interface de l'état de partie reçue du serveur
 export interface MatchState {
@@ -25,7 +24,7 @@ let modePong = false;
 let soloTri  = false;
 
 // Canvas et contexte
-export let canvas: HTMLCanvasElement;
+export let canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 export let ctx: CanvasRenderingContext2D;
 
 // Constantes de rendu (synchronisées avec le serveur)
@@ -122,6 +121,15 @@ function onTriMatchFound(data: any) {
 function onGameState(state: MatchState) {
   lastState = state;
   if (!ready) return;
+
+  if (showPauseMenu) {
+    if (lastState) {
+      renderPong(lastState);
+    }
+    drawPauseMenu(canvas, ctx);
+    return;
+  }
+
   if (!firstFrame) {
     firstFrame = true;
     // displayParticles();

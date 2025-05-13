@@ -1,7 +1,6 @@
-import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames, canvas } from "./pongGame.js";
+import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
 import { explosion } from "./ballExplosion.js";
 import { animateEnd } from "./menu/DisplayFinishGame.js";
-import { showPauseMenu, drawPauseMenu } from "./pauseMenu.js";
 const CW = 1200;
 const CH = 800;
 const CX = CW / 2;
@@ -121,9 +120,6 @@ export function renderPong(state) {
         }
         ctx.restore();
     });
-    if (showPauseMenu) {
-        drawPauseMenu(canvas, ctx);
-    }
     // 7) overlay game over
     if (state.gameOver) {
         setGameoverTrue();

@@ -135,9 +135,6 @@ export function renderPong(state: MatchState) {
       }
       ctx.restore();
     });
-    if (showPauseMenu) {
-        drawPauseMenu(canvas, ctx);
-      }
     // 7) overlay game over
     if (state.gameOver) {
         setGameoverTrue();
