@@ -1,4 +1,4 @@
-import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName } from "./pongGame.js";
+import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
 import { animateGameOver, explosion } from "./ballExplosion.js";
 import { showGameOverOverlay } from './DisplayFinishGame.js';
 import { displayParticles } from "./menu/DisplayMenu.js";
@@ -84,8 +84,10 @@ export function renderPong(state) {
         const margin = 30;
         const blockX = Math.max(margin, Math.min(CW - margin, basePos.x));
         const blockY = Math.max(margin, Math.min(CH - margin, basePos.y));
-        // Dessiner le fond du bloc - Ajout d'un fond subtil avec coins arrondis
-        const name = isMine ? playerName : opponentName;
+        // Utiliser le nom du joueur correspondant (TriPong)
+        const name = (typeof playerNames !== 'undefined' && playerNames.length === state.paddles.length)
+            ? playerNames[i]
+            : (isMine ? playerName : opponentName);
         ctx.save();
         // Police améliorée pour meilleure lisibilité
         ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
