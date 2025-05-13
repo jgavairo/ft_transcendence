@@ -51,6 +51,7 @@ export function getUser2Id() {
 }
 export let playerName = "";
 export let opponentName = "";
+export let playerNames = [];
 function onMatchFound(data) {
     modePong = true;
     soloTri = false;
@@ -79,6 +80,7 @@ function onTriMatchFound(data) {
     user2Id = data.user2Id;
     playerName = data.you || 'Player';
     opponentName = data.opponent || 'Opponent';
+    playerNames = Array.isArray(data.players) ? data.players : [];
     startPong();
     performCountdown().then(() => ready = true);
 }

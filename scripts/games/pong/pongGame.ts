@@ -77,6 +77,7 @@ export function getUser2Id(): string | null {
 
 export let playerName: string = "";
 export let opponentName: string = "";
+export let playerNames: string[] = [];
 
 function onMatchFound(data: any) {
   modePong  = true;
@@ -110,6 +111,7 @@ function onTriMatchFound(data: any) {
   user2Id     = data.user2Id;
   playerName  = data.you       || 'Player';
   opponentName= data.opponent  || 'Opponent';
+  playerNames = Array.isArray(data.players) ? data.players : [];
 
   startPong();
   performCountdown().then(() => ready = true);
