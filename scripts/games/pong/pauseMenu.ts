@@ -12,7 +12,7 @@ export function initPauseMenu(
   // 1) Toggle avec la touche Échap
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      showPauseMenu = !showPauseMenu;
+        showPauseMenu = !showPauseMenu;
     }
   });
 
@@ -49,7 +49,7 @@ export function initPauseMenu(
       x >= pmX + 20 && x <= pmX + 20 + btnW &&
       y >= btnQuitY && y <= btnQuitY + btnH
     ) {
-        stopGame(); 
+        stopGame();
         displayMenu();
     }
   });

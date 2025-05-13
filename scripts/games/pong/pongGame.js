@@ -6,7 +6,7 @@ import { createExplosion, explosion } from './ballExplosion.js';
 import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js';
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
-import { initPauseMenu } from './pauseMenu.js';
+import { initPauseMenu, showPauseMenu, drawPauseMenu } from './pauseMenu.js';
 // Variables réseau
 export let mySide;
 let roomId;
@@ -14,7 +14,7 @@ let soloMode = false;
 let modePong = false;
 let soloTri = false;
 // Canvas et contexte
-export let canvas;
+export let canvas = document.getElementById('gameCanvas');
 export let ctx;
 // Constantes de rendu (synchronisées avec le serveur)
 const CW = 1200;
@@ -83,13 +83,23 @@ function onTriMatchFound(data) {
     playerName = data.you || 'Player';
     opponentName = data.opponent || 'Opponent';
     playerNames = Array.isArray(data.players) ? data.players : [];
-    startPong();
     performCountdown().then(() => ready = true);
+    startPong();
 }
 function onGameState(state) {
     lastState = state;
     if (!ready)
         return;
+    if (showPauseMenu) {
+        // 1) redessine le dernier état du jeu
+        if (lastState) {
+            renderPong(lastState);
+        }
+        // 2) superpose le menu pause
+        drawPauseMenu(canvas, ctx);
+        // 3) ne continue pas la boucle
+        return;
+    }
     if (!firstFrame) {
         firstFrame = true;
         // displayParticles();
