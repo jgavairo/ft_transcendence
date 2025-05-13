@@ -1,5 +1,5 @@
 import { loginModalHTML, registerModalHTML } from "../sourcepage.js";
-import { HOSTNAME, MainApp } from "../main.js";
+import { HOSTNAME, MainApp, updateChatWidgetVisibility } from "../main.js";
 import { showNotification, showErrorNotification } from "../helpers/notifications.js";
 import api from "../helpers/api.js";
 import { setupProfileButton } from "../header/navigation.js";
@@ -73,6 +73,7 @@ export class LoginManager
                     MainApp.setupHeader();
                     MainApp.setupCurrentPage();
                     setupProfileButton();
+                    updateChatWidgetVisibility(); // Affiche le chat après login
                 }
                 else
                 {
