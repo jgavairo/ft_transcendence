@@ -335,6 +335,36 @@ async function launchLocalPong(nbPlayers: number)
     }
 }
 
+async function launchOnlinePong(nbPlayers: number)
+{
+    try 
+    {
+        const modal = document.getElementById("games-modal");
+        if (modal) 
+        {
+            const currentUser = await GameManager.getCurrentUser();
+            const username = currentUser?.username || "Player";
+            modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
+            console.log('Current user for solo 2 players:', username);
+            initPong(username);
+            switch (nbPlayers)
+            {
+                case 2:
+                    startSoloPong(username);
+                    break;
+                case 3:
+                    startSoloTri(username);
+                    break;
+            }
+        }
+    }
+    catch (error)
+    {
+        console.error('Error getting current user:', error);
+        startSoloPong("Player1"); // Fallback au nom par défaut en cas d'erreur
+    }
+}
+
 export function displayMenu() : void
 {
     const menu = new PongMenuManager();

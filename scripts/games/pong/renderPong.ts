@@ -1,7 +1,6 @@
 import { ctx, MatchState, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
 import { explosion } from "./ballExplosion.js";
 import { animateEnd } from "./menu/DisplayFinishGame.js";
-import { displayParticles } from "./menu/DisplayMenu.js";
 
 
 const CW = 1200;
@@ -37,8 +36,6 @@ export function renderPong(state: MatchState) {
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, CW, CH);
     
-    if (!start)
-        displayParticles();
     start = true;
     // 3) bordure de la map
     ctx.save();
