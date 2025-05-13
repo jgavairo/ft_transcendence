@@ -55,12 +55,13 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       
       const m = startTriMatch([socket, socket, socket], gameNs);
       triMatchStates.set(m.roomId, m);
-      playerInfo.set(socket.id, { side: -1, mode: 'solo-tri' });
+      playerInfo.set(socket.id, { side: 0, mode: 'solo-tri' });
       socket.join(m.roomId);
       socket.emit('matchFoundTri', {
         roomId: m.roomId,
         side: 0,
-        players: [username, username, username]
+        players: [username, username, username],
+        mode: 'solo-tri'
       });
       const iv = setInterval(() => {
         updateMatch(m, gameNs);

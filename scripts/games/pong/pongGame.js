@@ -6,6 +6,7 @@ import { createExplosion, explosion } from './ballExplosion.js';
 import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js';
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
+import { initPauseMenu } from './pauseMenu.js';
 // Variables réseau
 export let mySide;
 let roomId;
@@ -69,7 +70,8 @@ function onMatchFound(data) {
 }
 function onTriMatchFound(data) {
     modePong = false;
-    soloTri = data.mode === 'solo';
+    soloTri = data.mode === 'solo-tri';
+    console.log('data mode =', data.mode);
     soloMode = false; // pas utilisé ici
     mySide = soloTri ? 0 : data.side;
     lastState = null;
@@ -96,6 +98,29 @@ function onGameState(state) {
     else {
         renderPong(state);
     }
+}
+let loopId = null;
+export function stopGame() {
+    // 1) Arrêter la boucle requestAnimationFrame
+    if (loopId !== null) {
+        cancelAnimationFrame(loopId);
+        loopId = null;
+    }
+    // 2) Débrancher les écouteurs clavier
+    window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('keyup', onKeyUp);
+    // 3) Débrancher les écouteurs socket
+    socket.off('matchFound');
+    socket.off('gameState');
+    socket.off('matchFoundTri');
+    socket.off('stateUpdateTri');
+    socket.off('ballExplode');
+    // 4) Mettre à l’arrêt le module de particules/explosions
+    explosion.length = 0;
+    // 5) Nettoyer le canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 6) Autres nettoyages
+    resetGame();
 }
 export function connectPong() {
     // Pong classique
@@ -211,8 +236,6 @@ function onKeyDown(e) {
     if (!ready || gameover)
         return;
     // --- PONG CLASSIQUE ---
-    // solo-mode ou multi-mode (2 joueurs)
-    console.log('');
     if (modePong) {
         if (soloMode) {
             // 2 paddles joués localement : 0→A/D, 1→←/→
@@ -243,11 +266,7 @@ function onKeyDown(e) {
         return;
     }
     // --- TRI-PONG ---
-    // solo-tri ou multi-tri
-    // solo-tri : tout le monde local
-    // multi-tri : seul mySide
     if (!soloTri) {
-        console.log('here');
         // multi-Tri : chaque client ne pilote que SON side EN A/D
         if (e.code === 'KeyD')
             sendMoveTri(mySide, 'up');
@@ -304,6 +323,7 @@ export function startPong() {
     ctx = canvas.getContext('2d');
     canvas.width = CW;
     canvas.height = CH;
+    initPauseMenu(canvas, ctx, displayMenu);
 }
 // Ajout de la gestion du message de fin de partie
 export async function renderGameOverMessage(state) {
@@ -468,24 +488,4 @@ export function resetGame() {
 }
 document.addEventListener('DOMContentLoaded', () => {
     displayMenu();
-});
-window.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape')
-        return;
-    const modal = document.getElementById('optionnalModal');
-    if (!modal)
-        return;
-    if (modal.innerHTML.trim() !== '') {
-        modal.innerHTML = '';
-        return;
-    }
-    resetGame();
-    // Nettoyer le canvas principal
-    if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-    socket.removeAllListeners();
-    socket.disconnect();
 });
