@@ -232,6 +232,7 @@ function onKeyDown(e) {
     // solo-tri : tout le monde local
     // multi-tri : seul mySide
     if (!soloTri) {
+        console.log('here');
         // multi-Tri : chaque client ne pilote que SON side EN A/D
         if (e.code === 'KeyD')
             sendMoveTri(mySide, 'up');

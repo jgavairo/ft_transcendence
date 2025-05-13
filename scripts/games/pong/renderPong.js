@@ -1,6 +1,6 @@
 import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
 import { explosion } from "./ballExplosion.js";
-import { animateGameOver, animateWin } from "./menu/DisplayFinishGame.js";
+import { animateEnd } from "./menu/DisplayFinishGame.js";
 import { displayParticles } from "./menu/DisplayMenu.js";
 const CW = 1200;
 const CH = 800;
@@ -19,7 +19,6 @@ const PADDLE_COLORS = [
 ];
 // Dessine l'état de la partie Tri-Pong
 export function renderPong(state) {
-    var _a, _b;
     // 1) motion blur: on dessine un calque semi-transparent au lieu de tout clear
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     ctx.fillRect(0, 0, CW, CH);
@@ -128,14 +127,16 @@ export function renderPong(state) {
     // 7) overlay game over
     if (state.gameOver) {
         setGameoverTrue();
-        // si c'est un match solo, on peut toujours considérer un "win" pour le seul joueur
-        const myLives = (_b = (_a = state.paddles[mySide]) === null || _a === void 0 ? void 0 : _a.lives) !== null && _b !== void 0 ? _b : 0;
-        if (myLives > 0) {
-            animateWin();
-        }
-        else {
-            animateGameOver();
-        }
+        // 1) On trouve l’indice du gagnant (celui qui a encore des vies > 0)
+        const winnerIndex = state.paddles.findIndex(p => p.lives > 0);
+        // 2) On prend sa couleur de pad
+        const padColor = PADDLE_COLORS[winnerIndex % PADDLE_COLORS.length];
+        // 3) On détermine son nom (soit dans playerNames[], soit mySide/opponentName)
+        const winnerName = Array.isArray(playerNames) && playerNames.length === state.paddles.length
+            ? playerNames[winnerIndex]
+            : (winnerIndex === mySide ? playerName : opponentName);
+        // 4) On lance l’animation finale avec nom + couleur
+        animateEnd(winnerName, padColor);
         renderGameOverMessage(state);
         start = false; // pour remettre la particule en pause si tu veux
         //   setTimeout(() => {
