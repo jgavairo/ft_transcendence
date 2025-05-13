@@ -24,6 +24,7 @@ export async function startSoloPong(username: string) {
     const userId = currentUser?.id;
     
     // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
+    console.log("startSoloPong");
     socket.emit('startSolo', { username, userId });
   } catch (error) {
     console.error('Erreur lors de la récupération de l\'utilisateur:', error);

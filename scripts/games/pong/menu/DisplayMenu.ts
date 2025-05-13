@@ -367,6 +367,7 @@ export class PongMenuManager
             {
                 const currentUser = await GameManager.getCurrentUser();
                 const username = currentUser?.username || "Player";
+                modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
                 console.log('Current user for solo 2 players:', username);
                 switch (nbPlayers)
                 {
@@ -498,7 +499,7 @@ export class PongMenuManager
             fontSize: 24,
             fill: '#fc4cfc',
             x: gameWidth / 2 - 200,
-            y: 5,
+            y: 570,
             width: 400,
             align: 'center'
         });

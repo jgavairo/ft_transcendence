@@ -20,9 +20,9 @@ const ARC_HALF = Math.PI / 18; // demi-angle du paddle
 let start = false;
 // Tableau de couleurs pour chaque joueur/raquette
 const PADDLE_COLORS = [
-    '#00eaff', // bleu-cyan
-    '#ff00c8', // rose
-    '#ffe156', // jaune
+    '#00eaff',
+    '#ff00c8',
+    '#ffe156',
     '#7cff00', // vert (pour un 4e joueur éventuel)
 ];
 // Dessine l'état de la partie Tri-Pong
