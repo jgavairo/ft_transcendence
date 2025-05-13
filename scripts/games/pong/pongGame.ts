@@ -94,8 +94,8 @@ function onMatchFound(data: any) {
   playerName  = data.you   || 'Player';
   opponentName= data.opponent || 'Opponent';
 
-  startPong();
   performCountdown().then(() => ready = true);
+  startPong();
 }
 
 function onTriMatchFound(data: any) {
@@ -115,8 +115,8 @@ function onTriMatchFound(data: any) {
   opponentName= data.opponent  || 'Opponent';
   playerNames = Array.isArray(data.players) ? data.players : [];
 
-  startPong();
   performCountdown().then(() => ready = true);
+  startPong();
 }
 
 function onGameState(state: MatchState) {
