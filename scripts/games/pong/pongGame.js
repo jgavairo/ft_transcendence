@@ -65,8 +65,8 @@ function onMatchFound(data) {
     user2Id = data.user2Id;
     playerName = data.you || 'Player';
     opponentName = data.opponent || 'Opponent';
-    startPong();
     performCountdown().then(() => ready = true);
+    startPong();
 }
 function onTriMatchFound(data) {
     modePong = false;
