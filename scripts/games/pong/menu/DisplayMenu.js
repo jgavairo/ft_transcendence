@@ -42,15 +42,15 @@ let particlesCtx;
 const particles = [];
 function getRandomColor() {
     const colors = [
-        '#00FFFF',
-        '#4B0082',
-        '#9400D3',
-        '#8A2BE2',
-        '#4B0082',
-        '#7B68EE',
-        '#9370DB',
-        '#8B008B',
-        '#00BFFF',
+        '#00FFFF', // Cyan néon
+        '#4B0082', // Indigo profond
+        '#9400D3', // Violet vif
+        '#8A2BE2', // Bleu violet
+        '#4B0082', // Indigo
+        '#7B68EE', // Bleu moyen
+        '#9370DB', // Violet moyen
+        '#8B008B', // Magenta foncé
+        '#00BFFF', // Bleu ciel profond
         '#1E90FF' // Bleu dodger
     ];
     return colors[Math.floor(Math.random() * colors.length)];
@@ -59,7 +59,7 @@ function createParticle() {
     return {
         x: Math.random() * particlesCanvas.width,
         y: 0,
-        speed: BASE_PARTICLE_SPEED + Math.random() * 2,
+        speed: BASE_PARTICLE_SPEED + Math.random() * 2, // Utiliser la constante
         radius: 2 + Math.random() * 3,
         color: getRandomColor(),
         glowIntensity: 100 + Math.random() * 50
