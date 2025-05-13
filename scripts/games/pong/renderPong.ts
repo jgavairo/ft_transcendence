@@ -1,6 +1,6 @@
 import { ctx, MatchState, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
 import { explosion } from "./ballExplosion.js";
-import { animateGameOver, animateWin } from "./menu/DisplayFinishGame.js";
+import { animateEnd } from "./menu/DisplayFinishGame.js";
 import { displayParticles } from "./menu/DisplayMenu.js";
 
 
@@ -140,23 +140,28 @@ export function renderPong(state: MatchState) {
     });
     // 7) overlay game over
     if (state.gameOver) {
-      setGameoverTrue();
+        setGameoverTrue();
+        // 1) On trouve l’indice du gagnant (celui qui a encore des vies > 0)
+        const winnerIndex = state.paddles.findIndex(p => p.lives > 0);
+
+        // 2) On prend sa couleur de pad
+        const padColor = PADDLE_COLORS[winnerIndex % PADDLE_COLORS.length];
+
+        // 3) On détermine son nom (soit dans playerNames[], soit mySide/opponentName)
+        const winnerName =
+            Array.isArray(playerNames) && playerNames.length === state.paddles.length
+            ? playerNames[winnerIndex]
+            : (winnerIndex === mySide ? playerName : opponentName);
+
+        // 4) On lance l’animation finale avec nom + couleur
+        animateEnd(winnerName, padColor);
+        renderGameOverMessage(state);
+        start = false;  // pour remettre la particule en pause si tu veux
+        //   setTimeout(() => {
+        //     showGameOverOverlay();
+        //   }, 1500);
   
-      // si c'est un match solo, on peut toujours considérer un "win" pour le seul joueur
-      const myLives = state.paddles[mySide]?.lives ?? 0;
-      if (myLives > 0) {
-        animateWin();
-      } else {
-        animateGameOver();
-      }
-  
-      renderGameOverMessage(state);
-      start = false;  // pour remettre la particule en pause si tu veux
-    //   setTimeout(() => {
-    //     showGameOverOverlay();
-    //   }, 1500);
-  
-      return;  // on arrête le render ici
+        return;  // on arrête le render ici
     }
   
   }

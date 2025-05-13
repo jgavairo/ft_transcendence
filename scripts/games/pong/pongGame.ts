@@ -6,7 +6,6 @@ import { createExplosion, explosion } from './ballExplosion.js';
 import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js'
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
-import { displayParticles } from './menu/DisplayMenu.js';
 
 
 // Interface de l'état de partie reçue du serveur
@@ -274,6 +273,7 @@ function onKeyDown(e: KeyboardEvent) {
   // solo-tri : tout le monde local
   // multi-tri : seul mySide
   if (!soloTri) {
+    console.log('here');
     // multi-Tri : chaque client ne pilote que SON side EN A/D
     if (e.code === 'KeyD') sendMoveTri(mySide, 'up');
     else if (e.code === 'KeyA') sendMoveTri(mySide, 'down');
