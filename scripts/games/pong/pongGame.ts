@@ -155,9 +155,23 @@ export function connectPong() {
     const details = document.querySelector('.library-details') as HTMLElement;
     if (details) {
       const people = await fetchUsernames();
+      // --- Filtrage comme dans showGameDetails.ts ---
+      let friendIds: number[] = [];
+      try {
+        const res = await fetch('/api/friends/allFriendIds');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.ids)) {
+          friendIds = data.ids;
+        }
+      } catch (e) {
+        friendIds = [];
+      }
+      let currentUserObj = await GameManager.getCurrentUser();
+      // Pour Pong, on ne connaît pas les userIds des possesseurs du jeu ici, donc on affiche tous les amis sauf soi-même
+      const filteredPeople = people.filter(person => person.id !== currentUserObj.id && friendIds.includes(person.id));
       const friendsSection = details.querySelector('.friendsSection');
       if (friendsSection) {
-        friendsSection.outerHTML = renderFriendList(people);
+        friendsSection.outerHTML = renderFriendList(filteredPeople);
         // Réattacher les listeners sur les nouveaux éléments friendName
         const newFriendsSection = details.querySelector('.friendsSection');
         if (newFriendsSection) {
