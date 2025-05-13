@@ -1,6 +1,5 @@
 import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
-import { animateGameOver, explosion } from "./ballExplosion.js";
-import { showGameOverOverlay } from './DisplayFinishGame.js';
+import { animateGameOver, animateWin, explosion } from "./ballExplosion.js";
 import { displayParticles } from "./menu/DisplayMenu.js";
 const CW = 1200;
 const CH = 800;
@@ -12,6 +11,7 @@ const ARC_HALF = Math.PI / 18; // demi-angle du paddle
 let start = false;
 // Dessine l'état de la partie Tri-Pong
 export function renderPong(state) {
+    var _a, _b;
     // 1) motion blur: on dessine un calque semi-transparent au lieu de tout clear
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     ctx.fillRect(0, 0, CW, CH);
@@ -130,17 +130,24 @@ export function renderPong(state) {
             drawHeart(blockX + (h - 1) * 26, blockY + 12, 13, h < p.lives);
         }
         ctx.restore();
+        // 7) overlay game over
     });
-    // 7) overlay game over
     if (state.gameOver) {
         setGameoverTrue();
-        animateGameOver();
+        // si c'est un match solo, on peut toujours considérer un "win" pour le seul joueur
+        const myLives = (_b = (_a = state.paddles[mySide]) === null || _a === void 0 ? void 0 : _a.lives) !== null && _b !== void 0 ? _b : 0;
+        if (myLives > 0) {
+            animateWin();
+        }
+        else {
+            animateGameOver();
+        }
         renderGameOverMessage(state);
-        start = false;
-        setTimeout(() => {
-            showGameOverOverlay();
-        }, 1500);
-        return;
+        start = false; // pour remettre la particule en pause si tu veux
+        //   setTimeout(() => {
+        //     showGameOverOverlay();
+        //   }, 1500);
+        return; // on arrête le render ici
     }
 }
 // Convertit coordonnées polaires (phi,r) → cartésiennes

@@ -127,7 +127,98 @@ export function animateGameOver() {
             ctx.shadowColor = 'rgba(255,20,20,0.6)';
             ctx.shadowBlur = 20;
             ctx.fillStyle = '#ff4d4d';
-            ctx.fillText('PAS PELUS', 0, 0);
+            ctx.fillText('YOU LOSE', 0, 0);
+            ctx.restore();
+        }
+        // 6) Fade out final (frames 140→180)
+        if (goFrame >= 140) {
+            const tF = (goFrame - 140) / 40;
+            ctx.fillStyle = `rgba(0,0,0,${easeInOutQuad(tF)})`;
+            ctx.fillRect(0, 0, CW, CH);
+        }
+        goFrame++;
+        if (goFrame <= totalFrames) {
+            requestAnimationFrame(frame);
+        }
+    }
+    requestAnimationFrame(frame);
+}
+export function animateWin() {
+    const totalFrames = 180;
+    const particles = [];
+    const maxParticles = 100;
+    // Easing functions
+    function easeOutElastic(t) {
+        const p = 0.3;
+        return Math.pow(2, -10 * t) *
+            Math.sin((t - p / 4) * (2 * Math.PI) / p) + 1;
+    }
+    function easeInOutQuad(t) {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    }
+    // Particle class
+    class Spark {
+        constructor() {
+            const angle = Math.random() * 2 * Math.PI;
+            const speed = 2 + Math.random() * 4;
+            this.x = CX;
+            this.y = CY;
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.life = 30 + Math.random() * 30;
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += 0.1; // légère gravité
+            this.life--;
+        }
+        draw(context) {
+            context.globalAlpha = Math.max(0, this.life / 60);
+            context.fillRect(this.x, this.y, 2, 2);
+            context.globalAlpha = 1;
+        }
+    }
+    function frame() {
+        // 1) Clear canvas
+        ctx.clearRect(0, 0, CW, CH);
+        // 2) Fond radial animé
+        const tBG = Math.min(1, goFrame / 60);
+        const alphaBG = easeInOutQuad(tBG) * 0.8;
+        const grad = ctx.createRadialGradient(CX, CY, 0, CX, CY, Math.max(CW, CH));
+        grad.addColorStop(0, `rgba(20, 0, 0, ${alphaBG})`);
+        grad.addColorStop(1, `rgba(0, 0, 0, ${alphaBG + 0.2})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, CW, CH);
+        // 3) Burst de particules au frame 30
+        if (goFrame === 30) {
+            for (let i = 0; i < maxParticles; i++) {
+                particles.push(new Spark());
+            }
+        }
+        // update + draw particules
+        ctx.fillStyle = '#fffdaa';
+        particles.forEach((p, idx) => {
+            p.update();
+            p.draw(ctx);
+            if (p.life <= 0)
+                particles.splice(idx, 1);
+        });
+        // 4) Pop Texte « GAME OVER » (frames 60→100)
+        if (goFrame >= 60) {
+            const tText = Math.min(1, (goFrame - 60) / 40);
+            const scale = easeOutElastic(tText);
+            const shake = (1 - tText) * 10 * Math.sin(goFrame * 0.5);
+            ctx.save();
+            ctx.translate(CX + shake, CY);
+            ctx.scale(scale, scale);
+            ctx.font = 'bold 96px Arial';
+            ctx.textAlign = 'center';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#0bdb04';
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = '#0bdb04';
+            ctx.fillText('YOU WIN', 0, 0);
             ctx.restore();
         }
         // 6) Fade out final (frames 140→180)
