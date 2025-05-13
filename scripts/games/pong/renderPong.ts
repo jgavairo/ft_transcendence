@@ -1,6 +1,8 @@
-import { ctx, MatchState, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
+import { ctx, MatchState, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames, canvas } from "./pongGame.js";
 import { explosion } from "./ballExplosion.js";
 import { animateEnd } from "./menu/DisplayFinishGame.js";
+import { displayMenu } from "./menu/DisplayMenu.js";
+import { showPauseMenu, drawPauseMenu } from "./pauseMenu.js";
 
 
 const CW = 1200;
@@ -21,7 +23,6 @@ const PADDLE_COLORS = [
 ];
 
 
-
 // Dessine l'état de la partie Tri-Pong
 export function renderPong(state: MatchState) {
     
@@ -36,7 +37,6 @@ export function renderPong(state: MatchState) {
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, CW, CH);
     
-    start = true;
     // 3) bordure de la map
     ctx.save();
     ctx.strokeStyle = 'rgba(0,174,255,0.8)';
@@ -157,20 +157,11 @@ export function renderPong(state: MatchState) {
         //   setTimeout(() => {
         //     showGameOverOverlay();
         //   }, 1500);
-  
         return;  // on arrête le render ici
     }
   
   }
   
-  
-  // Convertit coordonnées polaires (phi,r) → cartésiennes
-  function fromPolar(phi: number, r: number) {
-    return {
-      x: CX + r * Math.cos(phi),
-      y: CY + r * Math.sin(phi),
-    };
-  }
   
   // Ajout d'une fonction pour dessiner des rectangles arrondis
   function roundRect(

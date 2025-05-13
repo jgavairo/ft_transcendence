@@ -6,7 +6,7 @@ import { createExplosion, explosion } from './ballExplosion.js';
 import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js'
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
-
+import { initPauseMenu, showPauseMenu, drawPauseMenu } from './pauseMenu.js';
 
 // Interface de l'état de partie reçue du serveur
 export interface MatchState {
@@ -22,9 +22,10 @@ let roomId: string;
 let soloMode = false;
 let modePong = false;
 let soloTri  = false;
+let running = false;
 
 // Canvas et contexte
-export let canvas: HTMLCanvasElement;
+export let canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 export let ctx: CanvasRenderingContext2D;
 
 // Constantes de rendu (synchronisées avec le serveur)
@@ -98,7 +99,8 @@ export function onMatchFound(data: any) {
 
 export function onTriMatchFound(data: any) {
   modePong  = false;
-  soloTri   = data.mode === 'solo';
+  soloTri   = data.mode === 'solo-tri';
+  console.log('data mode =', data.mode);
   soloMode  = false;            // pas utilisé ici
   mySide    = soloTri ? 0 : data.side;
   lastState = null;
@@ -112,12 +114,26 @@ export function onTriMatchFound(data: any) {
   opponentName= data.opponent  || 'Opponent';
   playerNames = Array.isArray(data.players) ? data.players : [];
 
+  performCountdown().then(() => ready = true);
   startPong();
 }
 
 function onGameState(state: MatchState) {
+  if (!running){ 
+    console.log('quit');
+    return;
+  }
   lastState = state;
   if (!ready) return;
+
+  if (showPauseMenu) {
+    if (lastState) {
+      renderPong(lastState);
+    }
+    drawPauseMenu(canvas, ctx);
+    return;
+  }
+
   if (!firstFrame) {
     firstFrame = true;
     // displayParticles();
@@ -127,6 +143,42 @@ function onGameState(state: MatchState) {
   }
 }
 
+let loopId: number | null = null;
+
+export function stopGame() {
+  // 1) Arrêter la boucle requestAnimationFrame
+  console.log('stopGame called');
+  running = false;                                   // ← désactive le rendu
+  if (loopId !== null) {
+    cancelAnimationFrame(loopId);
+    loopId = null;
+  }
+  socket.removeAllListeners('matchFound');
+  socket.removeAllListeners('gameState');
+  socket.removeAllListeners('matchFoundTri');
+  socket.removeAllListeners('stateUpdateTri');
+  socket.removeAllListeners('ballExplode');
+
+  // 2) Débrancher les écouteurs clavier
+  window.removeEventListener('keydown', onKeyDown);
+  window.removeEventListener('keyup',   onKeyUp);
+
+  // 3) Débrancher les écouteurs socket
+  socket.off('matchFound');
+  socket.off('gameState');
+  socket.off('matchFoundTri');
+  socket.off('stateUpdateTri');
+  socket.off('ballExplode');
+
+  // 4) Mettre à l’arrêt le module de particules/explosions
+  explosion.length = 0;
+
+  // 5) Nettoyer le canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 6) Autres nettoyages
+  resetGame();
+}
 
 export function connectPong() {
   // Pong classique
@@ -258,8 +310,6 @@ function onKeyDown(e: KeyboardEvent) {
   if (!ready || gameover) return;
 
   // --- PONG CLASSIQUE ---
-  // solo-mode ou multi-mode (2 joueurs)
-  console.log('')
   if (modePong) {
     if (soloMode) {
       // 2 paddles joués localement : 0→A/D, 1→←/→
@@ -281,11 +331,8 @@ function onKeyDown(e: KeyboardEvent) {
   }
 
   // --- TRI-PONG ---
-  // solo-tri ou multi-tri
-  // solo-tri : tout le monde local
-  // multi-tri : seul mySide
+
   if (!soloTri) {
-    console.log('here');
     // multi-Tri : chaque client ne pilote que SON side EN A/D
     if (e.code === 'KeyD') sendMoveTri(mySide, 'up');
     else if (e.code === 'KeyA') sendMoveTri(mySide, 'down');
@@ -337,13 +384,12 @@ function onKeyUp(e: KeyboardEvent) {
 
 // Initialise le canvas et le contexte
 export function startPong() {
-  const modal = document.getElementById("games-modal");
-  if (modal) 
-    modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
+  running = true;
   canvas = document.querySelector('#gameCanvas') as HTMLCanvasElement;
   ctx = canvas.getContext('2d')!;
   canvas.width = CW;
   canvas.height = CH;
+  initPauseMenu(canvas, ctx, displayMenu);
 }
 
 
@@ -526,23 +572,4 @@ export function resetGame()
 
 document.addEventListener('DOMContentLoaded', () => {
   displayMenu();
-});
-
-window.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    const modal = document.getElementById('optionnalModal');
-    if (!modal) return;
-    if (modal.innerHTML.trim() !== '') {
-        modal.innerHTML = '';
-        return;
-    }
-    resetGame();
-    // Nettoyer le canvas principal
-    if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-    socket.removeAllListeners();
-    socket.disconnect();
 });
