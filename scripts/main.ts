@@ -3,9 +3,17 @@ import { setupHeader } from "./header/navigation.js";
 import { setupStore } from "./pages/store/store.js";
 import api from "./helpers/api.js";
 import { LoginManager } from "./managers/loginManager.js";
-import { setupChatWidget } from "./pages/community/chatWidget.js";
+import { setupChatWidget, removeChatWidget } from "./pages/community/chatWidget.js";
 
 export const HOSTNAME = window.location.hostname;
+
+export async function updateChatWidgetVisibility() {
+    if (await LoginManager.isLoggedIn()) {
+        setupChatWidget();
+    } else {
+        removeChatWidget();
+    }
+}
 
 export class MainApp
 {
@@ -15,7 +23,7 @@ export class MainApp
         document.addEventListener('DOMContentLoaded', async () => {
             await this.setupHeader();
             this.setupCurrentPage();
-            setupChatWidget(); // Ajoute le widget de chat partout
+            updateChatWidgetVisibility(); // Affiche/masque le chat selon connexion
         });
     }
 
