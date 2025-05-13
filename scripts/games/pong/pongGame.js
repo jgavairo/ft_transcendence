@@ -13,6 +13,7 @@ let roomId;
 let soloMode = false;
 let modePong = false;
 let soloTri = false;
+let running = false;
 // Canvas et contexte
 export let canvas = document.getElementById('gameCanvas');
 export let ctx;
@@ -87,17 +88,18 @@ function onTriMatchFound(data) {
     startPong();
 }
 function onGameState(state) {
+    if (!running) {
+        console.log('quit');
+        return;
+    }
     lastState = state;
     if (!ready)
         return;
     if (showPauseMenu) {
-        // 1) redessine le dernier état du jeu
         if (lastState) {
             renderPong(lastState);
         }
-        // 2) superpose le menu pause
         drawPauseMenu(canvas, ctx);
-        // 3) ne continue pas la boucle
         return;
     }
     if (!firstFrame) {
@@ -112,10 +114,17 @@ function onGameState(state) {
 let loopId = null;
 export function stopGame() {
     // 1) Arrêter la boucle requestAnimationFrame
+    console.log('stopGame called');
+    running = false; // ← désactive le rendu
     if (loopId !== null) {
         cancelAnimationFrame(loopId);
         loopId = null;
     }
+    socket.removeAllListeners('matchFound');
+    socket.removeAllListeners('gameState');
+    socket.removeAllListeners('matchFoundTri');
+    socket.removeAllListeners('stateUpdateTri');
+    socket.removeAllListeners('ballExplode');
     // 2) Débrancher les écouteurs clavier
     window.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('keyup', onKeyUp);
@@ -329,6 +338,7 @@ function onKeyUp(e) {
 }
 // Initialise le canvas et le contexte
 export function startPong() {
+    running = true;
     canvas = document.querySelector('#gameCanvas');
     ctx = canvas.getContext('2d');
     canvas.width = CW;

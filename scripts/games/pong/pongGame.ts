@@ -22,6 +22,7 @@ let roomId: string;
 let soloMode = false;
 let modePong = false;
 let soloTri  = false;
+let running = false;
 
 // Canvas et contexte
 export let canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -119,6 +120,10 @@ function onTriMatchFound(data: any) {
 }
 
 function onGameState(state: MatchState) {
+  if (!running){ 
+    console.log('quit');
+    return;
+  }
   lastState = state;
   if (!ready) return;
 
@@ -143,10 +148,17 @@ let loopId: number | null = null;
 
 export function stopGame() {
   // 1) Arrêter la boucle requestAnimationFrame
+  console.log('stopGame called');
+  running = false;                                   // ← désactive le rendu
   if (loopId !== null) {
     cancelAnimationFrame(loopId);
     loopId = null;
   }
+  socket.removeAllListeners('matchFound');
+  socket.removeAllListeners('gameState');
+  socket.removeAllListeners('matchFoundTri');
+  socket.removeAllListeners('stateUpdateTri');
+  socket.removeAllListeners('ballExplode');
 
   // 2) Débrancher les écouteurs clavier
   window.removeEventListener('keydown', onKeyDown);
@@ -373,6 +385,7 @@ function onKeyUp(e: KeyboardEvent) {
 
 // Initialise le canvas et le contexte
 export function startPong() {
+  running = true;
   canvas = document.querySelector('#gameCanvas') as HTMLCanvasElement;
   ctx = canvas.getContext('2d')!;
   canvas.width = CW;
