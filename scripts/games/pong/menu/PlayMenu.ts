@@ -1,7 +1,6 @@
 import { displayWaitingScreen } from './WaitingScreen.js';
 import { displayMultiMenu } from "./MultiMenu.js";
 import { displaySoloMenu } from './SoloMenu.js';
-import { displayMenu, menuBg, stopAnimations } from './DisplayMenu.js';
 
 export function displayPlayMenu(): void {
     const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -14,7 +13,6 @@ export function displayPlayMenu(): void {
 
 
     // — Fond & titre —
-    ctx.drawImage(menuBg, 0, 0, cw, ch);
     ctx.fillStyle = 'white';
     ctx.font = '36px Arial';
     ctx.textAlign = 'center';
@@ -66,7 +64,6 @@ export function displayPlayMenu(): void {
             particlesCanvas.style.display = 'block';
           }
           teardown();
-          displayMenu();
         }
       }
     ];

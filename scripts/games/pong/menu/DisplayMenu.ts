@@ -1,439 +1,344 @@
-import { initTriPong } from '../TriPong.js';
-import { displayPlayMenu } from './PlayMenu.js';
-import { displaySoloMenu } from './SoloMenu.js';
+// @ts-ignore
+import Konva from "https://cdn.skypack.dev/konva";
+import { GameManager } from "../../../managers/gameManager.js";
+import { startSoloPong, startSoloTri } from "../SocketEmit.js";
+import { initPong } from "../TriPong.js";
 
+const gameWidth = 1200;
+const gameHeight = 800;
 
-export const menuBg = new Image();
-menuBg.src = '../../../../assets/games/pong/background.png';
-
-const titleImage = new Image();
-titleImage.src = '../../../../assets/games/pong/title.png';
-let titleY: number = -200; // Position initiale plus haute
-const titleSpeed: number = 2.5; // Vitesse plus lente
-const titleFinalY: number = 100; // Position finale ajustée
-
-let animationFrameId: number;
-let isAnimating: boolean = false;
-
-// Ajouter une constante pour la vitesse de base des particules
-const BASE_PARTICLE_SPEED = 0.5;
-
-// Ajouter une constante pour limiter le FPS
-const TARGET_FPS = 60;
-const FRAME_TIME = 1000 / TARGET_FPS;
-let lastFrameTime = 0;
-
-// Déclarer les gestionnaires d'événements comme des variables globales
-let onMouseMove: (e: MouseEvent) => void;
-let onMouseDown: (e: MouseEvent) => void;
-let onMouseUp: (e: MouseEvent) => void;
-
-// Au début du fichier
-let mouseX = 0;
-let mouseY = 0;
-let mousePressed = false;
-let mouseJustClicked = false;
-
-function animateTitle() {
-  if (!particlesCtx || !titleImage.complete) 
-    return;
-
-  if (titleY < titleFinalY) {
-      titleY += titleSpeed;
-  }
-
-  // Calculer la taille réduite (par exemple 40% de la largeur du canvas)
-  const scale = 0.5;
-  const newWidth = particlesCanvas.width * scale;
-  const newHeight = (titleImage.height * newWidth) / titleImage.width;
-
-  particlesCtx.drawImage(
-      titleImage,
-      (particlesCanvas.width - newWidth) / 2,
-      titleY,
-      newWidth,
-      newHeight
-  );
+interface Particles
+{
+    shape: Konva.Circle;
+    speed: number;
+    glowDirection: number;
 }
 
-interface Button 
+interface Button
 {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+    group: Konva.Group;
     text: string;
-    isHovered: boolean;
-    isClicked: boolean;
+    action: () => void;
 }
 
-const buttons: Button[] = [];
-
-let particlesCanvas: HTMLCanvasElement;
-let particlesCtx: CanvasRenderingContext2D;
-const particles: Particle[] = [];
-
-interface Particle
+class PongMenuManager
 {
-  x: number;
-  y: number;
-  speed: number;
-  radius: number;
-  color: string;
-  glowIntensity: number;
-}
+    private stage!: Konva.Stage;
+    private backgroundLayer!: Konva.Layer;
+    private titleLayer!: Konva.Layer;
+    private menuLayer!: Konva.Layer
+    private particles: Particles[] = []
+    private buttons: Button[] = []
+    private titleImage!: Konva.Image;
+    private isTitleVisible: boolean = false;
 
-function getRandomColor(): string {
-  const colors = [
-      '#00FFFF', // Cyan néon
-      '#4B0082', // Indigo profond
-      '#9400D3', // Violet vif
-      '#8A2BE2', // Bleu violet
-      '#4B0082', // Indigo
-      '#7B68EE', // Bleu moyen
-      '#9370DB', // Violet moyen
-      '#8B008B', // Magenta foncé
-      '#00BFFF', // Bleu ciel profond
-      '#1E90FF'  // Bleu dodger
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
-}
-
-function createParticle(): Particle {
-  return {
-      x: Math.random() * particlesCanvas.width,
-      y: 0,
-      speed: BASE_PARTICLE_SPEED + Math.random() * 2, // Utiliser la constante
-      radius: 2 + Math.random() * 3,
-      color: getRandomColor(),
-      glowIntensity: 100 + Math.random() * 50
-  };
-}
-
-function animateParticles(currentTime: number) {
-    if (!particlesCtx || !isAnimating) return;
-    
-    // Limiter le FPS
-    if (currentTime - lastFrameTime < FRAME_TIME) {
-        if (isAnimating) {
-            animationFrameId = requestAnimationFrame(animateParticles);
+    constructor()
+    {
+        const canvas = document.getElementById("games-modal");
+        if (!canvas)
+        {
+            console.error("Canvas not found");
+            return;
         }
-        return;
-    }
-    lastFrameTime = currentTime;
+        this.stage = new Konva.Stage
+        ({
+            container: canvas,
+            width: 1200,
+            height: 800
+        })
 
-    // Créer des particules occasionnellement
-    if (Math.random() < 0.05) {
-        particles.push(createParticle());
-    }
+        this.backgroundLayer = new Konva.Layer();
+        this.titleLayer = new Konva.Layer();
+        this.menuLayer = new Konva.Layer();
 
-    // Limiter le nombre de particules
-    if (particles.length > 50) {
-        particles.shift();
-    }
+        this.stage.add(this.backgroundLayer);
+        this.stage.add(this.titleLayer);
+        this.stage.add(this.menuLayer);
 
-    // Fond noir pour le canvas des particules
-    particlesCtx.fillStyle = 'black';
-    particlesCtx.fillRect(0, 0, particlesCanvas.width, particlesCanvas.height);
+        // Ajout du fond noir
+        const background = new Konva.Rect({
+            x: 0,
+            y: 0,
+            width: gameWidth,
+            height: gameHeight,
+            fill: 'black'
+        });
+        this.backgroundLayer.add(background);
 
-    // Dessiner les particules
-    for (let i = particles.length - 1; i >= 0; i--) {
-        const particle = particles[i];
-        particle.y += particle.speed;
+        const image = new Image();
+        image.src = '../../../../assets/games/pong/title.png';
+        image.onload = () =>
+        {
+            this.titleImage = new Konva.Image
+            ({
+                image: image,
+                x: (this.stage.width() - image.width * 0.35) / 2,
+                y: -200,
+                width: image.width * 0.35,
+                height: image.height * 0.35
+            });
+            this.titleLayer.add(this.titleImage);
+            this.animateTitle();
+        };
 
-        if (particle.y > particlesCanvas.height) {
-            particles.splice(i, 1);
-            continue;
-        }
-
-        // Effet de glow en plusieurs couches
-        // 1. Lueur externe
-        particlesCtx.shadowBlur = particle.glowIntensity;
-        particlesCtx.shadowColor = particle.color;
-        particlesCtx.globalAlpha = 0.3;
-        particlesCtx.fillStyle = particle.color;
-        particlesCtx.beginPath();
-        particlesCtx.arc(particle.x, particle.y, particle.radius * 2, 0, Math.PI * 2);
-        particlesCtx.fill();
-
-        // 2. Lueur moyenne
-        particlesCtx.shadowBlur = particle.glowIntensity / 2;
-        particlesCtx.globalAlpha = 0.5;
-        particlesCtx.beginPath();
-        particlesCtx.arc(particle.x, particle.y, particle.radius * 1.5, 0, Math.PI * 2);
-        particlesCtx.fill();
-
-        // 3. Centre brillant
-        particlesCtx.shadowBlur = 0;
-        particlesCtx.globalAlpha = 1;
-        particlesCtx.beginPath();
-        particlesCtx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-        particlesCtx.fill();
+        window.addEventListener('resize', () => {
+            this.stage.width(gameWidth);
+            this.stage.height(gameHeight);
+            this.updateLayout();
+        });
     }
 
-    // Gérer les interactions avec les boutons
-    buttons.forEach(button => {
-        // Détecter le survol
-        button.isHovered = (
-            mouseX >= button.x &&
-            mouseX <= button.x + button.width &&
-            mouseY >= button.y &&
-            mouseY <= button.y + button.height
-        );
+    private animateTitle()
+    {
+        const finalY = 70;
+        const speed = 2.3;
+
+        const animate = () =>
+        {
+            if (this.titleImage.y() < finalY)
+            {
+                this.titleImage.y(this.titleImage.y() + speed);
+                this.titleLayer.batchDraw();
+                requestAnimationFrame(animate);
+            }
+            else
+            {
+                this.isTitleVisible = true;
+            }
+        };
+
+        animate();
+
+    }
+
+    createButton(text: string, x: number, y: number, action: () => void)
+    {
+        const buttonGroup = new Konva.Group();
+        buttonGroup.x(x);
+        buttonGroup.y(y);
+
+        const button = new Konva.Rect
+        ({
+            width: 200,
+            height: 60,
+            fill: "#002eb2",
+            cornerRadius: 5,
+            opacity: 0.9,
+            stroke: '#00e7fe',
+            strokeWidth: 2
+        });
+
+        const buttonText = new Konva.Text
+        ({
+            text: text,
+            fontFamily: "'Press Start 2P', cursive",
+            fontSize: 16,
+            fill: "white",
+            align: 'center',
+            width: 200,
+            height: 60,
+            y: 25
+        });
+
+        buttonGroup.add(button);
+        buttonGroup.add(buttonText);
+
+        buttonGroup.on('mouseover', () => 
+        {
+            button.fill('#6506a9');
+            button.stroke('#fc4cfc');
+            this.menuLayer.batchDraw();
+        });
+
+        buttonGroup.on('mouseout', () =>
+        {
+            button.fill('#002eb2');
+            button.stroke('#00e7fe');
+            this.menuLayer.batchDraw();
+        });
+
+        buttonGroup.on('click', action);
+
+        this.buttons.push
+        ({
+            group: buttonGroup,
+            text: text,
+            action: action
+        });
+
+        this.menuLayer.add(buttonGroup);
+    }
+
+    private getRandomColor(): string {
+        const colors = [
+            '#00FFFF', '#4B0082', '#9400D3', '#8A2BE2',
+            '#4B0082', '#7B68EE', '#9370DB', '#8B008B',
+            '#00BFFF', '#1E90FF'
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    private createParticle()
+    {
+        const particle = new Konva.Circle
+        ({
+            x: Math.random() * this.stage.width(),
+            y: 0,
+            radius: 2 + Math.random() * 3,
+            fill: this.getRandomColor(),
+            opacity: 0.8,
+            shadowColor: this.getRandomColor(),
+            shadowBlur: 10,
+            shadowOpacity: 0.8
+        });
         
-        // Gérer le clic
-        if (mouseJustClicked && button.isHovered) {
-            console.log(`Button clicked: ${button.text}`);
+        this.particles.push
+        ({
+            shape: particle,
+            speed: 0.5 + Math.random() * 2,
+            glowDirection: 1
+        });
+
+        this.backgroundLayer.add(particle);
+    }
+
+    private animateParticles(): void
+    {
+        // Parcourt toutes les particules existantes
+        this.particles.forEach((particle, index) => {
+            // Déplace la particule vers le bas selon sa vitesse
+            particle.shape.y(particle.shape.y() + particle.speed);
             
-            if (button.text === "PLAY") {
-                stopAnimations();
-                const particlesCanvas = document.getElementById('particlesCanvas') as HTMLCanvasElement;
-                if (particlesCanvas) {
-                    particlesCanvas.style.display = 'none';
-                }
-                displayPlayMenu();
-            } else if (button.text === "QUIT") {
-                stopAnimations();
-                const modal = document.getElementById('optionnalModal');
-                if (modal) modal.innerHTML = '';
+            // Animation de la lueur
+            const currentBlur = particle.shape.shadowBlur();
+            if (currentBlur >= 15) particle.glowDirection = -1;
+            if (currentBlur <= 5) particle.glowDirection = 1;
+            particle.shape.shadowBlur(currentBlur + particle.glowDirection * 0.2);
+            
+            // Si la particule sort de l'écran par le bas
+            if (particle.shape.y() > this.stage.height()) {
+                // Supprime la particule du canvas
+                particle.shape.destroy();
+                // Retire la particule du tableau
+                this.particles.splice(index, 1);
+            }
+        });
+
+        // 5% de chance de créer une nouvelle particule à chaque frame
+        if (Math.random() < 0.05) {
+            this.createParticle();
+        }
+
+        // Rafraîchits l'affichage de la couche d'arrière-plan
+        this.backgroundLayer.batchDraw();
+
+        // Continue l'animation à la prochaine frame
+        requestAnimationFrame(() => this.animateParticles());
+    }
+
+    private updateLayout()
+    {
+        // Mise à jour du fond noir
+        const background = this.backgroundLayer.findOne('Rect');
+        if (background) {
+            background.width(this.stage.width());
+            background.height(this.stage.height());
+        }
+
+        if (this.titleImage)
+        {
+            this.titleImage.x((this.stage.width() - this.titleImage.width()) / 2);
+        }
+
+        this.buttons.forEach(button =>
+        {
+            button.group.x((this.stage.width() - 200) / 2);
+        });
+        this.stage.batchDraw();
+    }
+
+    changeMenu(menuType: 'main' | 'play' | 'solo' | 'multi')
+    {
+        this.buttons.forEach(button =>
+        {
+            button.group.destroy();
+        });
+
+        this.buttons = [];
+
+        switch (menuType)
+        {
+            case 'main':
+                this.createButton('PLAY', gameWidth / 2 - 100, 450, () => this.changeMenu('play'));
+                this.createButton('QUIT', gameWidth / 2 - 100, 520, () => {
+                    const modal = document.getElementById('optionnalModal');
+                    this.stage.destroy();
+                    if (modal) modal.innerHTML = '';
+                });
+                break;
+            case 'play':
+                this.createButton('SOLO', gameWidth / 2 - 100, 450, () => this.changeMenu('solo'));
+                this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
+                this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('main'));
+                break;
+            case 'solo':
+                this.createButton('1 PLAYER', gameWidth / 2 - 100, 450, () => alert('not implemented yet'));
+                this.createButton('2 PLAYERS', gameWidth / 2 - 100, 520, () => launchLocalPong(2));
+                this.createButton('3 PLAYERS', gameWidth / 2 - 100, 590, () => launchLocalPong(3));
+                this.createButton('BACK', gameWidth / 2 - 100, 660, () => this.changeMenu('play'));
+                break;
+            case 'multi':
+                this.createButton('2 PLAYERS', gameWidth / 2 - 100, 450, () => alert('not implemented yet'));
+                this.createButton('3 PLAYERS', gameWidth / 2 - 100, 520, () => alert('not implemented yet'));
+                this.createButton('TOURNAMENT', gameWidth / 2 - 100, 590, () => alert('not implemented yet'));
+                this.createButton('BACK', gameWidth / 2 - 100, 660, () => this.changeMenu('play'));
+                break;
+        }
+    }
+
+    public start()
+    {
+        this.animateParticles();
+        this.changeMenu('main');
+        console.log("Menu displayed");
+
+    }
+}
+
+async function launchLocalPong(nbPlayers: number)
+{
+    try 
+    {
+        const modal = document.getElementById("games-modal");
+        if (modal) 
+        {
+            const currentUser = await GameManager.getCurrentUser();
+            const username = currentUser?.username || "Player";
+            modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
+            console.log('Current user for solo 2 players:', username);
+            initPong(username);
+            switch (nbPlayers)
+            {
+                case 2:
+                    startSoloPong(username);
+                    break;
+                case 3:
+                    startSoloTri(username);
+                    break;
             }
         }
-    });
-    
-    // Réinitialiser mouseJustClicked pour le prochain frame
-    mouseJustClicked = false;
-    
-    // Dessiner les boutons
-    drawButtons();
-    
-    // Dessiner le titre
-    animateTitle();
-
-    // Continuer l'animation
-    if (isAnimating) {
-        animationFrameId = requestAnimationFrame(animateParticles);
+    }
+    catch (error)
+    {
+        console.error('Error getting current user:', error);
+        startSoloPong("Player1"); // Fallback au nom par défaut en cas d'erreur
     }
 }
 
-export function displayParticles() {
-  particlesCanvas = document.getElementById('particlesCanvas') as HTMLCanvasElement;
-  if (!particlesCanvas) return;
-
-  // S'assurer que l'animation précédente est arrêtée
-  stopAnimations();
-
-  particlesCtx = particlesCanvas.getContext('2d', { alpha: true })!;
-  
-  // Configuration pour un meilleur rendu du glow
-  particlesCtx.imageSmoothingEnabled = true;
-  particlesCtx.imageSmoothingQuality = 'high';
-  
-  // Fond noir initial
-  particlesCtx.fillStyle = 'black';
-  particlesCtx.fillRect(0, 0, particlesCanvas.width, particlesCanvas.height);
-  
-  // Réinitialiser la position du titre avant de démarrer
-  titleY = -200;
-  
-  // Démarrer l'animation
-  isAnimating = true;
-  animationFrameId = requestAnimationFrame(animateParticles);
+export function displayMenu() : void
+{
+    const menu = new PongMenuManager();
+    console.log("game started");
+    menu.start();
 }
-
-export function displayMenu(): void {
-    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-    if (!canvas) {
-        console.error("gameCanvas not found");
-        return;
-    }
     
-    const ctx = canvas.getContext('2d')!;
-    const cw = canvas.clientWidth;
-    const ch = canvas.clientHeight;
-    canvas.width = cw;
-    canvas.height = ch;
-
-    // Fond noir sur le canvas principal
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, cw, ch);
-
-    // Initialiser le canvas des particules
-    displayParticles();
-    
-    // S'assurer que le canvas des particules a les mêmes dimensions
-    if (particlesCanvas) {
-        particlesCanvas.width = cw;
-        particlesCanvas.height = ch;
-        
-        // Attendre que le canvas soit prêt
-        setTimeout(() => {
-            createButtons();
-            console.log("Buttons created and listeners set up after delay");
-        }, 500);
-    } else {
-        console.error("particlesCanvas is still null after displayParticles()");
-    }
-
-    // Capture de la position de la souris globale
-    document.addEventListener('mousemove', (e) => {
-        const rect = particlesCanvas.getBoundingClientRect();
-        mouseX = e.clientX - rect.left;
-        mouseY = e.clientY - rect.top;
-    });
-    
-    document.addEventListener('mousedown', () => {
-        mousePressed = true;
-    });
-    
-    document.addEventListener('mouseup', () => {
-        if (mousePressed) {
-            mouseJustClicked = true;
-        }
-        mousePressed = false;
-    });
-}
-  
-  window.addEventListener('DOMContentLoaded', () => {
-    const btnTri = document.getElementById('btnTriPong');
-    if (!btnTri) {
-      console.warn('btnTriPong introuvable dans le DOM');
-      return;
-    }
-    btnTri.addEventListener('click', () => {
-      const input = document.getElementById('usernameInput') as HTMLInputElement;
-      const username = input && input.value.trim() !== '' 
-                       ? input.value.trim() 
-                       : 'Player';
-      initTriPong(username);
-    });
-  });
-
-export function stopAnimations(): void {
-    // Supprimer l'overlay s'il existe
-    const overlays = document.querySelectorAll('div[style*="z-index: 1000"]');
-    overlays.forEach(overlay => document.body.removeChild(overlay));
-    
-    isAnimating = false;
-    
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = 0;
-    }
-    
-    // Nettoyer le canvas
-    if (particlesCtx) {
-        particlesCtx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
-        particlesCtx.fillStyle = 'black';
-        particlesCtx.fillRect(0, 0, particlesCanvas.width, particlesCanvas.height);
-    }
-    
-    // Réinitialiser les variables
-    particles.length = 0;
-    titleY = -200;
-    
-    // Réinitialiser les variables de souris
-    mouseX = 0;
-    mouseY = 0;
-    mousePressed = false;
-    mouseJustClicked = false;
-}
-
-
-function createButtons() {
-    const buttonWidth = 200;
-    const buttonHeight = 60;
-    const spacing = 20;
-    const startY = particlesCanvas.height / 2 + 50;
-
-    buttons.push({
-        x: (particlesCanvas.width - buttonWidth) / 2,
-        y: startY + buttonHeight + spacing,
-        width: buttonWidth,
-        height: buttonHeight,
-        text: "PLAY",
-        isHovered: false,
-        isClicked: false
-    });
-
-    buttons.push({
-        x: (particlesCanvas.width - buttonWidth) / 2,
-        y: startY + (buttonHeight + spacing) * 2,
-        width: buttonWidth,
-        height: buttonHeight,
-        text: "QUIT",
-        isHovered: false,
-        isClicked: false
-    });
-}
-
-function drawButtons() {
-    if (!particlesCtx) return;
-
-    buttons.forEach(button => {
-        particlesCtx.save();
-        
-        // Fond du bouton
-        particlesCtx.fillStyle = button.isHovered ? '#00FFFF' : '#4B0082';
-        particlesCtx.globalAlpha = button.isHovered ? 0.8 : 0.6;
-        
-        // Effet de clic
-        if (button.isClicked) {
-            particlesCtx.translate(0, 2);
-        }
-
-        // Dessiner le bouton avec coins arrondis
-        roundRect(
-            particlesCtx,
-            button.x,
-            button.y,
-            button.width,
-            button.height,
-            10
-        );
-
-        // Texte du bouton
-        particlesCtx.fillStyle = '#FFFFFF';
-        particlesCtx.globalAlpha = 1;
-        particlesCtx.font = 'bold 24px Arial';
-        particlesCtx.textAlign = 'center';
-        particlesCtx.textBaseline = 'middle';
-        particlesCtx.fillText(
-            button.text,
-            button.x + button.width / 2,
-            button.y + button.height / 2
-        );
-
-        // Effet de glow si survolé
-        if (button.isHovered) {
-            particlesCtx.shadowBlur = 20;
-            particlesCtx.shadowColor = '#00FFFF';
-            particlesCtx.strokeStyle = '#00FFFF';
-            particlesCtx.lineWidth = 2;
-            particlesCtx.stroke();
-        }
-
-        particlesCtx.restore();
-    });
-}
-
-function roundRect(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    radius: number
-) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-    ctx.fill();
-}

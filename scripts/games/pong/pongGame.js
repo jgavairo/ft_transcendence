@@ -1,4 +1,4 @@
-import { displayMenu, stopAnimations } from './menu/DisplayMenu.js';
+import { displayMenu, } from './menu/DisplayMenu.js';
 import { socket } from './network.js';
 import { renderRankings } from '../../pages/library/showGameDetails.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
@@ -315,9 +315,9 @@ async function renderGameOverMessage(state) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include',
+                credentials: 'include', // Utilise les cookies pour l'authentification
                 body: JSON.stringify({
-                    gameId: 1,
+                    gameId: 1, // ID du jeu (Pong)
                     userId: currentUser.id, // Utiliser l'ID utilisateur actuel
                 }),
             });
@@ -335,9 +335,9 @@ async function renderGameOverMessage(state) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include',
+                credentials: 'include', // Utilise les cookies pour l'authentification
                 body: JSON.stringify({
-                    gameId: 1,
+                    gameId: 1, // ID du jeu (Pong)
                     userId: currentUser.id, // Utiliser l'ID utilisateur actuel
                 }),
             });
@@ -641,7 +641,6 @@ window.addEventListener('keydown', (e) => {
         return;
     }
     resetGame();
-    stopAnimations();
     // Nettoyer le canvas principal
     if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
