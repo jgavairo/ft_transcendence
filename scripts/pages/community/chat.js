@@ -44,6 +44,17 @@ export async function setupChat() {
     const input = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendMessage");
     const chatContainer = document.getElementById("chatContainer");
+    // Vérification auth avant d'afficher le chat
+    let username = await fetchCurrentUser();
+    if (!username) {
+        if (chatContainer)
+            chatContainer.innerHTML = "<div class='chat-error'>Vous devez être connecté pour utiliser le chat.</div>";
+        if (input)
+            input.style.display = 'none';
+        if (sendBtn)
+            sendBtn.style.display = 'none';
+        return;
+    }
     if (!input || !sendBtn || !chatContainer) {
         console.error("Chat elements not found in the DOM.");
         return;
@@ -92,11 +103,6 @@ export async function setupChat() {
         chatContainer.appendChild(msgWrapper);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     };
-    const username = await fetchCurrentUser();
-    if (!username) {
-        console.error("Unable to fetch username. Chat will not work properly.");
-        return;
-    }
     // Charger l'historique des messages
     const chatHistory = await fetchChatHistory();
     chatHistory.forEach(message => {
@@ -121,7 +127,18 @@ export async function setupChat() {
         console.error("Socket.IO error:", error);
     });
     // Envoyer un message au serveur
-    sendBtn.addEventListener("click", () => {
+    sendBtn.addEventListener("click", async () => {
+        // Revérifie l'authentification à chaque envoi
+        username = await fetchCurrentUser();
+        if (!username) {
+            if (chatContainer)
+                chatContainer.innerHTML = "<div class='chat-error'>Vous avez été déconnecté. Merci de vous reconnecter pour utiliser le chat.</div>";
+            if (input)
+                input.style.display = 'none';
+            if (sendBtn)
+                sendBtn.style.display = 'none';
+            return;
+        }
         const text = input.value.trim();
         if (text) {
             socket.emit("sendMessage", { author: username, content: text }, (response) => {
