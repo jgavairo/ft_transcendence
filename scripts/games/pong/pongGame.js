@@ -141,7 +141,7 @@ export function stopGame() {
 }
 export function connectPong() {
     // Pong classique
-    socket.off('matchFound').on('matchFound', PongMenuManager.matchFound2Players);
+    socket.off('matchFound').on('matchFound', onMatchFound);
     socket.off('gameState').on('gameState', onGameState);
     // Tri-Pong → on branche exactement les mêmes handlers
     socket.off('matchFoundTri').on('matchFoundTri', PongMenuManager.matchFound3Players);
