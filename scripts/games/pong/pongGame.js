@@ -60,13 +60,12 @@ function onMatchFound(data) {
     soloMode = data.mode === 'solo';
     mySide = soloMode ? 0 : data.side;
     lastState = null;
-    ready = false;
+    ready = true;
     firstFrame = false;
     user1Id = data.user1Id;
     user2Id = data.user2Id;
     playerName = data.you || 'Player';
     opponentName = data.opponent || 'Opponent';
-    performCountdown().then(() => ready = true);
     startPong();
 }
 function onTriMatchFound(data) {
@@ -76,7 +75,7 @@ function onTriMatchFound(data) {
     soloMode = false; // pas utilisé ici
     mySide = soloTri ? 0 : data.side;
     lastState = null;
-    ready = false;
+    ready = true;
     firstFrame = false;
     // si tu veux stocker user1/user2 pour l'historique, fais-le ici aussi
     user1Id = data.user1Id;
@@ -84,7 +83,6 @@ function onTriMatchFound(data) {
     playerName = data.you || 'Player';
     opponentName = data.opponent || 'Opponent';
     playerNames = Array.isArray(data.players) ? data.players : [];
-    performCountdown().then(() => ready = true);
     startPong();
 }
 function onGameState(state) {
@@ -203,51 +201,6 @@ export function connectPong() {
                 }
             }
         }
-    });
-}
-async function performCountdown() {
-    // Si on a déjà un état, on le stocke pour le flouter
-    const backupState = lastState;
-    const duration = 1000; // durée de chaque animation en ms
-    for (const num of [3, 2, 1]) {
-        await animateNumber(num, backupState, duration);
-    }
-    // courte pause après le "1"
-    return new Promise(res => setTimeout(res, 200));
-}
-function animateNumber(num, bgState, duration) {
-    return new Promise(resolve => {
-        const start = performance.now();
-        function frame(now) {
-            const t = Math.min(1, (now - start) / duration);
-            // scale : monte de 1→1.5 puis redescend à 1
-            const scale = 1 + 0.5 * Math.sin(Math.PI * t);
-            // 1) efface tout
-            ctx.clearRect(0, 0, CW, CH);
-            // 2) floute et redessine l'arrière-plan
-            if (bgState) {
-                ctx.filter = 'blur(5px)';
-                renderPong(bgState);
-                ctx.filter = 'none';
-            }
-            // 3) dessine le chiffre animé
-            ctx.save();
-            ctx.translate(CX, CY);
-            ctx.scale(scale, scale);
-            ctx.fillStyle = 'white';
-            ctx.font = '100px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(String(num), 0, 0);
-            ctx.restore();
-            if (t < 1) {
-                requestAnimationFrame(frame);
-            }
-            else {
-                resolve();
-            }
-        }
-        requestAnimationFrame(frame);
     });
 }
 // En haut du fichier
