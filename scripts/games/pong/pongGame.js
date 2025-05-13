@@ -141,7 +141,7 @@ export function stopGame() {
 }
 export function connectPong() {
     // Pong classique
-    socket.off('matchFound').on('matchFound', onMatchFound);
+    socket.off('matchFound').on('matchFound', PongMenuManager.matchFound2Players);
     socket.off('gameState').on('gameState', onGameState);
     // Tri-Pong → on branche exactement les mêmes handlers
     socket.off('matchFoundTri').on('matchFoundTri', PongMenuManager.matchFound3Players);
@@ -291,6 +291,9 @@ function onKeyUp(e) {
 }
 // Initialise le canvas et le contexte
 export function startPong() {
+    const modal = document.getElementById('games-modal');
+    if (modal)
+        modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
     running = true;
     canvas = document.querySelector('#gameCanvas');
     ctx = canvas.getContext('2d');
@@ -324,9 +327,9 @@ export async function renderGameOverMessage(state) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include', // Utilise les cookies pour l'authentification
+                credentials: 'include',
                 body: JSON.stringify({
-                    gameId: 1, // ID du jeu (Pong)
+                    gameId: 1,
                     userId: currentUser.id, // Utiliser l'ID utilisateur actuel
                 }),
             });
@@ -344,9 +347,9 @@ export async function renderGameOverMessage(state) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include', // Utilise les cookies pour l'authentification
+                credentials: 'include',
                 body: JSON.stringify({
-                    gameId: 1, // ID du jeu (Pong)
+                    gameId: 1,
                     userId: currentUser.id, // Utiliser l'ID utilisateur actuel
                 }),
             });

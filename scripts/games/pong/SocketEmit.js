@@ -20,6 +20,7 @@ export async function startSoloPong(username) {
         const currentUser = await GameManager.getCurrentUser();
         const userId = currentUser === null || currentUser === void 0 ? void 0 : currentUser.id;
         // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
+        console.log("startSoloPong");
         socket.emit('startSolo', { username, userId });
     }
     catch (error) {
