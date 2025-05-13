@@ -13,7 +13,7 @@ let soloMode = false;
 let modePong = false;
 let soloTri = false;
 // Canvas et contexte
-let canvas;
+export let canvas;
 export let ctx;
 // Constantes de rendu (synchronisées avec le serveur)
 const CW = 1200;

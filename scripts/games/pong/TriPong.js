@@ -7,7 +7,6 @@ import { sendMoveTri } from './SocketEmit.js';
 export function initTriPong(username) {
     connectPong(); // branche matchFoundTri → startPong → renderPong
     startPong(); // configure canvas + clavier
-    console.log('=> joinTriQueue', username);
     socket.emit('joinTriQueue', { username });
 }
 // Configuration des touches pour 3 paddles
