@@ -1,6 +1,6 @@
 // matchmaking.ts
 import type { Namespace, Socket } from 'socket.io';
-import { updateMatch as updateTriMatch, startMatch, updateMatch, MatchState } from './gameSimulation.js';
+import { startMatch, updateMatch, MatchState } from './gameSimulation.js';
 import { startTriMatch, TriMatchState } from './TripongSimulation.js';
 import { dbManager } from '../../database/database.js';
 
@@ -59,12 +59,12 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       socket.join(m.roomId);
       socket.emit('matchFoundTri', {
         roomId: m.roomId,
-        side: -1,
+        side: 0,
         players: [username, username, username]
       });
       const iv = setInterval(() => {
         updateMatch(m, gameNs);
-        gameNs.to(m.roomId).emit('stateUpdateTri', m);
+        gameNs.to(m.roomId).emit('gameState', m);
         if (m.gameOver) clearInterval(iv);
       }, 1000 / 60);
     });
@@ -191,7 +191,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         s.emit('matchFoundTri', { roomId: m.roomId, side: i, players, mode:'multi' });
       });
       const iv = setInterval(() => {
-        updateTriMatch(m, gameNs);
+        updateMatch(m, gameNs);
         gameNs.to(m.roomId).emit('gameState', m);
         if (m.gameOver) clearInterval(iv);
       }, 1000 / 60);
