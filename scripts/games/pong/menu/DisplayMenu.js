@@ -1,7 +1,7 @@
 // @ts-ignore
 import Konva from "https://cdn.skypack.dev/konva";
 import { GameManager } from "../../../managers/gameManager.js";
-import { startSoloPong, startSoloTri } from "../SocketEmit.js";
+import { joinQueue, joinTriQueue, startSoloPong, startSoloTri } from "../SocketEmit.js";
 import { initPong } from "../TriPong.js";
 const gameWidth = 1200;
 const gameHeight = 800;
@@ -84,7 +84,7 @@ class PongMenuManager {
         });
         const buttonText = new Konva.Text({
             text: text,
-            fontFamily: "'Press Start 2P', cursive",
+            fontFamily: "Press Start 2P",
             fontSize: 16,
             fill: "white",
             align: 'center',
@@ -209,8 +209,8 @@ class PongMenuManager {
                 this.createButton('BACK', gameWidth / 2 - 100, 660, () => this.changeMenu('play'));
                 break;
             case 'multi':
-                this.createButton('2 PLAYERS', gameWidth / 2 - 100, 450, () => alert('not implemented yet'));
-                this.createButton('3 PLAYERS', gameWidth / 2 - 100, 520, () => alert('not implemented yet'));
+                this.createButton('2 PLAYERS', gameWidth / 2 - 100, 450, () => launchOnlinePong(2));
+                this.createButton('3 PLAYERS', gameWidth / 2 - 100, 520, () => launchOnlinePong(3));
                 this.createButton('TOURNAMENT', gameWidth / 2 - 100, 590, () => alert('not implemented yet'));
                 this.createButton('BACK', gameWidth / 2 - 100, 660, () => this.changeMenu('play'));
                 break;
@@ -244,6 +244,30 @@ async function launchLocalPong(nbPlayers) {
     catch (error) {
         console.error('Error getting current user:', error);
         startSoloPong("Player1"); // Fallback au nom par défaut en cas d'erreur
+    }
+}
+async function launchOnlinePong(nbPlayers) {
+    try {
+        const modal = document.getElementById("games-modal");
+        if (modal) {
+            const currentUser = await GameManager.getCurrentUser();
+            const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
+            modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
+            console.log('Current user for solo 2 players:', username);
+            initPong(username);
+            switch (nbPlayers) {
+                case 2:
+                    joinQueue(username);
+                    break;
+                case 3:
+                    joinTriQueue(username);
+                    break;
+            }
+        }
+    }
+    catch (error) {
+        console.error('Error getting current user:', error);
+        displayMenu();
     }
 }
 export function displayMenu() {
