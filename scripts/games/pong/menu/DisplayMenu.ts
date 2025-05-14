@@ -308,7 +308,7 @@ export class PongMenuManager
     {
         const currentUser = await GameManager.getCurrentUser();
         const username = currentUser?.username || "Player";
-        connectPong();
+        connectPong(true);
         if (nbPlayers === 2)
             joinQueue(username);
         else if (nbPlayers === 3)
@@ -365,7 +365,7 @@ export class PongMenuManager
             const modal = document.getElementById("games-modal");
             if (modal) 
             {
-                connectPong();
+                connectPong(false);
                 const currentUser = await GameManager.getCurrentUser();
                 const username = currentUser?.username || "Player";
                 modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
@@ -400,22 +400,22 @@ export class PongMenuManager
 
         // Affichage des joueurs
         const player1Text = new Konva.Text({
-            text: `Player 1: ${data.you}`,
+            text: `${data.you}`,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
-            y: 400,
+            x: (gameWidth / 6),
+            y: 450,
             width: 400,
             align: 'center'
         });
 
         const player2Text = new Konva.Text({
-            text: `Player 2: ${data.opponent}`,
+            text: `${data.opponent}`,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
+            x: gameWidth / 2,
             y: 450,
             width: 400,
             align: 'center'
@@ -462,34 +462,34 @@ export class PongMenuManager
 
         // Affichage des joueurs
         const player1Text = new Konva.Text({
-            text: `Player 1: ${data.players[0]}`,
+            text: `${data.players[0]}`,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
-            y: 400,
+            x: 0,
+            y: 450,
             width: 400,
             align: 'center'
         });
 
         const player2Text = new Konva.Text({
-            text: `Player 2: ${data.players[1]}`,
+            text: `${data.players[1]}`,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
+            x: gameWidth / 3,
             y: 450,
             width: 400,
             align: 'center'
         });
 
         const player3Text = new Konva.Text({
-            text: `Player 3: ${data.players[2]}`,
+            text: `${data.players[2]}`,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
-            y: 500,
+            x: gameWidth / 3 + ((gameWidth / 3)),
+            y: 450,
             width: 400,
             align: 'center'
         });

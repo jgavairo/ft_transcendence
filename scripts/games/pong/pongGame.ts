@@ -179,14 +179,25 @@ export function stopGame() {
   resetGame();
 }
 
-export function connectPong() {
+export function connectPong(isOnline: boolean) {
   // Pong classique
-  socket.off('matchFound').on('matchFound', PongMenuManager.matchFound2Players);
-  socket.off('gameState').on('gameState', onGameState);
+  if (isOnline) 
+  {
+    socket.off('matchFound').on('matchFound', PongMenuManager.matchFound2Players);
+    socket.off('gameState').on('gameState', onGameState);
+    
+    // Tri-Pong → on branche exactement les mêmes handlers
+    socket.off('matchFoundTri').on('matchFoundTri', PongMenuManager.matchFound3Players);
+    socket.off('stateUpdateTri').on('stateUpdateTri', onGameState);
+  }
+  else
+  {
+    socket.off('matchFound').on('matchFound', onMatchFound);
+    socket.off('gameState').on('gameState', onGameState);
 
-  // Tri-Pong → on branche exactement les mêmes handlers
-  socket.off('matchFoundTri').on('matchFoundTri', PongMenuManager.matchFound3Players);
-  socket.off('stateUpdateTri').on('stateUpdateTri', onGameState);
+    socket.off('matchFoundTri').on('matchFoundTri', onTriMatchFound);
+    socket.off('stateUpdateTri').on('stateUpdateTri', onGameState);
+  }
 
   // Explosion de balle
   socket.off('ballExplode').on('ballExplode', ({ x, y }) => {
