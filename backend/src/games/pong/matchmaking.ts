@@ -171,7 +171,13 @@ export function setupGameMatchmaking(gameNs: Namespace) {
 
     // 6) DÉCONNEXION
     socket.on('disconnect', () => {
-      playerInfo.delete(socket.id);
+      // const state = matchStates.get(socket.id);
+      // if (state) {
+      //   state.paddles.forEach(p => {
+      //     if (p.id === socket.id) p.lives = 0;
+      //   });
+      // }
+      // nsp.to(state.roomId).emit('stateUpdate', state);
       socketToUserId.delete(socket.id); // Supprimer l'association lors de la déconnexion
       classicQueue = classicQueue.filter(p => p.id !== socket.id);
       triQueue     = triQueue.filter(p => p.id !== socket.id);
