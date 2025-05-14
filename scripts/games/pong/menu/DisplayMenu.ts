@@ -365,6 +365,7 @@ export class PongMenuManager
             const modal = document.getElementById("games-modal");
             if (modal) 
             {
+                connectPong();
                 const currentUser = await GameManager.getCurrentUser();
                 const username = currentUser?.username || "Player";
                 console.log('Current user for solo 2 players:', username);
@@ -498,7 +499,7 @@ export class PongMenuManager
             fontSize: 24,
             fill: '#fc4cfc',
             x: gameWidth / 2 - 200,
-            y: 5,
+            y: 570,
             width: 400,
             align: 'center'
         });
