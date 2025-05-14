@@ -369,38 +369,38 @@ export class PongMenuManager
             {
                 // Affichage des joueurs
                 const player1Text = new Konva.Text({
-                text: `${username}1`,
-                fontFamily: 'Press Start 2P',
-                fontSize: 20,
-                fill: '#00e7fe',
-                x: (gameWidth / 6),
-                y: 450,
-                width: 400,
-                align: 'center'
+                    text: `${username}1`,
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 20,
+                    fill: '#00e7fe',
+                    x: (gameWidth / 6),
+                    y: 450,
+                    width: 400,
+                    align: 'center'
                 });
-
+                
                 const player2Text = new Konva.Text({
-                text: `${username}2`,
-                fontFamily: 'Press Start 2P',
-                fontSize: 20,
-                fill: '#00e7fe',
-                x: gameWidth / 2,
-                y: 450,
-                width: 400,
-                align: 'center'
+                    text: `${username}2`,
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 20,
+                    fill: '#00e7fe',
+                    x: gameWidth / 2,
+                    y: 450,
+                    width: 400,
+                    align: 'center'
                 });
-
+                
                 const countdownText = new Konva.Text({
-                text: 'Game starting in 5',
-                fontFamily: 'Press Start 2P',
-                fontSize: 24,
-                fill: '#fc4cfc',
-                x: gameWidth / 2 - 200,
-                y: 520,
-                width: 400,
-                align: 'center'
+                    text: 'Game starting in 5',
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 24,
+                    fill: '#fc4cfc',
+                    x: gameWidth / 2 - 200,
+                    y: 520,
+                    width: 400,
+                    align: 'center'
                 });
-
+                
                 menu.menuLayer.add(player1Text);
                 menu.menuLayer.add(player2Text);
                 menu.menuLayer.add(countdownText);
@@ -508,7 +508,7 @@ export class PongMenuManager
                 connectPong(false);
                 const currentUser = await GameManager.getCurrentUser();
                 const username = currentUser?.username || "Player";
-                modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
+                // modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
                 console.log('Current user for solo 2 players:', username);
                 switch (nbPlayers)
                 {
@@ -757,7 +757,6 @@ export class PongMenuManager
         }, 1000);
     }
 }
-
 
 export function displayMenu() : void
 {

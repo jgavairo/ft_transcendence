@@ -12,9 +12,9 @@ export interface TriMatchState {
 }
 
 // constantes du terrain (doivent matcher le client)
-const BALL_SPEED       = 4;
+const BALL_SPEED = 4;
 
-export function startTriMatch(sockets: Socket[], nsp: Namespace): TriMatchState {
+export function startTriMatch(sockets: Socket[], nsp: Namespace, isSolo: boolean): TriMatchState {
   const roomId = `tri_${Date.now()}`;
   sockets.forEach(s => s.join(roomId));
 
@@ -31,7 +31,11 @@ export function startTriMatch(sockets: Socket[], nsp: Namespace): TriMatchState 
   const state: TriMatchState = { roomId, paddles, ball, gameOver: false };
 
   // service initial après 4 secondes
-  setTimeout(() => resetBallPosition(state.ball), 6000);
+  const delay = isSolo ? 1_000 : 6_000;
+
+  setTimeout(() => {
+    resetBallPosition(state.ball);
+  }, delay);
 
   return state;
 }

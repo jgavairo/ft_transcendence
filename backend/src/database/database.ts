@@ -710,6 +710,12 @@ export class DatabaseManager
             throw error;
         }
     }
+
+    //getgameplayers(gameID, userID)
 }
 
 export const dbManager = DatabaseManager.getInstance();
+
+
+//call api depuis le front (token = currentUserID)
+// reception de la route dans le back

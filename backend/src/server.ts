@@ -273,6 +273,10 @@ app.get('/api/games/getAll', async (request: FastifyRequest, reply: FastifyReply
     return gameRoutes.getAllGames(request, reply);
 });
 
+app.get('/api/games/isFirstGame', async (request: FastifyRequest, reply: FastifyReply) => {
+    return gameRoutes.isFirstGame(request, reply);
+});
+
 //////////////////
 // STATS ROUTES //
 //////////////////

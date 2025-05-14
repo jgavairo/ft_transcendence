@@ -32,7 +32,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         socketToUserId.set(socket.id, userId);
       }
       
-      const m = startMatch([socket, socket], gameNs);
+      const m = startMatch([socket, socket], gameNs, true);
       matchStates.set(m.roomId, m);
       playerInfo.set(socket.id, { side: 0, mode: 'solo' });
       socket.join(m.roomId);
@@ -53,7 +53,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         socketToUserId.set(socket.id, userId);
       }
       
-      const m = startTriMatch([socket, socket, socket], gameNs);
+      const m = startTriMatch([socket, socket, socket], gameNs, true);
       triMatchStates.set(m.roomId, m);
       playerInfo.set(socket.id, { side: 0, mode: 'solo-tri' });
       socket.join(m.roomId);
@@ -85,7 +85,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         const p2 = classicQueue.shift()!;
         const s1 = gameNs.sockets.get(p1.id)!;
         const s2 = gameNs.sockets.get(p2.id)!;
-        const m = startMatch([s1, s2], gameNs);
+        const m = startMatch([s1, s2], gameNs, false);
 
         matchStates.set(m.roomId, m);
         playerInfo.set(p1.id, { side: 0, mode: 'multi' });
@@ -183,7 +183,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
     while (triQueue.length >= 3) {
       const trio = triQueue.splice(0, 3);
       const socks = trio.map(p => gameNs.sockets.get(p.id)!).filter(Boolean);
-      const m = startTriMatch(socks, gameNs);
+      const m = startTriMatch(socks, gameNs, false);
       triMatchStates.set(m.roomId, m);
       const players = trio.map(p => p.username);
       socks.forEach((s, i) => {

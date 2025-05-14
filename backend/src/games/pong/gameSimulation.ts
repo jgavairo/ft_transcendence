@@ -17,7 +17,7 @@ const PADDLE_SPEED      = Math.PI / 180 * 2;
 const MAX_DEFLECTION    = Math.PI / 6;
 const SPEED_MULTIPLIER  = 1.05;
 
-export function startMatch(socks: Socket[], nsp: Namespace): MatchState {
+export function startMatch(socks: Socket[], nsp: Namespace, isSolo: boolean ): MatchState {
   const roomId = `${Date.now()}`;
   socks.forEach(s => s.join(roomId));
 
@@ -29,11 +29,12 @@ export function startMatch(socks: Socket[], nsp: Namespace): MatchState {
 
   const ball = { x: 0, y: 0, vx: 0, vy: 0, r: 8 };
   const state: MatchState = { roomId, paddles, ball, gameOver: false };
-
-  // Sert la balle après 4s
+  
+  const delay = isSolo ? 1_000 : 6_000;
+  
   setTimeout(() => {
-    resetFirstBall(state);
-  }, 6000);
+    resetBall(state.ball);
+  }, delay);
   return state;
 }
 

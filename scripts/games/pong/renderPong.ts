@@ -16,10 +16,6 @@ const DEATH_FRAMES = 30;    // frames totales de l’animation
 const DEATH_EXP    = 60;    // expansion max du ring gris
 let deathFlashes: DeathFlash[] = [];
 
-
-
-
-
 const CW = 1200;
 const CH = 800;
 const CX = CW / 2;
@@ -39,79 +35,80 @@ const PADDLE_COLORS = [
 
 
 // Dessine l'état de la partie Tri-Pong
-export function renderPong(state: MatchState) {
-    
-        // 1) motion blur: on dessine un calque semi-transparent au lieu de tout clear
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        ctx.fillRect(0, 0, CW, CH);
-        
-        // 2) fond radial
-        const grd = ctx.createRadialGradient(CX, CY, R * 0.1, CX, CY, R);
-        grd.addColorStop(0, '#00111a');
-        grd.addColorStop(1, '#000000');
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, CW, CH);
-        
-        // 3) bordure de la map
+export async function renderPong(state: MatchState) {
+     
+      //if alreadyPLayed = NOT DISPLAY TUTO
+      // 1) motion blur: on dessine un calque semi-transparent au lieu de tout clear
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(0, 0, CW, CH);
+      
+      // 2) fond radial
+      const grd = ctx.createRadialGradient(CX, CY, R * 0.1, CX, CY, R);
+      grd.addColorStop(0, '#00111a');
+      grd.addColorStop(1, '#000000');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, CW, CH);
+      
+      // 3) bordure de la map
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0,174,255,0.8)';
+      ctx.lineWidth   = 6;
+      ctx.shadowBlur  = 20;
+      ctx.shadowColor = 'rgba(0,174,255,0.5)';
+      ctx.beginPath();
+      ctx.arc(CX, CY, R, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+    if (prevLives.length === 0) {
+        prevLives = state.paddles.map(p => p.lives);
+    }
+
+  state.paddles.forEach((p, i) => {
+    if (prevLives[i] === 1 && p.lives === 0) {
+        deathFlashes.push({ index: i, frame: 0 });
+      }
+    if (p.lives < prevLives[i]) {
+        lifeFlashes.push({ index: i, frame: 0 });
+    }
+    prevLives[i] = p.lives;
+  });
+
+  // 4) paddles avec glow pour le tien - chaque raquette a sa couleur
+  state.paddles.forEach((p, i) => {
+    const phi = (typeof p.phi === 'number' ? p.phi : (p as any).angle);
+    const start = phi - ARC_HALF;
+    const end   = phi + ARC_HALF;
+    const isMine = i === mySide;
+    const paddleColor = p.lives > 0
+  ? PADDLE_COLORS[i % PADDLE_COLORS.length]
+  : '#888888';
+
+
+    const death = deathFlashes.find(f => f.index === i);
+    if (death) {
+        const prog   = death.frame / DEATH_FRAMES;       // 0→1
+        const radius = R + P_TH/2 + 5 + prog * DEATH_EXP;
+        const alpha  = 1 - prog;
+
+        // a) ring gris
         ctx.save();
-        ctx.strokeStyle = 'rgba(0,174,255,0.8)';
-        ctx.lineWidth   = 6;
-        ctx.shadowBlur  = 20;
-        ctx.shadowColor = 'rgba(0,174,255,0.5)';
+        ctx.lineWidth   = P_TH + 4;
+        ctx.strokeStyle = `rgba(200,200,200,${alpha * 0.6})`;
         ctx.beginPath();
-        ctx.arc(CX, CY, R, 0, Math.PI * 2);
+        ctx.arc(CX, CY, radius, start, end);
         ctx.stroke();
         ctx.restore();
-    
-        if (prevLives.length === 0) {
-            prevLives = state.paddles.map(p => p.lives);
-        }
 
-      state.paddles.forEach((p, i) => {
-        if (prevLives[i] === 1 && p.lives === 0) {
-            deathFlashes.push({ index: i, frame: 0 });
-          }
-        if (p.lives < prevLives[i]) {
-            lifeFlashes.push({ index: i, frame: 0 });
-        }
-        prevLives[i] = p.lives;
-      });
-    
-    // 4) paddles avec glow pour le tien - chaque raquette a sa couleur
-    state.paddles.forEach((p, i) => {
-        const phi = (typeof p.phi === 'number' ? p.phi : (p as any).angle);
-        const start = phi - ARC_HALF;
-        const end   = phi + ARC_HALF;
-        const isMine = i === mySide;
-        const paddleColor = p.lives > 0
-      ? PADDLE_COLORS[i % PADDLE_COLORS.length]
-      : '#888888';
+        // b) skull/ghost au bout de la raquette
+        if (prog > 0.2 && prog < 1) {
+        const angleMid = phi;
+        const sx = CX + Math.cos(angleMid) * (radius - 10);
+        const sy = CY + Math.sin(angleMid) * (radius - 10);
+        drawSkull(ctx, sx, sy, (1 - prog) * 20);  // taille qui décroît
+    }
 
-
-        const death = deathFlashes.find(f => f.index === i);
-        if (death) {
-            const prog   = death.frame / DEATH_FRAMES;       // 0→1
-            const radius = R + P_TH/2 + 5 + prog * DEATH_EXP;
-            const alpha  = 1 - prog;
-
-            // a) ring gris
-            ctx.save();
-            ctx.lineWidth   = P_TH + 4;
-            ctx.strokeStyle = `rgba(200,200,200,${alpha * 0.6})`;
-            ctx.beginPath();
-            ctx.arc(CX, CY, radius, start, end);
-            ctx.stroke();
-            ctx.restore();
-
-            // b) skull/ghost au bout de la raquette
-            if (prog > 0.2 && prog < 1) {
-            const angleMid = phi;
-            const sx = CX + Math.cos(angleMid) * (radius - 10);
-            const sy = CY + Math.sin(angleMid) * (radius - 10);
-            drawSkull(ctx, sx, sy, (1 - prog) * 20);  // taille qui décroît
-        }
-
-        death.frame++;
+    death.frame++;
     }
         const flash = lifeFlashes.find(f => f.index === i);
         if (flash) {
