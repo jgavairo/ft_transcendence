@@ -31,7 +31,7 @@ export class PongMenuManager
     private particles: Particles[] = []
     private buttons: Button[] = []
     private titleImage!: Konva.Image;
-    private isTitleVisible: boolean = false;
+    private animationSkipped: boolean = false;
 
     constructor(title: boolean)
     {
@@ -96,6 +96,18 @@ export class PongMenuManager
     {
         const finalY = 70;
         const speed = 2.3;
+        let animationFrame: number;
+
+        const skipAnimation = () => {
+            if (this.titleImage) {
+                this.titleImage.y(finalY);
+                this.titleLayer.batchDraw();
+                this.animationSkipped = true;
+                cancelAnimationFrame(animationFrame);
+                this.stage.off('click', skipAnimation);
+                this.changeMenu('main');
+            }
+        };
 
         const animate = () =>
         {
@@ -103,16 +115,17 @@ export class PongMenuManager
             {
                 this.titleImage.y(this.titleImage.y() + speed);
                 this.titleLayer.batchDraw();
-                requestAnimationFrame(animate);
+                animationFrame = requestAnimationFrame(animate);
             }
             else
             {
-                this.isTitleVisible = true;
+                this.stage.off('click', skipAnimation);
+                this.changeMenu('main');
             }
         };
 
+        this.stage.on('click', skipAnimation);
         animate();
-
     }
 
     createButton(text: string, x: number, y: number, action: () => void)
@@ -348,6 +361,7 @@ export class PongMenuManager
     {
         this.animateParticles();
         setTimeout(() => {
+            if (!this.animationSkipped)
             this.changeMenu('main');
         }, 2000);
         console.log("Menu displayed");
