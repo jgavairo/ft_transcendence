@@ -169,7 +169,15 @@ export async function setupChatWidget() {
     socket.on("connect", () => {});
     socket.on("connect_error", () => {});
     socket.on("error", () => {});
-    sendBtn.addEventListener("click", () => {
+    sendBtn.addEventListener("click", async () => {
+
+        const username = await fetchCurrentUser();
+        if (!username) {
+            if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>Vous avez été déconnecté. Merci de vous reconnecter pour utiliser le chat.</div>";
+            if (input) input.style.display = 'none';
+            if (sendBtn) sendBtn.style.display = 'none';
+            return;
+        }
         const text = input.value.trim();
         if (!text || text.length === 0 || text.length > 300) {
             input.value = text.slice(0, 300); // Tronque si besoin
