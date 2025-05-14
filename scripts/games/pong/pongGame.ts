@@ -324,6 +324,9 @@ function onKeyUp(e: KeyboardEvent) {
 
 // Initialise le canvas et le contexte
 export function startPong() {
+  const modal = document.getElementById('games-modal');
+  if (modal)
+    modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
   running = true;
   const modal = document.getElementById("games-modal");
   if (modal)
