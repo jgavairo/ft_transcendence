@@ -18,6 +18,7 @@ const R = Math.min(CW, CH) / 2 - 45; // rayon du terrain
 const P_TH = 12; // épaisseur des paddles
 const ARC_HALF = Math.PI / 18; // demi-angle du paddle
 let start = false;
+export let forfait = false;
 // Tableau de couleurs pour chaque joueur/raquette
 const PADDLE_COLORS = [
     '#00eaff', // bleu-cyan

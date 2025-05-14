@@ -10,6 +10,8 @@ const MAX_ALPHA      = 0.6;     // opacité initiale
 let prevLives: number[] = [];
 let lifeFlashes: LifeFlash[] = [];
 
+
+
 //mort
 interface DeathFlash { index: number; frame: number; }
 const DEATH_FRAMES = 30;    // frames totales de l’animation
@@ -24,6 +26,7 @@ const R  = Math.min(CW, CH) / 2 - 45;      // rayon du terrain
 const P_TH = 12;                           // épaisseur des paddles
 const ARC_HALF = Math.PI / 18;      // demi-angle du paddle
 let start = false;
+export let forfait = false;
 
 // Tableau de couleurs pour chaque joueur/raquette
 const PADDLE_COLORS = [
@@ -83,7 +86,6 @@ export async function renderPong(state: MatchState) {
     const paddleColor = p.lives > 0
   ? PADDLE_COLORS[i % PADDLE_COLORS.length]
   : '#888888';
-
 
     const death = deathFlashes.find(f => f.index === i);
     if (death) {
