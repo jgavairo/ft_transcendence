@@ -121,6 +121,7 @@ export async function setupChat() {
     });
     socket.on("connect", () => {
         console.log("Connected to Socket.IO server");
+        socket.emit("register", { username }); // <-- ajoute cette ligne
     });
     socket.on("connect_error", (error) => {
         console.error("Socket.IO connection error:", error);
@@ -150,10 +151,16 @@ export async function setupChat() {
         if (text) {
             canSend = false;
             sendBtn.disabled = true;
-            socket.emit("sendMessage", { author: username, content: text }, (response) => {
-                console.log("Message sent, server response:", response);
-            });
-            addMessage(text, username, true);
+            const mentionMatch = text.match(/^@(\w+)/);
+            if (mentionMatch) {
+                const targetUsername = mentionMatch[1];
+                socket.emit("sendPrivateMessage", { to: targetUsername, author: username, content: text }, (response) => { });
+                addMessage(text, username, true);
+            }
+            else {
+                socket.emit("sendMessage", { author: username, content: text }, (response) => { });
+                addMessage(text, username, true);
+            }
             input.value = "";
             setTimeout(() => {
                 canSend = true;
@@ -171,6 +178,9 @@ export async function setupChat() {
         if (messageData.author === username) {
             return;
         }
+        addMessage(messageData.content, messageData.author, false);
+    });
+    socket.on("receivePrivateMessage", (messageData) => {
         addMessage(messageData.content, messageData.author, false);
     });
 }
