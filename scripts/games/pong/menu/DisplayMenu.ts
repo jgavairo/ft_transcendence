@@ -33,7 +33,7 @@ export class PongMenuManager
     private titleImage!: Konva.Image;
     private isTitleVisible: boolean = false;
 
-    constructor()
+    constructor(title: boolean)
     {
         PongMenuManager.instance = this;
         const canvas = document.getElementById("games-modal");
@@ -67,21 +67,23 @@ export class PongMenuManager
         });
         this.backgroundLayer.add(background);
 
-        const image = new Image();
-        image.src = '../../../../assets/games/pong/title.png';
-        image.onload = () =>
-        {
-            this.titleImage = new Konva.Image
-            ({
-                image: image,
-                x: (this.stage.width() - image.width * 0.35) / 2,
-                y: -200,
-                width: image.width * 0.35,
-                height: image.height * 0.35
-            });
-            this.titleLayer.add(this.titleImage);
-            this.animateTitle();
-        };
+        if (title) {
+            const image = new Image();
+            image.src = '../../../../assets/games/pong/title.png';
+            image.onload = () =>
+            {
+                this.titleImage = new Konva.Image
+                ({
+                    image: image,
+                    x: (this.stage.width() - image.width * 0.35) / 2,
+                    y: -200,
+                    width: image.width * 0.35,
+                    height: image.height * 0.35
+                });
+                this.titleLayer.add(this.titleImage);
+                this.animateTitle();
+            };
+        }
 
         window.addEventListener('resize', () => {
             this.stage.width(gameWidth);
@@ -197,7 +199,7 @@ export class PongMenuManager
         this.particles.push
         ({
             shape: particle,
-            speed: 0.5 + Math.random() * 2,
+            speed: 0.5 + Math.random() * 2.5,
             glowDirection: 1
         });
 
@@ -227,7 +229,7 @@ export class PongMenuManager
         });
 
         // 5% de chance de créer une nouvelle particule à chaque frame
-        if (Math.random() < 0.05) {
+        if (Math.random() < 0.15) {
             this.createParticle();
         }
 
@@ -526,6 +528,99 @@ export class PongMenuManager
         }
     }
 
+    public displayEndMatch(winnerName: string, padColor: string): void
+    {
+        // Nettoyage des éléments existants
+        this.buttons.forEach(button => button.group.destroy());
+        this.buttons = [];
+        this.menuLayer.destroyChildren();
+
+        // Création du texte du gagnant
+        const winnerText = new Konva.Text({
+            text: `${winnerName} WIN`,
+            fontFamily: 'Press Start 2P',
+            fontSize: 24,
+            fill: padColor,
+            x: gameWidth / 2 - 200,
+            y: -100, // Commence hors écran
+            width: 400,
+            align: 'center',
+            shadowColor: padColor,
+            shadowBlur: 20,
+            shadowOpacity: 0.8
+        });
+
+        this.menuLayer.add(winnerText);
+
+        // Animation d'entrée du texte
+        const finalY = 300;
+        const speed = 5;
+        const animate = () => {
+            if (winnerText.y() < finalY) {
+                winnerText.y(winnerText.y() + speed);
+                this.menuLayer.batchDraw();
+                requestAnimationFrame(animate);
+            } else {
+                // Une fois l'animation terminée, on affiche le bouton
+                this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
+                    this.stage.destroy();
+                    const newMenu = new PongMenuManager(true);
+                    newMenu.changeMenu('main');
+                });
+            }
+        };
+
+        // Création de particules de victoire
+        const createVictoryParticle = () => {
+            const particle = new Konva.Circle({
+                x: gameWidth / 2 + (Math.random() - 0.5) * 400,
+                y: 300 + (Math.random() - 0.5) * 200,
+                radius: 2 + Math.random() * 3,
+                fill: padColor,
+                opacity: 0.8,
+                shadowColor: padColor,
+                shadowBlur: 10,
+                shadowOpacity: 0.8
+            });
+
+            this.particles.push({
+                shape: particle,
+                speed: -1 - Math.random() * 2, // Vitesse négative pour monter
+                glowDirection: 1
+            });
+
+            this.backgroundLayer.add(particle);
+        };
+
+        // Animation des particules de victoire
+        const animateVictoryParticles = () => {
+            this.particles.forEach((particle, index) => {
+                particle.shape.y(particle.shape.y() + particle.speed);
+                
+                const currentBlur = particle.shape.shadowBlur();
+                if (currentBlur >= 15) particle.glowDirection = -1;
+                if (currentBlur <= 5) particle.glowDirection = 1;
+                particle.shape.shadowBlur(currentBlur + particle.glowDirection * 0.2);
+                
+                if (particle.shape.y() < 0) {
+                    particle.shape.destroy();
+                    this.particles.splice(index, 1);
+                }
+            });
+
+            if (Math.random() < 0.2) {
+                createVictoryParticle();
+            }
+
+            this.backgroundLayer.batchDraw();
+            requestAnimationFrame(animateVictoryParticles);
+        };
+
+        // Lancement des animations
+        animate();
+        animateVictoryParticles();
+    }
+
     public static matchFound2Players(data: any) : void
     {
         console.log("match found 2 players");
@@ -666,7 +761,7 @@ export class PongMenuManager
 
 export function displayMenu() : void
 {
-    const menu = new PongMenuManager();
+    const menu = new PongMenuManager(true);
     console.log("game started");
     menu.start();
 }
