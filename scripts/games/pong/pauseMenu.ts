@@ -59,7 +59,6 @@ export function initPauseMenu(
   });
 }
 
-// Dessine le menu pause en overlay
 export function drawPauseMenu(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D
@@ -79,28 +78,44 @@ export function drawPauseMenu(
   const btnQuitY   = btnResumeY + btnH + 20;
 
   ctx.save();
-  // a) Overlay semi-transparent
+  // overlay
   ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
   ctx.fillRect(0, 0, CW, CH);
 
-  // b) Boîte du menu
-  ctx.fillStyle = '#333';
-  ctx.fillRect(pmX, pmY, pmWidth, pmHeight);
+  // boîte du menu
+  ctx.fillStyle = 'rgba(83, 83, 83, 0.2)';
+  ctx.fillRect(pmX, pmY, pmWidth, pmHeight - 40);
 
-  // c) Bouton Resume
-  ctx.fillStyle = '#555';
-  ctx.fillRect(pmX + 20, btnResumeY, btnW, btnH);
-  ctx.fillStyle     = '#fff';
-  ctx.font           = '24px Arial';
-  ctx.textAlign      = 'center';
-  ctx.textBaseline   = 'middle';
-  ctx.fillText('Resume', CX, btnResumeY + btnH / 2);
+  // === bouton Resume ===
+  {
+    const path = new Path2D();
+    path.roundRect(pmX + 20, btnResumeY, btnW, btnH, 5);
+    ctx.fillStyle   = '#002eb2';
+    ctx.fill(path);
+    ctx.lineWidth   = 2;
+    ctx.strokeStyle = '#00e7fe';
+    ctx.stroke(path);
 
-  // d) Bouton Quit
-  ctx.fillStyle = '#555';
-  ctx.fillRect(pmX + 20, btnQuitY, btnW, btnH);
-  ctx.fillStyle   = '#fff';
-  ctx.fillText('Quit', CX, btnQuitY + btnH / 2);
+    ctx.fillStyle   = '#fff';
+    ctx.font        = '24px Arial';
+    ctx.textAlign   = 'center';
+    ctx.textBaseline= 'middle';
+    ctx.fillText('Resume', CX, btnResumeY + btnH / 2);
+  }
+
+  // === bouton Quit ===
+  {
+    const path = new Path2D();
+    path.roundRect(pmX + 20, btnQuitY, btnW, btnH, 5);
+    ctx.fillStyle   = '#002eb2';
+    ctx.fill(path);
+    ctx.lineWidth   = 2;
+    ctx.strokeStyle = '#00e7fe';
+    ctx.stroke(path);
+
+    ctx.fillStyle   = '#fff';
+    ctx.fillText('Quit', CX, btnQuitY + btnH / 2);
+  }
 
   ctx.restore();
 }
