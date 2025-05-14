@@ -122,7 +122,7 @@ export async function setupChat() {
 
     socket.on("connect", () => {
         console.log("Connected to Socket.IO server");
-        socket.emit("register", { username }); // <-- ajoute cette ligne
+        socket.emit("register", { username });
     });
 
     socket.on("connect_error", (error) => {
