@@ -64,21 +64,22 @@ export async function setupChat() {
     const userMap = new Map(users.map(user => [user.username, user]));
     // Grouper les messages par auteur pour un affichage Messenger-like
     let lastAuthor = null;
-    const addMessage = (content, author, self = true, showAvatar = true, showName = true) => {
+    const addMessage = (content, author, self = true) => {
         const isGrouped = lastAuthor === author;
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
-        // Nom au-dessus de la bulle, seulement pour le premier message du groupe
-        if (!isGrouped && showName) {
+        // Affiche le nom uniquement pour les messages reçus et seulement pour le premier message du groupe
+        if (!self && !isGrouped) {
             const user = userMap.get(author);
             const usernameSpan = document.createElement("span");
             usernameSpan.textContent = (user === null || user === void 0 ? void 0 : user.username) || author;
-            usernameSpan.className = `messenger-username${self ? " self" : ""}`;
+            usernameSpan.className = `messenger-username`;
             msgWrapper.appendChild(usernameSpan);
         }
         const row = document.createElement("div");
         row.className = "messenger-message-row";
-        if (!isGrouped && showAvatar) {
+        // Affiche la photo uniquement pour les messages reçus et seulement pour le premier message du groupe
+        if (!self && !isGrouped) {
             const user = userMap.get(author);
             const profileImg = document.createElement("img");
             profileImg.src = (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png";
@@ -107,9 +108,7 @@ export async function setupChat() {
     let prevAuthor = null;
     chatHistory.forEach(message => {
         const isSelf = message.author === username;
-        const showAvatar = prevAuthor !== message.author;
-        const showName = prevAuthor !== message.author;
-        addMessage(message.content, message.author, isSelf, showAvatar, showName);
+        addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
     });
     // Connecter le client au serveur socket.IO
@@ -147,9 +146,7 @@ export async function setupChat() {
             socket.emit("sendMessage", { author: username, content: text }, (response) => {
                 console.log("Message sent, server response:", response);
             });
-            const showAvatar = lastAuthor !== username;
-            const showName = lastAuthor !== username;
-            addMessage(text, username, true, showAvatar, showName);
+            addMessage(text, username, true);
             input.value = "";
         }
     });
@@ -163,8 +160,6 @@ export async function setupChat() {
         if (messageData.author === username) {
             return;
         }
-        const showAvatar = lastAuthor !== messageData.author;
-        const showName = lastAuthor !== messageData.author;
-        addMessage(messageData.content, messageData.author, false, showAvatar, showName);
+        addMessage(messageData.content, messageData.author, false);
     });
 }
