@@ -141,7 +141,7 @@ export function stopGame() {
 }
 export function connectPong() {
     // Pong classique
-    socket.off('matchFound').on('matchFound', onMatchFound);
+    socket.off('matchFound').on('matchFound', PongMenuManager.matchFound2Players);
     socket.off('gameState').on('gameState', onGameState);
     // Tri-Pong → on branche exactement les mêmes handlers
     socket.off('matchFoundTri').on('matchFoundTri', PongMenuManager.matchFound3Players);
@@ -292,6 +292,9 @@ function onKeyUp(e) {
 // Initialise le canvas et le contexte
 export function startPong() {
     running = true;
+    const modal = document.getElementById("games-modal");
+    if (modal)
+        modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
     canvas = document.querySelector('#gameCanvas');
     ctx = canvas.getContext('2d');
     canvas.width = CW;
