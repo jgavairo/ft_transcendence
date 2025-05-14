@@ -167,9 +167,16 @@ export async function setupChatWidget() {
         reconnectionAttempts: 5,
         reconnectionDelay: 1000
     });
-    socket.on("connect", () => { });
-    socket.on("connect_error", () => { });
-    socket.on("error", () => { });
+    socket.on("connect", () => {
+        console.log("Connected to Socket.IO server");
+        socket.emit("register", { username });
+    });
+    socket.on("connect_error", (error) => {
+        console.error("Socket.IO connection error:", error);
+    });
+    socket.on("error", (error) => {
+        console.error("Socket.IO error:", error);
+    });
     let canSend = true;
     const COOLDOWN_MS = 1000;
     sendBtn.addEventListener("click", async () => {
@@ -192,8 +199,16 @@ export async function setupChatWidget() {
         }
         canSend = false;
         sendBtn.disabled = true;
-        socket.emit("sendMessage", { author: username, content: text }, () => { });
-        addMessage(text, username, true);
+        const mentionMatch = text.match(/^@(\w+)/);
+        if (mentionMatch) {
+            const targetUsername = mentionMatch[1];
+            socket.emit("sendPrivateMessage", { to: targetUsername, author: username, content: text }, (response) => { });
+            addMessage(text, username, true);
+        }
+        else {
+            socket.emit("sendMessage", { author: username, content: text }, (response) => { });
+            addMessage(text, username, true);
+        }
         input.value = "";
         setTimeout(() => {
             canSend = true;
@@ -210,6 +225,13 @@ export async function setupChatWidget() {
     socket.on("receiveMessage", (messageData) => {
         if (messageData.author === username)
             return;
+        addMessage(messageData.content, messageData.author, false);
+        if (chatWindow.style.display !== "flex") {
+            unreadCount++;
+            showBadge();
+        }
+    });
+    socket.on("receivePrivateMessage", (messageData) => {
         addMessage(messageData.content, messageData.author, false);
         if (chatWindow.style.display !== "flex") {
             unreadCount++;

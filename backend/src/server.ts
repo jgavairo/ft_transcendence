@@ -509,15 +509,15 @@ const start = async () => {
         ////////////////////////////////
         const chatNs = app.io.of('/chat');
         chatNs.on('connection', (socket: Socket) => {
-            socket.on('register', (data) => {
-                userSocketMap.set(data.username, socket.id);
-                console.log("chat namespace userSocketMap:", JSON.stringify(Array.from(userSocketMap.entries())));
-            });
+                socket.on('register', (data) => {
+        userSocketMap.set(data.username, socket.id);
+        console.log("chat namespace userSocketMap:", JSON.stringify(Array.from(userSocketMap.entries())));
+    });
 
             socket.on('sendPrivateMessage', async (data, callback) => {
                 try {
                     const {to, author, content } = data;
-                    await dbManager.saveMessage(data.author, data.content);
+                    // await dbManager.saveMessage(data.author, data.content);
                     const targetSocketid = userSocketMap.get(to);
                     if (targetSocketid) {
                         chatNs.to(targetSocketid).emit('receivePrivateMessage', {author, content });
