@@ -285,26 +285,20 @@ export class PongMenuManager
                 break;
             case 'solo':
                 this.createButton('1 PLAYER', gameWidth / 2 - 100, 450, () => alert('not implemented yet'));
-                this.createButton('2 PLAYERS', gameWidth / 2 - 100, 520, () => this.launchLocalPong(2));
-                this.createButton('3 PLAYERS', gameWidth / 2 - 100, 590, () => this.launchLocalPong(3));
+                this.createButton('2 PLAYERS', gameWidth / 2 - 100, 520, () => this.offlineLobby(2));
+                this.createButton('3 PLAYERS', gameWidth / 2 - 100, 590, () => this.offlineLobby(3));
                 this.createButton('BACK', gameWidth / 2 - 100, 660, () => this.changeMenu('play'));
                 break;
             case 'multi':
-                this.createButton('2 PLAYERS', gameWidth / 2 - 100, 450, () => this.setupLobby(2));
-                this.createButton('3 PLAYERS', gameWidth / 2 - 100, 520, () => this.setupLobby(3));
+                this.createButton('2 PLAYERS', gameWidth / 2 - 100, 450, () => this.onlineLobby(2));
+                this.createButton('3 PLAYERS', gameWidth / 2 - 100, 520, () => this.onlineLobby(3));
                 this.createButton('TOURNAMENT', gameWidth / 2 - 100, 590, () => alert('not implemented yet'));
                 this.createButton('BACK', gameWidth / 2 - 100, 660, () => this.changeMenu('play'));
-                break;
-            case 'lobby2':
-                this.setupLobby(2);
-                break;
-            case 'lobby3':
-                this.setupLobby(3);
                 break;
         }
     }
 
-    private async setupLobby(nbPlayers: number)
+    private async onlineLobby(nbPlayers: number)
     {
         const currentUser = await GameManager.getCurrentUser();
         const username = currentUser?.username || "Player";
@@ -356,6 +350,150 @@ export class PongMenuManager
         }, 2000);
         console.log("Menu displayed");
 
+    }
+
+    private async offlineLobby(nbPlayers: number)
+    {
+        try 
+        {
+            const menu = PongMenuManager.instance;
+            const currentUser = await GameManager.getCurrentUser();
+            const username = currentUser?.username || "Player";
+            // Nettoyage des éléments existants
+            menu.buttons.forEach(button => button.group.destroy());
+            menu.buttons = [];
+            menu.menuLayer.destroyChildren();
+            if (nbPlayers === 2)
+            {
+                // Affichage des joueurs
+                const player1Text = new Konva.Text({
+                text: `${username}1`,
+                fontFamily: 'Press Start 2P',
+                fontSize: 20,
+                fill: '#00e7fe',
+                x: (gameWidth / 6),
+                y: 450,
+                width: 400,
+                align: 'center'
+                });
+
+                const player2Text = new Konva.Text({
+                text: `${username}2`,
+                fontFamily: 'Press Start 2P',
+                fontSize: 20,
+                fill: '#00e7fe',
+                x: gameWidth / 2,
+                y: 450,
+                width: 400,
+                align: 'center'
+                });
+
+                const countdownText = new Konva.Text({
+                text: 'Game starting in 5',
+                fontFamily: 'Press Start 2P',
+                fontSize: 24,
+                fill: '#fc4cfc',
+                x: gameWidth / 2 - 200,
+                y: 520,
+                width: 400,
+                align: 'center'
+                });
+
+                menu.menuLayer.add(player1Text);
+                menu.menuLayer.add(player2Text);
+                menu.menuLayer.add(countdownText);
+                // Décompte
+                let count = 5;
+                const countdown = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownText.text(`Game starting in ${count}`);
+                    menu.menuLayer.batchDraw();
+                } else {
+                    clearInterval(countdown);
+                    this.launchLocalPong(nbPlayers);
+                }
+                }, 1000);
+            }
+            else if (nbPlayers === 3)
+            {
+                console.log("match found 2 players");
+                const menu = PongMenuManager.instance;
+                
+                // Nettoyage des éléments existants
+                menu.buttons.forEach(button => button.group.destroy());
+                menu.buttons = [];
+                menu.menuLayer.destroyChildren();
+
+                // Affichage des joueurs
+                const player1Text = new Konva.Text({
+                    text: `${username}1`,
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 20,
+                    fill: '#00e7fe',
+                    x: 0,
+                    y: 450,
+                    width: 400,
+                    align: 'center'
+                });
+
+                const player2Text = new Konva.Text({
+                    text: `${username}2`,
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 20,
+                    fill: '#00e7fe',
+                    x: gameWidth / 3,
+                    y: 450,
+                    width: 400,
+                    align: 'center'
+                });
+
+                const player3Text = new Konva.Text({
+                    text: `${username}3`,
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 20,
+                    fill: '#00e7fe',
+                    x: gameWidth / 3 + ((gameWidth / 3)),
+                    y: 450,
+                    width: 400,
+                    align: 'center'
+                });
+
+                const countdownText = new Konva.Text({
+                    text: 'Game starting in 5',
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 24,
+                    fill: '#fc4cfc',
+                    x: gameWidth / 2 - 200,
+                    y: 570,
+                    width: 400,
+                    align: 'center'
+                });
+
+                menu.menuLayer.add(player1Text);
+                menu.menuLayer.add(player2Text);
+                menu.menuLayer.add(player3Text);
+                menu.menuLayer.add(countdownText);
+
+                // Décompte
+                let count = 5;
+                const countdown = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        countdownText.text(`Game starting in ${count}`);
+                        menu.menuLayer.batchDraw();
+                    } else {
+                        clearInterval(countdown);
+                        this.launchLocalPong(nbPlayers);
+                    }
+                }, 1000);
+            }
+        }
+        catch (error)
+        {
+            console.error('Error getting current user:', error);
+            this.launchLocalPong(nbPlayers);
+        }
     }
 
     async launchLocalPong(nbPlayers: number)
