@@ -102,6 +102,7 @@ export async function setupChatWidget() {
         }
         else {
             chatWindow.style.display = "flex";
+            chatContainer.scrollTop = chatContainer.scrollHeight;
             resetBadge();
         }
     };
@@ -169,15 +170,35 @@ export async function setupChatWidget() {
     socket.on("connect", () => { });
     socket.on("connect_error", () => { });
     socket.on("error", () => { });
-    sendBtn.addEventListener("click", () => {
+    let canSend = true;
+    const COOLDOWN_MS = 1000;
+    sendBtn.addEventListener("click", async () => {
+        if (!canSend)
+            return;
+        const username = await fetchCurrentUser();
+        if (!username) {
+            if (chatContainer)
+                chatContainer.innerHTML = "<div class='chat-error'>Vous avez été déconnecté. Merci de vous reconnecter pour utiliser le chat.</div>";
+            if (input)
+                input.style.display = 'none';
+            if (sendBtn)
+                sendBtn.style.display = 'none';
+            return;
+        }
         const text = input.value.trim();
         if (!text || text.length === 0 || text.length > 300) {
             input.value = text.slice(0, 300); // Tronque si besoin
             return;
         }
+        canSend = false;
+        sendBtn.disabled = true;
         socket.emit("sendMessage", { author: username, content: text }, () => { });
         addMessage(text, username, true);
         input.value = "";
+        setTimeout(() => {
+            canSend = true;
+            sendBtn.disabled = false;
+        }, COOLDOWN_MS);
     });
     input.addEventListener("input", () => {
         if (input.value.length > 300) {

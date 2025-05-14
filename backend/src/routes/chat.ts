@@ -3,7 +3,7 @@ import { dbManager } from "../database/database.js";
 
 const getChatHistoryHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-        const messages = await dbManager.getLastMessages(10);
+        const messages = await dbManager.getLastMessages(50);
 
         // Récupérer les informations des utilisateurs pour chaque message
         const enrichedMessages = await Promise.all(
