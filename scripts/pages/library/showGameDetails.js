@@ -4,7 +4,6 @@ import { setupLibrary } from "./library.js";
 import api from "../../helpers/api.js"; // Import de l'API helper
 import { launchPong } from "../../games/pong/main.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
-import { launchSpaceInvader } from "../../games/spaceInvader/main.js";
 /**
  * Rend le HTML pour afficher le classement des joueurs pour un jeu spécifique
  * @param gameId - L'ID du jeu dont on veut afficher le classement
@@ -185,7 +184,7 @@ export async function showGameDetails(gameIdOrObj) {
                 launchPong();
                 break;
             case 'Space Defense':
-                launchSpaceInvader();
+                showErrorNotification("This game is not available yet");
                 break;
             case 'TicTacToe':
                 showErrorNotification("This game is not available yet");
