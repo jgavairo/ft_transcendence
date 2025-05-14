@@ -31,7 +31,9 @@ export function startMatch(socks: Socket[], nsp: Namespace): MatchState {
   const state: MatchState = { roomId, paddles, ball, gameOver: false };
 
   // Sert la balle après 4s
-  resetFirstBall(state);
+  setTimeout(() => {
+    resetFirstBall(state);
+  }, 6000);
   return state;
 }
 
