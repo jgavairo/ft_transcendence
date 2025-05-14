@@ -171,7 +171,12 @@ export async function setupChatWidget() {
     socket.on("connect", () => {});
     socket.on("connect_error", () => {});
     socket.on("error", () => {});
+
+    let canSend = true;
+    const COOLDOWN_MS = 1000;
     sendBtn.addEventListener("click", async () => {
+
+        if (!canSend) return;
 
         const username = await fetchCurrentUser();
         if (!username) {
@@ -185,9 +190,15 @@ export async function setupChatWidget() {
             input.value = text.slice(0, 300); // Tronque si besoin
             return;
         }
+        canSend = false;
+        sendBtn.disabled = true;
         socket.emit("sendMessage", { author: username, content: text }, () => {});
         addMessage(text, username, true);
         input.value = "";
+        setTimeout(() => {
+            canSend = true;
+            sendBtn.disabled = false;
+        }, COOLDOWN_MS);
     });
     input.addEventListener("input", () => {
         if (input.value.length > 300) {

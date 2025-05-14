@@ -128,9 +128,14 @@ export async function setupChat() {
     socket.on("error", (error) => {
         console.error("Socket.IO error:", error);
     });
+    let canSend = true;
+    const COOLDOWN_MS = 1000;
     // Envoyer un message au serveur
     sendBtn.addEventListener("click", async () => {
         // Revérifie l'authentification à chaque envoi
+        if (!canSend) {
+            return;
+        }
         username = await fetchCurrentUser();
         if (!username) {
             if (chatContainer)
@@ -143,11 +148,17 @@ export async function setupChat() {
         }
         const text = input.value.trim();
         if (text) {
+            canSend = false;
+            sendBtn.disabled = true;
             socket.emit("sendMessage", { author: username, content: text }, (response) => {
                 console.log("Message sent, server response:", response);
             });
             addMessage(text, username, true);
             input.value = "";
+            setTimeout(() => {
+                canSend = true;
+                sendBtn.disabled = false;
+            }, COOLDOWN_MS);
         }
     });
     input.addEventListener("keydown", e => {
