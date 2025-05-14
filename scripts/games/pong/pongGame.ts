@@ -328,9 +328,6 @@ export function startPong() {
   if (modal)
     modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
   running = true;
-  const modal = document.getElementById("games-modal");
-  if (modal)
-    modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
   canvas = document.querySelector('#gameCanvas') as HTMLCanvasElement;
   ctx = canvas.getContext('2d')!;
   canvas.width = CW;
