@@ -11,7 +11,7 @@ import { authRoutes, googleAuthHandler } from "./routes/authentification.js";
 import { profileRoutes } from './routes/profile.js';
 import fs from 'fs';
 import { authMiddleware, AuthenticatedRequest } from './middleware/auth.js';
-import { chatRoutes } from './routes/chat.js';
+import { chatRoutes } from './routes/chatRoute.js';
 import { gameRoutes } from './routes/game.js';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyOauth2 from '@fastify/oauth2';
@@ -472,10 +472,61 @@ const start = async () => {
         console.log('Fastify server + Socket.IO OK sur port 3000');
 
         ////////////////////////////////
+        //    NOTIFICATION SOCKET     //
+        ////////////////////////////////
+        const notificationNs = app.io.of('/notification');
+
+
+        notificationNs.on('connection', (socket: Socket) => {
+
+            console.log("Notification namespace connected:", socket.id);
+
+            socket.on('disconnect', () => {
+                console.log('Client disconnected in notification namespace:', socket.id);
+                for (const [username, id] of userSocketMap.entries())
+                {
+                    if (id === socket.id)
+                    {
+                        userSocketMap.delete(username);
+                        console.log('User [', username, '] removed from userSocketMap, socketID [', socket.id, ']');
+                        break;
+                    }
+                }
+            });
+
+            socket.on('register', (data) => {
+                console.log("Register event received in notification namespace:", data);
+                userSocketMap.set(data.username, socket.id);
+                console.log("notification namespace userSocketMap:", JSON.stringify(Array.from(userSocketMap.entries())));
+            });
+        });
+        ////////////////////////////////
         //         CHAT SOCKET        //
         ////////////////////////////////
         const chatNs = app.io.of('/chat');
         chatNs.on('connection', (socket: Socket) => {
+            socket.on('register', (data) => {
+                userSocketMap.set(data.username, socket.id);
+                console.log("chat namespace userSocketMap:", JSON.stringify(Array.from(userSocketMap.entries())));
+            });
+
+            socket.on('sendPrivateMessage', async (data, callback) => {
+                try {
+                    const {to, author, content } = data;
+                    await dbManager.saveMessage(data.author, data.content);
+                    const targetSocketid = userSocketMap.get(to);
+                    if (targetSocketid) {
+                        chatNs.to(targetSocketid).emit('receivePrivateMessage', {author, content });
+                        if (callback) callback({ success: true });
+                    } else {
+                        if (callback) callback({ success: false, error: 'User not connected' });
+                    }
+                } catch (error) {
+                    if (callback) {
+                        callback({ success: false, error: 'Failed to send private message' });
+                    }
+                }
+            });
 
             socket.on('sendMessage', async (data, callback) => {
                 try 
@@ -507,35 +558,6 @@ const start = async () => {
         });
         /////////////////////////////////////////////////////////////////////////
 
-        ////////////////////////////////
-        //    NOTIFICATION SOCKET     //
-        ////////////////////////////////
-        const notificationNs = app.io.of('/notification');
-
-
-        notificationNs.on('connection', (socket: Socket) => {
-
-            console.log("Notification namespace connected:", socket.id);
-
-            socket.on('disconnect', () => {
-                console.log('Client disconnected in notification namespace:', socket.id);
-                for (const [username, id] of userSocketMap.entries())
-                {
-                    if (id === socket.id)
-                    {
-                        userSocketMap.delete(username);
-                        console.log('User [', username, '] removed from userSocketMap, socketID [', socket.id, ']');
-                        break;
-                    }
-                }
-            });
-
-            socket.on('register', (data) => {
-                console.log("Register event received in notification namespace:", data);
-                userSocketMap.set(data.username, socket.id);
-                console.log("notification namespace userSocketMap:", JSON.stringify(Array.from(userSocketMap.entries())));
-            });
-        });
         /////////////////////////////////////////////////////////////////////////
     } catch (err) {
         console.error('Error while starting the server:', err);
