@@ -55,6 +55,7 @@ function createChatWidgetHTML() {
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#66c0f4" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </span>
             <span class="chat-bubble-label">Chat</span>
+            <span class="chat-bubble-badge" id="chat-bubble-badge"></span>
         </div>
         <div id="chat-window">
             <div class="chat-header">
@@ -81,6 +82,20 @@ export async function setupChatWidget() {
     input.maxLength = 300; // Limite de caractères côté HTML
     const sendBtn = document.getElementById("sendMessage") as HTMLButtonElement;
     const chatContainer = document.getElementById("chatContainer");
+    const chatBubbleBadge = document.getElementById("chat-bubble-badge") as HTMLSpanElement;
+    let unreadCount = 0;
+
+    function showBadge() {
+        if (chatBubbleBadge) {
+            chatBubbleBadge.textContent = unreadCount > 0 ? unreadCount.toString() : "";
+            chatBubbleBadge.style.display = unreadCount > 0 ? "inline-block" : "none";
+        }
+    }
+    function resetBadge() {
+        unreadCount = 0;
+        showBadge();
+    }
+
     if (!chatBubble || !chatWindow || !closeBtn || !input || !sendBtn || !chatContainer) return;
 
     chatBubble.onclick = () => {
@@ -88,6 +103,7 @@ export async function setupChatWidget() {
             chatWindow.style.display = "none";
         } else {
             chatWindow.style.display = "flex";
+            resetBadge();
         }
     };
     closeBtn.onclick = () => { chatWindow.style.display = "none"; chatBubble.style.display = "flex"; };
@@ -172,6 +188,10 @@ export async function setupChatWidget() {
     socket.on("receiveMessage", (messageData: { author: string, content: string }) => {
         if (messageData.author === username) return;
         addMessage(messageData.content, messageData.author, false);
+        if (chatWindow.style.display !== "flex") {
+            unreadCount++;
+            showBadge();
+        }
     });
 }
 
