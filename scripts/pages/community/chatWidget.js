@@ -102,6 +102,7 @@ export async function setupChatWidget() {
         }
         else {
             chatWindow.style.display = "flex";
+            chatContainer.scrollTop = chatContainer.scrollHeight;
             resetBadge();
         }
     };
