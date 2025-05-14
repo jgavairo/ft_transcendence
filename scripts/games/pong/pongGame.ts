@@ -145,7 +145,7 @@ let loopId: number | null = null;
 export function stopGame() {
   // 1) Arrêter la boucle requestAnimationFrame
   console.log('stopGame called');
-  running = false;                                   // ← désactive le rendu
+  running = false;                    // ← désactive le rendu
   if (loopId !== null) {
     cancelAnimationFrame(loopId);
     loopId = null;
