@@ -62,52 +62,55 @@ export async function setupChat() {
     // Récupérer les informations des utilisateurs
     const users = await fetchUsernames();
     const userMap = new Map(users.map(user => [user.username, user]));
-    const addMessage = (content, author, self = true) => {
+    // Grouper les messages par auteur pour un affichage Messenger-like
+    let lastAuthor = null;
+    const addMessage = (content, author, self = true, showAvatar = true, showName = true) => {
+        const isGrouped = lastAuthor === author;
         const msgWrapper = document.createElement("div");
-        msgWrapper.className = `chat-message ${self ? "right" : "left"}`;
-        const user = userMap.get(author);
-        // Conteneur pour l'image de profil avec effet hover
-        const profileContainer = document.createElement("div");
-        profileContainer.className = "profile-picture-container";
-        // Ajouter la photo de profil
-        const profileImg = document.createElement("img");
-        profileImg.className = "chat-profile-picture";
-        profileImg.src = (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png";
-        profileImg.alt = `${author}'s profile picture`;
-        // Ajouter la couche de survol
-        const overlay = document.createElement("div");
-        overlay.className = "profile-picture-overlay";
-        const overlayText = document.createElement("span");
-        overlayText.textContent = "View";
-        overlay.appendChild(overlayText);
-        // Ajouter un événement de clic pour afficher la carte de profil
-        profileContainer.addEventListener("click", () => {
-            showProfileCard((user === null || user === void 0 ? void 0 : user.username) || author, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.email) || "Email not available", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
-        });
-        // Ajouter les éléments au conteneur
-        profileContainer.appendChild(profileImg);
-        profileContainer.appendChild(overlay);
-        // Ajouter le conteneur au message
-        msgWrapper.appendChild(profileContainer);
-        // Ajouter le nom d'utilisateur
-        const usernameSpan = document.createElement("span");
-        usernameSpan.className = "chat-username";
-        usernameSpan.textContent = (user === null || user === void 0 ? void 0 : user.username) || author;
-        // Ajouter le contenu du message
-        const messageContent = document.createElement("p");
-        messageContent.className = "chat-content";
+        msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
+        // Nom au-dessus de la bulle, seulement pour le premier message du groupe
+        if (!isGrouped && showName) {
+            const user = userMap.get(author);
+            const usernameSpan = document.createElement("span");
+            usernameSpan.textContent = (user === null || user === void 0 ? void 0 : user.username) || author;
+            usernameSpan.className = `messenger-username${self ? " self" : ""}`;
+            msgWrapper.appendChild(usernameSpan);
+        }
+        const row = document.createElement("div");
+        row.className = "messenger-message-row";
+        if (!isGrouped && showAvatar) {
+            const user = userMap.get(author);
+            const profileImg = document.createElement("img");
+            profileImg.src = (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png";
+            profileImg.alt = `${author}'s profile picture`;
+            profileImg.className = "messenger-avatar";
+            profileImg.onclick = () => showProfileCard((user === null || user === void 0 ? void 0 : user.username) || author, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.email) || "Email not available", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
+            row.appendChild(profileImg);
+        }
+        else {
+            const spacer = document.createElement("div");
+            spacer.className = "messenger-avatar-spacer";
+            row.appendChild(spacer);
+        }
+        const messageContent = document.createElement("div");
+        messageContent.className = `messenger-bubble${self ? " self" : ""}`;
         messageContent.textContent = content;
-        // Ajouter les éléments au conteneur du message
-        msgWrapper.appendChild(usernameSpan);
-        msgWrapper.appendChild(messageContent);
+        row.appendChild(messageContent);
+        msgWrapper.appendChild(row);
         chatContainer.appendChild(msgWrapper);
         chatContainer.scrollTop = chatContainer.scrollHeight;
+        lastAuthor = author;
     };
     // Charger l'historique des messages
     const chatHistory = await fetchChatHistory();
+    // Affichage de l'historique avec groupement
+    let prevAuthor = null;
     chatHistory.forEach(message => {
         const isSelf = message.author === username;
-        addMessage(message.content, message.author, isSelf);
+        const showAvatar = prevAuthor !== message.author;
+        const showName = prevAuthor !== message.author;
+        addMessage(message.content, message.author, isSelf, showAvatar, showName);
+        prevAuthor = message.author;
     });
     // Connecter le client au serveur socket.IO
     const socket = io(`http://${HOSTNAME}:3000/chat`, {
@@ -144,7 +147,9 @@ export async function setupChat() {
             socket.emit("sendMessage", { author: username, content: text }, (response) => {
                 console.log("Message sent, server response:", response);
             });
-            addMessage(text, username, true);
+            const showAvatar = lastAuthor !== username;
+            const showName = lastAuthor !== username;
+            addMessage(text, username, true, showAvatar, showName);
             input.value = "";
         }
     });
@@ -158,6 +163,8 @@ export async function setupChat() {
         if (messageData.author === username) {
             return;
         }
-        addMessage(messageData.content, messageData.author, false);
+        const showAvatar = lastAuthor !== messageData.author;
+        const showName = lastAuthor !== messageData.author;
+        addMessage(messageData.content, messageData.author, false, showAvatar, showName);
     });
 }
