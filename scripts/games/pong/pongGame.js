@@ -460,6 +460,3 @@ export function resetGame() {
     lastState = null;
     explosion.length = 0;
 }
-document.addEventListener('DOMContentLoaded', () => {
-    displayMenu();
-});

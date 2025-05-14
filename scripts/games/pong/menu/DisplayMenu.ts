@@ -3,6 +3,7 @@ import Konva from "https://cdn.skypack.dev/konva";
 import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong, startSoloTri } from "../SocketEmit.js";
 import { connectPong, onMatchFound, onTriMatchFound, stopGame } from "../pongGame.js";
+import { socket as gameSocket } from "../network.js";
 
 const gameWidth = 1200;
 const gameHeight = 800;
@@ -349,9 +350,10 @@ export class PongMenuManager
         this.buttons.forEach(button => button.group.destroy());
         this.buttons = [];
 
-        this.createButton('ANNULER', gameWidth / 2 - 100, 670, () => {
+        this.createButton('CANCEL', gameWidth / 2 - 100, 670, () => {
             // Nettoyage du texte d'attente
             waitingText.destroy();
+            gameSocket.disconnect()
             this.changeMenu('multi');
         });
     }
