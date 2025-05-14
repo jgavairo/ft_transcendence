@@ -55,6 +55,7 @@ function createChatWidgetHTML() {
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#66c0f4" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </span>
             <span class="chat-bubble-label">Chat</span>
+            <span class="chat-bubble-badge" id="chat-bubble-badge"></span>
         </div>
         <div id="chat-window">
             <div class="chat-header">
@@ -81,6 +82,20 @@ export async function setupChatWidget() {
     input.maxLength = 300; // Limite de caractères côté HTML
     const sendBtn = document.getElementById("sendMessage") as HTMLButtonElement;
     const chatContainer = document.getElementById("chatContainer");
+    const chatBubbleBadge = document.getElementById("chat-bubble-badge") as HTMLSpanElement;
+    let unreadCount = 0;
+
+    function showBadge() {
+        if (chatBubbleBadge) {
+            chatBubbleBadge.textContent = unreadCount > 0 ? unreadCount.toString() : "";
+            chatBubbleBadge.style.display = unreadCount > 0 ? "inline-block" : "none";
+        }
+    }
+    function resetBadge() {
+        unreadCount = 0;
+        showBadge();
+    }
+
     if (!chatBubble || !chatWindow || !closeBtn || !input || !sendBtn || !chatContainer) return;
 
     chatBubble.onclick = () => {
@@ -88,6 +103,7 @@ export async function setupChatWidget() {
             chatWindow.style.display = "none";
         } else {
             chatWindow.style.display = "flex";
+            resetBadge();
         }
     };
     closeBtn.onclick = () => { chatWindow.style.display = "none"; chatBubble.style.display = "flex"; };
@@ -96,21 +112,22 @@ export async function setupChatWidget() {
     const userMap = new Map(users.map(user => [user.username, user]));
     let lastAuthor: string | null = null;
     let lastMsgWrapper: HTMLDivElement | null = null;
-    const addMessage = (content: string, author: string, self = true, showAvatar = true, showName = true) => {
+    const addMessage = (content: string, author: string, self = true) => {
         const isGrouped = lastAuthor === author;
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
-        // Nom au-dessus de la bulle, seulement pour le premier message du groupe
-        if (!isGrouped && showName) {
+        // Affiche le nom uniquement pour les messages reçus et seulement pour le premier message du groupe
+        if (!self && !isGrouped) {
             const user = userMap.get(author);
             const usernameSpan = document.createElement("span");
             usernameSpan.textContent = user?.username || author;
-            usernameSpan.className = `messenger-username${self ? " self" : ""}`;
+            usernameSpan.className = `messenger-username`;
             msgWrapper.appendChild(usernameSpan);
         }
         const row = document.createElement("div");
         row.className = "messenger-message-row";
-        if (!isGrouped && showAvatar) {
+        // Affiche la photo uniquement pour les messages reçus et seulement pour le premier message du groupe
+        if (!self && !isGrouped) {
             const user = userMap.get(author);
             const profileImg = document.createElement("img");
             profileImg.src = user?.profile_picture || "default-profile.png";
@@ -139,9 +156,7 @@ export async function setupChatWidget() {
     let prevAuthor: string | null = null;
     chatHistory.forEach((message: { author: string, content: string }, idx: number) => {
         const isSelf = message.author === username;
-        const showAvatar = prevAuthor !== message.author;
-        const showName = prevAuthor !== message.author;
-        addMessage(message.content, message.author, isSelf, showAvatar, showName);
+        addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
     });
     const socket = io(`http://${HOSTNAME}:3000/chat`, {
@@ -161,9 +176,7 @@ export async function setupChatWidget() {
             return;
         }
         socket.emit("sendMessage", { author: username, content: text }, () => {});
-        const showAvatar = lastAuthor !== username;
-        const showName = lastAuthor !== username;
-        addMessage(text, username, true, showAvatar, showName);
+        addMessage(text, username, true);
         input.value = "";
     });
     input.addEventListener("input", () => {
@@ -174,9 +187,11 @@ export async function setupChatWidget() {
     input.addEventListener("keydown", e => { if (e.key === "Enter") sendBtn.click(); });
     socket.on("receiveMessage", (messageData: { author: string, content: string }) => {
         if (messageData.author === username) return;
-        const showAvatar = lastAuthor !== messageData.author;
-        const showName = lastAuthor !== messageData.author;
-        addMessage(messageData.content, messageData.author, false, showAvatar, showName);
+        addMessage(messageData.content, messageData.author, false);
+        if (chatWindow.style.display !== "flex") {
+            unreadCount++;
+            showBadge();
+        }
     });
 }
 
