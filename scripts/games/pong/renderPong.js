@@ -26,7 +26,8 @@ const PADDLE_COLORS = [
     '#7cff00', // vert (pour un 4e joueur éventuel)
 ];
 // Dessine l'état de la partie Tri-Pong
-export function renderPong(state) {
+export async function renderPong(state) {
+    //if alreadyPLayed = NOT DISPLAY TUTO
     // 1) motion blur: on dessine un calque semi-transparent au lieu de tout clear
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     ctx.fillRect(0, 0, CW, CH);
