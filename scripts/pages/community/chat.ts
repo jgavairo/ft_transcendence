@@ -63,21 +63,22 @@ export async function setupChat() {
 
     // Grouper les messages par auteur pour un affichage Messenger-like
     let lastAuthor: string | null = null;
-    const addMessage = (content: string, author: string, self = true, showAvatar = true, showName = true) => {
+    const addMessage = (content: string, author: string, self = true) => {
         const isGrouped = lastAuthor === author;
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
-        // Nom au-dessus de la bulle, seulement pour le premier message du groupe
-        if (!isGrouped && showName) {
+        // Affiche le nom uniquement pour les messages reçus et seulement pour le premier message du groupe
+        if (!self && !isGrouped) {
             const user = userMap.get(author);
             const usernameSpan = document.createElement("span");
             usernameSpan.textContent = user?.username || author;
-            usernameSpan.className = `messenger-username${self ? " self" : ""}`;
+            usernameSpan.className = `messenger-username`;
             msgWrapper.appendChild(usernameSpan);
         }
         const row = document.createElement("div");
         row.className = "messenger-message-row";
-        if (!isGrouped && showAvatar) {
+        // Affiche la photo uniquement pour les messages reçus et seulement pour le premier message du groupe
+        if (!self && !isGrouped) {
             const user = userMap.get(author);
             const profileImg = document.createElement("img");
             profileImg.src = user?.profile_picture || "default-profile.png";
@@ -106,9 +107,7 @@ export async function setupChat() {
     let prevAuthor: string | null = null;
     chatHistory.forEach(message => {
         const isSelf = message.author === username;
-        const showAvatar = prevAuthor !== message.author;
-        const showName = prevAuthor !== message.author;
-        addMessage(message.content, message.author, isSelf, showAvatar, showName);
+        addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
     });
 
@@ -148,9 +147,7 @@ export async function setupChat() {
             socket.emit("sendMessage", { author: username, content: text }, (response: { success: boolean; error?: string }) => {
                 console.log("Message sent, server response:", response);
             });
-            const showAvatar = lastAuthor !== username;
-            const showName = lastAuthor !== username;
-            addMessage(text, username, true, showAvatar, showName);
+            addMessage(text, username, true);
             input.value = "";
         }
     });
@@ -166,9 +163,7 @@ export async function setupChat() {
         if (messageData.author === username) {
             return;
         }
-        const showAvatar = lastAuthor !== messageData.author;
-        const showName = lastAuthor !== messageData.author;
-        addMessage(messageData.content, messageData.author, false, showAvatar, showName);
+        addMessage(messageData.content, messageData.author, false);
     });
 }
 

@@ -31,7 +31,7 @@ export function startTriMatch(sockets: Socket[], nsp: Namespace): TriMatchState 
   const state: TriMatchState = { roomId, paddles, ball, gameOver: false };
 
   // service initial après 4 secondes
-  setTimeout(() => resetBallPosition(state.ball), 4000);
+  setTimeout(() => resetBallPosition(state.ball), 6000);
 
   return state;
 }
