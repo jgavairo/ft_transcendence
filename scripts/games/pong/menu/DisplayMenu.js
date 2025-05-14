@@ -9,7 +9,7 @@ export class PongMenuManager {
     constructor(title) {
         this.particles = [];
         this.buttons = [];
-        this.isTitleVisible = false;
+        this.animationSkipped = false;
         PongMenuManager.instance = this;
         const canvas = document.getElementById("games-modal");
         if (!canvas) {
@@ -60,16 +60,29 @@ export class PongMenuManager {
     animateTitle() {
         const finalY = 70;
         const speed = 2.3;
+        let animationFrame;
+        const skipAnimation = () => {
+            if (this.titleImage) {
+                this.titleImage.y(finalY);
+                this.titleLayer.batchDraw();
+                this.animationSkipped = true;
+                cancelAnimationFrame(animationFrame);
+                this.stage.off('click', skipAnimation);
+                this.changeMenu('main');
+            }
+        };
         const animate = () => {
             if (this.titleImage.y() < finalY) {
                 this.titleImage.y(this.titleImage.y() + speed);
                 this.titleLayer.batchDraw();
-                requestAnimationFrame(animate);
+                animationFrame = requestAnimationFrame(animate);
             }
             else {
-                this.isTitleVisible = true;
+                this.stage.off('click', skipAnimation);
+                this.changeMenu('main');
             }
         };
+        this.stage.on('click', skipAnimation);
         animate();
     }
     createButton(text, x, y, action) {
@@ -260,7 +273,8 @@ export class PongMenuManager {
     start() {
         this.animateParticles();
         setTimeout(() => {
-            this.changeMenu('main');
+            if (!this.animationSkipped)
+                this.changeMenu('main');
         }, 2000);
         console.log("Menu displayed");
     }
