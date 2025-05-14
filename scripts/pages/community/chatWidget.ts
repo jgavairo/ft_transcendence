@@ -103,6 +103,7 @@ export async function setupChatWidget() {
             chatWindow.style.display = "none";
         } else {
             chatWindow.style.display = "flex";
+            chatContainer.scrollTop = chatContainer.scrollHeight;
             resetBadge();
         }
     };
@@ -112,6 +113,7 @@ export async function setupChatWidget() {
     const userMap = new Map(users.map(user => [user.username, user]));
     let lastAuthor: string | null = null;
     let lastMsgWrapper: HTMLDivElement | null = null;
+    
     const addMessage = (content: string, author: string, self = true) => {
         const isGrouped = lastAuthor === author;
         const msgWrapper = document.createElement("div");
