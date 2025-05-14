@@ -2,7 +2,7 @@
 import Konva from "https://cdn.skypack.dev/konva";
 import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong, startSoloTri } from "../SocketEmit.js";
-import { connectPong, onMatchFound, onTriMatchFound } from "../pongGame.js";
+import { connectPong, onMatchFound, onTriMatchFound, stopGame } from "../pongGame.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 export class PongMenuManager {
@@ -451,8 +451,8 @@ export class PongMenuManager {
                 // Une fois l'animation terminée, on affiche le bouton
                 this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
                     this.stage.destroy();
-                    const newMenu = new PongMenuManager(true);
-                    newMenu.changeMenu('main');
+                    stopGame();
+                    displayMenu();
                 });
             }
         };
