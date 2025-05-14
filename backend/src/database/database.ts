@@ -470,9 +470,13 @@ export class DatabaseManager
             'INSERT INTO messages (author, content) VALUES (?, ?)',
             [author, content]
         );
+        const result = await this.db.get('SELECT COUNT(*) as count FROM messages');
+        if (result.count > 50) {
+            await this.db.run('DELETE FROM messages WHERE id IN (SELECT id FROM messages ORDER BY timestamp ASC LIMIT ?)', [result.count - 50]);
+        }
     }
     
-    public async getLastMessages(limit: number = 10): Promise<{ author: string, content: string, timestamp: string }[]> {
+    public async getLastMessages(limit: number = 50): Promise<{ author: string, content: string, timestamp: string }[]> {
         if (!this.db) throw new Error('Database not initialized');
         const result = await this.db.all(
             'SELECT author, content, timestamp FROM messages ORDER BY timestamp DESC LIMIT ?',
