@@ -6,7 +6,7 @@ import { createExplosion, explosion } from './ballExplosion.js';
 import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js';
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
-import { initPauseMenu, showPauseMenu, drawPauseMenu } from './pauseMenu.js';
+import { initPauseMenu, showPauseMenu, drawPauseMenu, onEscapeKey } from './pauseMenu.js';
 // Variables réseau
 export let mySide;
 let roomId;
@@ -20,8 +20,6 @@ export let ctx;
 // Constantes de rendu (synchronisées avec le serveur)
 const CW = 1200;
 const CH = 800;
-const CX = CW / 2;
-const CY = CH / 2;
 let ready = false; // on ne dessine qu'une fois le countdown fini
 let lastState = null;
 let firstFrame = false;
@@ -118,20 +116,11 @@ export function stopGame() {
         cancelAnimationFrame(loopId);
         loopId = null;
     }
-    socket.removeAllListeners('matchFound');
-    socket.removeAllListeners('gameState');
-    socket.removeAllListeners('matchFoundTri');
-    socket.removeAllListeners('stateUpdateTri');
-    socket.removeAllListeners('ballExplode');
+    socket.disconnect();
+    window.removeEventListener('keydown', onEscapeKey);
     // 2) Débrancher les écouteurs clavier
-    window.removeEventListener('keydown', onKeyDown);
-    window.removeEventListener('keyup', onKeyUp);
-    // 3) Débrancher les écouteurs socket
-    socket.off('matchFound');
-    socket.off('gameState');
-    socket.off('matchFoundTri');
-    socket.off('stateUpdateTri');
-    socket.off('ballExplode');
+    // window.removeEventListener('keydown', onKeyDown);
+    // window.removeEventListener('keyup',   onKeyUp);
     // 4) Mettre à l’arrêt le module de particules/explosions
     explosion.length = 0;
     // 5) Nettoyer le canvas
@@ -141,6 +130,7 @@ export function stopGame() {
 }
 export function connectPong(isOnline) {
     // Pong classique
+    socket.connect();
     if (isOnline) {
         socket.off('matchFound').on('matchFound', PongMenuManager.matchFound2Players);
         socket.off('gameState').on('gameState', onGameState);

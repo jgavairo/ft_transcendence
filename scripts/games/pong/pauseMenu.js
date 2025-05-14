@@ -1,14 +1,16 @@
 import { stopGame } from "./pongGame.js";
 // pauseMenu.ts
 export let showPauseMenu = false;
+export function onEscapeKey(e) {
+    if (e.key === 'Escape') {
+        console.log('menu pause');
+        showPauseMenu = !showPauseMenu;
+    }
+}
 // Initialise le menu pause : installe le toggle Escape et le click listener
 export function initPauseMenu(canvas, ctx, displayMenu) {
     // 1) Toggle avec la touche Échap
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            showPauseMenu = !showPauseMenu;
-        }
-    });
+    window.addEventListener('keydown', onEscapeKey);
     // 2) Click sur le canvas pour Resume/Quit
     canvas.addEventListener('click', (e) => {
         if (!showPauseMenu)
@@ -38,6 +40,7 @@ export function initPauseMenu(canvas, ctx, displayMenu) {
         else if (x >= pmX + 20 && x <= pmX + 20 + btnW &&
             y >= btnQuitY && y <= btnQuitY + btnH) {
             stopGame();
+            showPauseMenu = false;
             displayMenu();
         }
     });
