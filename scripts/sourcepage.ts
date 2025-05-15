@@ -27,8 +27,15 @@ const profileWindow = `
 `;
 
 const storePage = `
-		<div class="gamescontainer">
-		</div>
+    <div class="storecontainer">
+        <div class="newscontainer">
+            <div class="news">
+                <h2>News</h2>
+            </div>
+        </div>
+		  <div class="gamescontainer">
+		  </div>
+    </div>
 `;
 
 const libraryPage = `
@@ -178,4 +185,21 @@ const gameModalHTML = `
     </div>
 `;
 
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML };
+const gameInfosModalHTML = (game: any, inLibrary: boolean) => `
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="gameInfosModal" id="gameInfosModal">
+          <div class="gameInfosModal-header">
+            <button class="closeGameInfosModal" id="closeGameInfosModal">X</button>
+          </div>
+            <div class="game-details">
+                    <h2>${game.name}</h2>
+                    <img src="${game.image}" alt="${game.name}" class="game-image">
+                    <p class="game-description">${game.description}</p>
+                    <button class="${inLibrary ? 'owned-button' : 'buybutton'}" id="${game.name}buybutton" ${inLibrary ? 'disabled' : ''}>
+                        ${inLibrary ? 'Already in library' : `Add to library ${game.price === 0 ? 'Free' : `${game.price}$`}`}
+                    </button>
+                </div>
+        </div>
+    </div>`
+
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML };

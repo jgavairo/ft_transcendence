@@ -1,53 +1,95 @@
 @import './colors.css';
 
-.gamescontainer
+.newscontainer
 {
-	width: 75%;
-	height: 75vh;
-	padding: 20px 0;
+	width: 95%;
+	height: auto;
 	color: #ffffff;
-	background-color: var(--bleu-fonce);
-	border-width: 4px;
-	border-color: var(--bleu-fonce);
+	background-color: var(--vert);
 	border-radius: 5px;
 	margin: 20px auto;
 	margin-top: 2%;
-	display: flex;
-	flex-direction: column;
-	gap: 20px;
+}
+
+.news
+{
+	width: 100%;
+	height: 100%;
+	background-color: var(--bleu-fonce);
+}
+
+.gamecard-details.expanded
+{
+	opacity: 1;
+	transform: translateX(0);
+	pointer-events: all;
+    background-color: var(--vert);
+}
+
+.gamescontainer
+{
+	width: 95%;
+	height: auto;
+	color: #ffffff;
+	background-color: transparent;
+	margin: 20px auto;
+	margin-top: 2%;
+	display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 32px;
+    padding: 32px;
 	overflow-y: auto;
 	scrollbar-width: none;
-
+	position: relative;
 }
 
-.gamecard
-{
-	width: 90%;
-	background-color: var(--anthracite);
-	border-radius: 5px;
-	margin: 20px auto;
+.gamecard {
+	position: relative;
+    margin: 20px;
+    width: 180px;
+    height: 270px;
+    overflow: hidden;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.8);
+    transition: transform 0.3s ease;
+    background: var(--anthracite);
+    cursor: pointer;
+    transition: all 0.5s ease;
 }
 
-.gamecard .gamecard-logo
-{
-	width: 400px;
-	height: 200px;
-	padding: 20px;
-	border-radius: 5px;
-	object-fit: cover;
+.gamecard:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 16px 3px rgba(0, 0, 0, 0.6);
 }
 
-.gamecard .gametitle
-{
-	font-size: 30px;
-	font-weight: bold;
-	padding-left: 20px;
-	padding-top: -20px;
-	padding-bottom: -20px;
-	margin-bottom: -40px;
+.gamecard::after {
+    content: '';
+    position: absolute;
+    z-index: 10;
+    width: 200%;
+    height: 100%;
+    top: -90%;
+    left: -20px;
+    opacity: 0.1;
+    transform: rotate(45deg);
+    background: linear-gradient(to top, transparent, #fff 15%, rgba(255, 255, 255, 0.5));
+    transition: 0.3s;
 }
 
-.gamecard .buybutton
+.gamecard:hover::after {
+    transform: rotate(25deg);
+    top: -40%;
+    opacity: 0.15;
+}
+
+.gamecard-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: 0.3s;
+}
+
+.buybutton
 {
 	width: 11rem;
 	height: 4rem;
@@ -56,19 +98,19 @@
 	padding: 10px 20px;
 	font-weight: bold;
 	position: relative;
-	bottom: 10%;
-	left: 80%;
+	bottom: 20px;
+	right: 20px;
 	transition: 0.3s;
 }
 
-.gamecard .buybutton:hover
+.buybutton:hover
 {
 	transition: 0.3s;
 	background-color: var(--vert);
 	cursor: pointer;
 }
 
-.gamecard .owned-button
+.owned-button
 {
 	width: 11rem;
 	height: 3rem;
@@ -79,48 +121,8 @@
 	font-weight: bold;
 	font-style: italic;
 	position: relative;
-	bottom: 10%;
-	left: 80%;
-}
-
-.gamecard .gamedescription
-{
-	background-color: var(--anthracite-fonce);
-	border-radius: 5px;
-	height: fit-content;
-	padding: 20px;
-	width: 60%;
-	position: relative;
-	top: 20px;
-	left: 40px;
-	overflow-y: auto;
-	scrollbar-width: none;
-}
-
-.gamecard .textdescription
-{
-	min-height: 1.5em;
-	max-height: 4.5em;
-	overflow-y: auto;
-	font-size: 16px;
-	line-height: 1.5;
-	color: #a3a3a3;
-	scrollbar-width: none;
-}
-
-.gamecard .textdescription::-webkit-scrollbar {
-	display: none;  /* Pour Chrome, Safari et Opera */
-}
-
-.gamecard .price
-{
-	font-size: 20px;
-	font-weight: bold;
-	margin-left: 85%;
-	position: relative;
-	bottom: 15%;
-	left: 3%;
-
+	bottom: 20px;
+	right: 20px;
 }
 
 .notification {
