@@ -9,7 +9,7 @@ import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDe
 import { initPauseMenu, showPauseMenu, drawPauseMenu, onEscapeKey } from './pauseMenu.js';
 import api from '../../helpers/api.js';
 import { HOSTNAME } from '../../main.js';
-import { drawTutorial } from './showTutorial.js';
+import { drawTutorialSolo1, drawTutorialSolo2 } from './showTutorial.js';
 // Variables réseau
 export let mySide;
 let roomId;
@@ -33,7 +33,8 @@ export function setGameoverTrue() {
 // ID des joueurs
 let user1Id = null; // ID du joueur 1
 let user2Id = null; // ID du joueur 2
-export let showTutorial = false;
+export let showTutorial1 = false;
+export let showTutorial2 = false;
 window.addEventListener('keydown', onKeyDown);
 window.addEventListener('keyup', onKeyUp);
 // Fonction pour récupérer l'ID utilisateur à partir d'un socket_id
@@ -71,12 +72,12 @@ export async function onMatchFound(data) {
         gameid: 1
     });
     const payload = await response.json();
-    const isFirstGame = payload.firstGame;
-    if (isFirstGame) {
-        showTutorial = true;
+    const isFirstGame1 = payload.firstGame;
+    if (isFirstGame1) {
+        showTutorial1 = true;
         ready = false;
         const onStart = () => {
-            showTutorial = false;
+            showTutorial1 = false;
             ready = true;
             window.removeEventListener('keydown', onStart);
         };
@@ -106,19 +107,34 @@ export async function onTriMatchFound(data) {
     const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`, {
         gameid: 1
     });
-    const firstGame = await response.json();
-    if (firstGame) {
-        console.log('firstgame =', firstGame);
+    const payload = await response.json();
+    const isFirstGame2 = payload.firstGame;
+    if (isFirstGame2) {
+        showTutorial2 = true;
+        ready = false;
+        const onStart = () => {
+            showTutorial2 = false;
+            ready = true;
+            window.removeEventListener('keydown', onStart);
+        };
+        window.addEventListener('keydown', onStart);
+        startPong();
     }
-    startPong();
+    else {
+        ready = true;
+        startPong();
+    }
 }
 function onGameState(state) {
     if (!running) {
-        console.log('quit');
         return;
     }
-    if (showTutorial) {
-        drawTutorial(canvas, ctx);
+    if (showTutorial1 && modePong == true) {
+        drawTutorialSolo1(canvas, ctx);
+        return;
+    }
+    if (showTutorial2 && modePong == false) {
+        drawTutorialSolo2(canvas, ctx);
         return;
     }
     lastState = state;
