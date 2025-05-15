@@ -7,6 +7,10 @@ import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js'
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
 import { initPauseMenu, showPauseMenu, drawPauseMenu, onEscapeKey } from './pauseMenu.js';
+import api from '../../helpers/api.js';
+import { HOSTNAME } from '../../main.js';
+import { drawTutorial } from './showTutorial.js';
+
 
 // Interface de l'état de partie reçue du serveur
 export interface MatchState {
@@ -48,7 +52,8 @@ export function setGameoverTrue()
 let user1Id: string | null = null; // ID du joueur 1
 let user2Id: string | null = null; // ID du joueur 2
 
-// Noms des joueurs
+
+export let showTutorial = false;
 
 
 window.addEventListener('keydown', onKeyDown);
@@ -78,24 +83,43 @@ export let playerName: string = "";
 export let opponentName: string = "";
 export let playerNames: string[] = [];
 
-export function onMatchFound(data: any) {
+export async function onMatchFound(data: any) {
   modePong  = true;
   soloTri   = false;
   soloMode  = data.mode === 'solo';
   mySide    = soloMode ? 0 : data.side;
   lastState = null;
-  ready     = true;
+  ready     = false;
   firstFrame= false;
 
   user1Id     = data.user1Id;
   user2Id     = data.user2Id;
   playerName  = data.you   || 'Player';
   opponentName= data.opponent || 'Opponent';
-
-  startPong();
+  const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`,
+    {
+      gameid: 1
+    });
+  const payload = await response.json();
+  const isFirstGame = payload.firstGame;  
+  if (isFirstGame) {
+    showTutorial = true;
+    ready = false;
+    const onStart = () => {
+      showTutorial = false;
+      ready = true;
+      window.removeEventListener('keydown', onStart);
+    };
+    window.addEventListener('keydown', onStart);
+    startPong();
+  }
+  else { 
+    ready = true;
+    startPong();
+  }
 }
 
-export function onTriMatchFound(data: any) {
+export async function onTriMatchFound(data: any) {
   modePong  = false;
   soloTri   = data.mode === 'solo-tri';
   console.log('data mode =', data.mode);
@@ -111,6 +135,14 @@ export function onTriMatchFound(data: any) {
   playerName  = data.you       || 'Player';
   opponentName= data.opponent  || 'Opponent';
   playerNames = Array.isArray(data.players) ? data.players : [];
+  const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`,
+    {
+      gameid: 1
+    });
+  const firstGame = await response.json();
+  if (firstGame) {
+    console.log('firstgame =', firstGame);
+  }
 
   startPong();
 }
@@ -120,6 +152,11 @@ function onGameState(state: MatchState) {
     console.log('quit');
     return;
   }
+  if (showTutorial) {
+    drawTutorial(canvas, ctx);
+    return;
+  }
+
   lastState = state;
   if (!ready) return;
 
