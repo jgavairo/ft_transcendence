@@ -44,6 +44,30 @@ export async function setupChat() {
     const input = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendMessage");
     const chatContainer = document.getElementById("chatContainer");
+    // Ajout du conteneur pour la suggestion d'utilisateurs
+    let mentionBox = document.getElementById("mention-suggestions");
+    if (!mentionBox) {
+        mentionBox = document.createElement("div");
+        mentionBox.id = "mention-suggestions";
+        mentionBox.style.position = "fixed"; // Utilise fixed pour overlay
+        mentionBox.style.background = "#23262e";
+        mentionBox.style.border = "1px solid #2a475e";
+        mentionBox.style.borderRadius = "8px";
+        mentionBox.style.boxShadow = "0 2px 8px #0003";
+        mentionBox.style.zIndex = "10001";
+        mentionBox.style.display = "none";
+        mentionBox.style.maxHeight = "180px";
+        mentionBox.style.overflowY = "auto";
+        mentionBox.style.fontFamily = "'Segoe UI', Arial, sans-serif";
+        mentionBox.style.fontSize = "1rem";
+        mentionBox.style.minWidth = "120px";
+        mentionBox.style.padding = "2px 0";
+        mentionBox.style.left = "0px";
+        mentionBox.style.top = "0px";
+        mentionBox.style.width = "auto";
+        // Ajoute la box à body pour overlay flottant
+        document.body.appendChild(mentionBox);
+    }
     // Vérification auth avant d'afficher le chat
     let username = await fetchCurrentUser();
     if (!username) {
@@ -62,6 +86,7 @@ export async function setupChat() {
     // Récupérer les informations des utilisateurs
     const users = await fetchUsernames();
     const userMap = new Map(users.map(user => [user.username, user]));
+    const usernames = users.map(u => u.username);
     // Grouper les messages par auteur pour un affichage Messenger-like
     let lastAuthor = null;
     const addMessage = (content, author, self = true) => {
@@ -94,8 +119,18 @@ export async function setupChat() {
             row.appendChild(spacer);
         }
         const messageContent = document.createElement("div");
-        messageContent.className = `messenger-bubble${self ? " self" : ""}`;
-        messageContent.textContent = content;
+        let mentionMatch = content.match(/^@(\w+)/);
+        let mentionClass = (!self && mentionMatch) ? " messenger-bubble-mention" : "";
+        if (!self && mentionMatch) {
+            messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="mention">@$1</span>');
+        }
+        else if (self && mentionMatch) {
+            messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="mention self">@$1</span>');
+        }
+        else {
+            messageContent.textContent = content;
+        }
+        messageContent.className = `messenger-bubble${self ? " self" : ""}${mentionClass}`;
         row.appendChild(messageContent);
         msgWrapper.appendChild(row);
         chatContainer.appendChild(msgWrapper);
@@ -107,6 +142,12 @@ export async function setupChat() {
     // Affichage de l'historique avec groupement
     let prevAuthor = null;
     chatHistory.forEach(message => {
+        // Filtre : si le message commence par @"quelqu'un" et que ce n'est pas moi, on n'affiche pas
+        const mentionMatch = message.content.match(/^@(\w+)/);
+        if (mentionMatch && mentionMatch[1] !== username) {
+            if (!(message.author === username))
+                return;
+        }
         const isSelf = message.author === username;
         addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
@@ -182,5 +223,95 @@ export async function setupChat() {
     });
     socket.on("receivePrivateMessage", (messageData) => {
         addMessage(messageData.content, messageData.author, false);
+    });
+    // Suggestion de mention @
+    let mentionActive = false;
+    let mentionStart = -1;
+    let filteredSuggestions = [];
+    function updateMentionBox() {
+        if (!mentionActive || filteredSuggestions.length === 0) {
+            mentionBox.style.display = "none";
+            return;
+        }
+        mentionBox.innerHTML = "";
+        filteredSuggestions.forEach(username => {
+            const item = document.createElement("div");
+            item.textContent = "@" + username;
+            item.style.padding = "6px 16px";
+            item.style.cursor = "pointer";
+            item.style.color = "#66c0f4";
+            item.onmouseenter = () => item.style.background = "#2a475e";
+            item.onmouseleave = () => item.style.background = "";
+            item.onclick = () => {
+                // Remplace le @... par @username
+                const val = input.value;
+                const before = val.slice(0, mentionStart);
+                const after = val.slice(input.selectionStart);
+                input.value = before + "@" + username + " " + after;
+                mentionBox.style.display = "none";
+                mentionActive = false;
+                input.focus();
+                // Place le curseur après la mention
+                const pos = (before + "@" + username + " ").length;
+                input.setSelectionRange(pos, pos);
+            };
+            mentionBox.appendChild(item);
+        });
+        // Positionne la box juste sous l'input, overlay flottant
+        const rect = input.getBoundingClientRect();
+        mentionBox.style.left = rect.left + "px";
+        mentionBox.style.top = (rect.bottom + 2) + "px";
+        mentionBox.style.width = rect.width + "px";
+        mentionBox.style.display = "block";
+    }
+    input.addEventListener("input", (e) => {
+        const val = input.value;
+        const pos = input.selectionStart || 0;
+        // Recherche le dernier @ avant le curseur
+        const before = val.slice(0, pos);
+        const match = before.match(/@([\w]*)$/);
+        if (match) {
+            mentionActive = true;
+            mentionStart = before.lastIndexOf("@");
+            const search = match[1].toLowerCase();
+            filteredSuggestions = usernames.filter(u => u.toLowerCase().startsWith(search) && u !== username).slice(0, 8);
+            updateMentionBox();
+        }
+        else {
+            mentionActive = false;
+            mentionBox.style.display = "none";
+        }
+    });
+    // Ferme la box si on clique ailleurs
+    document.addEventListener("click", (e) => {
+        if (e.target !== input && e.target !== mentionBox) {
+            mentionBox.style.display = "none";
+            mentionActive = false;
+        }
+    });
+    // Navigation clavier (flèches + entrée)
+    input.addEventListener("keydown", (e) => {
+        if (!mentionActive || mentionBox.style.display === "none")
+            return;
+        const items = Array.from(mentionBox.children);
+        let idx = items.findIndex(item => item.classList.contains("active"));
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            if (idx >= 0)
+                items[idx].classList.remove("active");
+            idx = (idx + 1) % items.length;
+            items[idx].classList.add("active");
+        }
+        else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            if (idx >= 0)
+                items[idx].classList.remove("active");
+            idx = (idx - 1 + items.length) % items.length;
+            items[idx].classList.add("active");
+        }
+        else if (e.key === "Enter" && idx >= 0) {
+            e.preventDefault();
+            items[idx].click();
+        }
     });
 }

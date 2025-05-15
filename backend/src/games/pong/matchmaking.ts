@@ -8,6 +8,15 @@ interface PlayerInfo {
   side: number;               // 0|1 pour bi-pong, 0|1|2 pour tri-pong, -1 pour solo modes
   mode: 'solo' | 'multi' | 'tri' | 'solo-tri';
 }
+
+// interface Tournament {
+//   id: string;                // identifiant unique du tournoi
+//   size: 4|8|16;              // nombre de participants
+//   players: string[];         // liste de socket.id inscrits
+//   round: number;             // numéro de tour en cours (1 = huitièmes, 2 = quarts, etc.)
+//   brackets: string[][];      // tableaux de paires de socket.id pour chaque match
+// }
+
 interface Player { id: string; username: string; }
 
 export function setupGameMatchmaking(gameNs: Namespace) {
