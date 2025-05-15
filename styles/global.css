@@ -324,6 +324,17 @@ body
     margin-right: 10px; /* Ajoute un espace à droite */
 }
 
+.closeGameInfosModal
+{
+    font-weight: bold;
+    color: #8d8d8d;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    transition: color 0.3s ease;
+    margin-right: 10px; /* Ajoute un espace à droite */
+}
 .closeProfileModal:hover {
     color: #ffffff;
     transition: 0.3s;
@@ -728,4 +739,22 @@ body
 {
 	transition: 0.3s;
 	background-color: #113d5e;
+}
+
+.gameInfosModal 
+{
+    background-color: #171A21;
+    border: 8px solid #263549;
+    padding: 30px;
+    border-radius: 10px;
+    width: 740px; /* Largeur fixe */
+    max-width: 90%; /* Largeur maximale pour les petits écrans */
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Espace entre les sections */
+    box-sizing: border-box; /* Inclut le padding dans la taille totale */
+    z-index: 3000; /* Assure que la modal est au-dessus de l'overlay */
+    max-height: 90vh; /* Limite la hauteur maximale à 90% de la hauteur de la fenêtre */
+    overflow-y: auto; /* Ajoute une barre de défilement verticale si nécessaire */
 }

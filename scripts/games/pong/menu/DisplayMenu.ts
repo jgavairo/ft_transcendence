@@ -569,21 +569,24 @@ export class PongMenuManager
         this.menuLayer.add(winnerText);
 
         // Animation d'entrée du texte
-        const finalY = 300;
-        const speed = 5;
-        const animate = () => {
-            if (winnerText.y() < finalY) {
-                winnerText.y(winnerText.y() + speed);
-                this.menuLayer.batchDraw();
-                requestAnimationFrame(animate);
-            } else {
-                // Une fois l'animation terminée, on affiche le bouton
-                this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
-                    this.stage.destroy();
-                    stopGame();
-                    displayMenu();
-                });
-            }
+            const finalY = 300;
+            const speed = 5;
+            const animate = () => 
+            {
+                if (winnerText.y() < finalY) {
+                    winnerText.y(winnerText.y() + speed);
+                    this.menuLayer.batchDraw();
+                    requestAnimationFrame(animate);
+                }
+                else 
+                {
+                    // Une fois l'animation terminée, on affiche le bouton
+                    this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
+                        this.stage.destroy();
+                        stopGame();
+                        displayMenu();
+                    });
+                }
         };
 
         // Création de particules de victoire
