@@ -1,5 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { dbManager } from "../database/database.js";
+import { dbManager, Game } from "../database/database.js";
+import { authMiddleware } from '../middleware/auth.js';
+import { AuthenticatedRequest } from './user.js';
 
 const getAllGamesHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     try 
@@ -17,22 +19,23 @@ const getAllGamesHandler = async (request: FastifyRequest, reply: FastifyReply) 
     }
 }
 
-const isFirstGameHandler = async (request: FastifyRequest, reply: FastifyReply) =>
-{
-    try
-    {
-        console.log('ICI IN BACKEND');
-        return reply.send({ success: true })
+const isFirstGameHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      await authMiddleware(request as AuthenticatedRequest, reply);
+        const userId = (request as AuthenticatedRequest).user.id;
+        const gameId = request.body as number;
+
+      const firstGame = await dbManager.isFirstGame(userId, gameId);
+
+      return reply.send({ success: true, firstGame });
+    } catch (error) {
+      console.error("Error checking first game:", error);
+      return reply.status(500).send({
+        success: false,
+        message: "Error checking first game"
+      });
     }
-    catch (error)
-    {
-        console.error("Error first games:", error);
-        return reply.status(500).send({
-            success: false,
-            message: "Error first games"
-        });
-    }
-}
+  };
 
 export const gameRoutes = 
 {

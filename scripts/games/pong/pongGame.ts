@@ -7,6 +7,10 @@ import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js'
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
 import { initPauseMenu, showPauseMenu, drawPauseMenu, onEscapeKey } from './pauseMenu.js';
+import api from '../../helpers/api.js';
+import { HOSTNAME } from '../../main.js';
+import { drawTutorialSolo1, drawTutorialSolo2 } from './showTutorial.js';
+
 
 // Interface de l'état de partie reçue du serveur
 export interface MatchState {
@@ -48,7 +52,9 @@ export function setGameoverTrue()
 let user1Id: string | null = null; // ID du joueur 1
 let user2Id: string | null = null; // ID du joueur 2
 
-// Noms des joueurs
+
+export let showTutorial1 = false;
+export let showTutorial2 = false;
 
 
 window.addEventListener('keydown', onKeyDown);
@@ -78,24 +84,43 @@ export let playerName: string = "";
 export let opponentName: string = "";
 export let playerNames: string[] = [];
 
-export function onMatchFound(data: any) {
+export async function onMatchFound(data: any) {
   modePong  = true;
   soloTri   = false;
   soloMode  = data.mode === 'solo';
   mySide    = soloMode ? 0 : data.side;
   lastState = null;
-  ready     = true;
+  ready     = false;
   firstFrame= false;
 
   user1Id     = data.user1Id;
   user2Id     = data.user2Id;
   playerName  = data.you   || 'Player';
   opponentName= data.opponent || 'Opponent';
-
-  startPong();
+  const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`,
+    {
+      gameid: 1
+    });
+  const payload = await response.json();
+  const isFirstGame1 = payload.firstGame;  
+  if (isFirstGame1) {
+    showTutorial1 = true;
+    ready = false;
+    const onStart = () => {
+      showTutorial1 = false;
+      ready = true;
+      window.removeEventListener('keydown', onStart);
+    };
+    window.addEventListener('keydown', onStart);
+    startPong();
+  }
+  else { 
+    ready = true;
+    startPong();
+  }
 }
 
-export function onTriMatchFound(data: any) {
+export async function onTriMatchFound(data: any) {
   modePong  = false;
   soloTri   = data.mode === 'solo-tri';
   console.log('data mode =', data.mode);
@@ -111,15 +136,42 @@ export function onTriMatchFound(data: any) {
   playerName  = data.you       || 'Player';
   opponentName= data.opponent  || 'Opponent';
   playerNames = Array.isArray(data.players) ? data.players : [];
-
-  startPong();
+  const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`,
+    {
+      gameid: 1
+    });
+  const payload = await response.json();
+  const isFirstGame2 = payload.firstGame;
+  if (isFirstGame2) {
+    showTutorial2 = true;
+    ready = false;
+    const onStart = () => {
+      showTutorial2 = false;
+      ready = true;
+      window.removeEventListener('keydown', onStart);
+    };
+    window.addEventListener('keydown', onStart);
+    startPong();
+  }
+  else { 
+    ready = true;
+    startPong();
+  }
 }
 
 function onGameState(state: MatchState) {
   if (!running){ 
-    console.log('quit');
     return;
   }
+  if (showTutorial1 && modePong == true) {
+    drawTutorialSolo1(canvas, ctx);
+    return;
+  }
+  if (showTutorial2 && modePong == false) {
+    drawTutorialSolo2(canvas, ctx);
+    return;
+  }
+
   lastState = state;
   if (!ready) return;
 
@@ -358,7 +410,7 @@ export async function renderGameOverMessage(state: MatchState) {
     }
 
     // Appeler l'API en fonction du résultat
-    if (player.lives > 0 && modePong) {
+    if (player.lives > 0 && modePong && !soloMode && !soloTri) {
       // Victoire : appeler incrementWins
       const response = await fetch('/api/games/incrementWins', {
         method: 'POST',
@@ -377,7 +429,7 @@ export async function renderGameOverMessage(state: MatchState) {
       } else {
         console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
       }
-    } else {
+    } else if (player.lives <= 0 && modePong && !soloMode && !soloTri) {
       // Défaite : appeler incrementLosses
       const response = await fetch('/api/games/incrementLosses', {
         method: 'POST',
