@@ -143,8 +143,22 @@ export async function setupChatWidget() {
             row.appendChild(spacer);
         }
         const messageContent = document.createElement("div");
-        messageContent.className = `messenger-bubble${self ? " self" : ""}`;
-        messageContent.textContent = content;
+        let mentionMatch = content.match(/^@(\w+)/);
+        let mentionClass = (!self && mentionMatch) ? " messenger-bubble-mention" : "";
+        if (!self && mentionMatch) {
+            messageContent.innerHTML = content.replace(
+                /^@(\w+)/,
+                '<span class="mention">@$1</span>'
+            );
+        } else if (self && mentionMatch) {
+            messageContent.innerHTML = content.replace(
+                /^@(\w+)/,
+                '<span class="mention self">@$1</span>'
+            );
+        } else {
+            messageContent.textContent = content;
+        }
+        messageContent.className = `messenger-bubble${self ? " self" : ""}${mentionClass}`;
         row.appendChild(messageContent);
         msgWrapper.appendChild(row);
         chatContainer.appendChild(msgWrapper);
