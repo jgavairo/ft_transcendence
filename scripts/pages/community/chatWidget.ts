@@ -157,6 +157,11 @@ export async function setupChatWidget() {
     const chatHistory = await fetchChatHistory();
     let prevAuthor: string | null = null;
     chatHistory.forEach((message: { author: string, content: string }, idx: number) => {
+        const mentionMatch = message.content.match(/^@(\w+)/);
+        if (mentionMatch && mentionMatch[1] !== username) {
+            if (!(message.author === username))
+                return;
+        }
         const isSelf = message.author === username;
         addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
