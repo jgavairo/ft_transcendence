@@ -2,6 +2,9 @@ import { stopGame } from "./pongGame.js";
 // pauseMenu.ts
 
 export let showPauseMenu = false;
+export let hoverResume = false;
+export let hoverQuit   = false;
+
 
 export function onEscapeKey(e: KeyboardEvent) {
   if (e.key === 'Escape') {
@@ -19,6 +22,39 @@ export function initPauseMenu(
   // 1) Toggle avec la touche Échap
   window.addEventListener('keydown', onEscapeKey);
 
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+    if (!showPauseMenu) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // mêmes calculs que pour click…
+    const CW = canvas.width;
+    const CH = canvas.height;
+    const CX = CW / 2;
+    const CY = CH / 2;
+  
+    const pmWidth   = 300;
+    const btnW      = 200;
+    const btnH      = 60;
+    const spacing   = 20;
+    const paddingV  = 20;
+  
+    const totalBtnsH = btnH * 2 + spacing;
+    const pmHeight   = totalBtnsH + paddingV * 2;
+    const pmY        = CY - pmHeight / 2;
+  
+    const btnX       = CX - btnW / 2;
+    // Y des deux boutons
+    const btnResumeY = pmY + paddingV;
+    const btnQuitY   = btnResumeY + btnH + spacing;
+    // on teste le hover par simple AABB
+    hoverResume = x >= btnX && x <= btnX + btnW
+      && y >= btnResumeY && y <= btnResumeY + btnH;
+    hoverQuit   = x >= btnX && x <= btnX + btnW
+      && y >= btnQuitY   && y <= btnQuitY   + btnH;
+  });
+
   // 2) Click sur le canvas pour Resume/Quit
   canvas.addEventListener('click', (e: MouseEvent) => {
     if (!showPauseMenu) return;
@@ -31,26 +67,33 @@ export function initPauseMenu(
     const CH = canvas.height;
     const CX = CW / 2;
     const CY = CH / 2;
-    const pmWidth  = 300;
-    const pmHeight = 180;
-    const pmX = CX - pmWidth / 2;
-    const pmY = CY - pmHeight / 2;
-    const btnW = pmWidth - 40;
-    const btnH = 40;
-    const btnResumeY = pmY + 20;
-    const btnQuitY   = btnResumeY + btnH + 20;
+  
+    const pmWidth   = 300;
+    const btnW      = 200;
+    const btnH      = 60;
+    const spacing   = 20;
+    const paddingV  = 20;
+  
+    const totalBtnsH = btnH * 2 + spacing;
+    const pmHeight   = totalBtnsH + paddingV * 2;
+    const pmY        = CY - pmHeight / 2;
+    const btnX       = CX - btnW / 2;
+
+    // Y des deux boutons
+    const btnResumeY = pmY + paddingV;
+    const btnQuitY   = btnResumeY + btnH + spacing;
 
     // Resume ?
     if (
-      x >= pmX + 20 && x <= pmX + 20 + btnW &&
-      y >= btnResumeY && y <= btnResumeY + btnH
+      x >= btnX && x <= btnX + btnW
+      && y >= btnResumeY && y <= btnResumeY + btnH
     ) {
       showPauseMenu = false;
     }
     // Quit ?
     else if (
-      x >= pmX + 20 && x <= pmX + 20 + btnW &&
-      y >= btnQuitY && y <= btnQuitY + btnH
+      x >= btnX && x <= btnX + btnW
+      && y >= btnQuitY   && y <= btnQuitY   + btnH
     ) {
         stopGame();
         showPauseMenu = false;
@@ -67,37 +110,45 @@ export function drawPauseMenu(
   const CH = canvas.height;
   const CX = CW / 2;
   const CY = CH / 2;
-
+  
+  // dimensions et espacement des boutons
+  const btnW     = 200;
+  const btnH     = 60;
+  const spacing  = 20; // espace entre les boutons
+  const totalBtnsH = btnH*2 + spacing;
+  
+  // dimensions de la boîte pause
   const pmWidth  = 300;
-  const pmHeight = 180;
-  const pmX = CX - pmWidth / 2;
-  const pmY = CY - pmHeight / 2;
-  const btnW = pmWidth - 40;
-  const btnH = 40;
-  const btnResumeY = pmY + 20;
-  const btnQuitY   = btnResumeY + btnH + 20;
+  const pmHeight = 200;
+  const pmX      = CX - pmWidth/2;
+  const pmY      = CY - pmHeight/2;
+  
+  // on centre horizontalement :
+  const btnX = pmX + (pmWidth - btnW) / 2;
+  
+  // on centre verticalement l’ensemble des deux boutons + espacement :
+  const startY     = pmY + (pmHeight - totalBtnsH) / 2;
+  const btnResumeY = startY;
+  const btnQuitY   = startY + btnH + spacing;
 
   ctx.save();
   // overlay
   ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
   ctx.fillRect(0, 0, CW, CH);
 
-  // boîte du menu
-  ctx.fillStyle = 'rgba(83, 83, 83, 0.2)';
-  ctx.fillRect(pmX, pmY, pmWidth, pmHeight - 40);
 
   // === bouton Resume ===
   {
     const path = new Path2D();
-    path.roundRect(pmX + 20, btnResumeY, btnW, btnH, 5);
-    ctx.fillStyle   = '#002eb2';
+    path.roundRect(btnX, btnResumeY, btnW, btnH, 5);
+    ctx.fillStyle = hoverResume ? '#6506a9' : '#002eb2';
     ctx.fill(path);
     ctx.lineWidth   = 2;
-    ctx.strokeStyle = '#00e7fe';
+    ctx.strokeStyle = hoverResume ? '#fc4cfc' : '#00e7fe';
     ctx.stroke(path);
 
     ctx.fillStyle   = '#fff';
-    ctx.font        = '24px Arial';
+    ctx.font        = '16px "Press Start 2P"';
     ctx.textAlign   = 'center';
     ctx.textBaseline= 'middle';
     ctx.fillText('Resume', CX, btnResumeY + btnH / 2);
@@ -106,11 +157,11 @@ export function drawPauseMenu(
   // === bouton Quit ===
   {
     const path = new Path2D();
-    path.roundRect(pmX + 20, btnQuitY, btnW, btnH, 5);
-    ctx.fillStyle   = '#002eb2';
+    path.roundRect(btnX, btnQuitY,   btnW, btnH, 5);
+    ctx.fillStyle = hoverQuit ? '#6506a9' : '#002eb2';
     ctx.fill(path);
     ctx.lineWidth   = 2;
-    ctx.strokeStyle = '#00e7fe';
+    ctx.strokeStyle = hoverQuit ? '#fc4cfc' : '#00e7fe';
     ctx.stroke(path);
 
     ctx.fillStyle   = '#fff';
