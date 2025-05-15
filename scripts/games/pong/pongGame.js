@@ -7,6 +7,9 @@ import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js';
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
 import { initPauseMenu, showPauseMenu, drawPauseMenu, onEscapeKey } from './pauseMenu.js';
+import api from '../../helpers/api.js';
+import { HOSTNAME } from '../../main.js';
+import { drawTutorial } from './showTutorial.js';
 // Variables réseau
 export let mySide;
 let roomId;
@@ -30,7 +33,7 @@ export function setGameoverTrue() {
 // ID des joueurs
 let user1Id = null; // ID du joueur 1
 let user2Id = null; // ID du joueur 2
-// Noms des joueurs
+export let showTutorial = false;
 window.addEventListener('keydown', onKeyDown);
 window.addEventListener('keyup', onKeyUp);
 // Fonction pour récupérer l'ID utilisateur à partir d'un socket_id
@@ -52,21 +55,40 @@ export function getUser2Id() {
 export let playerName = "";
 export let opponentName = "";
 export let playerNames = [];
-export function onMatchFound(data) {
+export async function onMatchFound(data) {
     modePong = true;
     soloTri = false;
     soloMode = data.mode === 'solo';
     mySide = soloMode ? 0 : data.side;
     lastState = null;
-    ready = true;
+    ready = false;
     firstFrame = false;
     user1Id = data.user1Id;
     user2Id = data.user2Id;
     playerName = data.you || 'Player';
     opponentName = data.opponent || 'Opponent';
-    startPong();
+    const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`, {
+        gameid: 1
+    });
+    const payload = await response.json();
+    const isFirstGame = payload.firstGame;
+    if (isFirstGame) {
+        showTutorial = true;
+        ready = false;
+        const onStart = () => {
+            showTutorial = false;
+            ready = true;
+            window.removeEventListener('keydown', onStart);
+        };
+        window.addEventListener('keydown', onStart);
+        startPong();
+    }
+    else {
+        ready = true;
+        startPong();
+    }
 }
-export function onTriMatchFound(data) {
+export async function onTriMatchFound(data) {
     modePong = false;
     soloTri = data.mode === 'solo-tri';
     console.log('data mode =', data.mode);
@@ -81,11 +103,22 @@ export function onTriMatchFound(data) {
     playerName = data.you || 'Player';
     opponentName = data.opponent || 'Opponent';
     playerNames = Array.isArray(data.players) ? data.players : [];
+    const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`, {
+        gameid: 1
+    });
+    const firstGame = await response.json();
+    if (firstGame) {
+        console.log('firstgame =', firstGame);
+    }
     startPong();
 }
 function onGameState(state) {
     if (!running) {
         console.log('quit');
+        return;
+    }
+    if (showTutorial) {
+        drawTutorial(canvas, ctx);
         return;
     }
     lastState = state;
