@@ -157,14 +157,3 @@ function resetBall(ball: MatchState['ball']) {
   ball.vx = BALL_SPEED * Math.cos(a);
   ball.vy = BALL_SPEED * Math.sin(a);
 }
-
-// Placement et service initial de la balle côté joueur 1
-function resetFirstBall(match: MatchState) {
-  const phiServe = match.paddles[1].phi;
-  match.ball.x = RADIUS * Math.cos(phiServe);
-  match.ball.y = RADIUS * Math.sin(phiServe);
-
-  const backAngle = phiServe + Math.PI;
-  match.ball.vx = BALL_SPEED * Math.cos(backAngle);
-  match.ball.vy = BALL_SPEED * Math.sin(backAngle);
-}
