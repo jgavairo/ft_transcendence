@@ -517,7 +517,7 @@ const start = async () => {
             socket.on('sendPrivateMessage', async (data, callback) => {
                 try {
                     const {to, author, content } = data;
-                    // await dbManager.saveMessage(data.author, data.content);
+                    await dbManager.saveMessage(data.author, data.content);
                     const targetSocketid = userSocketMap.get(to);
                     if (targetSocketid) {
                         chatNs.to(targetSocketid).emit('receivePrivateMessage', {author, content });
