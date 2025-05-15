@@ -358,7 +358,7 @@ export async function renderGameOverMessage(state: MatchState) {
     }
 
     // Appeler l'API en fonction du résultat
-    if (player.lives > 0 && modePong) {
+    if (player.lives > 0 && modePong && !soloMode && !soloTri) {
       // Victoire : appeler incrementWins
       const response = await fetch('/api/games/incrementWins', {
         method: 'POST',
@@ -377,7 +377,7 @@ export async function renderGameOverMessage(state: MatchState) {
       } else {
         console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
       }
-    } else {
+    } else if (player.lives <= 0 && modePong && !soloMode && !soloTri) {
       // Défaite : appeler incrementLosses
       const response = await fetch('/api/games/incrementLosses', {
         method: 'POST',
