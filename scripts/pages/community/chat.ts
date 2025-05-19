@@ -88,20 +88,6 @@ export async function setupChat() {
         }
         const row = document.createElement("div");
         row.className = "messenger-message-row";
-        // Affiche la photo uniquement pour les messages reçus et seulement pour le premier message du groupe
-        if (!self && !isGrouped) {
-            const user = userMap.get(author);
-            const profileImg = document.createElement("img");
-            profileImg.src = user?.profile_picture || "default-profile.png";
-            profileImg.alt = `${author}'s profile picture`;
-            profileImg.className = "messenger-avatar";
-            profileImg.onclick = () => showProfileCard(user?.username || author, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
-            row.appendChild(profileImg);
-        } else {
-            const spacer = document.createElement("div");
-            spacer.className = "messenger-avatar-spacer";
-            row.appendChild(spacer);
-        }
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " messenger-bubble-mention" : "";
@@ -119,7 +105,35 @@ export async function setupChat() {
             messageContent.textContent = content;
         }
         messageContent.className = `messenger-bubble${self ? " self" : ""}${mentionClass}`;
-        row.appendChild(messageContent);
+        if (!self && !isGrouped) {
+            // Avatar à gauche, bulle à droite
+            const user = userMap.get(author);
+            const profileImg = document.createElement("img");
+            profileImg.src = user?.profile_picture || "default-profile.png";
+            profileImg.alt = `${author}'s profile picture`;
+            profileImg.className = "messenger-avatar";
+            profileImg.onclick = () => showProfileCard(user?.username || author, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+            row.appendChild(profileImg);
+            row.appendChild(messageContent);
+        } else if (!self && isGrouped) {
+            // Spacer à gauche, bulle à droite
+            const spacer = document.createElement("div");
+            spacer.className = "messenger-avatar-spacer";
+            row.appendChild(spacer);
+            row.appendChild(messageContent);
+        } else if (self && !isGrouped) {
+            // Bulle à gauche, spacer à droite (row-reverse via CSS)
+            row.appendChild(messageContent);
+            const spacer = document.createElement("div");
+            spacer.className = "messenger-avatar-spacer";
+            row.appendChild(spacer);
+        } else if (self && isGrouped) {
+            // Bulle à gauche, spacer à droite (row-reverse via CSS)
+            row.appendChild(messageContent);
+            const spacer = document.createElement("div");
+            spacer.className = "messenger-avatar-spacer";
+            row.appendChild(spacer);
+        }
         msgWrapper.appendChild(row);
         chatContainer.appendChild(msgWrapper);
         chatContainer.scrollTop = chatContainer.scrollHeight;
