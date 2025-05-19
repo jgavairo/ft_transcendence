@@ -111,6 +111,16 @@ export async function renderRankings(gameId: number, container: HTMLElement, cur
  * @returns string - HTML de la friend list
  */
 export function renderFriendList(people: { id: number; username: string; profile_picture: string; email: string; bio: string; isOnline?: boolean }[]): string {
+    if (!people || people.length === 0) {
+        return `
+            <div class="friendsSection">
+                <h3 class="sectionTitle">Friend List</h3>
+                <div class="friendsContainer nobodyToShow">
+                    <span class="nobodyToShowMsg">Please tell them this game is awesome...</span>
+                </div>
+            </div>
+        `;
+    }
     return `
         <div class="friendsSection">
             <h3 class="sectionTitle">Friend List</h3>
