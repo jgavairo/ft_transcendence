@@ -286,6 +286,12 @@ export async function setupChatWidget() {
              const item = document.createElement("div");
              item.textContent = "@" + username;
              item.className = "mention-suggestion-item";
+             // Ajout des styles inline comme dans chat.ts
+             item.style.padding = "6px 16px";
+             item.style.cursor = "pointer";
+             item.style.color = "#66c0f4";
+             item.onmouseenter = () => item.style.background = "#2a475e";
+             item.onmouseleave = () => item.style.background = "";
              item.onclick = () => {
                  // Remplace le @... par @username
                  const val = input.value;
