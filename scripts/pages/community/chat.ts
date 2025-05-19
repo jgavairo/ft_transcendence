@@ -2,6 +2,7 @@ import { io } from "socket.io-client";
 import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
+import { showErrorNotification } from "../../helpers/notifications.js";
 async function fetchCurrentUser(): Promise<string | null> {
     try {
         const response = await fetch(`http://${HOSTNAME}:3000/api/user/infos`, {
@@ -195,10 +196,16 @@ export async function setupChat() {
         }
         const text = input.value.trim();
         if (text) {
+            const mentionMatch = text.match(/^@(\w+)/);
             canSend = false;
             sendBtn.disabled = true;
-
-            const mentionMatch = text.match(/^@(\w+)/);
+            
+            if (mentionMatch && mentionMatch[1] === username) {
+                showErrorNotification("You can't mention yourself.");
+                canSend = true;
+                sendBtn.disabled = false;
+                return;
+            }
             if (mentionMatch) {
                 const targetUsername = mentionMatch[1];
                 socket.emit("sendPrivateMessage", { to: targetUsername, author: username, content: text }, (response: { success: boolean; error?: string }) => {});
