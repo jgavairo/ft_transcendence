@@ -383,3 +383,10 @@
     color: #4caf50; /* Vert pour les victoires */
     margin-left: 10px;
 }
+
+.nobodyToShowMsg {
+    color: #cbd5e0;
+    font-size: 1rem;
+    text-align: center;
+    margin-top: 2rem;
+}
