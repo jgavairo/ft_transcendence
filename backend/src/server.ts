@@ -465,15 +465,74 @@ app.get('/api/match/history/:userId', async (request: FastifyRequest, reply: Fas
 ////////////////////////////////////////////
 
 export const userSocketMap = new Map<string, string>();
+export const userSocketMapChat = new Map<string, string>();
 
 const start = async () => {
     try 
     {
         console.log("HOSTNAME", HOSTNAME);
         await dbManager.initialize();
-        
+
         await app.listen({ port: 3000, host: '0.0.0.0' });
         console.log('Fastify server + Socket.IO OK sur port 3000');
+
+        ////////////////////////////////
+        //         CHAT SOCKET        //
+        ////////////////////////////////
+        const chatNs = app.io.of('/chat');
+        chatNs.on('connection', (socket: Socket) => {
+                socket.on('register', (data) => {
+        userSocketMapChat.set(data.username, socket.id);
+        console.log("chat namespace userSocketMap:", JSON.stringify(Array.from(userSocketMapChat.entries())));
+        });
+
+            socket.on('sendPrivateMessage', async (data, callback) => {
+                try {
+                    const {to, author, content } = data;
+                    await dbManager.saveMessage(data.author, data.content);
+                    const targetSocketid = userSocketMapChat.get(to);
+                    if (targetSocketid) {
+                        chatNs.to(targetSocketid).emit('receivePrivateMessage', {author, content });
+                        if (callback) callback({ success: true });
+                    } else {
+                        if (callback) callback({ success: false, error: 'User not connected' });
+                    }
+                } catch (error) {
+                    if (callback) {
+                        callback({ success: false, error: 'Failed to send private message' });
+                    }
+                }
+            });
+
+            socket.on('sendMessage', async (data, callback) => {
+                try 
+                {
+                    // Sauvegarder le message dans la base de données
+                    await dbManager.saveMessage(data.author, data.content);
+
+                    // Diffuser le message à tous les clients connectés
+                    socket.broadcast.emit('receiveMessage', {
+                        author: data.author,
+                        content: data.content,
+                        timestamp: new Date().toISOString()
+                      });
+
+                    if (callback) {
+                        callback({ success: true });
+                    }
+                } catch (error) {
+                    console.error('Error saving message:', error);
+                    if (callback) {
+                        callback({ success: false, error: 'Failed to save message' });
+                    }
+                }
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Client disconnected:', socket.id);
+            });
+        });
+        /////////////////////////////////////////////////////////////////////////
 
         ////////////////////////////////
         //    NOTIFICATION SOCKET     //
@@ -504,64 +563,6 @@ const start = async () => {
                 console.log("notification namespace userSocketMap:", JSON.stringify(Array.from(userSocketMap.entries())));
             });
         });
-        ////////////////////////////////
-        //         CHAT SOCKET        //
-        ////////////////////////////////
-        const chatNs = app.io.of('/chat');
-        chatNs.on('connection', (socket: Socket) => {
-                socket.on('register', (data) => {
-        userSocketMap.set(data.username, socket.id);
-        console.log("chat namespace userSocketMap:", JSON.stringify(Array.from(userSocketMap.entries())));
-    });
-
-            socket.on('sendPrivateMessage', async (data, callback) => {
-                try {
-                    const {to, author, content } = data;
-                    await dbManager.saveMessage(data.author, data.content);
-                    const targetSocketid = userSocketMap.get(to);
-                    if (targetSocketid) {
-                        chatNs.to(targetSocketid).emit('receivePrivateMessage', {author, content });
-                        if (callback) callback({ success: true });
-                    } else {
-                        if (callback) callback({ success: false, error: 'User not connected' });
-                    }
-                } catch (error) {
-                    if (callback) {
-                        callback({ success: false, error: 'Failed to send private message' });
-                    }
-                }
-            });
-
-            socket.on('sendMessage', async (data, callback) => {
-                try 
-                {
-                    // Sauvegarder le message dans la base de données
-                    await dbManager.saveMessage(data.author, data.content);
-                    
-                    // Diffuser le message à tous les clients connectés
-                    socket.broadcast.emit('receiveMessage', {
-                        author: data.author,
-                        content: data.content,
-                        timestamp: new Date().toISOString()
-                      });
-
-                    if (callback) {
-                        callback({ success: true });
-                    }
-                } catch (error) {
-                    console.error('Error saving message:', error);
-                    if (callback) {
-                        callback({ success: false, error: 'Failed to save message' });
-                    }
-                }
-            });
-
-            socket.on('disconnect', () => {
-                console.log('Client disconnected:', socket.id);
-            });
-        });
-        /////////////////////////////////////////////////////////////////////////
-
         /////////////////////////////////////////////////////////////////////////
     } catch (err) {
         console.error('Error while starting the server:', err);
@@ -570,4 +571,3 @@ const start = async () => {
 };
 
 start();
-
