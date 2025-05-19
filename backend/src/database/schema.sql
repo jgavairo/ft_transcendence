@@ -50,7 +50,6 @@ CREATE TABLE IF NOT EXISTS match_history (
     FOREIGN KEY (user2_id) REFERENCES users (id)
 );
 
-
 CREATE TABLE IF NOT EXISTS game_player (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     game_id INTEGER NOT NULL,

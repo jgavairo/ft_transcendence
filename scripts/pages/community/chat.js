@@ -49,22 +49,7 @@ export async function setupChat() {
     if (!mentionBox) {
         mentionBox = document.createElement("div");
         mentionBox.id = "mention-suggestions";
-        mentionBox.style.position = "fixed"; // Utilise fixed pour overlay
-        mentionBox.style.background = "#23262e";
-        mentionBox.style.border = "1px solid #2a475e";
-        mentionBox.style.borderRadius = "8px";
-        mentionBox.style.boxShadow = "0 2px 8px #0003";
-        mentionBox.style.zIndex = "10001";
-        mentionBox.style.display = "none";
-        mentionBox.style.maxHeight = "180px";
-        mentionBox.style.overflowY = "auto";
-        mentionBox.style.fontFamily = "'Segoe UI', Arial, sans-serif";
-        mentionBox.style.fontSize = "1rem";
-        mentionBox.style.minWidth = "120px";
-        mentionBox.style.padding = "2px 0";
-        mentionBox.style.left = "0px";
-        mentionBox.style.top = "0px";
-        mentionBox.style.width = "auto";
+        mentionBox.className = "mention-suggestions-box";
         // Ajoute la box à body pour overlay flottant
         document.body.appendChild(mentionBox);
     }
@@ -264,6 +249,12 @@ export async function setupChat() {
         mentionBox.style.width = rect.width + "px";
         mentionBox.style.display = "block";
     }
+    // Ajout : repositionne la mentionBox lors du resize
+    window.addEventListener("resize", () => {
+        if (mentionActive && mentionBox.style.display === "block") {
+            updateMentionBox();
+        }
+    });
     input.addEventListener("input", (e) => {
         const val = input.value;
         const pos = input.selectionStart || 0;

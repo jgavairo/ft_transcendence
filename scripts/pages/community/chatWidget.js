@@ -63,15 +63,25 @@ function createChatWidgetHTML() {
                 <button id="close-chat-window">✖</button>
             </div>
             <div id="chatContainer"></div>
-            <div style="display:flex;padding:9px 10px 9px 10px;background:#23262e;border-top:1.5px solid #2a475e;">
+            <div class="chat-input-container">
                 <input id="chatInput" type="text" placeholder="Message..." autocomplete="off" />
                 <button id="sendMessage">Envoyer</button>
+                <div id="mention-suggestions" class="mention-suggestions-box"></div>
             </div>
         </div>
     `;
     document.body.appendChild(widget);
 }
 export async function setupChatWidget() {
+    // Ajout du conteneur pour la suggestion d'utilisateurs
+    let mentionBox = document.getElementById("mention-suggestions");
+    if (!mentionBox) {
+        mentionBox = document.createElement("div");
+        mentionBox.id = "mention-suggestions";
+        mentionBox.className = "mention-suggestions-box";
+        // Ajoute la box à body pour overlay flottant
+        document.body.appendChild(mentionBox);
+    }
     if (document.getElementById("chat-widget"))
         return; // déjà présent
     createChatWidgetHTML();
@@ -109,6 +119,7 @@ export async function setupChatWidget() {
     closeBtn.onclick = () => { chatWindow.style.display = "none"; chatBubble.style.display = "flex"; };
     const users = await fetchUsernames();
     const userMap = new Map(users.map(user => [user.username, user]));
+    const usernames = users.map(u => u.username);
     let lastAuthor = null;
     let lastMsgWrapper = null;
     const addMessage = (content, author, self = true) => {
@@ -251,6 +262,98 @@ export async function setupChatWidget() {
         if (chatWindow.style.display !== "flex") {
             unreadCount++;
             showBadge();
+        }
+    });
+    // Suggestion de mention @
+    let mentionActive = false;
+    let mentionStart = -1;
+    let filteredSuggestions = [];
+    function updateMentionBox() {
+        if (!mentionActive || filteredSuggestions.length === 0) {
+            mentionBox.style.display = "none";
+            return;
+        }
+        mentionBox.innerHTML = "";
+        filteredSuggestions.forEach(username => {
+            const item = document.createElement("div");
+            item.textContent = "@" + username;
+            item.className = "mention-suggestion-item";
+            item.onclick = () => {
+                // Remplace le @... par @username
+                const val = input.value;
+                const before = val.slice(0, mentionStart);
+                const after = val.slice(input.selectionStart);
+                input.value = before + "@" + username + " " + after;
+                mentionBox.style.display = "none";
+                mentionActive = false;
+                input.focus();
+                // Place le curseur après la mention
+                const pos = (before + "@" + username + " ").length;
+                input.setSelectionRange(pos, pos);
+            };
+            mentionBox.appendChild(item);
+        });
+        // Positionne la box juste sous l'input, overlay flottant
+        const rect = input.getBoundingClientRect();
+        mentionBox.style.left = rect.left + "px";
+        mentionBox.style.top = (rect.bottom + 2) + "px";
+        mentionBox.style.width = rect.width + "px";
+        mentionBox.style.display = "block";
+    }
+    input.addEventListener("input", (e) => {
+        const val = input.value;
+        const pos = input.selectionStart || 0;
+        // Recherche le dernier @ avant le curseur
+        const before = val.slice(0, pos);
+        const match = before.match(/@([\w]*)$/);
+        if (match) {
+            mentionActive = true;
+            mentionStart = before.lastIndexOf("@");
+            const search = match[1].toLowerCase();
+            filteredSuggestions = usernames.filter(u => u.toLowerCase().startsWith(search) && u !== username).slice(0, 8);
+            updateMentionBox();
+        }
+        else {
+            mentionActive = false;
+            mentionBox.style.display = "none";
+        }
+    });
+    // Ferme la box si on clique ailleurs
+    document.addEventListener("click", (e) => {
+        if (e.target !== input && e.target !== mentionBox) {
+            mentionBox.style.display = "none";
+            mentionActive = false;
+        }
+    });
+    // Navigation clavier (flèches + entrée)
+    input.addEventListener("keydown", (e) => {
+        if (!mentionActive || mentionBox.style.display === "none")
+            return;
+        const items = Array.from(mentionBox.children);
+        let idx = items.findIndex(item => item.classList.contains("active"));
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            if (idx >= 0)
+                items[idx].classList.remove("active");
+            idx = (idx + 1) % items.length;
+            items[idx].classList.add("active");
+        }
+        else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            if (idx >= 0)
+                items[idx].classList.remove("active");
+            idx = (idx - 1 + items.length) % items.length;
+            items[idx].classList.add("active");
+        }
+        else if (e.key === "Enter" && idx >= 0) {
+            e.preventDefault();
+            items[idx].click();
+        }
+    });
+    // Ajout : repositionne la mentionBox lors du resize
+    window.addEventListener("resize", () => {
+        if (mentionActive && mentionBox.style.display === "block") {
+            updateMentionBox();
         }
     });
 }
