@@ -252,3 +252,55 @@
     background: linear-gradient(90deg, #3895EB 60%, #195887 100%);
     color: #fff;
 }
+
+/* Styles pour la box de suggestions de mention @ */
+.mention-suggestions-box {
+    position: fixed;
+    background: #23262e;
+    border: 1px solid #2a475e;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px #0003;
+    z-index: 10001;
+    display: none;
+    max-height: 180px;
+    overflow-y: auto;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 1rem;
+    min-width: 120px;
+    padding: 2px 0;
+    left: 0px;
+    top: 0px;
+    width: auto;
+}
+
+/* Ajout : styles pour la barre d'entrée du chat */
+.chat-input-container {
+    display: flex;
+    padding: 9px 10px 9px 10px;
+    background: #23262e;
+    border-top: 1.5px solid #2a475e;
+    position: relative;
+}
+
+/* Ajout : styles pour les messages d'erreur du chat */
+.chat-error {
+    color: #ff6b6b;
+    background: #23262e;
+    padding: 12px 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    margin: 12px 0;
+}
+
+/* Ajout : styles pour les suggestions de mention */
+.mention-suggestion-item {
+    padding: 6px 16px;
+    cursor: pointer;
+    color: #66c0f4;
+    transition: background 0.15s;
+}
+.mention-suggestion-item:hover,
+.mention-suggestion-item.active {
+    background: #2a475e;
+}
