@@ -85,7 +85,7 @@ app.register(fastifyOauth2 as unknown as FastifyPluginAsync<any>,
         auth: fastifyOauth2.GOOGLE_CONFIGURATION
     },
     startRedirectPath: '/api/auth/google',
-    callbackUri: `http://${HOSTNAME}:3000/api/auth/google/callback`,
+    callbackUri: `https://${HOSTNAME}:8443/api/auth/google/callback`,
     generateStateFunction: () => {
         return 'state_' + Math.random().toString(36).substring(7);
     },
@@ -142,7 +142,7 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
 
         if (userInfo.error) {
             console.error("Google API error:", userInfo.error);
-            return reply.redirect(`http://${HOSTNAME}:8080/login?error=google`);
+            return reply.redirect(`https://${HOSTNAME}:8443/login?error=google`);
         }
 
         const result = await googleAuthHandler(userInfo);
@@ -150,7 +150,7 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
 
         if (!result.token) {
             console.error('No token generated from googleAuthHandler');
-            return reply.redirect(`http://${HOSTNAME}:8080/login?error=google`);
+            return reply.redirect(`https://${HOSTNAME}:8443/login?error=google`);
         }
 
         console.log("Setting token cookie:", result.token);
@@ -168,10 +168,10 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
         });
 
         // Redirige vers le frontend après succès
-        return reply.redirect(`http://${HOSTNAME}:8080/`);
+        return reply.redirect(`https://${HOSTNAME}:8443/`);
     } catch (error) {
         console.error('Error during Google authentication:', error);
-        return reply.redirect(`http://${HOSTNAME}:8080/login?error=google`);
+        return reply.redirect(`https://${HOSTNAME}:8443/login?error=google`);
     }
 });
 

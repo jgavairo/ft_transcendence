@@ -28,7 +28,7 @@ export class MainApp
     }
 
     static checkAuth = async () => {
-        const response = await api.get(`http://${HOSTNAME}:3000/api/auth/check`);
+        const response = await api.get(`https://${HOSTNAME}:8443/api/auth/check`);
         const text = await response.text();
         const data = JSON.parse(text);
         return data;
@@ -37,7 +37,7 @@ export class MainApp
     static getUserInfo = async () => {
         try 
         {
-            const response = await api.get(`http://${HOSTNAME}:3000/api/user/infos`);
+            const response = await api.get(`https://${HOSTNAME}:8443/api/user/infos`);
             const text = await response.text();
             const data = JSON.parse(text);
             if (data.success) 

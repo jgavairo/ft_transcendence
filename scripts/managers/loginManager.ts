@@ -63,7 +63,7 @@ export class LoginManager
                 showErrorNotification("Please enter a username and password");
                 return;
             }
-            api.post(`http://${HOSTNAME}:8080/api/auth/login`, { username, password })
+            api.post(`https://${HOSTNAME}:8443/api/auth/login`, { username, password })
             .then(response => response.json())
             .then(data => {
                 console.log('backend response:', data);
@@ -129,7 +129,7 @@ export class LoginManager
                     showErrorNotification("Passwords do not match");
                     return;
                 }
-                api.post(`http://${HOSTNAME}:8080/api/auth/register`, { username, password, email })
+                api.post(`https://${HOSTNAME}:8443/api/auth/register`, { username, password, email })
                 .then(response => response.json())
                 .then(data => {
                     console.log('backend response:', data);

@@ -7,7 +7,7 @@ const STORAGE_KEY = "people";
 
 export async function fetchUsernames(): Promise<{ id: number, username: string, profile_picture: string, email: string, bio: string, isOnline: boolean }[]> {
     try {
-        const response = await api.get(`http://${HOSTNAME}:3000/api/users`);
+        const response = await api.get(`https://${HOSTNAME}:8443/api/users`);
         const data: { success: boolean; users: any[]; message?: string } = await response.json();
         if (data.success) {
             const users = data.users.map(async (user: any) => ({
@@ -40,7 +40,7 @@ export async function renderPeopleList(filter: string = "") {
 
     try {
         const people = await fetchUsernames();
-        const response = await fetch(`http://${HOSTNAME}:3000/api/user/infos`, {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, {
             credentials: 'include'
         });
         const currentUser = await response.json();
@@ -318,7 +318,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
 
     // Récupérez les statistiques de l'utilisateur
     try {
-        const response = await fetch(`http://${HOSTNAME}:3000/api/games/1/rankings`, {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/games/1/rankings`, {
             credentials: 'include',
         });
         const rankings = await response.json();
@@ -378,7 +378,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
 async function fetchMatchHistory(userId: number): Promise<any[]> {
     try {
         // Utiliser l'API pour récupérer l'historique des matchs avec les noms des joueurs
-        const response = await fetch(`http://${HOSTNAME}:3000/api/match/history/${userId}`, {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/match/history/${userId}`, {
             credentials: 'include',
         });
         

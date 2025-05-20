@@ -5,7 +5,7 @@ import api from "../../helpers/api.js";
 const STORAGE_KEY = "people";
 export async function fetchUsernames() {
     try {
-        const response = await api.get(`http://${HOSTNAME}:3000/api/users`);
+        const response = await api.get(`https://${HOSTNAME}:8443/api/users`);
         const data = await response.json();
         if (data.success) {
             const users = data.users.map(async (user) => (Object.assign(Object.assign({}, user), { isOnline: await FriendsManager.isOnline(user.username) })));
@@ -35,7 +35,7 @@ export async function renderPeopleList(filter = "") {
     }
     try {
         const people = await fetchUsernames();
-        const response = await fetch(`http://${HOSTNAME}:3000/api/user/infos`, {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, {
             credentials: 'include'
         });
         const currentUser = await response.json();
@@ -275,7 +275,7 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     statsSection.textContent = "Loading stats...";
     // Récupérez les statistiques de l'utilisateur
     try {
-        const response = await fetch(`http://${HOSTNAME}:3000/api/games/1/rankings`, {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/games/1/rankings`, {
             credentials: 'include',
         });
         const rankings = await response.json();
@@ -327,7 +327,7 @@ export async function showProfileCard(username, profilePicture, email, bio, user
 async function fetchMatchHistory(userId) {
     try {
         // Utiliser l'API pour récupérer l'historique des matchs avec les noms des joueurs
-        const response = await fetch(`http://${HOSTNAME}:3000/api/match/history/${userId}`, {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/match/history/${userId}`, {
             credentials: 'include',
         });
         if (response.ok) {
