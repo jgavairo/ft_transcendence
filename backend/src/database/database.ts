@@ -750,6 +750,30 @@ export class DatabaseManager
         }
         return !already;
       }
+    
+      public async hasPlayed(
+        userId: number,
+        gameId: number,
+        mode: number
+      ): Promise<boolean> {
+        if (!this.db) throw new Error('DB not initialized');
+      
+        const row = await this.db.get<{ players_ids: string }>(
+          `SELECT players_ids
+             FROM game_player
+            WHERE game_id = ?
+              AND mode    = ?`,
+          [gameId, mode]
+        );
+      
+        if (!row) return false;
+        try {
+          const players: string[] = JSON.parse(row.players_ids);
+          return players.includes(String(userId));
+        } catch {
+          return false;
+        }
+      }
 }
 
 export const dbManager = DatabaseManager.getInstance();
