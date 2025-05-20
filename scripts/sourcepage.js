@@ -174,19 +174,17 @@ const gameModalHTML = `
     </div>
 `;
 const gameInfosModalHTML = (game, inLibrary) => `
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="gameInfosModal" id="gameInfosModal">
-          <div class="gameInfosModal-header">
-            <button class="closeGameInfosModal" id="closeGameInfosModal">X</button>
-          </div>
-            <div class="game-details">
-                    <h2>${game.name}</h2>
-                    <img src="${game.image}" alt="${game.name}" class="game-image">
-                    <p class="game-description">${game.description}</p>
-                    <button class="${inLibrary ? 'owned-button' : 'buybutton'}" id="${game.name}buybutton" ${inLibrary ? 'disabled' : ''}>
-                        ${inLibrary ? 'Already in library' : `Add to library ${game.price === 0 ? 'Free' : `${game.price}$`}`}
-                    </button>
-                </div>
-        </div>
-    </div>`;
+<div class="modal-overlay" id="modalOverlay">
+    <div class="gameInfosModal" id="gameInfosModal" style="background-image: url('${game.image}');">
+    <div class="gameInfosModal-overlay">
+    <h1>${game.name}</h1>
+    <div class="game-details">
+      <p class="game-description">${game.description}</p>
+      <button class="${inLibrary ? 'owned-button' : 'buybutton'}" id="${game.name}buybutton" ${inLibrary ? 'disabled' : ''}>
+        ${inLibrary ? 'Already in library' : `Add to library ${game.price === 0 ? 'Free' : `${game.price}$`}`}
+      </button>
+    </div>
+  </div>
+</div>
+</div>`;
 export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML };
