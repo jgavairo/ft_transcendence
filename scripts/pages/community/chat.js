@@ -22,9 +22,9 @@ async function fetchCurrentUser() {
         return null;
     }
 }
-async function fetchChatHistory() {
+async function fetchChatHistory(username) {
     try {
-        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history`, {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history?username=${encodeURIComponent(username)}`, {
             credentials: "include"
         });
         const data = await response.json();
@@ -140,16 +140,10 @@ export async function setupChat() {
         lastAuthor = author;
     };
     // Charger l'historique des messages
-    const chatHistory = await fetchChatHistory();
+    const chatHistory = await fetchChatHistory(username);
     // Affichage de l'historique avec groupement
     let prevAuthor = null;
     chatHistory.forEach(message => {
-        // Filtre : si le message commence par @"quelqu'un" et que ce n'est pas moi, on n'affiche pas
-        const mentionMatch = message.content.match(/^@(\w+)/);
-        if (mentionMatch && mentionMatch[1] !== username) {
-            if (!(message.author === username))
-                return;
-        }
         const isSelf = message.author === username;
         addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
