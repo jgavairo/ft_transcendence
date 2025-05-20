@@ -69,6 +69,13 @@ export function setupCard() {
             if (modal)
                 modal.innerHTML = gameInfosModalHTML(game, inLibrary);
             const overlay = document.getElementById('modalOverlay');
+            if (overlay && modal) {
+                overlay.addEventListener('click', (event) => {
+                    if (event.target === overlay) {
+                        modal.innerHTML = '';
+                    }
+                });
+            }
             const buyButton = document.querySelector('.buybutton');
             if (buyButton) {
                 buyButton.addEventListener('click', async () => {
