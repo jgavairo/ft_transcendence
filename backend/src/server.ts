@@ -19,6 +19,7 @@ import { setupGameMatchmaking } from './games/pong/matchmaking.js';
 import type { FastifyPluginAsync } from 'fastify';
 import { friendsRoutes } from './routes/friends.js';
 import { newsRoutes } from './routes/news.js';
+import { hasPlayedHandler } from './routes/game.js';
 export const JWT_SECRET = process.env.JWT_SECRET || ''
 export const HOSTNAME = process.env.HOSTNAME || 'localhost'
 
@@ -282,6 +283,13 @@ app.get('/api/games/getAll', async (request: FastifyRequest, reply: FastifyReply
     return gameRoutes.getAllGames(request, reply);
 });
 
+app.get<{
+    Params: { gameId: string; mode: string }
+  }>(
+    '/api/games/:gameId/:mode/hasPlayed',
+    { preHandler: authMiddleware },
+    hasPlayedHandler
+  );
 
 app.post<{
     Body: { gameId: number; mode: number }

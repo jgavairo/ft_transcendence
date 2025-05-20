@@ -1,5 +1,5 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { dbManager, Game } from "../database/database.js";
+import { FastifyRequest, FastifyReply, FastifyPluginAsync } from 'fastify';
+import { dbManager } from "../database/database.js";
 import { authMiddleware } from '../middleware/auth.js';
 import { AuthenticatedRequest } from './user.js';
 
@@ -45,8 +45,31 @@ const isFirstGameHandler = async ( request: FastifyRequest, reply:   FastifyRepl
     }
   };
 
+  export const hasPlayedHandler = async (
+    request: FastifyRequest<{
+      Params: { gameId: string; mode: string }
+    }>,
+    reply: FastifyReply
+  ): Promise<void> => {
+    try {
+      // L’utilisateur est déjà authentifié par le preHandler
+      const userId = (request as AuthenticatedRequest).user.id;
+      const gameId = Number(request.params.gameId);
+      const mode   = Number(request.params.mode);
+  
+      const hasPlayed = await dbManager.hasPlayed(userId, gameId, mode);
+      return reply.send({ success: true, hasPlayed });
+    } catch (err) {
+      console.error('Error in hasPlayedHandler:', err);
+      return reply
+        .status(500)
+        .send({ success: false, message: 'Internal server error' });
+    }
+  };
+
 export const gameRoutes = 
 {
     getAllGames: getAllGamesHandler,
-    isFirstGame: isFirstGameHandler
+    isFirstGame: isFirstGameHandler,
+    hasPlayed: hasPlayedHandler
 };
