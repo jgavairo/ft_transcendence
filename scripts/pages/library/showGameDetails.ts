@@ -8,9 +8,10 @@ import { showErrorNotification } from "../../helpers/notifications.js";
 interface Game {
     id: number;
     name: string;
+    price: number;
+    description: string;
     image: string;
-    description?: string;
-    // ... autres propriétés du jeu
+    is_available: boolean;
 }
 
 interface RankedPerson {

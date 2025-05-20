@@ -18,6 +18,7 @@ import fastifyOauth2 from '@fastify/oauth2';
 import { setupGameMatchmaking } from './games/pong/matchmaking.js';
 import type { FastifyPluginAsync } from 'fastify';
 import { friendsRoutes } from './routes/friends.js';
+import { newsRoutes } from './routes/news.js';
 export const JWT_SECRET = process.env.JWT_SECRET || ''
 export const HOSTNAME = process.env.HOSTNAME || 'localhost'
 
@@ -263,6 +264,14 @@ app.get('/api/friends/allFriendIds', { preHandler: authMiddleware }, async (requ
 
 app.get('/api/chat/history', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return chatRoutes.getChatHistory(request, reply);
+});
+
+////////////////
+// NEWS ROUTES //
+////////////////
+
+app.get('/api/news/getAll', async (request: FastifyRequest, reply: FastifyReply) => {
+    return newsRoutes.getAllNews(request, reply);
 });
 
 /////////////////
