@@ -50,8 +50,12 @@ CREATE TABLE IF NOT EXISTS match_history (
     FOREIGN KEY (user2_id) REFERENCES users (id)
 );
 
+
+DROP TABLE IF EXISTS game_player;
 CREATE TABLE IF NOT EXISTS game_player (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    game_id INTEGER NOT NULL,
-    players_ids TEXT DEFAULT '[]'
-)
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id      INTEGER NOT NULL,
+    mode         INTEGER NOT NULL DEFAULT 0,
+    players_ids  TEXT    NOT NULL DEFAULT '[]',
+    UNIQUE(game_id, mode)
+);
