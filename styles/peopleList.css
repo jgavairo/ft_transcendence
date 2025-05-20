@@ -34,6 +34,8 @@
     flex-direction: column;
     gap: 0.5rem; /* Réduit l'espace entre les éléments */
     padding-right: 10px;
+    max-height: 350px; /* Limite la hauteur de la liste */
+    overflow-y: auto;  /* Ajoute une barre de défilement si besoin */
 }
 
 .friend-item {
