@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import { dbManager } from "../database/database.js";
 import { JWT_SECRET } from "../server.js";
 
@@ -28,7 +29,9 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
             });
         }
         
-        if (user.password_hash !== password) {
+        // Comparaison sécurisée avec bcrypt
+        const isValid = await bcrypt.compare(password, user.password_hash);
+        if (!isValid) {
             return res.status(401).send({
                 success: false,
                 message: "Password is incorrect for this username: " + username
@@ -83,11 +86,14 @@ const registerHandler = async (req: FastifyRequest, res: FastifyReply) =>
 
     try 
     {
+        // Hashage du mot de passe avec bcrypt
+        const password_hash = await bcrypt.hash(password, 10);
+
         const userID = await dbManager.registerUser
         ({
             username: username,
             email: email,
-            password_hash: password,
+            password_hash: password_hash,
             profile_picture: '../assets/profile_pictures/default.png',
             friends: [],
             friend_requests: [],
