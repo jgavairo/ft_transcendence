@@ -4,7 +4,8 @@ import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong } from "../SocketEmit.js";
 import { connectPong, onMatchFound, onTriMatchFound, stopGame } from "../pongGame.js";
 import { socket as gameSocket } from "../network.js";
-import { launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
+import { getFirstPlay, launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
+import { showNotification } from "../../../helpers/notifications.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 export class PongMenuManager {
@@ -130,6 +131,49 @@ export class PongMenuManager {
         });
         this.menuLayer.add(buttonGroup);
     }
+    createButton2(text, x, y, action) {
+        const buttonGroup = new Konva.Group();
+        buttonGroup.x(x);
+        buttonGroup.y(y);
+        const button = new Konva.Rect({
+            width: 200,
+            height: 60,
+            fill: "#000000",
+            cornerRadius: 5,
+            opacity: 0.9,
+            stroke: '#555555',
+            strokeWidth: 2
+        });
+        const buttonText = new Konva.Text({
+            text: text,
+            fontFamily: "Press Start 2P",
+            fontSize: 16,
+            fill: "white",
+            align: 'center',
+            width: 200,
+            height: 60,
+            y: 25
+        });
+        buttonGroup.add(button);
+        buttonGroup.add(buttonText);
+        buttonGroup.on('mouseover', () => {
+            button.fill('#222222');
+            button.stroke('#777777');
+            this.menuLayer.batchDraw();
+        });
+        buttonGroup.on('mouseout', () => {
+            button.fill('#000000');
+            button.stroke('#555555');
+            this.menuLayer.batchDraw();
+        });
+        buttonGroup.on('click', action);
+        this.buttons.push({
+            group: buttonGroup,
+            text: text,
+            action: action
+        });
+        this.menuLayer.add(buttonGroup);
+    }
     getRandomColor() {
         const colors = [
             '#00FFFF', '#4B0082', '#9400D3', '#8A2BE2',
@@ -200,7 +244,7 @@ export class PongMenuManager {
         });
         this.stage.batchDraw();
     }
-    changeMenu(menuType) {
+    async changeMenu(menuType) {
         this.buttons.forEach(button => {
             button.group.destroy();
         });
@@ -217,7 +261,11 @@ export class PongMenuManager {
                 break;
             case 'play':
                 this.createButton('SOLO', gameWidth / 2 - 100, 450, () => this.changeMenu('solo'));
-                this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
+                const first = await getFirstPlay();
+                if (first)
+                    this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
+                else
+                    this.createButton2('MULTI', gameWidth / 2 - 100, 520, () => showNotification('1 game in solo remaining'));
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('main'));
                 break;
             case 'solo':
@@ -447,7 +495,7 @@ export class PongMenuManager {
             fontSize: 24,
             fill: padColor,
             x: gameWidth / 2 - 200,
-            y: -100,
+            y: -100, // Commence hors écran
             width: 400,
             align: 'center',
             shadowColor: padColor,
@@ -487,7 +535,7 @@ export class PongMenuManager {
             });
             this.particles.push({
                 shape: particle,
-                speed: -1 - Math.random() * 2,
+                speed: -1 - Math.random() * 2, // Vitesse négative pour monter
                 glowDirection: 1
             });
             this.backgroundLayer.add(particle);
@@ -639,7 +687,7 @@ export class PongMenuManager {
         }, 1000);
     }
 }
-export function displayMenu() {
+export async function displayMenu() {
     const menu = new PongMenuManager(true);
     console.log("game started");
     menu.start();

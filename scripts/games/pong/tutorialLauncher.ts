@@ -3,6 +3,14 @@ import { startSoloPong, startSoloTri } from './SocketEmit.js';
 import api from '../../helpers/api.js';
 import { HOSTNAME } from '../../main.js';
 
+export async function getFirstPlay() {
+    const response = await api.get(
+        `http://${HOSTNAME}:3000/api/games/1/1/hasPlayed`
+      );
+      const { hasPlayed } = await response.json();
+      return hasPlayed;
+}
+
 export async function launchSoloPongWithTutorial(
   modal: HTMLElement,
   username: string
@@ -15,7 +23,6 @@ export async function launchSoloPongWithTutorial(
     mode:   1
   });
   const { firstGame } = await response.json();
-
   if (firstGame) {
     drawTutorialSolo1(canvas, ctx);
     const onEnter = (e: KeyboardEvent) => {
