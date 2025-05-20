@@ -15,9 +15,9 @@ async function fetchCurrentUser() {
         return null;
     }
 }
-async function fetchChatHistory() {
+async function fetchChatHistory(username) {
     try {
-        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history`, { credentials: "include" });
+        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history?username=${encodeURIComponent(username)}`, { credentials: "include" });
         const data = await response.json();
         if (data.success)
             return data.messages;
@@ -174,14 +174,9 @@ export async function setupChatWidget() {
     const username = await fetchCurrentUser();
     if (!username)
         return;
-    const chatHistory = await fetchChatHistory();
+    const chatHistory = await fetchChatHistory(username);
     let prevAuthor = null;
     chatHistory.forEach((message, idx) => {
-        const mentionMatch = message.content.match(/^@(\w+)/);
-        if (mentionMatch && mentionMatch[1] !== username) {
-            if (!(message.author === username))
-                return;
-        }
         const isSelf = message.author === username;
         addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;

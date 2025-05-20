@@ -3,11 +3,21 @@ import { dbManager } from "../database/database.js";
 
 const getChatHistoryHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+        const username = (request.query as any).username as string;
         const messages = await dbManager.getLastMessages(50);
 
-        // Récupérer les informations des utilisateurs pour chaque message
+        // Filtrer les messages publics ou mentionnant l'utilisateur
+        const filteredMessages = messages.filter(msg => {
+            const mentionMatch = msg.content.match(/^@(\w+)/);
+            // Message public (pas de mention)
+            if (!mentionMatch) return true;
+            // Message privé pour cet utilisateur ou envoyé par lui-même
+            return mentionMatch[1] === username || msg.author === username;
+        });
+
+        // Enrichir les messages comme avant
         const enrichedMessages = await Promise.all(
-            messages.map(async (message) => {
+            filteredMessages.map(async (message) => {
                 const user = await dbManager.getUserByUsername(message.author);
                 return {
                     ...message,
