@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { dbManager } from "../database/database.js";
 import { authMiddleware } from '../middleware/auth.js';
+import bcrypt from 'bcrypt';
 
 export interface AuthenticatedRequest extends FastifyRequest
 {
@@ -132,16 +133,17 @@ const changePasswordHandler = async (request: FastifyRequest<{ Body: ChangePassw
                 message: "User not found"
             });
         }
-        const realPassword = await dbManager.getUserPassword(user.id);
-        console.log("realPassword", realPassword, "request.body.oldPassword", request.body.oldPassword);
-        if (realPassword !== request.body.oldPassword)
+        const realPasswordHash = await dbManager.getUserPassword(user.id);
+        const isValid = await bcrypt.compare(request.body.oldPassword, realPasswordHash);
+        if (!isValid)
         {
             return reply.status(401).send({
                 success: false,
                 message: "Invalid password"
             });
         }
-        await dbManager.updateUserPassword(user.id, request.body.newPassword);
+        const newHash = await bcrypt.hash(request.body.newPassword, 10);
+        await dbManager.updateUserPassword(user.id, newHash);
         return reply.send
         ({
             success: true,

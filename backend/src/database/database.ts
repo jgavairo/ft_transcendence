@@ -151,11 +151,11 @@ export class DatabaseManager
         return result.password_hash;
     }
 
-    public async updateUserPassword(userId: number, newPassword: string): Promise<void>
+    public async updateUserPassword(userId: number, newPasswordHash: string): Promise<void>
     {
         if (!this.db)
             throw new Error('Database not initialized');
-        await this.db.run('UPDATE users SET password_hash = ? WHERE id = ?', [newPassword, userId]);
+        await this.db.run('UPDATE users SET password_hash = ? WHERE id = ?', [newPasswordHash, userId]);
     }
 
     public async getUserLibrary(userId: number): Promise<number[]>
