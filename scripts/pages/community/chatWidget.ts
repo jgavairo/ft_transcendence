@@ -15,9 +15,9 @@ async function fetchCurrentUser(): Promise<string | null> {
     }
 }
 
-async function fetchChatHistory(): Promise<{ author: string, content: string, timestamp?: string }[]> {
+async function fetchChatHistory(username: string): Promise<{ author: string, content: string, timestamp?: string }[]> {
     try {
-        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history`, { credentials: "include" });
+        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history?username=${encodeURIComponent(username)}`, { credentials: "include" });
         const data = await response.json();
         if (data.success) return data.messages;
         return [];
@@ -122,6 +122,7 @@ export async function setupChatWidget() {
     closeBtn.onclick = () => { chatWindow.style.display = "none"; chatBubble.style.display = "flex"; };
 
     const users = await fetchUsernames();
+    
     const userMap = new Map(users.map(user => [user.username, user]));
     const usernames = users.map(u => u.username);
     let lastAuthor: string | null = null;
@@ -181,14 +182,9 @@ export async function setupChatWidget() {
     };
     const username = await fetchCurrentUser();
     if (!username) return;
-    const chatHistory = await fetchChatHistory();
+    const chatHistory = await fetchChatHistory(username);
     let prevAuthor: string | null = null;
     chatHistory.forEach((message: { author: string, content: string }, idx: number) => {
-        const mentionMatch = message.content.match(/^@(\w+)/);
-        if (mentionMatch && mentionMatch[1] !== username) {
-            if (!(message.author === username))
-                return;
-        }
         const isSelf = message.author === username;
         addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
