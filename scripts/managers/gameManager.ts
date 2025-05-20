@@ -8,6 +8,7 @@ export interface Game
     price: number;
     description: string;
     image: string;
+    is_available: boolean;
 }
 
 export class GameManager

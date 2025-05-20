@@ -26,7 +26,18 @@ CREATE TABLE IF NOT EXISTS games
     price REAL NOT NULL,
     description TEXT NOT NULL,
     image TEXT NOT NULL,
-    user_ids TEXT DEFAULT '[]'
+    user_ids TEXT DEFAULT '[]',
+    is_available BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS news
+(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    priority INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS game_user_rankings (

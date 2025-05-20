@@ -1,0 +1,129 @@
+/* Conteneur principal des news */
+.newscontainer {
+    width: 80%;
+    height: 38vh;
+    color: #ffffff;
+    background-color: var(--bleu-fonce);
+    border-radius: 15px;
+    margin: 20px auto;
+    margin-top: 2%;
+    position: relative;
+    overflow: hidden;  /* Cache tout ce qui dépasse */
+}
+
+/* Conteneur du carrousel qui va glisser horizontalement */
+.news-carousel {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    transition: transform 0.5s ease;  /* Animation fluide lors du défilement */
+}
+
+/* Style pour chaque news individuelle */
+.news-item {
+    min-width: 100%;  /* Prend toute la largeur du conteneur */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Overlay sombre sur l'image pour améliorer la lisibilité du texte */
+.news-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.3));
+}
+
+/* Conteneur du contenu de la news */
+.news-content {
+    position: relative;
+    z-index: 1;  /* Au-dessus de l'overlay */
+    text-align: center;
+    max-width: 800px;
+}
+
+/* Style du titre de la news */
+.news-title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--bleu-clair);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);  /* Ombre pour meilleure lisibilité */
+}
+
+/* Style de la description de la news */
+.news-description {
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+/* Conteneur des points de navigation */
+.news-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+/* Points de navigation individuels */
+.news-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+/* Point de navigation actif */
+.news-dot.active {
+    background: var(--bleu-clair);
+}
+
+/* Style des flèches de navigation */
+.news-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.5rem;
+    transition: 0.3s;
+}
+
+/* Position de la flèche précédente */
+.news-arrow.prev {
+    color: var(--gris-police);
+    left: 20px;
+    transition: 0.3s;
+}
+
+.news-arrow.prev:hover {
+    color: #ffffff;
+}
+
+/* Position de la flèche suivante */
+.news-arrow.next {
+    color: var(--gris-police);
+    right: 20px;
+    transition: 0.3s;
+}
+
+.news-arrow.next:hover {
+    color: #ffffff;
+}

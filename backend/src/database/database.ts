@@ -28,6 +28,17 @@ export interface Game {
     price: number;
     description: string;
     image: string;
+    is_available: boolean;
+}
+
+export interface News 
+{
+    id?: number;
+    title: string;
+    content: string;
+    image_url: string;
+    created_at?: string;
+    priority: number;
 }
 
 export class DatabaseManager
@@ -71,6 +82,7 @@ export class DatabaseManager
                         price: 0,
                         description: "Pong is a two-dimensional sports game that simulates table tennis. The player controls an in-game paddle by moving it vertically along the left or right side of the screen, and can use the paddle to hit a ball back and forth across the screen. The goal is to manoeuvre the ball past the opponent's paddle and into the opposing side's court, and to prevent the ball from being hit back into their own court",
                         image: "../../assets/games/pong/pong.png",
+                        is_available: true
                     },
                     {
                         id: 3,
@@ -78,18 +90,60 @@ export class DatabaseManager
                         price: 0,
                         description: "SpaceDefense est un jeu d’arcade explosif où vous incarnez un soleil en péril, attaqué par des vagues d’astéroïdes. Défendez votre orbite en tirant des lasers sur les menaces galactiques avant qu’elles ne vous percutent. Reflexes, précision et survie sont vos seules armes dans ce combat cosmique !",
                         image: "../../assets/games/SpaceDefense/SpaceDefense.png",
+                        is_available: true
                     },
+                    {
+                        id: 4,
+                        name: "Grand theft auto 6",
+                        price: 0,
+                        description: "Grand theft auto 6 is a game that allows you to drive a car and shoot at people.",
+                        image: "../../assets/games/gta6/gta6.jpg",
+                        is_available: false
+                    }
                 ];
 
                 for (const game of defaultGames) 
                 {
                     await this.db.run(
-                        'INSERT INTO games (name, price, description, image) VALUES (?, ?, ?, ?)',
-                        [game.name, game.price, game.description, game.image]
+                        'INSERT INTO games (name, price, description, image, is_available) VALUES (?, ?, ?, ?, ?)',
+                        [game.name, game.price, game.description, game.image, game.is_available]
                     );
                 }
                 console.log('Default games inserted successfully');
             }
+            const newsCount = await this.db.get('SELECT COUNT(*) as count FROM news');
+            if (newsCount.count === 0) {
+            // Insérer les news par défaut
+            const defaultNews = [
+                {
+                    title: "Launch of ft_transcendence",
+                    content: "Welcome on our new online gaming platform inspired by Steam. Discover the games, and challenge other players in real time!",
+                    image_url: "../../assets/news/launch.png",
+                    priority: 2
+                },
+                {
+                    title: "Pong 2.0 is now available",
+                    content: "Pong 2.0 is now available! Discover the new playing mode and the new features!",
+                    image_url: "../../assets/news/PongNews.jpg",
+                    priority: 1
+                },
+                {
+                    title: "Grand theft auto 6 is coming",
+                    content: "The new GTA 6 is coming and he will be on our favorite platform ft_transcendence !",
+                    image_url: "../../assets/news/gta6.jpg",
+                    priority: 0
+                }
+            ];
+
+            // Insérer chaque news dans la base de données
+            for (const news of defaultNews) {
+                await this.db.run(
+                    'INSERT INTO news (title, content, image_url, priority) VALUES (?, ?, ?, ?)',
+                    [news.title, news.content, news.image_url, news.priority]
+                );
+            }
+            console.log('Default news inserted successfully');
+        }
         }
         catch (error)
         {
@@ -750,6 +804,15 @@ export class DatabaseManager
         }
         return !already;
       }
+
+      public async getAllNews(): Promise<News[]> {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        
+        return await this.db.all(
+            'SELECT * FROM news ORDER BY priority DESC, created_at DESC'
+        );
+    }
 }
 
 export const dbManager = DatabaseManager.getInstance();

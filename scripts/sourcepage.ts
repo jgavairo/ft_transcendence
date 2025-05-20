@@ -29,9 +29,12 @@ const profileWindow = `
 const storePage = `
     <div class="storecontainer">
         <div class="newscontainer">
-            <div class="news">
-                <h2>News</h2>
+            <div class="news-carousel" id="newsCarousel">
             </div>
+            <div class="news-controls" id="newsControls">
+            </div>
+            <div class="news-arrow prev" id="prevNews">❮</div>
+            <div class="news-arrow next" id="nextNews">❯</div>
         </div>
 		  <div class="gamescontainer">
 		  </div>
@@ -183,8 +186,8 @@ const gameModalHTML = `
         <div class="game-modal" id="games-modal" style="width: 1216px; height: 816px;">
         </div>
     </div>
-`;
-
+    `;
+    
 const gameInfosModalHTML = (game: any, inLibrary: boolean) => `
 <div class="modal-overlay" id="modalOverlay">
     <div class="gameInfosModal" id="gameInfosModal" style="background-image: url('${game.image}');">
@@ -192,8 +195,10 @@ const gameInfosModalHTML = (game: any, inLibrary: boolean) => `
     <h1>${game.name}</h1>
     <div class="game-details">
       <p class="game-description">${game.description}</p>
-      <button class="${inLibrary ? 'owned-button' : 'buybutton'}" id="${game.name}buybutton" ${inLibrary ? 'disabled' : ''}>
-        ${inLibrary ? 'Already in library' : `Add to library ${game.price === 0 ? 'Free' : `${game.price}$`}`}
+      <button class="${!game.is_available ? 'owned-button' : (inLibrary ? 'owned-button' : 'buybutton')}" 
+              id="${game.name}buybutton" 
+              ${!game.is_available ? 'disabled' : ''}>
+        ${!game.is_available ? 'is not available yet' : (inLibrary ? 'Already in library' : `Add to library `)}
       </button>
     </div>
   </div>
