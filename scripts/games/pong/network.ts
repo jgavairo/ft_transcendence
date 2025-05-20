@@ -1,5 +1,5 @@
 import { io, type Socket } from 'socket.io-client';
 
-export const socket: Socket = io(`http://${window.location.hostname}:3000/game`, {
+export const socket: Socket = io(`https://${window.location.hostname}:8443/game`, {
   withCredentials: true
 });

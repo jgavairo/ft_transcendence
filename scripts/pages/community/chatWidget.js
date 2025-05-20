@@ -5,7 +5,7 @@ import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
 async function fetchCurrentUser() {
     try {
-        const response = await fetch(`http://${HOSTNAME}:3000/api/user/infos`, { credentials: "include" });
+        const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, { credentials: "include" });
         const data = await response.json();
         if (data.success)
             return data.user.username;
@@ -17,7 +17,7 @@ async function fetchCurrentUser() {
 }
 async function fetchChatHistory() {
     try {
-        const response = await fetch(`http://${HOSTNAME}:3000/api/chat/history`, { credentials: "include" });
+        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history`, { credentials: "include" });
         const data = await response.json();
         if (data.success)
             return data.messages;
@@ -186,7 +186,7 @@ export async function setupChatWidget() {
         addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
     });
-    const socket = io(`http://${HOSTNAME}:3000/chat`, {
+    const socket = io(`https://${HOSTNAME}:8443/chat`, {
         transports: ['websocket', 'polling'],
         withCredentials: true,
         reconnection: true,

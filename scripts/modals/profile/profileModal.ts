@@ -53,7 +53,7 @@ export async function setupProfileModal() {
                 return;
             }
             try {
-                const response = await api.post(`http://${HOSTNAME}:3000/api/profile/updateBio`, { bio: newBio });
+                const response = await api.post(`https://${HOSTNAME}:8443/api/profile/updateBio`, { bio: newBio });
                 const data = await response.json();
                 if (data.success) {
                     showNotification('Bio updated successfully.');
@@ -108,7 +108,7 @@ function changePassword()
             showErrorNotification('New password and old password cannot be the same');
             return;
         }
-        const response = await api.post(`http://${HOSTNAME}:3000/api/user/changePassword`, 
+        const response = await api.post(`https://${HOSTNAME}:8443/api/user/changePassword`, 
         {
             oldPassword: oldPassword.value,
             newPassword: newPassword.value
@@ -162,7 +162,7 @@ function setupChangeProfilePictureModal()
 
         try
         {
-            const response = await api.postFormData(`http://${HOSTNAME}:3000/api/profile/changePicture`, formData);
+            const response = await api.postFormData(`https://${HOSTNAME}:8443/api/profile/changePicture`, formData);
             const data = await response.json();
             if (data.success)
             {

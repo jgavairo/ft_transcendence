@@ -97,7 +97,7 @@ export async function onMatchFound(data: any) {
   user2Id     = data.user2Id;
   playerName  = data.you   || 'Player';
   opponentName= data.opponent || 'Opponent';
-  const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`,
+  const response = await api.post(`https://${HOSTNAME}:8443/api/games/isFirstGame`,
     {
       gameid: 1
     });
@@ -136,7 +136,7 @@ export async function onTriMatchFound(data: any) {
   playerName  = data.you       || 'Player';
   opponentName= data.opponent  || 'Opponent';
   playerNames = Array.isArray(data.players) ? data.players : [];
-  const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`,
+  const response = await api.post(`https://${HOSTNAME}:8443/api/games/isFirstGame`,
     {
       gameid: 1
     });

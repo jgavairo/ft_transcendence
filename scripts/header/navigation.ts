@@ -25,9 +25,9 @@ export async function setupHeader()
 {
 	attachNavigationListeners();
 	setupProfileButton()
-	const response = await api.get(`http://${HOSTNAME}:3000/api/user/infos`);
+	const response = await api.get(`https://${HOSTNAME}:8443/api/user/infos`);
 	const data = await response.json();
-	notificationSocket = io(`http://${HOSTNAME}:3000/notification`, {
+	notificationSocket = io(`https://${HOSTNAME}:8443/notification`, {
         transports: ['websocket', 'polling'],
         withCredentials: true,
         reconnection: true,
@@ -161,7 +161,7 @@ export function setupProfileButton()
 			logoutButton.addEventListener('click', async () => {
 				console.log("logout button clicked");
 				try {
-					const response = await api.get(`http://${HOSTNAME}:3000/api/auth/logout`);
+					const response = await api.get(`https://${HOSTNAME}:8443/api/auth/logout`);
 					const data = await response.json();
 					console.log('response:', data);
 					if (data.success) {

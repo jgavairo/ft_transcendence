@@ -5,7 +5,7 @@ import { HOSTNAME } from "../../main.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
 async function fetchCurrentUser() {
     try {
-        const response = await fetch(`http://${HOSTNAME}:3000/api/user/infos`, {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, {
             credentials: "include",
         });
         const data = await response.json();
@@ -24,7 +24,7 @@ async function fetchCurrentUser() {
 }
 async function fetchChatHistory() {
     try {
-        const response = await fetch(`http://${HOSTNAME}:3000/api/chat/history`, {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history`, {
             credentials: "include"
         });
         const data = await response.json();
@@ -155,7 +155,7 @@ export async function setupChat() {
         prevAuthor = message.author;
     });
     // Connecter le client au serveur socket.IO
-    const socket = io(`http://${HOSTNAME}:3000/chat`, {
+    const socket = io(`https://${HOSTNAME}:8443/chat`, {
         transports: ['websocket', 'polling'],
         withCredentials: true,
         reconnection: true,

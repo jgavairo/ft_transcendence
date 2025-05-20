@@ -1,4 +1,4 @@
 import { io } from 'socket.io-client';
-export const socket = io(`http://${window.location.hostname}:3000/game`, {
+export const socket = io(`https://${window.location.hostname}:8443/game`, {
     withCredentials: true
 });
