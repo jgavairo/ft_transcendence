@@ -1,9 +1,10 @@
 // @ts-ignore
 import Konva from "https://cdn.skypack.dev/konva";
 import { GameManager } from "../../../managers/gameManager.js";
-import { joinQueue, joinTriQueue, startSoloPong, startSoloTri } from "../SocketEmit.js";
+import { joinQueue, joinTriQueue, startSoloPong } from "../SocketEmit.js";
 import { connectPong, onMatchFound, onTriMatchFound, stopGame } from "../pongGame.js";
 import { socket as gameSocket } from "../network.js";
+import { launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 export class PongMenuManager {
@@ -421,10 +422,10 @@ export class PongMenuManager {
                 console.log('Current user for solo 2 players:', username);
                 switch (nbPlayers) {
                     case 2:
-                        startSoloPong(username);
+                        await launchSoloPongWithTutorial(modal, username);
                         break;
                     case 3:
-                        startSoloTri(username);
+                        await launchSoloTriWithTutorial(modal, username);
                         break;
                 }
             }

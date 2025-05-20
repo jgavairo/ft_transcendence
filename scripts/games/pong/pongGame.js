@@ -7,9 +7,6 @@ import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js';
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
 import { initPauseMenu, showPauseMenu, drawPauseMenu, onEscapeKey } from './pauseMenu.js';
-import api from '../../helpers/api.js';
-import { HOSTNAME } from '../../main.js';
-import { drawTutorialSolo1, drawTutorialSolo2 } from './showTutorial.js';
 // Variables réseau
 export let mySide;
 let roomId;
@@ -33,8 +30,10 @@ export function setGameoverTrue() {
 // ID des joueurs
 let user1Id = null; // ID du joueur 1
 let user2Id = null; // ID du joueur 2
-export let showTutorial1 = false;
-export let showTutorial2 = false;
+export let showTutorial = false;
+export function setShowTutoFalse() {
+    showTutorial = false;
+}
 window.addEventListener('keydown', onKeyDown);
 window.addEventListener('keyup', onKeyUp);
 // Fonction pour récupérer l'ID utilisateur à partir d'un socket_id
@@ -68,26 +67,8 @@ export async function onMatchFound(data) {
     user2Id = data.user2Id;
     playerName = data.you || 'Player';
     opponentName = data.opponent || 'Opponent';
-    const response = await api.post(`https://${HOSTNAME}:8443/api/games/isFirstGame`, {
-        gameid: 1
-    });
-    const payload = await response.json();
-    const isFirstGame1 = payload.firstGame;
-    if (isFirstGame1) {
-        showTutorial1 = true;
-        ready = false;
-        const onStart = () => {
-            showTutorial1 = false;
-            ready = true;
-            window.removeEventListener('keydown', onStart);
-        };
-        window.addEventListener('keydown', onStart);
-        startPong();
-    }
-    else {
-        ready = true;
-        startPong();
-    }
+    startPong();
+    ready = true;
 }
 export async function onTriMatchFound(data) {
     modePong = false;
@@ -104,37 +85,11 @@ export async function onTriMatchFound(data) {
     playerName = data.you || 'Player';
     opponentName = data.opponent || 'Opponent';
     playerNames = Array.isArray(data.players) ? data.players : [];
-    const response = await api.post(`https://${HOSTNAME}:8443/api/games/isFirstGame`, {
-        gameid: 1
-    });
-    const payload = await response.json();
-    const isFirstGame2 = payload.firstGame;
-    if (isFirstGame2) {
-        showTutorial2 = true;
-        ready = false;
-        const onStart = () => {
-            showTutorial2 = false;
-            ready = true;
-            window.removeEventListener('keydown', onStart);
-        };
-        window.addEventListener('keydown', onStart);
-        startPong();
-    }
-    else {
-        ready = true;
-        startPong();
-    }
+    ready = true;
+    startPong();
 }
 function onGameState(state) {
     if (!running) {
-        return;
-    }
-    if (showTutorial1 && modePong == true) {
-        drawTutorialSolo1(canvas, ctx);
-        return;
-    }
-    if (showTutorial2 && modePong == false) {
-        drawTutorialSolo2(canvas, ctx);
         return;
     }
     lastState = state;
@@ -338,6 +293,7 @@ function onKeyUp(e) {
 }
 // Initialise le canvas et le contexte
 export function startPong() {
+    console.log('startpong lance');
     const modal = document.getElementById('games-modal');
     if (modal)
         modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';

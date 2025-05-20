@@ -273,9 +273,25 @@ app.get('/api/games/getAll', async (request: FastifyRequest, reply: FastifyReply
     return gameRoutes.getAllGames(request, reply);
 });
 
-app.post('/api/games/isFirstGame', async (request: FastifyRequest, reply: FastifyReply) => {
-    return gameRoutes.isFirstGame(request, reply);
-});
+
+app.post<{
+    Body: { gameId: number; mode: number }
+  }>(
+    '/api/games/isFirstGame',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['gameId','mode'],
+          properties: {
+            gameId: { type: 'integer' },
+            mode:   { type: 'integer', minimum: 0, maximum: 3 }
+          }
+        }
+      }
+    },
+    gameRoutes.isFirstGame   // ← pas de wrapper, Fastify voit direct le bon type
+  );
 
 //////////////////
 // STATS ROUTES //

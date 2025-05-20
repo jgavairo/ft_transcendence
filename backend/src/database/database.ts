@@ -704,39 +704,47 @@ export class DatabaseManager
         }
     }
 
-    public async isFirstGame(userId: number, gameId: number): Promise<boolean> {
-        if (!this.db) throw new Error('Database not initialized');
-    
-        const row = await this.db.get<{ id: number, players_ids: string }>(
+    public async isFirstGame(
+        userId: number,
+        gameId: number,
+        mode: number
+      ): Promise<boolean> {
+        if (!this.db) throw new Error('DB not initialized');
+
+        const row = await this.db.get<{ id: number; players_ids: string }>(
           `SELECT id, players_ids
-           FROM game_player
-           WHERE game_id = ?`,
-          [gameId]
+             FROM game_player
+            WHERE game_id = ?
+              AND mode    = ?`,
+          [gameId, mode]
         );
-    
+      
         let players: string[] = [];
-        let recordId: number | undefined;
-    
+        let recordId: number|undefined;
+      
         if (row) {
           recordId = row.id;
           try { players = JSON.parse(row.players_ids); }
           catch { players = []; }
         }
-    
+      
         const already = players.includes(String(userId));
         if (!already) {
           players.push(String(userId));
           const json = JSON.stringify(players);
-    
+      
           if (recordId) {
             await this.db.run(
-              `UPDATE game_player SET players_ids = ? WHERE id = ?`,
+              `UPDATE game_player
+                  SET players_ids = ?
+                WHERE id = ?`,
               [json, recordId]
             );
           } else {
             await this.db.run(
-              `INSERT INTO game_player (game_id, players_ids) VALUES (?, ?)`,
-              [gameId, json]
+              `INSERT INTO game_player (game_id, mode, players_ids)
+               VALUES (?, ?, ?)`,
+              [gameId, mode, json]
             );
           }
         }
