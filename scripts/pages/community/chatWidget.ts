@@ -73,6 +73,25 @@ function createChatWidgetHTML() {
     document.body.appendChild(widget);
 }
 
+const blockedCache: Record<string, boolean> = {};
+
+async function isBlocked(author: string): Promise<boolean> {
+    if (blockedCache[author] !== undefined) return blockedCache[author];
+    try {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/user/isBlocked`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: author })
+        });
+        const data = await response.json();
+        blockedCache[author] = !!data.isBlocked;
+        return blockedCache[author];
+    } catch {
+        return false;
+    }
+}
+
 export async function setupChatWidget() {
 
         // Ajout du conteneur pour la suggestion d'utilisateurs
@@ -127,7 +146,7 @@ export async function setupChatWidget() {
     const usernames = users.map(u => u.username);
     let lastAuthor: string | null = null;
     let lastMsgWrapper: HTMLDivElement | null = null;
-    
+
     const addMessage = (content: string, author: string, self = true) => {
         const isGrouped = lastAuthor === author;
         const msgWrapper = document.createElement("div");
@@ -184,11 +203,12 @@ export async function setupChatWidget() {
     if (!username) return;
     const chatHistory = await fetchChatHistory(username);
     let prevAuthor: string | null = null;
-    chatHistory.forEach((message: { author: string, content: string }, idx: number) => {
+    for (const message of chatHistory) {
         const isSelf = message.author === username;
+        if (!isSelf && await isBlocked(message.author)) continue;
         addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
-    });
+    }
     const socket = io(`https://${HOSTNAME}:8443/chat`, {
         transports: ['websocket', 'polling'],
         withCredentials: true,
@@ -251,8 +271,9 @@ export async function setupChatWidget() {
         }
     });
     input.addEventListener("keydown", e => { if (e.key === "Enter") sendBtn.click(); });
-    socket.on("receiveMessage", (messageData: { author: string, content: string }) => {
+    socket.on("receiveMessage", async (messageData: { author: string, content: string }) => {
         if (messageData.author === username) return;
+        if (await isBlocked(messageData.author)) return;
         addMessage(messageData.content, messageData.author, false);
         if (chatWindow.style.display !== "flex") {
             unreadCount++;
@@ -260,7 +281,8 @@ export async function setupChatWidget() {
         }
     });
 
-    socket.on("receivePrivateMessage", (messageData: { author: string, content: string }) => {
+    socket.on("receivePrivateMessage", async (messageData: { author: string, content: string }) => {
+        if (await isBlocked(messageData.author)) return;
         addMessage(messageData.content, messageData.author, false);
         if (chatWindow.style.display !== "flex") {
             unreadCount++;
