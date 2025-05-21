@@ -356,11 +356,12 @@ export class PongMenuManager
                 break;
             case 'play':
                 this.createButton('SOLO', gameWidth / 2 - 100, 450, () => this.changeMenu('solo'));
-                const first = await getFirstPlay();
-                if (first)
-                    this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
-                else
-                    this.createButton2('MULTI', gameWidth / 2 - 100, 520, () => showNotification('1 game in solo remaining'));
+                // const first = await getFirstPlay();
+                // if (first)
+                //     this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
+                // else
+                //     this.createButton2('MULTI', gameWidth / 2 - 100, 520, () => showNotification('1 game in solo remaining'));
+                this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('main'));
                 break;
             case 'solo':
@@ -847,4 +848,3 @@ export async function displayMenu() : Promise<void>
     console.log("game started");
     menu.start();
 }
-    
