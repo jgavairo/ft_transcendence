@@ -66,7 +66,7 @@ function createChatWidgetHTML() {
             <div class="chat-input-container">
                 <input id="chatInput" type="text" placeholder="Message..." autocomplete="off" />
                 <button id="sendMessage">Envoyer</button>
-                <div id="mention-suggestions" class="mention-suggestions-box"></div>
+                <div id="mention-suggestions" class="chat-widget-mention-suggestions-box"></div>
             </div>
         </div>
     `;
@@ -99,7 +99,7 @@ export async function setupChatWidget() {
     if (!mentionBox) {
         mentionBox = document.createElement("div");
         mentionBox.id = "mention-suggestions";
-        mentionBox.className = "mention-suggestions-box";
+        mentionBox.className = "chat-widget-mention-suggestions-box";
         // Ajoute la box à body pour overlay flottant
         document.body.appendChild(mentionBox);
     }
@@ -150,48 +150,46 @@ export async function setupChatWidget() {
     const addMessage = (content: string, author: string, self = true) => {
         const isGrouped = lastAuthor === author;
         const msgWrapper = document.createElement("div");
-        msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
-        // Affiche le nom uniquement pour les messages reçus et seulement pour le premier message du groupe
+        msgWrapper.className = `chat-widget-messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
         if (!self && !isGrouped) {
             const user = userMap.get(author);
             const usernameSpan = document.createElement("span");
             usernameSpan.textContent = user?.username || author;
-            usernameSpan.className = `messenger-username`;
+            usernameSpan.className = `chat-widget-messenger-username`;
             msgWrapper.appendChild(usernameSpan);
         }
         const row = document.createElement("div");
-        row.className = "messenger-message-row";
-        // Affiche la photo uniquement pour les messages reçus et seulement pour le premier message du groupe
+        row.className = "chat-widget-messenger-message-row";
         if (!self && !isGrouped) {
             const user = userMap.get(author);
             const profileImg = document.createElement("img");
             profileImg.src = user?.profile_picture || "default-profile.png";
             profileImg.alt = `${author}'s profile picture`;
-            profileImg.className = "messenger-avatar";
+            profileImg.className = "chat-widget-messenger-avatar";
             profileImg.onclick = () => showProfileCard(user?.username || author, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
             row.appendChild(profileImg);
         } else {
             const spacer = document.createElement("div");
-            spacer.className = "messenger-avatar-spacer";
+            spacer.className = "chat-widget-messenger-avatar-spacer";
             row.appendChild(spacer);
         }
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
-        let mentionClass = (!self && mentionMatch) ? " messenger-bubble-mention" : "";
+        let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
         if (!self && mentionMatch) {
             messageContent.innerHTML = content.replace(
                 /^@(\w+)/,
-                '<span class="mention">@$1</span>'
+                '<span class="chat-widget-mention">@$1</span>'
             );
         } else if (self && mentionMatch) {
             messageContent.innerHTML = content.replace(
                 /^@(\w+)/,
-                '<span class="mention self">@$1</span>'
+                '<span class="chat-widget-mention self">@$1</span>'
             );
         } else {
             messageContent.textContent = content;
         }
-        messageContent.className = `messenger-bubble${self ? " self" : ""}${mentionClass}`;
+        messageContent.className = `chat-widget-messenger-bubble${self ? " self" : ""}${mentionClass}`;
         row.appendChild(messageContent);
         msgWrapper.appendChild(row);
         chatContainer.appendChild(msgWrapper);
@@ -303,8 +301,7 @@ export async function setupChatWidget() {
          filteredSuggestions.forEach(username => {
              const item = document.createElement("div");
              item.textContent = "@" + username;
-             item.className = "mention-suggestion-item";
-             // Ajout des styles inline comme dans chat.ts
+             item.className = "chat-widget-mention-suggestion-item";
              item.style.padding = "6px 16px";
              item.style.cursor = "pointer";
              item.style.color = "#66c0f4";
