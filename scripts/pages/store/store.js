@@ -4,4 +4,3 @@ export async function setupStore() {
     setupNews();
     setupGameList();
 }
-document.addEventListener('DOMContentLoaded', setupStore);

@@ -345,7 +345,11 @@ export async function showProfileCard(username: string, profilePicture: string, 
             blockButton.prepend(iconSpan);
         }
         blockButton.disabled = false;
-        // Ajout : rafraîchir tout le site après blocage/déblocage
+        // Sauvegarde la page courante avant reload
+        const activeBtn = document.querySelector('.activebutton');
+        if (activeBtn && activeBtn.id) {
+            localStorage.setItem('currentPage', activeBtn.id.replace('button', ''));
+        }
         window.location.reload();
     });
 

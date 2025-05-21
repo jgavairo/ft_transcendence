@@ -115,12 +115,12 @@ export async function setupChat() {
         if (!self && mentionMatch) {
             messageContent.innerHTML = content.replace(
                 /^@(\w+)/,
-                '<span class="mention">@$1</span>'
+                '<span class="chat-mention">@$1</span>'
             );
         } else if (self && mentionMatch) {
             messageContent.innerHTML = content.replace(
                 /^@(\w+)/,
-                '<span class="mention self">@$1</span>'
+                '<span class="chat-mention self">@$1</span>'
             );
         } else {
             messageContent.textContent = content;

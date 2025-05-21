@@ -1,12 +1,19 @@
 var _a;
-import { storePage, header } from "./sourcepage.js";
+import { storePage, libraryPage, header } from "./sourcepage.js";
 import { setupHeader } from "./header/navigation.js";
 import { setupStore } from "./pages/store/store.js";
 import api from "./helpers/api.js";
 import { LoginManager } from "./managers/loginManager.js";
 import { setupChatWidget, removeChatWidget } from "./pages/community/chatWidget.js";
+import { showCommunityPage } from "./pages/community/community.js";
+import { setupLibrary } from "./games/library.js"; // Ajoute cette ligne si tu as une fonction d'init pour la library
 export const HOSTNAME = window.location.hostname;
 export async function updateChatWidgetVisibility() {
+    // Ne recharge pas le widget chat si on est sur la page community
+    const currentPage = localStorage.getItem('currentPage') || 'store';
+    if (currentPage === 'community') {
+        return;
+    }
     if (await LoginManager.isLoggedIn()) {
         setupChatWidget();
     }
@@ -52,8 +59,51 @@ export class MainApp {
             console.error('Main element not found');
             return;
         }
-        mainElement.innerHTML = storePage;
-        setupStore();
+        const currentPage = localStorage.getItem('currentPage') || 'store';
+        setTimeout(() => {
+            const storeBtn = document.getElementById('storebutton');
+            const libraryBtn = document.getElementById('librarybutton');
+            const communityBtn = document.getElementById('communitybutton');
+            if (storeBtn && libraryBtn && communityBtn) {
+                storeBtn.classList.remove('activebutton');
+                libraryBtn.classList.remove('activebutton');
+                communityBtn.classList.remove('activebutton');
+                storeBtn.classList.add('button');
+                libraryBtn.classList.add('button');
+                communityBtn.classList.add('button');
+                if (currentPage === 'store') {
+                    storeBtn.classList.add('activebutton');
+                    storeBtn.classList.remove('button');
+                }
+                else if (currentPage === 'library') {
+                    libraryBtn.classList.add('activebutton');
+                    libraryBtn.classList.remove('button');
+                }
+                else if (currentPage === 'community') {
+                    communityBtn.classList.add('activebutton');
+                    communityBtn.classList.remove('button');
+                }
+            }
+        }, 0);
+        if (currentPage === 'store') {
+            mainElement.innerHTML = storePage;
+            setupStore();
+        }
+        else if (currentPage === 'library') {
+            mainElement.innerHTML = libraryPage;
+            // Correction : appelle setupLibrary après avoir injecté le HTML
+            setTimeout(() => {
+                if (typeof setupLibrary === 'function')
+                    setupLibrary();
+            }, 0);
+        }
+        else if (currentPage === 'community') {
+            showCommunityPage();
+        }
+        else {
+            mainElement.innerHTML = storePage;
+            setupStore();
+        }
     }
 }
 _a = MainApp;
