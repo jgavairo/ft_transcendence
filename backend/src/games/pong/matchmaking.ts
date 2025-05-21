@@ -9,13 +9,11 @@ interface PlayerInfo {
   mode: 'solo' | 'multi' | 'tri' | 'solo-tri';
 }
 
-// interface Tournament {
-//   id: string;                // identifiant unique du tournoi
-//   size: 4|8|16;              // nombre de participants
-//   players: string[];         // liste de socket.id inscrits
-//   round: number;             // numéro de tour en cours (1 = huitièmes, 2 = quarts, etc.)
-//   brackets: string[][];      // tableaux de paires de socket.id pour chaque match
-// }
+interface Tournament {
+  id: string;
+  size: 4|8;
+  slots: Array<{ socketId?: string; username?: string }>;
+}
 
 interface Player { id: string; username: string; }
 
@@ -27,6 +25,12 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   let triQueue: Player[] = [];
   const matchStates = new Map<string, MatchState>();
   const triMatchStates = new Map<string, TriMatchState>();
+  // Map des tournois complets ou en attente, groupés par id
+  const tournaments = new Map<string, Tournament>();
+  // Map pour le tournoi en attente pour chaque taille (4 ou 8)
+  const waitingBySize = new Map<4|8, Tournament>();
+  // Compteur simple pour générer un ID unique
+  let tournamentCounter = 0;
 
   // Fonction utilitaire pour récupérer l'ID utilisateur à partir d'un socket_id
   function getUserIdFromSocketId(socketId: string): string | undefined {
@@ -34,6 +38,43 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   }
 
   gameNs.on('connection', socket => {
+    
+    // TOURNAMENT
+    socket.on('joinTournament', async ({
+      size,        // 4 ou 8
+      username,
+      userId
+    }: {
+      size: 4|8;
+      username: string;
+      userId?: string;
+    }) => {
+      // (optionnel) stocker l'userId
+      if (userId) socketToUserId.set(socket.id, userId);
+    
+      // a) Récupère ou crée le tournoi en attente pour cette taille
+      let tourn = waitingBySize.get(size);
+      if (!tourn || tourn.slots.every(s => s.socketId)) {
+        const id = `tourn-${++tournamentCounter}`;
+        tourn = { id, size, slots: Array.from({ length: size }, () => ({ })) };
+        tournaments.set(id, tourn);
+        waitingBySize.set(size, tourn);
+      }
+    
+      // b) Inscrit ce joueur dans la première case libre
+      const idx = tourn.slots.findIndex(s => !s.socketId);
+      tourn.slots[idx] = { socketId: socket.id, username };
+      socket.join(tourn.id);
+    
+      // c) S'il est complet maintenant, on le retire de waiting
+      if (tourn.slots.every(s => s.socketId)) {
+        waitingBySize.delete(size);
+      }
+    
+      // d) Broadcast à tous dans ce tournoi
+      gameNs.to(tourn.id).emit('tournamentSlotUpdate', { index: idx, username });
+    });
+    
     // 1) SOLO CLASSIC
     socket.on('startSolo', ({ username, userId }: { username: string, userId?: string }) => {
       // Stocker l'association socket_id -> user_id si disponible
