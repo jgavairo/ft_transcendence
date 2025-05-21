@@ -160,11 +160,53 @@ const changePasswordHandler = async (request: FastifyRequest<{ Body: ChangePassw
     }
 };
 
+const blockUserHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const { username } = request.body as { username: string };
+        if (!username) return reply.status(400).send({ success: false, message: "Username required" });
+        await dbManager.blockUser((request as AuthenticatedRequest).user.id, username);
+        return reply.send({ success: true });
+    } catch (error) {
+        console.error("Error in blockUserHandler:", error);
+        return reply.status(500).send({ success: false, message: "Erreur serveur" });
+    }
+};
+
+const unblockUserHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const { username } = request.body as { username: string };
+        if (!username) return reply.status(400).send({ success: false, message: "Username required" });
+        await dbManager.unblockUser((request as AuthenticatedRequest).user.id, username);
+        return reply.send({ success: true });
+    } catch (error) {
+        console.error("Error in unblockUserHandler:", error);
+        return reply.status(500).send({ success: false, message: "Erreur serveur" });
+    }
+};
+
+const isBlockedHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const { username } = request.body as { username: string };
+        if (!username) return reply.status(400).send({ success: false, message: "Username required" });
+        const isBlocked = await dbManager.isUserBlocked((request as AuthenticatedRequest).user.id, username);
+        return reply.send({ success: true, isBlocked });
+    } catch (error) {
+        console.error("Error in isBlockedHandler:", error);
+        return reply.status(500).send({ success: false, message: "Erreur serveur" });
+    }
+};
+
 export const userRoutes = 
 {
     getInfos: getInfosHandler,
     getUserLibrary: getUserLibraryHandler,
     getAllUsers: getAllUsersHandler,
     addGame: addGameHandler,
-    changePassword: changePasswordHandler
+    changePassword: changePasswordHandler,
+    blockUser: blockUserHandler,
+    unblockUser: unblockUserHandler,
+    isBlocked: isBlockedHandler,
 };
