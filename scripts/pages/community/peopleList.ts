@@ -278,6 +278,77 @@ export async function showProfileCard(username: string, profilePicture: string, 
     card.id = "profileCard";
     card.className = "profile-card";
 
+    // Ajoutez un conteneur pour le bouton block/unblock en haut à gauche
+    const topLeftContainer = document.createElement("div");
+    topLeftContainer.style.position = "absolute";
+    topLeftContainer.style.top = "10px";
+    topLeftContainer.style.left = "10px";
+    topLeftContainer.style.zIndex = "2";
+    topLeftContainer.style.display = "flex";
+    topLeftContainer.style.alignItems = "center";
+    // Ajoutez un bouton Block/Unblock avec une icône
+    const blockButton = document.createElement("button");
+    blockButton.className = "profile-card-block";
+    blockButton.style.display = "flex";
+    blockButton.style.alignItems = "center";
+    blockButton.style.gap = "4px";
+    blockButton.textContent = "Loading...";
+
+    // Icône
+    const iconSpan = document.createElement("span");
+    iconSpan.className = "block-icon";
+    iconSpan.textContent = "🔒"; // Valeur par défaut, changée plus bas
+
+    // Vérifier si l'utilisateur est bloqué
+    let isBlocked = false;
+    try {
+        const resp = await fetch(`https://${HOSTNAME}:8443/api/user/isBlocked`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username })
+        });
+        const data = await resp.json();
+        isBlocked = data.isBlocked;
+        blockButton.textContent = isBlocked ? "Unblock" : "Block";
+        iconSpan.textContent = isBlocked ? "🔓" : "🔒";
+    } catch (e) {
+        blockButton.textContent = "Block";
+        iconSpan.textContent = "🔒";
+    }
+    // Ajoute l'icône au bouton (avant le texte)
+    blockButton.prepend(iconSpan);
+
+    blockButton.addEventListener("click", async () => {
+        blockButton.disabled = true;
+        if (!isBlocked) {
+            await fetch(`https://${HOSTNAME}:8443/api/user/block`, {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username })
+            });
+            isBlocked = true;
+            blockButton.textContent = "Unblock";
+            iconSpan.textContent = "🔓";
+            blockButton.prepend(iconSpan);
+        } else {
+            await fetch(`https://${HOSTNAME}:8443/api/user/unblock`, {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username })
+            });
+            isBlocked = false;
+            blockButton.textContent = "Block";
+            iconSpan.textContent = "🔒";
+            blockButton.prepend(iconSpan);
+        }
+        blockButton.disabled = false;
+    });
+
+    topLeftContainer.appendChild(blockButton);
+
     // Ajoutez l'image de profil
     const img = document.createElement("img");
     const isOnline = await FriendsManager.isOnline(username);
@@ -355,12 +426,17 @@ export async function showProfileCard(username: string, profilePicture: string, 
         statsSection.textContent = "Failed to load stats.";
     }
 
+    // Ajoutez le bouton block/unblock en haut à gauche AVANT les autres éléments
+    card.style.position = "relative";
+    card.appendChild(topLeftContainer);
+
     // Ajoutez les éléments à la carte
     card.appendChild(closeButton);
     card.appendChild(img);
     card.appendChild(name);
     card.appendChild(emailElement);
     card.appendChild(bioElement);
+    // (ne pas ajouter blockButton ici, il est déjà dans topLeftContainer)
     card.appendChild(statsSection);
 
     // Ajoutez la carte à l'overlay

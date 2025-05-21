@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
     library TEXT DEFAULT '[]',
     attempting_friend_ids TEXT DEFAULT '[]',
     friends TEXT DEFAULT '[]',
-    friend_requests TEXT DEFAULT '[]'
+    friend_requests TEXT DEFAULT '[]',
+    blocked_users TEXT DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS messages (
