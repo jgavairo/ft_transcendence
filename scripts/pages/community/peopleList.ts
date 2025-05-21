@@ -427,7 +427,6 @@ export async function showProfileCard(username: string, profilePicture: string, 
     }
 
     // Ajoutez le bouton block/unblock en haut à gauche AVANT les autres éléments
-    card.style.position = "relative";
     card.appendChild(topLeftContainer);
 
     // Ajoutez les éléments à la carte

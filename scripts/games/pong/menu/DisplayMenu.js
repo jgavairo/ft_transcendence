@@ -495,7 +495,7 @@ export class PongMenuManager {
             fontSize: 24,
             fill: padColor,
             x: gameWidth / 2 - 200,
-            y: -100,
+            y: -100, // Commence hors écran
             width: 400,
             align: 'center',
             shadowColor: padColor,
@@ -535,7 +535,7 @@ export class PongMenuManager {
             });
             this.particles.push({
                 shape: particle,
-                speed: -1 - Math.random() * 2,
+                speed: -1 - Math.random() * 2, // Vitesse négative pour monter
                 glowDirection: 1
             });
             this.backgroundLayer.add(particle);
