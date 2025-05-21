@@ -345,6 +345,8 @@ export async function showProfileCard(username: string, profilePicture: string, 
             blockButton.prepend(iconSpan);
         }
         blockButton.disabled = false;
+        // Ajout : rafraîchir tout le site après blocage/déblocage
+        window.location.reload();
     });
 
     topLeftContainer.appendChild(blockButton);

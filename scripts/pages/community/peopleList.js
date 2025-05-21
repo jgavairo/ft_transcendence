@@ -307,6 +307,8 @@ export async function showProfileCard(username, profilePicture, email, bio, user
             blockButton.prepend(iconSpan);
         }
         blockButton.disabled = false;
+        // Ajout : rafraîchir tout le site après blocage/déblocage
+        window.location.reload();
     });
     topLeftContainer.appendChild(blockButton);
     // Ajoutez l'image de profil
@@ -377,7 +379,6 @@ export async function showProfileCard(username, profilePicture, email, bio, user
         statsSection.textContent = "Failed to load stats.";
     }
     // Ajoutez le bouton block/unblock en haut à gauche AVANT les autres éléments
-    // card.style.position = "relative";
     card.appendChild(topLeftContainer);
     // Ajoutez les éléments à la carte
     card.appendChild(closeButton);

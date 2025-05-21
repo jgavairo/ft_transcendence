@@ -72,6 +72,25 @@ function createChatWidgetHTML() {
     `;
     document.body.appendChild(widget);
 }
+const blockedCache = {};
+async function isBlocked(author) {
+    if (blockedCache[author] !== undefined)
+        return blockedCache[author];
+    try {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/user/isBlocked`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: author })
+        });
+        const data = await response.json();
+        blockedCache[author] = !!data.isBlocked;
+        return blockedCache[author];
+    }
+    catch (_a) {
+        return false;
+    }
+}
 export async function setupChatWidget() {
     // Ajout du conteneur pour la suggestion d'utilisateurs
     let mentionBox = document.getElementById("mention-suggestions");
@@ -176,11 +195,13 @@ export async function setupChatWidget() {
         return;
     const chatHistory = await fetchChatHistory(username);
     let prevAuthor = null;
-    chatHistory.forEach((message, idx) => {
+    for (const message of chatHistory) {
         const isSelf = message.author === username;
+        if (!isSelf && await isBlocked(message.author))
+            continue;
         addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
-    });
+    }
     const socket = io(`https://${HOSTNAME}:8443/chat`, {
         transports: ['websocket', 'polling'],
         withCredentials: true,
@@ -243,8 +264,10 @@ export async function setupChatWidget() {
     });
     input.addEventListener("keydown", e => { if (e.key === "Enter")
         sendBtn.click(); });
-    socket.on("receiveMessage", (messageData) => {
+    socket.on("receiveMessage", async (messageData) => {
         if (messageData.author === username)
+            return;
+        if (await isBlocked(messageData.author))
             return;
         addMessage(messageData.content, messageData.author, false);
         if (chatWindow.style.display !== "flex") {
@@ -252,7 +275,9 @@ export async function setupChatWidget() {
             showBadge();
         }
     });
-    socket.on("receivePrivateMessage", (messageData) => {
+    socket.on("receivePrivateMessage", async (messageData) => {
+        if (await isBlocked(messageData.author))
+            return;
         addMessage(messageData.content, messageData.author, false);
         if (chatWindow.style.display !== "flex") {
             unreadCount++;

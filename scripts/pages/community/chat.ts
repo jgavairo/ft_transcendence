@@ -39,6 +39,26 @@ async function fetchChatHistory(username: string): Promise<{ author: string, con
     }
 }
 
+// Ajoute un cache pour éviter de refaire la requête pour chaque message du même auteur
+const blockedCache: Record<string, boolean> = {};
+
+async function isBlocked(author: string): Promise<boolean> {
+    if (blockedCache[author] !== undefined) return blockedCache[author];
+    try {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/user/isBlocked`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: author })
+        });
+        const data = await response.json();
+        blockedCache[author] = !!data.isBlocked;
+        return blockedCache[author];
+    } catch {
+        return false;
+    }
+}
+
 export async function setupChat() {
     const input = document.getElementById("chatInput") as HTMLInputElement;
     const sendBtn = document.getElementById("sendMessage") as HTMLButtonElement;
@@ -145,11 +165,12 @@ export async function setupChat() {
     const chatHistory = await fetchChatHistory(username);
     // Affichage de l'historique avec groupement
     let prevAuthor: string | null = null;
-    chatHistory.forEach(message => {
+    for (const message of chatHistory) {
         const isSelf = message.author === username;
+        if (!isSelf && await isBlocked(message.author)) continue;
         addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
-    });
+    }
 
     // Connecter le client au serveur socket.IO
     const socket = io(`https://${HOSTNAME}:8443/chat`, {
@@ -223,14 +244,14 @@ export async function setupChat() {
     });
 
     // Recevoir un message du serveur
-    socket.on("receiveMessage", (messageData: { author: string, content: string }) => {
-        if (messageData.author === username) {
-            return;
-        }
+    socket.on("receiveMessage", async (messageData: { author: string, content: string }) => {
+        if (messageData.author === username) return;
+        if (await isBlocked(messageData.author)) return;
         addMessage(messageData.content, messageData.author, false);
     });
 
-    socket.on("receivePrivateMessage", (messageData: { author: string, content: string }) => {
+    socket.on("receivePrivateMessage", async (messageData: { author: string, content: string }) => {
+        if (await isBlocked(messageData.author)) return;
         addMessage(messageData.content, messageData.author, false);
     });
 
