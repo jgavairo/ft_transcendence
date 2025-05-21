@@ -113,10 +113,10 @@ export async function setupChat() {
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " messenger-bubble-mention" : "";
         if (!self && mentionMatch) {
-            messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="mention">@$1</span>');
+            messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="chat-mention">@$1</span>');
         }
         else if (self && mentionMatch) {
-            messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="mention self">@$1</span>');
+            messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="chat-mention self">@$1</span>');
         }
         else {
             messageContent.textContent = content;
