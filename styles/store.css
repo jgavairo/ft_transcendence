@@ -112,7 +112,7 @@
 .owned-button
 {
 	width: 11rem;
-	height: 3rem;
+	height: fit-content;
 	background-color: var(--anthracite-fonce);
 	color: var(--gris-police);
 	border-radius: 5px;

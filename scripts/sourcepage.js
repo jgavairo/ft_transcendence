@@ -183,10 +183,10 @@ const gameInfosModalHTML = (game, inLibrary) => `
     <h1>${game.name}</h1>
     <div class="game-details">
       <p class="game-description">${game.description}</p>
-      <button class="${Boolean(game.is_available) === false ? 'owned-button' : (inLibrary ? 'owned-button' : 'buybutton')}" 
+      <button class="${!game.is_available ? 'owned-button' : (inLibrary ? 'owned-button' : 'buybutton')}" 
               id="${game.name}buybutton" 
-              ${Boolean(game.is_available) === false ? 'disabled' : ''}>
-        ${Boolean(game.is_available) === false ? 'is not available yet' : (inLibrary ? 'Already in library' : 'Add to library')}
+              ${!game.is_available ? 'disabled' : ''}>
+        ${!game.is_available ? 'is not available yet' : (inLibrary ? 'Already in library' : `Add to library `)}
       </button>
     </div>
   </div>

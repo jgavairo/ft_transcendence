@@ -88,7 +88,7 @@ export class DatabaseManager
                         id: 3,
                         name: "Space Defense",
                         price: 0,
-                        description: "SpaceDefense est un jeu d’arcade explosif où vous incarnez un soleil en péril, attaqué par des vagues d’astéroïdes. Défendez votre orbite en tirant des lasers sur les menaces galactiques avant qu’elles ne vous percutent. Reflexes, précision et survie sont vos seules armes dans ce combat cosmique !",
+                        description: "SpaceDefense est un jeu d'arcade explosif où vous incarnez un soleil en péril, attaqué par des vagues d'astéroïdes. Défendez votre orbite en tirant des lasers sur les menaces galactiques avant qu'elles ne vous percutent. Reflexes, précision et survie sont vos seules armes dans ce combat cosmique !",
                         image: "../../assets/games/SpaceDefense/SpaceDefense.png",
                         is_available: true
                     },
@@ -98,6 +98,38 @@ export class DatabaseManager
                         price: 0,
                         description: "Grand theft auto 6 is a game that allows you to drive a car and shoot at people.",
                         image: "../../assets/games/gta6/gta6.jpg",
+                        is_available: false
+                    },
+                    {
+                        id: 5,
+                        name: "Minecraft",
+                        price: 0,
+                        description: "Minecraft is a game that allows you to build a house and explore the world.",
+                        image: "../../assets/games/minecraft/Minecraft.jpg",
+                        is_available: false
+                    },
+                    {
+                        id: 6,
+                        name: "Rick & Morty",
+                        price: 0,
+                        description: "In Rick & Morty, you play as Rick, a scientist who travels through space and time with his grandson, Morty.",
+                        image: "../../assets/games/rickAndMorty/RickAndMorty.png",
+                        is_available: false
+                    },
+                    {
+                        id: 7,
+                        name: "Dofus",
+                        price: 0,
+                        description: "Dofus is a best-selling MMORPG game that offers a unique and immersive experience.",
+                        image: "../../assets/games/dofus/Dofus.jpeg",
+                        is_available: false
+                    },
+                    {
+                        id: 8,
+                        name: "Lumen",
+                        price: 0,
+                        description: "Lumen is a game from new studio called 'Ruptur'. It's an atmospheric adventure game where you play as a mysterious character fleeing from light. Throughout this captivating journey, you'll traverse diverse landscapes, from dense forests to abandoned cities, all while avoiding the ever-present luminescence that seems to chase you. As you progress through the story, you'll uncover the truth about your character's unique condition and why light has become your greatest enemy. A tale of survival, discovery, and the search for answers in a world where darkness becomes your only ally.",
+                        image: "../../assets/games/lumen/Lumen.png",
                         is_available: false
                     }
                 ];
