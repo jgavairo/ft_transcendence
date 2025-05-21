@@ -330,9 +330,9 @@ export async function renderGameOverMessage(state) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include',
+                credentials: 'include', // Utilise les cookies pour l'authentification
                 body: JSON.stringify({
-                    gameId: 1,
+                    gameId: 1, // ID du jeu (Pong)
                     userId: currentUser.id, // Utiliser l'ID utilisateur actuel
                 }),
             });
@@ -350,9 +350,9 @@ export async function renderGameOverMessage(state) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include',
+                credentials: 'include', // Utilise les cookies pour l'authentification
                 body: JSON.stringify({
-                    gameId: 1,
+                    gameId: 1, // ID du jeu (Pong)
                     userId: currentUser.id, // Utiliser l'ID utilisateur actuel
                 }),
             });
