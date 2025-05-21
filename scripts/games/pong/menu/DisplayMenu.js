@@ -4,8 +4,7 @@ import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong } from "../SocketEmit.js";
 import { connectPong, onMatchFound, onTriMatchFound, stopGame } from "../pongGame.js";
 import { socket as gameSocket } from "../network.js";
-import { getFirstPlay, launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
-import { showNotification } from "../../../helpers/notifications.js";
+import { launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 export class PongMenuManager {
@@ -261,11 +260,12 @@ export class PongMenuManager {
                 break;
             case 'play':
                 this.createButton('SOLO', gameWidth / 2 - 100, 450, () => this.changeMenu('solo'));
-                const first = await getFirstPlay();
-                if (first)
-                    this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
-                else
-                    this.createButton2('MULTI', gameWidth / 2 - 100, 520, () => showNotification('1 game in solo remaining'));
+                // const first = await getFirstPlay();
+                // if (first)
+                //     this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
+                // else
+                //     this.createButton2('MULTI', gameWidth / 2 - 100, 520, () => showNotification('1 game in solo remaining'));
+                this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('main'));
                 break;
             case 'solo':
