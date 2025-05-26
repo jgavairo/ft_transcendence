@@ -1,11 +1,9 @@
 import { gameover, ctx } from "./pongGame.js";
 
-
 const CW = 1200;
 const CH = 800;
 const CX = CW / 2;
 const CY = CH / 2;
-
 
 interface Particle {
   x: number;

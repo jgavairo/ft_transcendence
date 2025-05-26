@@ -206,6 +206,16 @@ app.post<{ Body: ChangePasswordRequest }>('/api/user/changePassword', { preHandl
     return userRoutes.changePassword(request, reply);
 });
 
+app.post('/api/user/block', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return userRoutes.blockUser(request, reply);
+});
+app.post('/api/user/unblock', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return userRoutes.unblockUser(request, reply);
+});
+app.post('/api/user/isBlocked', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return userRoutes.isBlocked(request, reply);
+});
+
 ////////////////////
 // PROFILE ROUTES //
 ////////////////////
