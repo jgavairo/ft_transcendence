@@ -28,13 +28,14 @@
 
 .gamescontainer
 {
-	width: 95%;
+	width: 80%;
 	height: auto;
 	color: #ffffff;
 	background-color: transparent;
 	margin: 20px auto;
 	margin-top: 2%;
 	display: grid;
+    justify-items: center;
     grid-template-columns: repeat(6, 1fr);
     gap: 32px;
     padding: 32px;
