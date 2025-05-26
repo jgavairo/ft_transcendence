@@ -22,6 +22,9 @@ import { newsRoutes } from './routes/news.js';
 import { hasPlayedHandler } from './routes/game.js';
 export const JWT_SECRET = process.env.JWT_SECRET || ''
 export const HOSTNAME = process.env.HOSTNAME || 'localhost'
+import { Game } from './games/tower/GameState.js';
+import { spawnCommand } from './games/tower/types/types.js';
+import { GAME_CONFIG } from './games/tower/config.js';
 
 // Créer l'application Fastify
 export const app = fastify({
@@ -499,6 +502,7 @@ app.get('/api/match/history/:userId', async (request: FastifyRequest, reply: Fas
 
 export const userSocketMap = new Map<string, string>();
 export const userSocketMapChat = new Map<string, string>();
+export const userSocketMapTower = new Map<string, string>();
 
 const start = async () => {
     try 
@@ -597,7 +601,129 @@ const start = async () => {
             });
         });
         /////////////////////////////////////////////////////////////////////////
-    } catch (err) {
+    
+        //////////////////////////////
+        //        TOWER SOCKET      //
+        //////////////////////////////
+
+        const towerGames = new Map<string, Game>();
+        const towerQueue: Array<{id: string, username: string}> = [];
+        const towerNs = app.io.of('/tower');
+
+        towerNs.on('connection', (socket: Socket) => 
+        {
+            console.log("Tower namespace connected:", socket.id);
+
+            socket.on('register', (username: string) => {
+                console.log("XXX Register event received in tower namespace:", username, "with socket.id:", socket.id);
+                userSocketMapTower.set(socket.id, username);
+            });
+            
+            socket.on('joinQueue', (username: string) => {
+                towerQueue.push({id: socket.id, username: username});
+                attemptMatch();
+            });
+
+            socket.on('leaveQueue', () => {
+                const index = towerQueue.findIndex(player => player.id === socket.id);
+                if (index !== -1) {
+                    towerQueue.splice(index, 1);
+                }
+            });
+
+            socket.on('playSolo', (username: string) => {
+                const game = new Game(socket.id, socket.id, false);
+                towerGames.set(socket.id, game);
+            });
+
+            function attemptMatch() 
+            {
+                while (towerQueue.length >= 2) {
+                    const [player1, player2] = towerQueue.splice(0, 2);
+                    const game = new Game(player1.id, player2.id, true);
+                    const roomId = `tower_${Date.now()}`;
+                    
+                    towerGames.set(roomId, game);
+                    
+                    towerNs.to(player1.id).emit('matchFound', {
+                        roomId,
+                        side: 'player',
+                        opponent: player2.username
+                    });
+                    towerNs.to(player2.id).emit('matchFound', {
+                        roomId,
+                        side: 'enemy',
+                        opponent: player1.username
+                    });
+                }
+            }
+
+            const gameLoop = setInterval(() => 
+            {
+                // Vérifier d'abord le jeu solo
+                const soloGame = towerGames.get(socket.id);
+                if (soloGame)
+                {
+                    soloGame.update();
+                    socket.emit('gameState', soloGame.getState());
+                }
+
+                // Vérifier les jeux multijoueur
+                for (const [roomId, game] of towerGames.entries()) {
+                    if (roomId.startsWith('tower_')) {
+                        game.update();
+                        towerNs.to(roomId).emit('gameState', game.getState());
+                    }
+                }
+            }, 1000 / GAME_CONFIG.TICK_RATE);
+
+            socket.on('command', (command: spawnCommand) =>
+            {
+                // Vérifier d'abord le jeu solo
+                const soloGame = towerGames.get(socket.id);
+                if (soloGame && command.type === 'spawn')
+                {
+                    soloGame.spawnUnit('player', command.troopType);
+                    return;
+                }
+
+                // Chercher le jeu multijoueur du joueur
+                for (const [roomId, game] of towerGames.entries()) {
+                    if (roomId.startsWith('tower_')) {
+                        const isPlayerOne = game.getSocketPlayerOne() === socket.id;
+                        const isPlayerTwo = game.getSocketPlayerTwo() === socket.id;
+                        
+                        if (isPlayerOne || isPlayerTwo) {
+                            if (command.type === 'spawn') {
+                                const side = isPlayerOne ? 'player' : 'enemy';
+                                game.spawnUnit(side, command.troopType);
+                            }
+                            break;
+                        }
+                    }
+                }
+            });
+
+            socket.on('ready', (roomId: string) => {
+                console.log("Player ready in room:", roomId);
+                const game = towerGames.get(roomId);
+                if (game) {
+                    socket.join(roomId);
+                    game.update();
+                    towerNs.to(roomId).emit('gameState', game.getState());
+                }
+            });
+            
+            socket.on('disconnect', () =>
+            {
+                clearInterval(gameLoop);
+                towerGames.delete(socket.id);
+                console.log('Client déconnecté du namespace /tower:', socket.id);
+            });
+        });
+    } 
+    catch (err) 
+    {
         console.error('Error while starting the server:', err);
         process.exit(1);
     }
