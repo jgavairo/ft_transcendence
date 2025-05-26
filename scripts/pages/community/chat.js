@@ -41,6 +41,26 @@ async function fetchChatHistory(username) {
         return [];
     }
 }
+// Ajoute un cache pour éviter de refaire la requête pour chaque message du même auteur
+const blockedCache = {};
+async function isBlocked(author) {
+    if (blockedCache[author] !== undefined)
+        return blockedCache[author];
+    try {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/user/isBlocked`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: author })
+        });
+        const data = await response.json();
+        blockedCache[author] = !!data.isBlocked;
+        return blockedCache[author];
+    }
+    catch (_a) {
+        return false;
+    }
+}
 export async function setupChat() {
     const input = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendMessage");
@@ -93,10 +113,10 @@ export async function setupChat() {
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " messenger-bubble-mention" : "";
         if (!self && mentionMatch) {
-            messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="mention">@$1</span>');
+            messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="chat-mention">@$1</span>');
         }
         else if (self && mentionMatch) {
-            messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="mention self">@$1</span>');
+            messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="chat-mention self">@$1</span>');
         }
         else {
             messageContent.textContent = content;
@@ -143,11 +163,13 @@ export async function setupChat() {
     const chatHistory = await fetchChatHistory(username);
     // Affichage de l'historique avec groupement
     let prevAuthor = null;
-    chatHistory.forEach(message => {
+    for (const message of chatHistory) {
         const isSelf = message.author === username;
+        if (!isSelf && await isBlocked(message.author))
+            continue;
         addMessage(message.content, message.author, isSelf);
         prevAuthor = message.author;
-    });
+    }
     // Connecter le client au serveur socket.IO
     const socket = io(`https://${HOSTNAME}:8443/chat`, {
         transports: ['websocket', 'polling'],
@@ -217,13 +239,16 @@ export async function setupChat() {
         }
     });
     // Recevoir un message du serveur
-    socket.on("receiveMessage", (messageData) => {
-        if (messageData.author === username) {
+    socket.on("receiveMessage", async (messageData) => {
+        if (messageData.author === username)
             return;
-        }
+        if (await isBlocked(messageData.author))
+            return;
         addMessage(messageData.content, messageData.author, false);
     });
-    socket.on("receivePrivateMessage", (messageData) => {
+    socket.on("receivePrivateMessage", async (messageData) => {
+        if (await isBlocked(messageData.author))
+            return;
         addMessage(messageData.content, messageData.author, false);
     });
     // Suggestion de mention @

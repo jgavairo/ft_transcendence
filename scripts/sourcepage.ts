@@ -206,3 +206,24 @@ const gameInfosModalHTML = (game: any, inLibrary: boolean) => `
 </div>`
 
 export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML };
+
+// À la fin du fichier, ajoute ce bloc pour gérer la sauvegarde de la page courante
+if (typeof window !== 'undefined') {
+    document.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target && target.id && (target.id === 'storebutton' || target.id === 'librarybutton' || target.id === 'communitybutton')) {
+            localStorage.setItem('currentPage', target.id.replace('button', ''));
+            // Met à jour les classes des boutons pour refléter la sélection
+            const ids = ['storebutton', 'librarybutton', 'communitybutton'];
+            ids.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.classList.remove('activebutton');
+                    btn.classList.add('button');
+                }
+            });
+            target.classList.add('activebutton');
+            target.classList.remove('button');
+        }
+    });
+}

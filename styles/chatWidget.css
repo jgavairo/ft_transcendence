@@ -91,78 +91,78 @@
 
 /* Ajout des classes pour remplacer les styles JS */
 
-.chat-message-widget {
+.chat-widget-message-widget {
     display: flex;
     flex-direction: column;
     margin: 8px 0;
 }
-.chat-message-right {
+.chat-widget-message-right {
     align-items: flex-end;
 }
-.chat-message-left {
+.chat-widget-message-left {
     align-items: flex-start;
 }
-.chat-message-username {
+.chat-widget-message-username {
     font-weight: bold;
     margin-bottom: 2px;
     font-size: 1rem;
 }
-.chat-message-username.right {
+.chat-widget-message-username.right {
     color: #4a90e2;
 }
-.chat-message-username.left {
+.chat-widget-message-username.left {
     color: #66c0f4;
 }
-.chat-message-row {
+.chat-widget-message-row {
     display: flex;
     align-items: center;
 }
-.chat-message-avatar {
+.chat-widget-message-avatar {
     width: 32px;
     height: 32px;
     border-radius: 50%;
     margin-right: 8px;
     cursor: pointer;
 }
-.chat-message-content {
+.chat-widget-message-content {
     border-radius: 12px;
     padding: 8px 12px;
     max-width: 200px;
     word-break: break-word;
 }
-.chat-message-content.right {
+.chat-widget-message-content.right {
     background: #4a90e2;
     color: #fff;
 }
-.chat-message-content.left {
+.chat-widget-message-content.left {
     background: #e1e1e1;
     color: #222;
 }
 
 /* Messenger-like chat message styles */
-.messenger-message-wrapper {
+.chat-widget-messenger-message-wrapper {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     margin-bottom: 2px;
     margin-top: 18px;
 }
-.messenger-message-wrapper.grouped {
+.chat-widget-messenger-message-wrapper.grouped {
     margin-top: 2px;
 }
-.messenger-message-wrapper.self {
+.chat-widget-messenger-message-wrapper.self {
     align-items: flex-end;
 }
-.messenger-message-row {
+.chat-widget-messenger-message-row {
     display: flex;
     align-items: flex-end;
     width: auto; /* Empêche la ligne de forcer la largeur à 100% */
     max-width: 80%;
 }
-.messenger-message-wrapper.self .messenger-message-row {
+.chat-widget-messenger-message-wrapper.self .chat-widget-messenger-message-row {
     margin-right: 0;
 }
-.messenger-avatar {
+.chat-widget-messenger-avatar {
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -172,32 +172,32 @@
     border: 2px solid #fff;
     background: #e1e1e1;
 }
-.messenger-avatar-spacer {
+.chat-widget-messenger-avatar-spacer {
     width: 28px;
     height: 28px;
     margin-right: 7px;
 }
-.messenger-message-wrapper.self .messenger-avatar-spacer {
+.chat-widget-messenger-message-wrapper.self .chat-widget-messenger-avatar-spacer {
     width: 0;
     margin-right: 0;
 }
-.messenger-username {
+.chat-widget-messenger-username {
     font-size: 0.85rem;
     color: #b0b3b8;
     font-weight: 500;
     margin-bottom: 2px;
-    margin-left: 45px;
+    margin-left: 40px;
     margin-top: 0;
     text-align: left;
     letter-spacing: 0.01em;
 }
-.messenger-message-wrapper.self .messenger-username {
+.chat-widget-messenger-message-wrapper.self .chat-widget-messenger-username {
     color: #7a7fd1;
     margin-left: 0;
     margin-right: 35px;
     text-align: right;
 }
-.messenger-bubble {
+.chat-widget-messenger-bubble {
     min-width: 24px;
     padding: 6px 13px;
     border-radius: 18px;
@@ -211,21 +211,21 @@
     line-height: 1.35;
     align-self: flex-start;
 }
-.messenger-bubble.self {
+.chat-widget-messenger-bubble.self {
     background: #4f59e7;
     color: #fff;
     border-radius: 18px;
     align-self: flex-end; /* Messages de l'utilisateur alignés à droite */
     margin-right: 0;
 }
-.messenger-message-wrapper {
+.chat-widget-messenger-message-wrapper {
     margin-top: 14px;
     margin-bottom: 0;
 }
-.messenger-message-wrapper.grouped {
+.chat-widget-messenger-message-wrapper.grouped {
     margin-top: 2px;
 }
-.mention {
+.chat-widget-mention {
     color: #fff;
     background: linear-gradient(90deg, #195887 60%, #3895EB 100%);
     border-radius: 6px;
@@ -239,7 +239,7 @@
     margin-right: 2px;
     text-shadow: 0 1px 2px #171d25cc;
 }
-.mention.self {
+.chat-widget-mention.self {
     background: linear-gradient(90deg, #4f59e7 60%, #195887 100%);
     box-shadow: 0 0 3px 1px #fff4;
     color: #fff;
@@ -248,13 +248,13 @@
     font-size: 1em;
     font-weight: 700;
 }
-.mention:hover {
+.chat-widget-mention:hover {
     background: linear-gradient(90deg, #3895EB 60%, #195887 100%);
     color: #fff;
 }
 
 /* Styles pour la box de suggestions de mention @ */
-.mention-suggestions-box {
+.chat-widget-mention-suggestions-box {
     position: fixed;
     background: #23262e;
     border: 1px solid #2a475e;

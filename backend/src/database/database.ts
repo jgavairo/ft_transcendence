@@ -20,6 +20,7 @@ export interface User {
     attempting_friend_ids?: number[];
     friends: number [];
     friend_requests: number[];
+    blocked_users?: string[]; // Ajouté pour le blocage
 }
 
 export interface Game {
@@ -869,6 +870,88 @@ export class DatabaseManager
           return false;
         }
       }
+
+      public async blockUser(blockerId: number, blockedUsername: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        const blocker = await this.getUserById(blockerId);
+        if (!blocker) throw new Error('Blocker not found');
+        const blockedUser = await this.getUserByUsername(blockedUsername);
+        if (!blockedUser) throw new Error('User to block not found');
+        let blockedUsers: string[] = [];
+        if (blocker.blocked_users) {
+            blockedUsers = Array.isArray(blocker.blocked_users)
+                ? blocker.blocked_users
+                : JSON.parse(blocker.blocked_users as any);
+        } else if ((blocker as any).blocked_users) {
+            try {
+                blockedUsers = JSON.parse((blocker as any).blocked_users);
+            } catch { blockedUsers = []; }
+        }
+        if (!blockedUsers.includes(blockedUsername)) {
+            blockedUsers.push(blockedUsername);
+            await this.db.run(
+                'UPDATE users SET blocked_users = ? WHERE id = ?',
+                [JSON.stringify(blockedUsers), blockerId]
+            );
+        }
+    }
+
+    public async unblockUser(blockerId: number, blockedUsername: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        const blocker = await this.getUserById(blockerId);
+        if (!blocker) throw new Error('Blocker not found');
+        let blockedUsers: string[] = [];
+        if (blocker.blocked_users) {
+            blockedUsers = Array.isArray(blocker.blocked_users)
+                ? blocker.blocked_users
+                : JSON.parse(blocker.blocked_users as any);
+        } else if ((blocker as any).blocked_users) {
+            try {
+                blockedUsers = JSON.parse((blocker as any).blocked_users);
+            } catch { blockedUsers = []; }
+        }
+        if (blockedUsers.includes(blockedUsername)) {
+            blockedUsers = blockedUsers.filter(u => u !== blockedUsername);
+            await this.db.run(
+                'UPDATE users SET blocked_users = ? WHERE id = ?',
+                [JSON.stringify(blockedUsers), blockerId]
+            );
+        }
+    }
+
+    public async isUserBlocked(blockerId: number, blockedUsername: string): Promise<boolean> {
+        if (!this.db) throw new Error('Database not initialized');
+        const blocker = await this.getUserById(blockerId);
+        if (!blocker) throw new Error('Blocker not found');
+        let blockedUsers: string[] = [];
+        if (blocker.blocked_users) {
+            blockedUsers = Array.isArray(blocker.blocked_users)
+                ? blocker.blocked_users
+                : JSON.parse(blocker.blocked_users as any);
+        } else if ((blocker as any).blocked_users) {
+            try {
+                blockedUsers = JSON.parse((blocker as any).blocked_users);
+            } catch { blockedUsers = []; }
+        }
+        return blockedUsers.includes(blockedUsername);
+    }
+
+    public async getBlockedUsers(blockerId: number): Promise<string[]> {
+        if (!this.db) throw new Error('Database not initialized');
+        const blocker = await this.getUserById(blockerId);
+        if (!blocker) throw new Error('Blocker not found');
+        let blockedUsers: string[] = [];
+        if (blocker.blocked_users) {
+            blockedUsers = Array.isArray(blocker.blocked_users)
+                ? blocker.blocked_users
+                : JSON.parse(blocker.blocked_users as any);
+        } else if ((blocker as any).blocked_users) {
+            try {
+                blockedUsers = JSON.parse((blocker as any).blocked_users);
+            } catch { blockedUsers = []; }
+        }
+        return blockedUsers;
+    }
 }
 
 export const dbManager = DatabaseManager.getInstance();

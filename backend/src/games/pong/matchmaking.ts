@@ -9,15 +9,28 @@ interface PlayerInfo {
   mode: 'solo' | 'multi' | 'tri' | 'solo-tri';
 }
 
-// interface Tournament {
-//   id: string;                // identifiant unique du tournoi
-//   size: 4|8|16;              // nombre de participants
-//   players: string[];         // liste de socket.id inscrits
-//   round: number;             // numéro de tour en cours (1 = huitièmes, 2 = quarts, etc.)
-//   brackets: string[][];      // tableaux de paires de socket.id pour chaque match
-// }
+interface TournamentView {
+  id: string;
+  size: number;
+  rounds: {
+    matchId: string;
+    players: [string, string];
+  }[][];
+}
+
+interface Tournament {
+  id: string;
+  size: 4 | 8;
+  slots: { socket: Socket; username: string }[];
+  rounds: {
+    matches: { matchId: string; slots: [number, number] }[];
+    winners: string[];
+  }[];
+}
 
 interface Player { id: string; username: string; }
+
+
 
 export function setupGameMatchmaking(gameNs: Namespace) {
   const playerInfo = new Map<string, PlayerInfo>();
@@ -27,6 +40,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   let triQueue: Player[] = [];
   const matchStates = new Map<string, MatchState>();
   const triMatchStates = new Map<string, TriMatchState>();
+  // Map des tournois complets ou en attente, groupés par id
+  const tournaments = new Map<string, Tournament>();
 
   // Fonction utilitaire pour récupérer l'ID utilisateur à partir d'un socket_id
   function getUserIdFromSocketId(socketId: string): string | undefined {
@@ -34,6 +49,20 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   }
 
   gameNs.on('connection', socket => {
+    
+    // TOURNAMENT
+    socket.on('joinTournament', ({ size, username }: { size: 4|8; username: string }) => {
+      let tour = Array.from(tournaments.values()).find(t => t.size === size && t.slots.length < size);
+      if (!tour) {
+        tour = { id: crypto.randomUUID(), size, slots: [], rounds: [] };
+        tournaments.set(tour.id, tour);
+      }
+      tour.slots.push({ socket, username });
+      socket.join(tour.id);
+
+      // Si tournoi plein → démarrage
+      if (tour.slots.length === size) startTournament(tour);
+    });
     // 1) SOLO CLASSIC
     socket.on('startSolo', ({ username, userId }: { username: string, userId?: string }) => {
       // Stocker l'association socket_id -> user_id si disponible
@@ -180,18 +209,109 @@ export function setupGameMatchmaking(gameNs: Namespace) {
 
     // 6) DÉCONNEXION
     socket.on('disconnect', () => {
-      // const state = matchStates.get(socket.id);
-      // if (state) {
-      //   state.paddles.forEach(p => {
-      //     if (p.id === socket.id) p.lives = 0;
-      //   });
-      // }
-      // nsp.to(state.roomId).emit('stateUpdate', state);
-      socketToUserId.delete(socket.id); // Supprimer l'association lors de la déconnexion
       classicQueue = classicQueue.filter(p => p.id !== socket.id);
       triQueue     = triQueue.filter(p => p.id !== socket.id);
     });
   });
+
+  // 1) Lancement du tournoi
+function startTournament(tour: Tournament) {
+    // Room globale (pour tournamentOver)
+    tour.slots.forEach(({ socket }) => socket.join(tour.id));
+
+    // Demi-finales (pour size=4) ou quarts (pour size=8)
+    const matches: { matchId: string; slots: [number, number] }[] = [];
+    for (let i = 0; i < tour.size; i += 2) {
+      matches.push({
+        matchId: `${tour.id}-r0-m${i/2}`,
+        slots: [i, i + 1]
+      });
+    }
+    tour.rounds.push({ matches, winners: [] });
+    broadcastBracket(tour);
+    runRoundMatches(tour, 0);
+  }
+
+  function runRoundMatches(tour: Tournament, roundIdx: number) {
+    const round = tour.rounds[roundIdx];
+    round.matches.forEach(m => {
+      const [i1, i2] = m.slots;
+      const s1 = tour.slots[i1].socket;
+      const s2 = tour.slots[i2].socket;
+      // autoriser movePaddle
+      playerInfo.set(s1.id, { side: 0, mode: 'multi' });
+      playerInfo.set(s2.id, { side: 1, mode: 'multi' });
+
+      // convocation
+      s1.join(m.matchId);
+      s2.join(m.matchId);
+      s1.emit('tournamentMatchFound', { roomId: m.matchId, side: 0 });
+      s2.emit('tournamentMatchFound', { roomId: m.matchId, side: 1 });
+
+      // démarrage de la partie
+      const state = startMatch([s1, s2], gameNs, false);
+      matchStates.set(m.matchId, state);
+
+      const iv = setInterval(() => {
+        updateMatch(state, gameNs);
+        gameNs.to(m.matchId).emit('gameState', state);
+        if (state.gameOver) {
+          clearInterval(iv);
+          const winSide = state.paddles.findIndex(p => p.lives > 0);
+          const winnerId = [s1.id, s2.id][winSide];
+
+          tour.rounds[roundIdx].winners.push(winnerId);
+          if (tour.rounds[roundIdx].winners.length === round.matches.length) {
+            const total = Math.log2(tour.size);
+            if (roundIdx + 1 < total) {
+              prepareNextRound(tour, roundIdx + 1);
+            } else {
+              gameNs.to(tour.id).emit('tournamentOver', { winner: winnerId });
+              tournaments.delete(tour.id);
+            }
+          }
+        }
+      }, 1000/60);
+    });
+  }
+
+  function prepareNextRound(tour: Tournament, next: number) {
+    const prevWins = tour.rounds[next - 1].winners;
+    const matches: { matchId: string; slots: [number, number] }[] = [];
+    for (let i = 0; i < prevWins.length; i += 2) {
+      const idA = prevWins[i], idB = prevWins[i + 1];
+      const idxA = tour.slots.findIndex(s => s.socket.id === idA);
+      const idxB = tour.slots.findIndex(s => s.socket.id === idB);
+      matches.push({
+        matchId: `${tour.id}-r${next}-m${i/2}`,
+        slots: [idxA, idxB]
+      });
+    }
+    tour.rounds[next] = { matches, winners: [] };
+    broadcastBracket(tour);
+    runRoundMatches(tour, next);
+  }
+
+  function broadcastBracket(tour: Tournament) {
+    const view: TournamentView = {
+      id: tour.id,
+      size: tour.size,
+      rounds: tour.rounds.map(r =>
+        r.matches.map(m => ({
+          matchId: m.matchId,
+          players: [
+            tour.slots[m.slots[0]].username,
+            tour.slots[m.slots[1]].username
+          ] as [string, string]
+        }))
+      )
+    };
+    tour.slots.forEach(({ socket }) => {
+      socket.emit('tournamentBracket', view);
+    });
+  }
+
+
 
   // --- FONCTION D'ASSOCIATION POUR 3-JOUEURS TRI-PONG ---
   function attemptTriMatch() {
