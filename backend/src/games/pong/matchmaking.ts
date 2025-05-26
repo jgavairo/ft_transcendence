@@ -216,13 +216,16 @@ export function setupGameMatchmaking(gameNs: Namespace) {
 
   // 1) Lancement du tournoi
 function startTournament(tour: Tournament) {
-    // Joindre room globale
+    // Room globale (pour tournamentOver)
     tour.slots.forEach(({ socket }) => socket.join(tour.id));
 
-    // Construire 1er tour (demi-finales ou quarts)
-    const matches = [];
+    // Demi-finales (pour size=4) ou quarts (pour size=8)
+    const matches: { matchId: string; slots: [number, number] }[] = [];
     for (let i = 0; i < tour.size; i += 2) {
-      matches.push({ matchId: `${tour.id}-r0-m${i/2}`, slots: [i, i+1] as [number, number] });
+      matches.push({
+        matchId: `${tour.id}-r0-m${i/2}`,
+        slots: [i, i + 1]
+      });
     }
     tour.rounds.push({ matches, winners: [] });
     broadcastBracket(tour);
@@ -231,20 +234,21 @@ function startTournament(tour: Tournament) {
 
   function runRoundMatches(tour: Tournament, roundIdx: number) {
     const round = tour.rounds[roundIdx];
-    for (const m of round.matches) {
-      const s1 = tour.slots[m.slots[0]].socket;
-      const s2 = tour.slots[m.slots[1]].socket;
-
-      // Autoriser le movePaddle
+    round.matches.forEach(m => {
+      const [i1, i2] = m.slots;
+      const s1 = tour.slots[i1].socket;
+      const s2 = tour.slots[i2].socket;
+      // autoriser movePaddle
       playerInfo.set(s1.id, { side: 0, mode: 'multi' });
       playerInfo.set(s2.id, { side: 1, mode: 'multi' });
 
-      // Créer room spécifique et prévenir
-      s1.join(m.matchId); s2.join(m.matchId);
+      // convocation
+      s1.join(m.matchId);
+      s2.join(m.matchId);
       s1.emit('tournamentMatchFound', { roomId: m.matchId, side: 0 });
       s2.emit('tournamentMatchFound', { roomId: m.matchId, side: 1 });
 
-      // Lancer la partie
+      // démarrage de la partie
       const state = startMatch([s1, s2], gameNs, false);
       matchStates.set(m.matchId, state);
 
@@ -255,9 +259,8 @@ function startTournament(tour: Tournament) {
           clearInterval(iv);
           const winSide = state.paddles.findIndex(p => p.lives > 0);
           const winnerId = [s1.id, s2.id][winSide];
-          tour.rounds[roundIdx].winners.push(winnerId);
 
-          // Tous les matchs de la manche finis ?
+          tour.rounds[roundIdx].winners.push(winnerId);
           if (tour.rounds[roundIdx].winners.length === round.matches.length) {
             const total = Math.log2(tour.size);
             if (roundIdx + 1 < total) {
@@ -269,17 +272,20 @@ function startTournament(tour: Tournament) {
           }
         }
       }, 1000/60);
-    }
+    });
   }
 
   function prepareNextRound(tour: Tournament, next: number) {
-    const prevWins = tour.rounds[next-1].winners;
+    const prevWins = tour.rounds[next - 1].winners;
     const matches: { matchId: string; slots: [number, number] }[] = [];
     for (let i = 0; i < prevWins.length; i += 2) {
-      const a = prevWins[i], b = prevWins[i+1];
-      const idxA = tour.slots.findIndex(s => s.socket.id === a);
-      const idxB = tour.slots.findIndex(s => s.socket.id === b);
-      matches.push({ matchId: `${tour.id}-r${next}-m${i/2}`, slots: [idxA, idxB] });
+      const idA = prevWins[i], idB = prevWins[i + 1];
+      const idxA = tour.slots.findIndex(s => s.socket.id === idA);
+      const idxB = tour.slots.findIndex(s => s.socket.id === idB);
+      matches.push({
+        matchId: `${tour.id}-r${next}-m${i/2}`,
+        slots: [idxA, idxB]
+      });
     }
     tour.rounds[next] = { matches, winners: [] };
     broadcastBracket(tour);
@@ -300,7 +306,9 @@ function startTournament(tour: Tournament) {
         }))
       )
     };
-    tour.slots.forEach(({ socket }) => socket.emit('tournamentBracket', view));
+    tour.slots.forEach(({ socket }) => {
+      socket.emit('tournamentBracket', view);
+    });
   }
 
 
