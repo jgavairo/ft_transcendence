@@ -27,7 +27,7 @@ export class MainApp {
         document.addEventListener('DOMContentLoaded', async () => {
             await this.setupHeader();
             this.setupCurrentPage();
-            updateChatWidgetVisibility(); // Affiche/masque le chat selon connexion
+            updateChatWidgetVisibility();
         });
     }
     static async setupHeader() {

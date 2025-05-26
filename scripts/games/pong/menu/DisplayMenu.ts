@@ -1,14 +1,24 @@
 // @ts-ignore
 import Konva from "https://cdn.skypack.dev/konva";
 import { GameManager } from "../../../managers/gameManager.js";
-import { joinQueue, joinTriQueue, startSoloPong} from "../SocketEmit.js";
-import { connectPong, onMatchFound, onTriMatchFound, stopGame } from "../pongGame.js";
+import { joinQueue, joinTriQueue, startSoloPong, joinTournament} from "../SocketEmit.js";
+import { connectPong, onMatchFound, onTriMatchFound, stopGame, MatchState } from "../pongGame.js";
 import { socket as gameSocket } from "../network.js";
-import { getFirstPlay, launchSoloPongWithTutorial, launchSoloTriWithTutorial} from "../tutorialLauncher.js";
+import { launchSoloPongWithTutorial, launchSoloTriWithTutorial} from "../tutorialLauncher.js";
+import { renderPong } from "../renderPong.js";
 import { showNotification } from "../../../helpers/notifications.js";
 
 const gameWidth = 1200;
 const gameHeight = 800;
+
+interface TournamentView {
+  id: string;
+  size: number;
+  rounds: {
+    matchId: string;
+    players: [string, string];
+  }[][];
+}
 
 interface Particles
 {
@@ -55,6 +65,7 @@ export class PongMenuManager
         this.backgroundLayer = new Konva.Layer();
         this.titleLayer = new Konva.Layer();
         this.menuLayer = new Konva.Layer();
+        this.setupSocketListeners();
 
         this.stage.add(this.backgroundLayer);
         this.stage.add(this.titleLayer);
@@ -377,120 +388,121 @@ export class PongMenuManager
                 this.createButton('BACK', gameWidth / 2 - 100, 660, () => this.changeMenu('play'));
                 break;
             case 'tournament':
-                this.createButton('4 PLAYERS', gameWidth / 2 - 100, 450, () => this.createTournamentBracket(4));
-                this.createButton('8 PLAYERS', gameWidth / 2 - 100, 520, () => this.createTournamentBracket(8));
+                this.createButton('4 PLAYERS', gameWidth / 2 - 100, 450, () => {
+                    this.createTournamentBracket(4);
+                    GameManager.getCurrentUser().then(u =>
+                        joinTournament(4, u?.username || 'Player')
+                    );
+                });
+                this.createButton('8 PLAYERS', gameWidth / 2 - 100, 520, () => {
+                    this.createTournamentBracket(8);
+                    GameManager.getCurrentUser().then(u =>
+                        joinTournament(8, u?.username || 'Player')
+                    );
+                });
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('multi'));
                 break;
         }
     }
 
-    private firstRoundSlots: Konva.Text[] = [];
-    private async createTournamentBracket(nbPlayers: number) {
-        // 1) Récupérer le pseudo
-        const currentUser = await GameManager.getCurrentUser();
-        const username = currentUser?.username || 'Player';
-      
-        // 2) Préparer les seeds : le premier slot = username
-        const seeds = [ username, ...Array(nbPlayers - 1).fill('waiting for opponent') ];
-      
-        // 3) Réinitialiser le layer
-        this.firstRoundSlots = [];
-        const rounds = Math.log2(nbPlayers);
-        this.menuLayer.removeChildren();
-      
-        // 4) Dimensions corrigées
-        const paddingX     = 40;
-        const bracketTop   = gameHeight * 0.55;   // <-- ici gameHeight, pas gameWidth
-        const paddingBottom= 40;
-        const usableWidth  = gameWidth  - 2 * paddingX;
-        const usableHeight = gameHeight - bracketTop - paddingBottom;
-        const colW         = usableWidth / rounds;
-      
-        // 5) SlotH / gapY dynamiques
-        const minSlotH = 18, minGapY = 8;
-        let slotH = (usableHeight - (nbPlayers - 1) * minGapY) / nbPlayers;
-        let gapY  = minGapY;
-        if (slotH < minSlotH) {
-          slotH = minSlotH;
-          gapY  = (usableHeight - nbPlayers * slotH) / (nbPlayers - 1);
-        }
-      
-        // 6) Dessiner les rounds
-        for (let r = 0; r < rounds; r++) {
-          const competitorCount = (r === rounds - 1)
-            ? 1
-            : nbPlayers / Math.pow(2, r);
-      
-          const x      = paddingX + r * colW;
-          const nextX  = paddingX + (r + 1) * colW;
-          const totalH = competitorCount * slotH + (competitorCount - 1) * gapY;
-          const startY = bracketTop + (usableHeight - totalH) / 2;
-      
-          for (let i = 0; i < competitorCount; i++) {
-            const y = startY + i * (slotH + gapY);
-            // 7) Le label vient de seeds[i] uniquement pour le round 0
-            const label = (r === 0 ? seeds[i] : '');
-      
-            const slot = new Konva.Text({
-              text: label,
-              fontFamily: 'Press Start 2P',
-              fontSize: 12,
-              fill: '#00e7fe',
-              x, y,
-              width: colW * 0.35,
-              height: slotH,
-              align: 'center',
-              verticalAlign: 'middle'
+    private setupSocketListeners() {
+    // Réception de la structure du bracket
+    gameSocket.on('tournamentBracket', (view: TournamentView) => {
+      const seeds = view.rounds[0].flatMap(r => r.players);
+      this.createTournamentBracket(view.size, seeds);
+    });
+
+    // Convocation à un match de tournoi
+    gameSocket.on(
+  'tournamentMatchFound',
+    ({ roomId, side }: { roomId: string; side: number }) => {
+            // 1) Cacher le menu
+            this.menuLayer.hide();
+
+            this.drawInGameNames(side);
+            // 3) Initialiser la partie
+            onMatchFound({ roomId, side });
+
+            // 4) Dès qu'on reçoit un état de jeu, on redessine
+            gameSocket.on('gameState', (state: MatchState) => {
+            renderPong(state);
             });
-            this.menuLayer.add(slot);
-      
-            // stocker la référence pour round 0
-            if (r === 0) {
-              this.firstRoundSlots.push(slot);
-            }
-      
-            // tracer le step-bracket
-            if (r < rounds - 1) {
-              const yMid   = y + slotH/2;
-              const xStart = x + colW*0.35;
-              const xMid   = xStart + colW*0.25;
-              const xTarget= nextX + colW*0.05;
-      
-              // segment horizontal
-              this.menuLayer.add(new Konva.Line({
-                points: [xStart, yMid, xMid, yMid],
-                stroke: '#00e7fe', strokeWidth: 1.5
-              }));
-              // vertical + sortie pour i pair
-              if (i % 2 === 0) {
-                const y2   = yMid + (slotH + gapY);
-                const yPar = (yMid + y2) / 2;
-                this.menuLayer.add(new Konva.Line({
-                  points: [xMid, yMid, xMid, y2],
-                  stroke: '#00e7fe', strokeWidth: 1.5
-                }));
-                this.menuLayer.add(new Konva.Line({
-                  points: [xMid, yPar, xTarget, yPar],
-                  stroke: '#00e7fe', strokeWidth: 1.5
-                }));
-              }
-            }
+        }
+    );
+
+    // Fin du tournoi
+    gameSocket.on('tournamentOver', ({ winner }: { winner: string }) => {
+      alert(`🏆 Tournoi terminé ! Le gagnant est : ${winner}`);
+    });
+  }
+
+    private drawInGameNames(side: number) {
+        const you = new Konva.Text({
+        text: side === 0 ? 'You' : 'Opponent',
+        x: 20, y: 20, fontSize: 14, fontFamily: 'Press Start 2P'
+        });
+        const opp = new Konva.Text({
+        text: side === 1 ? 'You' : 'Opponent',
+        x: window.innerWidth - 140, y: 20,
+        fontSize: 14, fontFamily: 'Press Start 2P'
+        });
+    }
+
+    private firstRoundSlots: Konva.Text[] = [];
+    private async createTournamentBracket(
+    nbPlayers: number,
+    seeds?: string[]
+  ) {
+    const username = (await GameManager.getCurrentUser()).username;
+    const labels = seeds ?? [username, ...Array(nbPlayers-1).fill('waiting…')];
+
+    // effacer et recalc dimensions
+    this.menuLayer.removeChildren();
+    const rounds = Math.log2(nbPlayers);
+    const padX = 40;
+    const top = window.innerHeight * 0.4;
+    const bottom = 20;
+    const w = window.innerWidth - padX*2;
+    const h = window.innerHeight - top - bottom;
+    const colW = w/rounds;
+    const minH = 18, minGap=8;
+    let slotH = (h - (nbPlayers-1)*minGap)/nbPlayers, gap=minGap;
+    if (slotH<minH) { slotH=minH; gap=(h-nbPlayers*slotH)/(nbPlayers-1); }
+
+    for (let r=0; r<rounds; r++) {
+      const count = r===rounds-1 ? 1 : nbPlayers/2**r;
+      const x = padX + r*colW, xNext=padX+(r+1)*colW;
+      const total = count*slotH + (count-1)*gap;
+      const startY = top + (h-total)/2;
+      for (let i=0; i<count; i++) {
+        const y = startY + i*(slotH+gap);
+        const text = r===0 ? labels[i] : '';
+        const slot = new Konva.Text({
+          text, x, y, width: colW*0.35, height: slotH,
+          fontFamily:'Press Start 2P', fontSize:12, align:'center', verticalAlign:'middle', fill:'#00e7fe'
+        });
+        this.menuLayer.add(slot);
+        if (r===0) this.firstRoundSlots.push(slot);
+
+        if (r<rounds-1) {
+          const yMid=y+slotH/2, xs=x+colW*0.35, xm=xs+colW*0.25, xt=xNext+colW*0.05;
+          this.menuLayer.add(new Konva.Line({
+            points:[xs,yMid,xm,yMid], stroke:'#00e7fe', strokeWidth:1.5
+          }));
+          if (i%2===0) {
+            const y2=yMid+(slotH+gap), yp=(yMid+y2)/2;
+            this.menuLayer.add(new Konva.Line({
+              points:[xm,yMid,xm,y2], stroke:'#00e7fe', strokeWidth:1.5
+            }));
+            this.menuLayer.add(new Konva.Line({
+              points:[xm,yp,xt,yp], stroke:'#00e7fe', strokeWidth:1.5
+            }));
           }
         }
-      
-        // 8) Affichage final
-        this.menuLayer.draw();
-      
-        gameSocket.off('tournamentSlotUpdate');
-        gameSocket.on('tournamentSlotUpdate', ({ index, username }: { index: number; username: string }) => {
-            const slot = this.firstRoundSlots[index];
-            if (slot) {
-            slot.text(username);
-            this.menuLayer.batchDraw();
-            }
-        });
       }
-      
+    }
+    this.menuLayer.draw();
+  } 
       
     private async onlineLobby(nbPlayers: number)
     {

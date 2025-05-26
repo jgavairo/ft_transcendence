@@ -17,6 +17,11 @@ export async function joinQueue(username: string) {
   }
 }
 
+export function joinTournament(nbPlayers: number, username: string) {
+  socket.emit('joinTournament', { size: nbPlayers, username });
+}
+
+
 export async function startSoloPong(username: string) {
   // Récupérer l'utilisateur actuel et son ID si disponible
   try {
