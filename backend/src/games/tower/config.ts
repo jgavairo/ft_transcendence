@@ -45,6 +45,19 @@ export const GAME_CONFIG = {
             attackImgKey: 'knight_attack',
             idleImgKey: 'knight_idle',
             deadImgKey: 'knight_dead'
+        },
+        mage:
+        {
+            hp: 50,
+            speed: 50,
+            damage: 70,
+            range: 100,
+            cost: 60,
+            imgKey: 'mage_walk',
+            attackSpeed: 0.5,
+            attackImgKey: 'mage_attack',
+            idleImgKey: 'mage_idle',
+            deadImgKey: 'mage_dead'
         }
     }
 }
