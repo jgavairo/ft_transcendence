@@ -454,10 +454,6 @@ export async function renderGameOverMessage(state) {
         console.error('Erreur réseau lors de l\'enregistrement du résultat:', error);
     }
 }
-// Listen for server burst
-socket.on('ballExplode', ({ x, y }) => {
-    createExplosion(x, y);
-});
 export function resetGame() {
     ready = false;
     gameover = false;
