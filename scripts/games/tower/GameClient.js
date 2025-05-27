@@ -80,6 +80,11 @@ export class GameClient {
                     this.socket.emit("command", { type: "spawn", troopType });
                     return true;
                 }
+            case 'mage':
+                if (playerState.gold >= 60) {
+                    this.socket.emit("command", { type: "spawn", troopType });
+                    return true;
+                }
             default:
                 return false;
         }

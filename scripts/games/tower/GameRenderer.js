@@ -1,6 +1,75 @@
 // @ts-ignore
 import Konva from "https://cdn.skypack.dev/konva";
 export class GameRenderer {
+    loadImages() {
+        const paths = {
+            background: '/assets/games/Tower/TowerBackground.png',
+            playerBase: '/assets/games/Tower/leftTower.png',
+            enemyBase: '/assets/games/Tower/rightTower.png',
+            coin: '/assets/games/Tower/coin.png',
+            endBackground: '/assets/games/Tower/endMatch.png',
+            waitingBackground: '/assets/games/Tower/waitingScreen.png', // Ajouter l'image de fin
+            // Knight //////////////////////////////////////////////////////////////////////
+            //
+            // -------------- Badge
+            knight_badge: '/assets/games/Tower/characters/knight/badge.png',
+            // -------------- Walk
+            player_knight_walk: '/assets/games/Tower/characters/knight/knightWalkPlayer.png',
+            enemy_knight_walk: '/assets/games/Tower/characters/knight/knightWalkEnemy.png',
+            // -------------- Attack
+            player_knight_attack: '/assets/games/Tower/characters/knight/knightAttackPlayer.png',
+            enemy_knight_attack: '/assets/games/Tower/characters/knight/knightAttackEnemy.png',
+            // -------------- Death
+            player_knight_dead: '/assets/games/Tower/characters/knight/knightDeadPlayer.png',
+            enemy_knight_dead: '/assets/games/Tower/characters/knight/knightDeadEnemy.png',
+            // -------------- Idle
+            player_knight_idle: '/assets/games/Tower/characters/knight/knightIdlePlayer.png',
+            enemy_knight_idle: '/assets/games/Tower/characters/knight/knightIdleEnemy.png',
+            // Archer //////////////////////////////////////////////////////////////////////
+            //
+            // -------------- Badge
+            archer_badge: '/assets/games/Tower/characters/archer/badge.png',
+            // -------------- Walk
+            player_archer_walk: '/assets/games/Tower/characters/archer/archerWalkPlayer.png',
+            enemy_archer_walk: '/assets/games/Tower/characters/archer/archerWalkEnemy.png',
+            // -------------- Attack
+            player_archer_attack: '/assets/games/Tower/characters/archer/archerAttackPlayer.png',
+            enemy_archer_attack: '/assets/games/Tower/characters/archer/archerAttackEnemy.png',
+            // -------------- Death
+            player_archer_dead: '/assets/games/Tower/characters/archer/archerDeadPlayer.png',
+            enemy_archer_dead: '/assets/games/Tower/characters/archer/archerDeadEnemy.png',
+            // -------------- Idle
+            player_archer_idle: '/assets/games/Tower/characters/archer/archerIdlePlayer.png',
+            enemy_archer_idle: '/assets/games/Tower/characters/archer/archerIdleEnemy.png',
+            // Mage //////////////////////////////////////////////////////////////////////
+            //
+            // -------------- Badge
+            mage_badge: '/assets/games/Tower/characters/mage/badge.png',
+            // -------------- Walk
+            player_mage_walk: '/assets/games/Tower/characters/mage/mageWalkPlayer.png',
+            enemy_mage_walk: '/assets/games/Tower/characters/mage/mageWalkEnemy.png',
+            // -------------- Attack
+            player_mage_attack: '/assets/games/Tower/characters/mage/mageAttackPlayer.png',
+            enemy_mage_attack: '/assets/games/Tower/characters/mage/mageAttackEnemy.png',
+            // -------------- Death
+            player_mage_dead: '/assets/games/Tower/characters/mage/mageDeadPlayer.png',
+            enemy_mage_dead: '/assets/games/Tower/characters/mage/mageDeadEnemy.png',
+            // -------------- Idle
+            player_mage_idle: '/assets/games/Tower/characters/mage/mageIdlePlayer.png',
+            enemy_mage_idle: '/assets/games/Tower/characters/mage/mageIdleEnemy.png'
+        };
+        const promises = Object.entries(paths).map(([key, src]) => {
+            return new Promise((resolve) => {
+                const img = new window.Image();
+                img.src = src;
+                img.onload = () => {
+                    this.images[key] = img;
+                    resolve();
+                };
+            });
+        });
+        return Promise.all(promises).then(() => { });
+    }
     constructor(canvasId, gameClient) {
         this.buttons = []; // Pour stocker les boutons
         this.isDestroyed = false;
@@ -38,59 +107,6 @@ export class GameRenderer {
             this.createUnitButtons();
         });
     }
-    loadImages() {
-        const paths = {
-            background: '/assets/games/Tower/TowerBackground.png',
-            playerBase: '/assets/games/Tower/leftTower.png',
-            enemyBase: '/assets/games/Tower/rightTower.png',
-            coin: '/assets/games/Tower/coin.png',
-            endBackground: '/assets/games/Tower/endMatch.png',
-            waitingBackground: '/assets/games/Tower/waitingScreen.png',
-            // Knight //////////////////////////////////////////////////////////////////////
-            //
-            // -------------- Badge
-            knight_badge: '/assets/games/Tower/characters/knight/badge.png',
-            // -------------- Walk
-            player_knight_walk: '/assets/games/Tower/characters/knight/knightWalkPlayer.png',
-            enemy_knight_walk: '/assets/games/Tower/characters/knight/knightWalkEnemy.png',
-            // -------------- Attack
-            player_knight_attack: '/assets/games/Tower/characters/knight/knightAttackPlayer.png',
-            enemy_knight_attack: '/assets/games/Tower/characters/knight/knightAttackEnemy.png',
-            // -------------- Death
-            player_knight_dead: '/assets/games/Tower/characters/knight/knightDeadPlayer.png',
-            enemy_knight_dead: '/assets/games/Tower/characters/knight/knightDeadEnemy.png',
-            // -------------- Idle
-            player_knight_idle: '/assets/games/Tower/characters/knight/knightIdlePlayer.png',
-            enemy_knight_idle: '/assets/games/Tower/characters/knight/knightIdleEnemy.png',
-            // Archer //////////////////////////////////////////////////////////////////////
-            //
-            // -------------- Badge
-            archer_badge: '/assets/games/Tower/characters/archer/badge.png',
-            // -------------- Walk
-            player_archer_walk: '/assets/games/Tower/characters/archer/archerWalkPlayer.png',
-            enemy_archer_walk: '/assets/games/Tower/characters/archer/archerWalkEnemy.png',
-            // -------------- Attack
-            player_archer_attack: '/assets/games/Tower/characters/archer/archerAttackPlayer.png',
-            enemy_archer_attack: '/assets/games/Tower/characters/archer/archerAttackEnemy.png',
-            // -------------- Death
-            player_archer_dead: '/assets/games/Tower/characters/archer/archerDeadPlayer.png',
-            enemy_archer_dead: '/assets/games/Tower/characters/archer/archerDeadEnemy.png',
-            // -------------- Idle
-            player_archer_idle: '/assets/games/Tower/characters/archer/archerIdlePlayer.png',
-            enemy_archer_idle: '/assets/games/Tower/characters/archer/archerIdleEnemy.png'
-        };
-        const promises = Object.entries(paths).map(([key, src]) => {
-            return new Promise((resolve) => {
-                const img = new window.Image();
-                img.src = src;
-                img.onload = () => {
-                    this.images[key] = img;
-                    resolve();
-                };
-            });
-        });
-        return Promise.all(promises).then(() => { });
-    }
     handleButtonCooldown(button, image) {
         if (this.isDestroyed) {
             return;
@@ -101,12 +117,12 @@ export class GameRenderer {
         this.buttonCooldowns.set(button, true);
         // Créer le groupe pour le cooldown
         const cooldownGroup = new Konva.Group({
-            x: image.x() - image.width() / 2 + 10,
+            x: image.x() - image.width() / 2 + 10, // Décalage de 10px du bord
             y: image.y() - image.height() / 2 + 10 // Décalage de 10px du bord
         });
         // Arc de progression (cercle plein)
         const cooldownArc = new Konva.Arc({
-            innerRadius: 0,
+            innerRadius: 0, // Commence au centre pour un cercle plein
             outerRadius: Math.max(0, this.cooldownSize / 2),
             angle: 0,
             rotation: -90,
@@ -149,7 +165,7 @@ export class GameRenderer {
     createUnitButtons() {
         const buttonY = 700;
         const buttonSpacing = 80;
-        if (this.images.archer_badge && this.images.knight_badge) {
+        if (this.images.archer_badge && this.images.knight_badge && this.images.mage_badge) {
             const buttonHeight = 1024 * 0.09;
             const buttonWidth = 768 * 0.09;
             // Bouton Archer
@@ -236,8 +252,49 @@ export class GameRenderer {
             knightImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(knightButton);
             this.buttons.push(knightButton);
+            // Bouton Mage
+            const mageButton = new Konva.Group();
+            const mageImage = new Konva.Image({
+                image: this.images.mage_badge,
+                x: 480 + (buttonSpacing * 2),
+                y: buttonY,
+                height: buttonHeight,
+                width: buttonWidth,
+                offsetX: buttonWidth / 2,
+                offsetY: buttonHeight / 2
+            });
+            mageButton.add(mageImage);
+            this.buttonCooldowns.set(mageButton, false);
+            mageButton.on('click', () => {
+                if (!this.buttonCooldowns.get(mageButton)) {
+                    console.log('Spawn mage');
+                    const spawnSuccess = this.gameClient.spawnUnit('mage');
+                    console.log('Spawn success:', spawnSuccess);
+                    if (spawnSuccess) {
+                        this.handleButtonCooldown(mageButton, mageImage);
+                    }
+                }
+            });
+            mageButton.on('mouseover', () => {
+                if (!this.buttonCooldowns.get(mageButton)) {
+                    document.body.style.cursor = 'pointer';
+                    mageImage.scale({ x: 1.1, y: 1.1 });
+                    this.buttonsLayer.batchDraw();
+                }
+            });
+            mageButton.on('mouseout', () => {
+                if (!this.buttonCooldowns.get(mageButton)) {
+                    document.body.style.cursor = 'default';
+                    mageImage.scale({ x: 1, y: 1 });
+                    this.buttonsLayer.batchDraw();
+                }
+            });
+            // Ajuster la position pour tenir compte du nouveau point d'origine
+            mageImage.x(480 + (buttonSpacing * 2) + buttonWidth / 2);
+            mageImage.y(buttonY + buttonHeight / 2);
+            this.buttonsLayer.add(mageButton);
+            this.buttons.push(mageButton);
         }
-        this.buttonsLayer.draw();
     }
     cleanup() {
         if (this.isDestroyed)

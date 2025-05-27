@@ -139,6 +139,7 @@ export class Game
                     unit.deathTimer = 0;
                     // Faire en sorte que toutes les unités qui ciblent cette unité perdent leur cible
                     const enemySide = side === 'player' ? 'enemy' : 'player';
+                    this.state[enemySide].gold += 10;
                     this.state[enemySide].units.forEach(enemyUnit => {
                         if (enemyUnit.targetId === unit.id) {
                             enemyUnit.targetId = null;

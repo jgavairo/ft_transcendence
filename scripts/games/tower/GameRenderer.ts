@@ -79,7 +79,25 @@ export class GameRenderer {
             enemy_archer_dead: '/assets/games/Tower/characters/archer/archerDeadEnemy.png',
             // -------------- Idle
             player_archer_idle: '/assets/games/Tower/characters/archer/archerIdlePlayer.png',
-            enemy_archer_idle: '/assets/games/Tower/characters/archer/archerIdleEnemy.png'
+            enemy_archer_idle: '/assets/games/Tower/characters/archer/archerIdleEnemy.png',
+            // Mage //////////////////////////////////////////////////////////////////////
+            //
+            // -------------- Badge
+            mage_badge: '/assets/games/Tower/characters/mage/badge.png',
+            // -------------- Walk
+            player_mage_walk: '/assets/games/Tower/characters/mage/mageWalkPlayer.png',
+            enemy_mage_walk: '/assets/games/Tower/characters/mage/mageWalkEnemy.png',
+            // -------------- Attack
+            player_mage_attack: '/assets/games/Tower/characters/mage/mageAttackPlayer.png',
+            enemy_mage_attack: '/assets/games/Tower/characters/mage/mageAttackEnemy.png',
+            // -------------- Death
+            player_mage_dead: '/assets/games/Tower/characters/mage/mageDeadPlayer.png',
+            enemy_mage_dead: '/assets/games/Tower/characters/mage/mageDeadEnemy.png',
+            // -------------- Idle
+            player_mage_idle: '/assets/games/Tower/characters/mage/mageIdlePlayer.png',
+            enemy_mage_idle: '/assets/games/Tower/characters/mage/mageIdleEnemy.png',
+
+            //
         };
         const promises = Object.entries(paths).map(([key, src]) => 
         {
@@ -183,7 +201,7 @@ export class GameRenderer {
         const buttonY = 700;
         const buttonSpacing = 80;
 
-        if (this.images.archer_badge && this.images.knight_badge) {
+        if (this.images.archer_badge && this.images.knight_badge && this.images.mage_badge) {
             const buttonHeight = 1024 * 0.09;
             const buttonWidth = 768 * 0.09;
 
@@ -284,8 +302,56 @@ export class GameRenderer {
 
             this.buttonsLayer.add(knightButton);
             this.buttons.push(knightButton);
+
+            // Bouton Mage
+            const mageButton = new Konva.Group();
+            const mageImage = new Konva.Image({
+                image: this.images.mage_badge,
+                x: 480 + (buttonSpacing * 2),
+                y: buttonY,
+                height: buttonHeight,
+                width: buttonWidth,
+                offsetX: buttonWidth / 2,
+                offsetY: buttonHeight / 2
+            });
+            
+            mageButton.add(mageImage);
+            this.buttonCooldowns.set(mageButton, false);
+
+            mageButton.on('click', () => {
+                if (!this.buttonCooldowns.get(mageButton)) {
+                    console.log('Spawn mage');
+                    const spawnSuccess = this.gameClient.spawnUnit('mage');
+                    console.log('Spawn success:', spawnSuccess);
+                    if (spawnSuccess) {
+                        this.handleButtonCooldown(mageButton, mageImage);
+                    }
+                }
+            });
+
+            mageButton.on('mouseover', () => {
+                if (!this.buttonCooldowns.get(mageButton)) {
+                    document.body.style.cursor = 'pointer';
+                    mageImage.scale({ x: 1.1, y: 1.1 });
+                    this.buttonsLayer.batchDraw();
+                }
+            });
+
+            mageButton.on('mouseout', () => {
+                if (!this.buttonCooldowns.get(mageButton)) {
+                    document.body.style.cursor = 'default';
+                    mageImage.scale({ x: 1, y: 1 });
+                    this.buttonsLayer.batchDraw();
+                }
+            });
+
+            // Ajuster la position pour tenir compte du nouveau point d'origine
+            mageImage.x(480 + (buttonSpacing * 2) + buttonWidth / 2);
+            mageImage.y(buttonY + buttonHeight / 2);
+
+            this.buttonsLayer.add(mageButton);
+            this.buttons.push(mageButton);
         }
-        this.buttonsLayer.draw();
     }
     
     public cleanup() {
