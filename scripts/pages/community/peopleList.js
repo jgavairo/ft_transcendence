@@ -281,6 +281,7 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     // Ajoute l'icône au bouton (avant le texte)
     blockButton.prepend(iconSpan);
     blockButton.addEventListener("click", async () => {
+        var _a;
         blockButton.disabled = true;
         if (!isBlocked) {
             await fetch(`https://${HOSTNAME}:8443/api/user/block`, {
@@ -307,12 +308,25 @@ export async function showProfileCard(username, profilePicture, email, bio, user
             blockButton.prepend(iconSpan);
         }
         blockButton.disabled = false;
-        // Sauvegarde la page courante avant reload
-        const activeBtn = document.querySelector('.activebutton');
-        if (activeBtn && activeBtn.id) {
-            localStorage.setItem('currentPage', activeBtn.id.replace('button', ''));
+        try {
+            if ((_a = document.getElementById("communitybutton")) === null || _a === void 0 ? void 0 : _a.classList.contains("activebutton")) {
+                // On est sur la page communauté : vider le chat puis relancer setupChat
+                const chatContainer = document.getElementById("chatContainer");
+                if (chatContainer)
+                    chatContainer.innerHTML = "";
+                const { setupChat } = await import("./chat.js");
+                setupChat();
+            }
+            else {
+                // Autre page, widget chat
+                const { removeChatWidget, setupChatWidget } = await import("./chatWidget.js");
+                removeChatWidget();
+                setupChatWidget();
+            }
         }
-        window.location.reload();
+        catch (e) {
+            console.error("Failed to refresh chat after block/unblock", e);
+        }
     });
     topLeftContainer.appendChild(blockButton);
     // Ajoutez l'image de profil
