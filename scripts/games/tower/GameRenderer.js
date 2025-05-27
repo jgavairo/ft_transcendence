@@ -40,23 +40,7 @@ export class GameRenderer {
             enemy_archer_dead: '/assets/games/Tower/characters/archer/archerDeadEnemy.png',
             // -------------- Idle
             player_archer_idle: '/assets/games/Tower/characters/archer/archerIdlePlayer.png',
-            enemy_archer_idle: '/assets/games/Tower/characters/archer/archerIdleEnemy.png',
-            // Mage //////////////////////////////////////////////////////////////////////
-            //
-            // -------------- Badge
-            mage_badge: '/assets/games/Tower/characters/mage/badge.png',
-            // -------------- Walk
-            player_mage_walk: '/assets/games/Tower/characters/mage/mageWalkPlayer.png',
-            enemy_mage_walk: '/assets/games/Tower/characters/mage/mageWalkEnemy.png',
-            // -------------- Attack
-            player_mage_attack: '/assets/games/Tower/characters/mage/mageAttackPlayer.png',
-            enemy_mage_attack: '/assets/games/Tower/characters/mage/mageAttackEnemy.png',
-            // -------------- Death
-            player_mage_dead: '/assets/games/Tower/characters/mage/mageDeadPlayer.png',
-            enemy_mage_dead: '/assets/games/Tower/characters/mage/mageDeadEnemy.png',
-            // -------------- Idle
-            player_mage_idle: '/assets/games/Tower/characters/mage/mageIdlePlayer.png',
-            enemy_mage_idle: '/assets/games/Tower/characters/mage/mageIdleEnemy.png'
+            enemy_archer_idle: '/assets/games/Tower/characters/archer/archerIdleEnemy.png'
         };
         const promises = Object.entries(paths).map(([key, src]) => {
             return new Promise((resolve) => {
