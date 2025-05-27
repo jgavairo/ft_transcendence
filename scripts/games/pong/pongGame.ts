@@ -507,12 +507,6 @@ export async function renderGameOverMessage(state: MatchState) {
 }
 
 
-
-// Listen for server burst
-socket.on('ballExplode', ({ x, y }: { x:number, y:number }) => {
-  createExplosion(x, y);
-});
-
 export function resetGame()
 {
   ready      = false;
