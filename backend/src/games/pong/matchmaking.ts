@@ -43,6 +43,9 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   // Map des tournois complets ou en attente, groupés par id
   const tournaments = new Map<string, Tournament>();
 
+  // Gestion des rooms privées
+  const privateRooms = new Map<string, { sockets: Socket[]; usernames: string[]; maxPlayers: number }>();
+
   // Fonction utilitaire pour récupérer l'ID utilisateur à partir d'un socket_id
   function getUserIdFromSocketId(socketId: string): string | undefined {
     return socketToUserId.get(socketId);
@@ -211,6 +214,90 @@ export function setupGameMatchmaking(gameNs: Namespace) {
     socket.on('disconnect', () => {
       classicQueue = classicQueue.filter(p => p.id !== socket.id);
       triQueue     = triQueue.filter(p => p.id !== socket.id);
+    });
+
+    // --- ROOM PRIVÉE ---
+    socket.on('createPrivateRoom', ({ username, nbPlayers }, callback) => {
+      const roomId = crypto.randomUUID();
+      privateRooms.set(roomId, { sockets: [socket], usernames: [username], maxPlayers: nbPlayers });
+      socket.join(roomId);
+      callback({ roomId });
+    });
+
+    socket.on('joinPrivateRoom', ({ roomId, username }, callback) => {
+      const room = privateRooms.get(roomId);
+      if (!room) {
+        callback({ error: 'Room not found' });
+        return;
+      }
+      if (room.sockets.length >= room.maxPlayers) {
+        callback({ error: 'Room is full' });
+        return;
+      }
+      room.sockets.push(socket);
+      room.usernames.push(username);
+      socket.join(roomId);
+      callback({ roomId });
+      // Si la room est pleine, on lance la partie
+      if (room.sockets.length === room.maxPlayers) {
+        if (room.maxPlayers === 2) {
+          const m = startMatch(room.sockets, gameNs, false);
+          matchStates.set(roomId, m);
+          playerInfo.set(room.sockets[0].id, { side: 0, mode: 'multi' });
+          playerInfo.set(room.sockets[1].id, { side: 1, mode: 'multi' });
+          room.sockets[0].emit('matchFound', {
+            roomId,
+            side: 0,
+            mode: 'multi',
+            you: room.usernames[0],
+            opponent: room.usernames[1],
+            user1Id: room.sockets[0].id,
+            user2Id: room.sockets[1].id
+          });
+          room.sockets[1].emit('matchFound', {
+            roomId,
+            side: 1,
+            mode: 'multi',
+            you: room.usernames[1],
+            opponent: room.usernames[0],
+            user1Id: room.sockets[0].id,
+            user2Id: room.sockets[1].id
+          });
+          const iv = setInterval(() => {
+            updateMatch(m, gameNs);
+            gameNs.to(roomId).emit('gameState', m);
+            if (m.gameOver) clearInterval(iv);
+          }, 1000 / 60);
+        } else if (room.maxPlayers === 3) {
+          const m = startTriMatch(room.sockets, gameNs, false);
+          triMatchStates.set(roomId, m);
+          room.sockets.forEach((s, i) => {
+            playerInfo.set(s.id, { side: i, mode: 'tri' });
+            s.emit('matchFoundTri', {
+              roomId,
+              side: i,
+              players: room.usernames,
+              mode: 'multi'
+            });
+          });
+          const iv = setInterval(() => {
+            updateMatch(m, gameNs);
+            gameNs.to(roomId).emit('gameState', m);
+            if (m.gameOver) clearInterval(iv);
+          }, 1000 / 60);
+        }
+        privateRooms.delete(roomId);
+      }
+    });
+
+    socket.on('leavePrivateRoom', ({ roomId }) => {
+      const room = privateRooms.get(roomId);
+      if (room) {
+        room.sockets = room.sockets.filter(s => s.id !== socket.id);
+        room.usernames = room.usernames.filter((_, i) => room.sockets[i].id !== socket.id);
+        if (room.sockets.length === 0) privateRooms.delete(roomId);
+      }
+      socket.leave(roomId);
     });
   });
 
