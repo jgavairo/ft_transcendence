@@ -3,6 +3,7 @@ import { io } from "socket.io-client";
 import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
+import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 
 async function fetchCurrentUser(): Promise<string | null> {
     try {
@@ -71,25 +72,6 @@ function createChatWidgetHTML() {
         </div>
     `;
     document.body.appendChild(widget);
-}
-
-const blockedCache: Record<string, boolean> = {};
-
-async function isBlocked(author: string): Promise<boolean> {
-    if (blockedCache[author] !== undefined) return blockedCache[author];
-    try {
-        const response = await fetch(`https://${HOSTNAME}:8443/api/user/isBlocked`, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: author })
-        });
-        const data = await response.json();
-        blockedCache[author] = !!data.isBlocked;
-        return blockedCache[author];
-    } catch {
-        return false;
-    }
 }
 
 export async function setupChatWidget() {
@@ -199,7 +181,10 @@ export async function setupChatWidget() {
     };
     const username = await fetchCurrentUser();
     if (!username) return;
+
+    // Charger l'historique des messages
     const chatHistory = await fetchChatHistory(username);
+    // Affichage de l'historique avec groupement
     let prevAuthor: string | null = null;
     for (const message of chatHistory) {
         const isSelf = message.author === username;
@@ -381,6 +366,9 @@ export async function setupChatWidget() {
             updateMentionBox();
         }
     });
+    
+    // Vider le cache partagé au début de setupChatWidget
+    clearBlockedCache();
 }
 
 export function removeChatWidget() {

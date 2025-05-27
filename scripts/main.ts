@@ -96,47 +96,9 @@ export class MainApp
             console.error('Main element not found');
             return;
         }
-        const currentPage = localStorage.getItem('currentPage') || 'store';
-
-        setTimeout(() => {
-            const storeBtn = document.getElementById('storebutton');
-            const libraryBtn = document.getElementById('librarybutton');
-            const communityBtn = document.getElementById('communitybutton');
-            if (storeBtn && libraryBtn && communityBtn) {
-                storeBtn.classList.remove('activebutton');
-                libraryBtn.classList.remove('activebutton');
-                communityBtn.classList.remove('activebutton');
-                storeBtn.classList.add('button');
-                libraryBtn.classList.add('button');
-                communityBtn.classList.add('button');
-                if (currentPage === 'store') {
-                    storeBtn.classList.add('activebutton');
-                    storeBtn.classList.remove('button');
-                } else if (currentPage === 'library') {
-                    libraryBtn.classList.add('activebutton');
-                    libraryBtn.classList.remove('button');
-                } else if (currentPage === 'community') {
-                    communityBtn.classList.add('activebutton');
-                    communityBtn.classList.remove('button');
-                }
-            }
-        }, 0);
-
-        if (currentPage === 'store') {
-            mainElement.innerHTML = storePage;
-            setupStore();
-        } else if (currentPage === 'library') {
-            mainElement.innerHTML = libraryPage;
-            // Correction : appelle setupLibrary après avoir injecté le HTML
-            setTimeout(() => {
-                if (typeof setupLibrary === 'function') setupLibrary();
-            }, 0);
-        } else if (currentPage === 'community') {
-            showCommunityPage();
-        } else {
-            mainElement.innerHTML = storePage;
-            setupStore();
-        }
+        // Toujours afficher la page store par défaut après un refresh
+        mainElement.innerHTML = storePage;
+        setupStore();
     }
 }
 console.log("MainApp");

@@ -65,14 +65,18 @@ export async function renderPeopleList(filter: string = "") {
                     isRequested = await FriendsManager.isRequested(person.username);
                 }
             }
-
             const div = document.createElement("div");
             div.className = "friend-item";
 
-            // Conteneur pour l'image de profil avec effet hover
+            // Rendre tout l'item cliquable
+            div.addEventListener("click", () => {
+                showProfileCard(person.username, person.profile_picture, person.email, person.bio, person.id);
+            });
+
+            // Conteneur pour l'image de profil
             const profileContainer = document.createElement("div");
             profileContainer.className = "profile-picture-container";
-            
+
             // Ajouter l'image de profil
             const img = document.createElement("img");
             const isOnline = await FriendsManager.isOnline(person.username);
@@ -82,31 +86,24 @@ export async function renderPeopleList(filter: string = "") {
                 img.className = "profile-picture";
             img.src = person.profile_picture || "default-profile.png";
             img.alt = `${person.username}'s profile picture`;
-            
-            // Ajouter la couche de survol
-            const overlay = document.createElement("div");
-            overlay.className = "profile-picture-overlay";
-            
-            const overlayText = document.createElement("span");
-            overlayText.textContent = "View";
-            overlay.appendChild(overlayText);
-            
-            // Ajouter un événement pour afficher la carte "profil"
-            profileContainer.addEventListener("click", () => {
-                showProfileCard(person.username, person.profile_picture, person.email, person.bio, person.id);
-            });
-            
-            // Ajouter les éléments au conteneur
+
             profileContainer.appendChild(img);
-            profileContainer.appendChild(overlay);
-            
-            // Ajouter le conteneur au div principal
+
+            // Supprimer l'overlay "view"
+
             div.appendChild(profileContainer);
-            
+
             const label = document.createElement("span");
             label.className = "friend-name";
             label.textContent = person.username;
-            
+
+            // Grouper la photo et le nom dans un conteneur .friend-info
+            const friendInfo = document.createElement("div");
+            friendInfo.className = "friend-info";
+            friendInfo.appendChild(profileContainer);
+            friendInfo.appendChild(label);
+            div.appendChild(friendInfo);
+
             const button = document.createElement("button");
             const button2 = document.createElement("button");
 
@@ -132,15 +129,17 @@ export async function renderPeopleList(filter: string = "") {
             }
 
             button.setAttribute("data-name", person.username);
-            
+
             if (isRequested) {
-                button2.addEventListener("click", async () => {
+                button2.addEventListener("click", async (e) => {
+                    e.stopPropagation();
                     await refuseFriendRequest(person.username);
                     await renderPeopleList();
                 });
             }
 
-            button.addEventListener("click", async () => {
+            button.addEventListener("click", async (e) => {
+                e.stopPropagation();
                 if (isFriend) {
                     await removeFriend(person.username);
                 } else if (isRequesting) {
@@ -153,7 +152,6 @@ export async function renderPeopleList(filter: string = "") {
                 await renderPeopleList();
             });
 
-            div.appendChild(label);
             div.appendChild(button);
             div.appendChild(button2);
             container.appendChild(div);
@@ -261,6 +259,16 @@ export async function showProfileCard(username: string, profilePicture: string, 
         existingCard.remove();
     }
 
+    // Récupérer le username courant
+    let currentUsername: string | null = null;
+    try {
+        const resp = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, { credentials: "include" });
+        const data = await resp.json();
+        if (data.success && data.user && data.user.username) {
+            currentUsername = data.user.username;
+        }
+    } catch {}
+
     // Créez un overlay
     const overlay = document.createElement("div");
     overlay.id = "profileOverlay";
@@ -286,74 +294,87 @@ export async function showProfileCard(username: string, profilePicture: string, 
     topLeftContainer.style.zIndex = "2";
     topLeftContainer.style.display = "flex";
     topLeftContainer.style.alignItems = "center";
-    // Ajoutez un bouton Block/Unblock avec une icône
-    const blockButton = document.createElement("button");
-    blockButton.className = "profile-card-block";
-    blockButton.style.display = "flex";
-    blockButton.style.alignItems = "center";
-    blockButton.style.gap = "4px";
-    blockButton.textContent = "Loading...";
 
-    // Icône
-    const iconSpan = document.createElement("span");
-    iconSpan.className = "block-icon";
-    iconSpan.textContent = "🔒"; // Valeur par défaut, changée plus bas
+    // N'affiche pas le bouton block/unblock si c'est le profil de l'utilisateur courant
+    if (currentUsername !== username) {
+        // Ajoutez un bouton Block/Unblock avec une icône
+        const blockButton = document.createElement("button");
+        blockButton.className = "profile-card-block";
+        blockButton.style.display = "flex";
+        blockButton.style.alignItems = "center";
+        blockButton.style.gap = "4px";
+        blockButton.textContent = "Loading...";
 
-    // Vérifier si l'utilisateur est bloqué
-    let isBlocked = false;
-    try {
-        const resp = await fetch(`https://${HOSTNAME}:8443/api/user/isBlocked`, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username })
-        });
-        const data = await resp.json();
-        isBlocked = data.isBlocked;
-        blockButton.textContent = isBlocked ? "Unblock" : "Block";
-        iconSpan.textContent = isBlocked ? "🔓" : "🔒";
-    } catch (e) {
-        blockButton.textContent = "Block";
-        iconSpan.textContent = "🔒";
-    }
-    // Ajoute l'icône au bouton (avant le texte)
-    blockButton.prepend(iconSpan);
+        // Icône
+        const iconSpan = document.createElement("span");
+        iconSpan.className = "block-icon";
+        iconSpan.textContent = "🔒"; // Valeur par défaut, changée plus bas
 
-    blockButton.addEventListener("click", async () => {
-        blockButton.disabled = true;
-        if (!isBlocked) {
-            await fetch(`https://${HOSTNAME}:8443/api/user/block`, {
+        // Vérifier si l'utilisateur est bloqué
+        let isBlocked = false;
+        try {
+            const resp = await fetch(`https://${HOSTNAME}:8443/api/user/isBlocked`, {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username })
             });
-            isBlocked = true;
-            blockButton.textContent = "Unblock";
-            iconSpan.textContent = "🔓";
-            blockButton.prepend(iconSpan);
-        } else {
-            await fetch(`https://${HOSTNAME}:8443/api/user/unblock`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username })
-            });
-            isBlocked = false;
+            const data = await resp.json();
+            isBlocked = data.isBlocked;
+            blockButton.textContent = isBlocked ? "Unblock" : "Block";
+            iconSpan.textContent = isBlocked ? "🔓" : "🔒";
+        } catch (e) {
             blockButton.textContent = "Block";
             iconSpan.textContent = "🔒";
-            blockButton.prepend(iconSpan);
         }
-        blockButton.disabled = false;
-        // Sauvegarde la page courante avant reload
-        const activeBtn = document.querySelector('.activebutton');
-        if (activeBtn && activeBtn.id) {
-            localStorage.setItem('currentPage', activeBtn.id.replace('button', ''));
-        }
-        window.location.reload();
-    });
+        // Ajoute l'icône au bouton (avant le texte)
+        blockButton.prepend(iconSpan);
 
-    topLeftContainer.appendChild(blockButton);
+        blockButton.addEventListener("click", async () => {
+            blockButton.disabled = true;
+            if (!isBlocked) {
+                await fetch(`https://${HOSTNAME}:8443/api/user/block`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username })
+                });
+                isBlocked = true;
+                blockButton.textContent = "Unblock";
+                iconSpan.textContent = "🔓";
+                blockButton.prepend(iconSpan);
+            } else {
+                await fetch(`https://${HOSTNAME}:8443/api/user/unblock`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username })
+                });
+                isBlocked = false;
+                blockButton.textContent = "Block";
+                iconSpan.textContent = "🔒";
+                blockButton.prepend(iconSpan);
+            }
+            blockButton.disabled = false;
+            try {
+                if (document.getElementById("communitybutton")?.classList.contains("activebutton")) {
+                    // On est sur la page communauté : vider le chat puis relancer setupChat
+                    const chatContainer = document.getElementById("chatContainer");
+                    if (chatContainer) chatContainer.innerHTML = "";
+                    const { setupChat } = await import("./chat.js");
+                    setupChat();
+                } else {
+                    // Autre page, widget chat
+                    const { removeChatWidget, setupChatWidget } = await import("./chatWidget.js");
+                    removeChatWidget();
+                    setupChatWidget();
+                }
+            } catch (e) {
+                console.error("Failed to refresh chat after block/unblock", e);
+            }
+        });
+        topLeftContainer.appendChild(blockButton);
+    }
 
     // Ajoutez l'image de profil
     const img = document.createElement("img");
