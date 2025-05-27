@@ -65,14 +65,18 @@ export async function renderPeopleList(filter: string = "") {
                     isRequested = await FriendsManager.isRequested(person.username);
                 }
             }
-
             const div = document.createElement("div");
             div.className = "friend-item";
 
-            // Conteneur pour l'image de profil avec effet hover
+            // Rendre tout l'item cliquable
+            div.addEventListener("click", () => {
+                showProfileCard(person.username, person.profile_picture, person.email, person.bio, person.id);
+            });
+
+            // Conteneur pour l'image de profil
             const profileContainer = document.createElement("div");
             profileContainer.className = "profile-picture-container";
-            
+
             // Ajouter l'image de profil
             const img = document.createElement("img");
             const isOnline = await FriendsManager.isOnline(person.username);
@@ -82,31 +86,24 @@ export async function renderPeopleList(filter: string = "") {
                 img.className = "profile-picture";
             img.src = person.profile_picture || "default-profile.png";
             img.alt = `${person.username}'s profile picture`;
-            
-            // Ajouter la couche de survol
-            const overlay = document.createElement("div");
-            overlay.className = "profile-picture-overlay";
-            
-            const overlayText = document.createElement("span");
-            overlayText.textContent = "View";
-            overlay.appendChild(overlayText);
-            
-            // Ajouter un événement pour afficher la carte "profil"
-            profileContainer.addEventListener("click", () => {
-                showProfileCard(person.username, person.profile_picture, person.email, person.bio, person.id);
-            });
-            
-            // Ajouter les éléments au conteneur
+
             profileContainer.appendChild(img);
-            profileContainer.appendChild(overlay);
-            
-            // Ajouter le conteneur au div principal
+
+            // Supprimer l'overlay "view"
+
             div.appendChild(profileContainer);
-            
+
             const label = document.createElement("span");
             label.className = "friend-name";
             label.textContent = person.username;
-            
+
+            // Grouper la photo et le nom dans un conteneur .friend-info
+            const friendInfo = document.createElement("div");
+            friendInfo.className = "friend-info";
+            friendInfo.appendChild(profileContainer);
+            friendInfo.appendChild(label);
+            div.appendChild(friendInfo);
+
             const button = document.createElement("button");
             const button2 = document.createElement("button");
 
@@ -132,15 +129,17 @@ export async function renderPeopleList(filter: string = "") {
             }
 
             button.setAttribute("data-name", person.username);
-            
+
             if (isRequested) {
-                button2.addEventListener("click", async () => {
+                button2.addEventListener("click", async (e) => {
+                    e.stopPropagation();
                     await refuseFriendRequest(person.username);
                     await renderPeopleList();
                 });
             }
 
-            button.addEventListener("click", async () => {
+            button.addEventListener("click", async (e) => {
+                e.stopPropagation();
                 if (isFriend) {
                     await removeFriend(person.username);
                 } else if (isRequesting) {
@@ -153,7 +152,6 @@ export async function renderPeopleList(filter: string = "") {
                 await renderPeopleList();
             });
 
-            div.appendChild(label);
             div.appendChild(button);
             div.appendChild(button2);
             container.appendChild(div);

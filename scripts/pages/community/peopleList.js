@@ -57,7 +57,11 @@ export async function renderPeopleList(filter = "") {
             }
             const div = document.createElement("div");
             div.className = "friend-item";
-            // Conteneur pour l'image de profil avec effet hover
+            // Rendre tout l'item cliquable
+            div.addEventListener("click", () => {
+                showProfileCard(person.username, person.profile_picture, person.email, person.bio, person.id);
+            });
+            // Conteneur pour l'image de profil
             const profileContainer = document.createElement("div");
             profileContainer.className = "profile-picture-container";
             // Ajouter l'image de profil
@@ -69,24 +73,13 @@ export async function renderPeopleList(filter = "") {
                 img.className = "profile-picture";
             img.src = person.profile_picture || "default-profile.png";
             img.alt = `${person.username}'s profile picture`;
-            // Ajouter la couche de survol
-            const overlay = document.createElement("div");
-            overlay.className = "profile-picture-overlay";
-            const overlayText = document.createElement("span");
-            overlayText.textContent = "View";
-            overlay.appendChild(overlayText);
-            // Ajouter un événement pour afficher la carte "profil"
-            profileContainer.addEventListener("click", () => {
-                showProfileCard(person.username, person.profile_picture, person.email, person.bio, person.id);
-            });
-            // Ajouter les éléments au conteneur
             profileContainer.appendChild(img);
-            profileContainer.appendChild(overlay);
-            // Ajouter le conteneur au div principal
+            // Supprimer l'overlay "view"
             div.appendChild(profileContainer);
             const label = document.createElement("span");
             label.className = "friend-name";
             label.textContent = person.username;
+            div.appendChild(label);
             const button = document.createElement("button");
             const button2 = document.createElement("button");
             if (isFriend) {
@@ -114,12 +107,14 @@ export async function renderPeopleList(filter = "") {
             }
             button.setAttribute("data-name", person.username);
             if (isRequested) {
-                button2.addEventListener("click", async () => {
+                button2.addEventListener("click", async (e) => {
+                    e.stopPropagation();
                     await refuseFriendRequest(person.username);
                     await renderPeopleList();
                 });
             }
-            button.addEventListener("click", async () => {
+            button.addEventListener("click", async (e) => {
+                e.stopPropagation();
                 if (isFriend) {
                     await removeFriend(person.username);
                 }
@@ -134,7 +129,6 @@ export async function renderPeopleList(filter = "") {
                 }
                 await renderPeopleList();
             });
-            div.appendChild(label);
             div.appendChild(button);
             div.appendChild(button2);
             container.appendChild(div);
