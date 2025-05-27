@@ -98,7 +98,7 @@ export class GameClient
         switch (troopType)
         {
             case 'archer':
-                if (playerState.gold >= 40)
+                if (playerState.gold >= 15)
                 {
                     this.socket.emit("command", {type: "spawn", troopType});
                     return true;
@@ -111,6 +111,24 @@ export class GameClient
                 }
             case 'mage':
                 if (playerState.gold >= 60)
+                {
+                    this.socket.emit("command", {type: "spawn", troopType});
+                    return true;
+                }
+            case 'minotaur':
+                if (playerState.gold >= 120)
+                {
+                    this.socket.emit("command", {type: "spawn", troopType});
+                    return true;
+                }
+            case 'samourai':
+                if (playerState.gold >= 60)
+                {
+                    this.socket.emit("command", {type: "spawn", troopType});
+                    return true;
+                }
+            case 'samouraiArcher':
+                if (playerState.gold >= 50)
                 {
                     this.socket.emit("command", {type: "spawn", troopType});
                     return true;

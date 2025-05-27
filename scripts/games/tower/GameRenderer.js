@@ -40,7 +40,71 @@ export class GameRenderer {
             enemy_archer_dead: '/assets/games/Tower/characters/archer/archerDeadEnemy.png',
             // -------------- Idle
             player_archer_idle: '/assets/games/Tower/characters/archer/archerIdlePlayer.png',
-            enemy_archer_idle: '/assets/games/Tower/characters/archer/archerIdleEnemy.png'
+            enemy_archer_idle: '/assets/games/Tower/characters/archer/archerIdleEnemy.png',
+            // Mage //////////////////////////////////////////////////////////////////////
+            //
+            // -------------- Badge
+            mage_badge: '/assets/games/Tower/characters/mage/badge.png',
+            // -------------- Walk
+            player_mage_walk: '/assets/games/Tower/characters/mage/mageWalkPlayer.png',
+            enemy_mage_walk: '/assets/games/Tower/characters/mage/mageWalkEnemy.png',
+            // -------------- Attack
+            player_mage_attack: '/assets/games/Tower/characters/mage/mageAttackPlayer.png',
+            enemy_mage_attack: '/assets/games/Tower/characters/mage/mageAttackEnemy.png',
+            // -------------- Death
+            player_mage_dead: '/assets/games/Tower/characters/mage/mageDeadPlayer.png',
+            enemy_mage_dead: '/assets/games/Tower/characters/mage/mageDeadEnemy.png',
+            // -------------- Idle
+            player_mage_idle: '/assets/games/Tower/characters/mage/mageIdlePlayer.png',
+            enemy_mage_idle: '/assets/games/Tower/characters/mage/mageIdleEnemy.png',
+            // Minotaur //////////////////////////////////////////////////////////////////////
+            //
+            // -------------- Badge
+            minotaur_badge: '/assets/games/Tower/characters/minotaur/badge.png',
+            // -------------- Walk
+            player_minotaur_walk: '/assets/games/Tower/characters/minotaur/minotaurWalkPlayer.png',
+            enemy_minotaur_walk: '/assets/games/Tower/characters/minotaur/minotaurWalkEnemy.png',
+            // -------------- Attack
+            player_minotaur_attack: '/assets/games/Tower/characters/minotaur/minotaurAttackPlayer.png',
+            enemy_minotaur_attack: '/assets/games/Tower/characters/minotaur/minotaurAttackEnemy.png',
+            // -------------- Death
+            player_minotaur_dead: '/assets/games/Tower/characters/minotaur/minotaurDeadPlayer.png',
+            enemy_minotaur_dead: '/assets/games/Tower/characters/minotaur/minotaurDeadEnemy.png',
+            // -------------- Idle
+            player_minotaur_idle: '/assets/games/Tower/characters/minotaur/minotaurIdlePlayer.png',
+            enemy_minotaur_idle: '/assets/games/Tower/characters/minotaur/minotaurIdleEnemy.png',
+            // Samourai //////////////////////////////////////////////////////////////////////
+            //
+            // -------------- Badge
+            samourai_badge: '/assets/games/Tower/characters/samourai/badge.png',
+            // -------------- Walk
+            player_samourai_walk: '/assets/games/Tower/characters/samourai/samouraiWalkPlayer.png',
+            enemy_samourai_walk: '/assets/games/Tower/characters/samourai/samouraiWalkEnemy.png',
+            // -------------- Attack
+            player_samourai_attack: '/assets/games/Tower/characters/samourai/samouraiAttackPlayer.png',
+            enemy_samourai_attack: '/assets/games/Tower/characters/samourai/samouraiAttackEnemy.png',
+            // -------------- Death
+            player_samourai_dead: '/assets/games/Tower/characters/samourai/samouraiDeadPlayer.png',
+            enemy_samourai_dead: '/assets/games/Tower/characters/samourai/samouraiDeadEnemy.png',
+            // -------------- Idle
+            player_samourai_idle: '/assets/games/Tower/characters/samourai/samouraiIdlePlayer.png',
+            enemy_samourai_idle: '/assets/games/Tower/characters/samourai/samouraiIdleEnemy.png',
+            // samouraiArcher //////////////////////////////////////////////////////////////////////
+            //
+            // -------------- Badge
+            samouraiArcher_badge: '/assets/games/Tower/characters/samouraiArcher/badge.png',
+            // -------------- Walk
+            player_samouraiArcher_walk: '/assets/games/Tower/characters/samouraiArcher/samouraiArcherWalkPlayer.png',
+            enemy_samouraiArcher_walk: '/assets/games/Tower/characters/samouraiArcher/samouraiArcherWalkEnemy.png',
+            // -------------- Attack
+            player_samouraiArcher_attack: '/assets/games/Tower/characters/samouraiArcher/samouraiArcherAttackPlayer.png',
+            enemy_samouraiArcher_attack: '/assets/games/Tower/characters/samouraiArcher/samouraiArcherAttackEnemy.png',
+            // -------------- Death
+            player_samouraiArcher_dead: '/assets/games/Tower/characters/samouraiArcher/samouraiArcherDeadPlayer.png',
+            enemy_samouraiArcher_dead: '/assets/games/Tower/characters/samouraiArcher/samouraiArcherDeadEnemy.png',
+            // -------------- Idle
+            player_samouraiArcher_idle: '/assets/games/Tower/characters/samouraiArcher/samouraiArcherIdlePlayer.png',
+            enemy_samouraiArcher_idle: '/assets/games/Tower/characters/samouraiArcher/samouraiArcherIdleEnemy.png'
         };
         const promises = Object.entries(paths).map(([key, src]) => {
             return new Promise((resolve) => {
@@ -278,6 +342,132 @@ export class GameRenderer {
             mageImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(mageButton);
             this.buttons.push(mageButton);
+            // Bouton Minotaur
+            const minotaurButton = new Konva.Group();
+            const minotaurImage = new Konva.Image({
+                image: this.images.minotaur_badge,
+                x: 480 + (buttonSpacing * 3),
+                y: buttonY,
+                height: buttonHeight,
+                width: buttonWidth,
+                offsetX: buttonWidth / 2,
+                offsetY: buttonHeight / 2
+            });
+            minotaurButton.add(minotaurImage);
+            this.buttonCooldowns.set(minotaurButton, false);
+            minotaurButton.on('click', () => {
+                if (!this.buttonCooldowns.get(minotaurButton)) {
+                    console.log('Spawn minotaur');
+                    const spawnSuccess = this.gameClient.spawnUnit('minotaur');
+                    console.log('Spawn success:', spawnSuccess);
+                    if (spawnSuccess) {
+                        this.handleButtonCooldown(minotaurButton, minotaurImage);
+                    }
+                }
+            });
+            minotaurButton.on('mouseover', () => {
+                if (!this.buttonCooldowns.get(minotaurButton)) {
+                    document.body.style.cursor = 'pointer';
+                    minotaurImage.scale({ x: 1.1, y: 1.1 });
+                    this.buttonsLayer.batchDraw();
+                }
+            });
+            minotaurButton.on('mouseout', () => {
+                if (!this.buttonCooldowns.get(minotaurButton)) {
+                    document.body.style.cursor = 'default';
+                    minotaurImage.scale({ x: 1, y: 1 });
+                    this.buttonsLayer.batchDraw();
+                }
+            });
+            // Ajuster la position pour tenir compte du nouveau point d'origine
+            minotaurImage.x(480 + (buttonSpacing * 3) + buttonWidth / 2);
+            minotaurImage.y(buttonY + buttonHeight / 2);
+            this.buttonsLayer.add(minotaurButton);
+            this.buttons.push(minotaurButton);
+            // Bouton Samourai
+            const samouraiButton = new Konva.Group();
+            const samouraiImage = new Konva.Image({
+                image: this.images.samourai_badge,
+                x: 480 + (buttonSpacing * 4),
+                y: buttonY,
+                height: buttonHeight,
+                width: buttonWidth,
+                offsetX: buttonWidth / 2,
+                offsetY: buttonHeight / 2
+            });
+            samouraiButton.add(samouraiImage);
+            this.buttonCooldowns.set(samouraiButton, false);
+            samouraiButton.on('click', () => {
+                if (!this.buttonCooldowns.get(samouraiButton)) {
+                    console.log('Spawn samourai');
+                    const spawnSuccess = this.gameClient.spawnUnit('samourai');
+                    console.log('Spawn success:', spawnSuccess);
+                    if (spawnSuccess) {
+                        this.handleButtonCooldown(samouraiButton, samouraiImage);
+                    }
+                }
+            });
+            samouraiButton.on('mouseover', () => {
+                if (!this.buttonCooldowns.get(samouraiButton)) {
+                    document.body.style.cursor = 'pointer';
+                    samouraiImage.scale({ x: 1.1, y: 1.1 });
+                    this.buttonsLayer.batchDraw();
+                }
+            });
+            samouraiButton.on('mouseout', () => {
+                if (!this.buttonCooldowns.get(samouraiButton)) {
+                    document.body.style.cursor = 'default';
+                    samouraiImage.scale({ x: 1, y: 1 });
+                    this.buttonsLayer.batchDraw();
+                }
+            });
+            // Ajuster la position pour tenir compte du nouveau point d'origine
+            samouraiImage.x(480 + (buttonSpacing * 4) + buttonWidth / 2);
+            samouraiImage.y(buttonY + buttonHeight / 2);
+            this.buttonsLayer.add(samouraiButton);
+            this.buttons.push(samouraiButton);
+            // Bouton Samourai Archer
+            const samouraiArcherButton = new Konva.Group();
+            const samouraiArcherImage = new Konva.Image({
+                image: this.images.samouraiArcher_badge,
+                x: 480 + (buttonSpacing * 5),
+                y: buttonY,
+                height: buttonHeight,
+                width: buttonWidth,
+                offsetX: buttonWidth / 2,
+                offsetY: buttonHeight / 2
+            });
+            samouraiArcherButton.add(samouraiArcherImage);
+            this.buttonCooldowns.set(samouraiArcherButton, false);
+            samouraiArcherButton.on('click', () => {
+                if (!this.buttonCooldowns.get(samouraiArcherButton)) {
+                    console.log('Spawn samouraiArcher');
+                    const spawnSuccess = this.gameClient.spawnUnit('samouraiArcher');
+                    console.log('Spawn success:', spawnSuccess);
+                    if (spawnSuccess) {
+                        this.handleButtonCooldown(samouraiArcherButton, samouraiArcherImage);
+                    }
+                }
+            });
+            samouraiArcherButton.on('mouseover', () => {
+                if (!this.buttonCooldowns.get(samouraiArcherButton)) {
+                    document.body.style.cursor = 'pointer';
+                    samouraiArcherImage.scale({ x: 1.1, y: 1.1 });
+                    this.buttonsLayer.batchDraw();
+                }
+            });
+            samouraiArcherButton.on('mouseout', () => {
+                if (!this.buttonCooldowns.get(samouraiArcherButton)) {
+                    document.body.style.cursor = 'default';
+                    samouraiArcherImage.scale({ x: 1, y: 1 });
+                    this.buttonsLayer.batchDraw();
+                }
+            });
+            // Ajuster la position pour tenir compte du nouveau point d'origine
+            samouraiArcherImage.x(480 + (buttonSpacing * 5) + buttonWidth / 2);
+            samouraiArcherImage.y(buttonY + buttonHeight / 2);
+            this.buttonsLayer.add(samouraiArcherButton);
+            this.buttons.push(samouraiArcherButton);
         }
     }
     cleanup() {
