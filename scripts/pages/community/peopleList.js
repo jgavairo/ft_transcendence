@@ -79,7 +79,12 @@ export async function renderPeopleList(filter = "") {
             const label = document.createElement("span");
             label.className = "friend-name";
             label.textContent = person.username;
-            div.appendChild(label);
+            // Grouper la photo et le nom dans un conteneur .friend-info
+            const friendInfo = document.createElement("div");
+            friendInfo.className = "friend-info";
+            friendInfo.appendChild(profileContainer);
+            friendInfo.appendChild(label);
+            div.appendChild(friendInfo);
             const button = document.createElement("button");
             const button2 = document.createElement("button");
             if (isFriend) {

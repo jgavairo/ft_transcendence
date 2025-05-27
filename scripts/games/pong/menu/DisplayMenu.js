@@ -263,11 +263,6 @@ export class PongMenuManager {
                 break;
             case 'play':
                 this.createButton('SOLO', gameWidth / 2 - 100, 450, () => this.changeMenu('solo'));
-                // const first = await getFirstPlay();
-                // if (first)
-                //     this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
-                // else
-                //     this.createButton2('MULTI', gameWidth / 2 - 100, 520, () => showNotification('1 game in solo remaining'));
                 this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('main'));
                 break;
@@ -278,10 +273,20 @@ export class PongMenuManager {
                 this.createButton('BACK', gameWidth / 2 - 100, 660, () => this.changeMenu('play'));
                 break;
             case 'multi':
-                this.createButton('2 PLAYERS', gameWidth / 2 - 100, 450, () => this.onlineLobby(2));
-                this.createButton('3 PLAYERS', gameWidth / 2 - 100, 520, () => this.onlineLobby(3));
+                this.createButton('2 PLAYERS', gameWidth / 2 - 100, 450, () => this.changeMenu('multi-2'));
+                this.createButton('3 PLAYERS', gameWidth / 2 - 100, 520, () => this.changeMenu('multi-3'));
                 this.createButton('TOURNAMENT', gameWidth / 2 - 100, 590, () => this.changeMenu('tournament'));
                 this.createButton('BACK', gameWidth / 2 - 100, 660, () => this.changeMenu('play'));
+                break;
+            case 'multi-2':
+                this.createButton('PRIVATE', gameWidth / 2 - 100, 450, () => this.privateLobby(2));
+                this.createButton('ONLINE', gameWidth / 2 - 100, 520, () => this.onlineLobby(2));
+                this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('multi'));
+                break;
+            case 'multi-3':
+                this.createButton('PRIVATE', gameWidth / 2 - 100, 450, () => this.privateLobby(3));
+                this.createButton('ONLINE', gameWidth / 2 - 100, 520, () => this.onlineLobby(3));
+                this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('multi'));
                 break;
             case 'tournament':
                 this.createButton('4 PLAYERS', gameWidth / 2 - 100, 450, () => {
@@ -785,6 +790,37 @@ export class PongMenuManager {
                 onTriMatchFound(data);
             }
         }, 1000);
+    }
+    // Crée une room privée non listée, met l'utilisateur en attente dans la room (sans afficher l'ID)
+    async privateLobby(nbPlayers) {
+        const currentUser = await GameManager.getCurrentUser();
+        const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
+        connectPong(true);
+        gameSocket.emit('createPrivateRoom', { username, nbPlayers }, (data) => {
+            this.menuLayer.destroyChildren();
+            const waitingText = new Konva.Text({
+                text: 'Waiting for other players to join...',
+                fontFamily: 'Press Start 2P',
+                fontSize: 20,
+                fill: '#fc4cfc',
+                x: gameWidth / 2 - 250,
+                y: 470,
+                width: 500,
+                align: 'center',
+            });
+            this.menuLayer.add(waitingText);
+            this.createButton('QUIT', gameWidth / 2 - 100, 600, () => {
+                gameSocket.emit('leavePrivateRoom', { roomId: data.roomId });
+                waitingText.destroy();
+                // Find and destroy the button from the buttons array
+                const quitButton = this.buttons.find(button => button.text === 'QUIT');
+                if (quitButton)
+                    quitButton.group.destroy();
+                gameSocket.disconnect();
+                this.changeMenu('multi');
+            });
+            this.menuLayer.batchDraw();
+        });
     }
 }
 export async function displayMenu() {
