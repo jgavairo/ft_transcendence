@@ -1,7 +1,7 @@
 /* Section des amis */
 .friends-section {
     background-color: #1e2a38;
-    border-radius: 12px;
+    border-radius: 1rem;
     padding: 1.5rem;
     width: 35%;
     min-width: 300px;
@@ -9,6 +9,7 @@
     display: flex;
     flex-direction: column;
     height: 500px; /* fixe une hauteur max */
+    overflow: visible;
 }
 
 .friends-section h2 {
@@ -34,45 +35,74 @@
     flex-direction: column;
     gap: 0.5rem; /* Réduit l'espace entre les éléments */
     padding-right: 10px;
+    padding-left: 10px;
     max-height: 350px; /* Limite la hauteur de la liste */
     overflow-y: auto;  /* Ajoute une barre de défilement si besoin */
 }
 
+/* Harmonisation du style peopleList avec ranking (leaderboard) */
 .friend-item {
-    display: flex;
-    align-items: center; /* Aligne verticalement les éléments */
-    justify-content: flex-start; /* Aligne les éléments à gauche */
-    gap: 10px; /* Ajoute un espace entre les éléments */
-    margin-bottom: 5px; /* Réduit l'espace entre les lignes */
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  background-color: #1e2a38;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  box-shadow: none;
+  position: relative;
+  min-height: 48px;
+  overflow: hidden;
+}
+
+/* Nouveau : groupe la photo et le nom ensemble à gauche */
+.friend-info {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
 }
 
 .friend-name {
-    text-align: left;
-    font-size: 1rem;
-    color: white;
-    flex: 1;
-    line-height: 1.5; /* Améliore la lisibilité */
-    white-space: nowrap; /* Empêche le texte de dépasser */
-    overflow: hidden; /* Cache le texte qui dépasse */
-    text-overflow: ellipsis; /* Ajoute "..." si le texte est trop long */
+  flex: none;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  margin-right: 0;
+}
+
+/* Place les boutons à droite avec un margin-left auto */
+.friend-item > .toggle-button,
+.friend-item > .toggle-button.refused {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* Si deux boutons, espace entre eux */
+.friend-item > .toggle-button.refused {
+  margin-left: 0.5rem;
+}
+
+.friend-item:hover {
+  background-color: #374151;
+  transform: scale(1.02);
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+  z-index: 2;
 }
 
 .profile-picture-container {
-    position: relative; /* Assure que l'overlay est bien positionné */
-    width: 40px;
-    height: 40px;
-    border-radius: 50%; /* Assure que le conteneur est rond */
-    overflow: hidden;
-    cursor: pointer;
-    flex-shrink: 0; /* Empêche le conteneur de se réduire */
-}
-
-/* Image de profil */
-.profile-picture {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%; /* Assure que l'image est ronde */
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 1rem;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-picture.online
@@ -81,7 +111,7 @@
     height: 100%;
     object-fit: cover;
     border-radius: 50%; /* Assure que l'image est ronde */
-    border: 2px solid #4caf50;
+    border: 3px solid #4caf50;
 }
 
 /* Couche de survol */
@@ -111,11 +141,11 @@
 
 /* Effet hover */
 .profile-picture-container:hover .profile-picture-overlay {
-    opacity: 1; /* Affiche la couche de survol */
+    opacity: 0; /* Gardé invisible intentionnellement */
 }
 
 .profile-picture-container:hover .profile-picture {
-    transform: scale(1.1); /* Zoom léger sur l'image */
+    transform: none; /* Aucune transformation appliquée */
 }
 
 .toggle-button {
