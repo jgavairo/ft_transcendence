@@ -3,6 +3,8 @@ import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
+import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
+
 async function fetchCurrentUser(): Promise<string | null> {
     try {
         const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, {
@@ -36,26 +38,6 @@ async function fetchChatHistory(username: string): Promise<{ author: string, con
     } catch (error) {
         console.error("Error fetching chat history:", error);
         return [];
-    }
-}
-
-// Ajoute un cache pour éviter de refaire la requête pour chaque message du même auteur
-const blockedCache: Record<string, boolean> = {};
-
-async function isBlocked(author: string): Promise<boolean> {
-    if (blockedCache[author] !== undefined) return blockedCache[author];
-    try {
-        const response = await fetch(`https://${HOSTNAME}:8443/api/user/isBlocked`, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: author })
-        });
-        const data = await response.json();
-        blockedCache[author] = !!data.isBlocked;
-        return blockedCache[author];
-    } catch {
-        return false;
     }
 }
 
@@ -347,4 +329,7 @@ export async function setupChat() {
             items[idx].click();
         }
     });
+
+    // Vider le cache partagé au début de setupChat
+    clearBlockedCache();
 }

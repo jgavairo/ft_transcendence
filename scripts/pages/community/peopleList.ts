@@ -345,12 +345,23 @@ export async function showProfileCard(username: string, profilePicture: string, 
             blockButton.prepend(iconSpan);
         }
         blockButton.disabled = false;
-        // Sauvegarde la page courante avant reload
-        const activeBtn = document.querySelector('.activebutton');
-        if (activeBtn && activeBtn.id) {
-            localStorage.setItem('currentPage', activeBtn.id.replace('button', ''));
+        try {
+            if (document.getElementById("communitybutton")?.classList.contains("activebutton")) {
+                // On est sur la page communauté : vider le chat puis relancer setupChat
+                const chatContainer = document.getElementById("chatContainer");
+                if (chatContainer) chatContainer.innerHTML = "";
+                const { setupChat } = await import("./chat.js");
+                setupChat();
+            } else {
+                // Autre page, widget chat
+                const { removeChatWidget, setupChatWidget } = await import("./chatWidget.js");
+                removeChatWidget();
+                setupChatWidget();
+            }
+        } catch (e) {
+            console.error("Failed to refresh chat after block/unblock", e);
         }
-        window.location.reload();
+        
     });
 
     topLeftContainer.appendChild(blockButton);
