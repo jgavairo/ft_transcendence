@@ -298,25 +298,13 @@ export class PongMenuManager {
     }
     //fonctions pr tournoi
     setupSocketListeners() {
-        gameSocket.on('readyForMatch', ({ matchId, opponent }) => {
-            // affiche un bouton “I’m Ready” + texte “vs. opponent”
-            this.menuLayer.removeChildren();
-            this.menuLayer.add(new Konva.Text({ x: 100, y: 100, text: `Finale contre ${opponent}` }));
-            const readyBtn = this.createButton('I\'m Ready', 100, 200, () => {
-                gameSocket.emit('playerReady', { matchId });
-                // Optionnel : désactiver le bouton pour éviter le spam
-                this.menuLayer.batchDraw();
-            });
-            this.menuLayer.add(readyBtn);
-            this.menuLayer.batchDraw();
-        });
         // 1) Bracket (liste des inscrits)
         gameSocket.on('tournamentBracket', (view) => {
             this.showBracket(view.size, view.joined);
         });
         // 2) Match trouvé
-        gameSocket.on('tournamentMatchFound', ({ matchId, side, opponent }) => {
-            PongMenuManager.matchFound2Players({ matchId, side, opponent });
+        gameSocket.on('tournamentMatchFound', (data) => {
+            this.startMatch(data);
         });
         // 3) Tournoi terminé
         gameSocket.on('tournamentOver', ({ winner }) => {
@@ -337,8 +325,6 @@ export class PongMenuManager {
     async onlineTournament(size) {
         const current = await GameManager.getCurrentUser();
         const username = (current === null || current === void 0 ? void 0 : current.username) || 'Player';
-        // 1) prépare le canvas Pong (comme en 1-vs-1)
-        connectPong(true);
         // 2) join la queue tournoi
         await this.joinTournamentQueue(size, username);
         // 3) feedback "waiting" animé
@@ -380,21 +366,72 @@ export class PongMenuManager {
         this.menuLayer.batchDraw();
     }
     /** Lance le match : nettoie le menu, appelle onMatchFound, branche renderPong */
-    startMatch({ matchId, side, opponent }) {
-        this.mySide = side;
-        GameManager.getCurrentUser().then(u => this.myUsername = u.username);
-        // efface tout l'ancien menu
+    async startMatch({ matchId, side, opponent }) {
+        // 1) clear out any old menu
         this.menuLayer.removeChildren();
         this.menuLayer.batchDraw();
-        // démarrage Pong
-        // 2) désabonner l’ancien gameState
+        // 2) drop any old gameState listeners
         gameSocket.removeAllListeners('gameState');
         connectPong(true);
-        onMatchFound({ matchId, side, opponent });
+        const menu = PongMenuManager.instance;
+        // Nettoyage des éléments existants
+        menu.buttons.forEach(button => button.group.destroy());
+        menu.buttons = [];
+        menu.menuLayer.destroyChildren();
+        const current = await GameManager.getCurrentUser();
+        const you = (current === null || current === void 0 ? void 0 : current.username) || 'You';
+        // Affichage des joueurs
+        const player1Text = new Konva.Text({
+            text: you,
+            fontFamily: 'Press Start 2P',
+            fontSize: 20,
+            fill: '#00e7fe',
+            x: (gameWidth / 6),
+            y: 450,
+            width: 400,
+            align: 'center'
+        });
+        const player2Text = new Konva.Text({
+            text: `${opponent}`,
+            fontFamily: 'Press Start 2P',
+            fontSize: 20,
+            fill: '#00e7fe',
+            x: gameWidth / 2,
+            y: 450,
+            width: 400,
+            align: 'center'
+        });
+        const countdownText = new Konva.Text({
+            text: 'Game starting in 5',
+            fontFamily: 'Press Start 2P',
+            fontSize: 24,
+            fill: '#fc4cfc',
+            x: gameWidth / 2 - 200,
+            y: 520,
+            width: 400,
+            align: 'center'
+        });
+        menu.menuLayer.add(player1Text);
+        menu.menuLayer.add(player2Text);
+        menu.menuLayer.add(countdownText);
+        // Décompte
+        let count = 5;
+        const countdown = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countdownText.text(`Game starting in ${count}`);
+                menu.menuLayer.batchDraw();
+            }
+            else {
+                clearInterval(countdown);
+                onMatchFound({ matchId, side, you, opponent });
+            }
+        }, 1000);
+        // 5) finally hook up the render loop
         gameSocket.on('gameState', (state) => {
             renderPong(state);
             if (state.gameOver) {
-                gameSocket.removeListener('gameState');
+                gameSocket.removeAllListeners('gameState');
             }
         });
     }
