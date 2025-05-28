@@ -22,11 +22,11 @@ export const GAME_CONFIG = {
     {
         archer:
         {
-            hp: 30,
+            hp: 20,
             speed: 50,
-            damage: 10,
+            damage: 15,
             range: 150,
-            cost: 15,
+            cost: 20,
             imgKey: 'archer_walk',
             attackSpeed: 1,
             attackImgKey: 'archer_attack',
@@ -35,7 +35,7 @@ export const GAME_CONFIG = {
         },
         knight:
         {
-            hp: 120,
+            hp: 180,
             speed: 50,
             damage: 40,
             range: 40,
@@ -54,14 +54,14 @@ export const GAME_CONFIG = {
             range: 120,
             cost: 60,
             imgKey: 'mage_walk',
-            attackSpeed: 0.5,
+            attackSpeed: 1,
             attackImgKey: 'mage_attack',
             idleImgKey: 'mage_idle',
             deadImgKey: 'mage_dead'
         },
         minotaur:
         {
-            hp: 200,
+            hp: 250,
             speed: 50,
             damage: 100,
             range: 50,
@@ -74,9 +74,9 @@ export const GAME_CONFIG = {
         },
         samourai:
         {
-            hp: 100,
+            hp: 70,
             speed: 50,
-            damage: 60,
+            damage: 100,
             range: 40,
             cost: 60,
             imgKey: 'samourai_walk',
@@ -93,7 +93,7 @@ export const GAME_CONFIG = {
             range: 350,
             cost: 50,
             imgKey: 'samouraiArcher_walk',
-            attackSpeed: 0.5,
+            attackSpeed: 1,
             attackImgKey: 'samouraiArcher_attack',
             idleImgKey: 'samouraiArcher_idle',
             deadImgKey: 'samouraiArcher_dead'

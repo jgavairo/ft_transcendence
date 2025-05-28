@@ -44,7 +44,8 @@ export class TowerMenuManager {
         this.animationFrames = [];
     }
 
-    public start() {
+    public start() 
+    {
         // Annuler les animations existantes avant de commencer
         this.cancelAllAnimations();
 
@@ -178,7 +179,9 @@ export class TowerMenuManager {
                 this.titleText.y(this.titleText.y() + speed);
                 this.titleLayer.batchDraw();
                 animationFrame = requestAnimationFrame(animate);
-            } else {
+            }
+            else 
+            {
                 this.stage.off('click', skipAnimation);
                 this.changeMenu('main');
             }
@@ -285,36 +288,91 @@ export class TowerMenuManager {
             this.client = null;
     }
 
-    async changeMenu(menuType: 'main' | 'play' | 'solo' | 'multi' | 'endMatch', winner?: string) {
+    private createUnitsPanel() {
+        const panelImage = new window.Image();
+        panelImage.src = '/assets/games/Tower/UnitsPanel.png';
+        panelImage.onload = () => {
+            const panel = new Konva.Image({
+                image: panelImage,
+                x: 0,
+                y: 0,
+                width: 1200,
+                height: 800
+            });
+            this.backgroundLayer.add(panel);
+            this.backgroundLayer.batchDraw();
+        };
+    }
+
+    async changeMenu(menuType: 'main' | 'play' | 'solo' | 'multi' | 'endMatch' | 'units', winner?: string) {
         // Annuler les animations existantes avant de changer de menu
         this.cancelAllAnimations();
 
         // Vérifier si le stage existe, sinon le réinitialiser
         console.log("Changing menu to", menuType);
-        if (!this.stage) 
-        {
-            console.log("Creating new stage");
-            const container = document.getElementById("games-modal");
-            if (!container) {
-                console.error("Canvas not found");
-                return;
-            }
-            console.log("Creating new stage");
-            this.stage = new Konva.Stage({
-                container: container as HTMLDivElement,
+        const container = document.getElementById("games-modal");
+        if (!container) {
+            console.error("Canvas not found");
+            return;
+        }
+
+        // Détruire l'ancien stage s'il existe
+        if (this.stage) {
+            this.stage.destroy();
+        }
+
+        // Créer un nouveau stage
+        this.stage = new Konva.Stage({
+            container: container as HTMLDivElement,
+            width: gameWidth,
+            height: gameHeight
+        });
+
+        // Initialiser les layers
+        this.backgroundLayer = new Konva.Layer();
+        this.titleLayer = new Konva.Layer();
+        this.menuLayer = new Konva.Layer();
+
+        this.stage.add(this.backgroundLayer);
+        this.stage.add(this.titleLayer);
+        this.stage.add(this.menuLayer);
+
+        // Nettoyer les layers
+        this.backgroundLayer.destroyChildren();
+        this.titleLayer.destroyChildren();
+        this.menuLayer.destroyChildren();
+
+        // Charger le background normal
+        const bgImage = new window.Image();
+        bgImage.src = '/assets/games/Tower/TowerBackground.png';
+        bgImage.onload = () => {
+            const KonvaBg = new Konva.Image({
+                image: bgImage,
+                x: 0,
+                y: 0,
                 width: gameWidth,
                 height: gameHeight
             });
-            console.log("Stage created");
-            this.backgroundLayer = new Konva.Layer();
-            this.titleLayer = new Konva.Layer();
-            this.menuLayer = new Konva.Layer();
+            this.backgroundLayer.add(KonvaBg);
+            this.backgroundLayer.batchDraw();
+        };
 
-            console.log("Adding layers to stage");
-            this.stage.add(this.backgroundLayer);
-            this.stage.add(this.titleLayer);
-            this.stage.add(this.menuLayer);
-            console.log("Layers added to stage");
+        // Charger le titre seulement si ce n'est pas le menu units
+        if (menuType !== 'units') {
+            const titleImg = new window.Image();
+            titleImg.src = '/assets/games/Tower/TowerTitle.png';
+            titleImg.onload = () => {
+                const scale = 0.4;
+                const konvaTitle = new Konva.Image({
+                    image: titleImg,
+                    x: (gameWidth - titleImg.width * scale) / 2,
+                    y: 20,
+                    width: titleImg.width * scale,
+                    height: titleImg.height * scale
+                });
+                this.titleLayer.add(konvaTitle);
+                this.titleLayer.batchDraw();
+            };
         }
 
         console.log("Cleaning up old buttons");
@@ -322,10 +380,11 @@ export class TowerMenuManager {
         this.buttons.forEach(button => button.group.destroy());
         this.buttons = [];
         console.log("Buttons cleaned");
+
         switch (menuType) {
             case 'main':
                 this.createButton('PLAY', gameWidth / 2 - 125, 350, () => this.changeMenu('play'));
-                this.createButton('UNITS', gameWidth / 2 - 125, 440, () => alert('Units not available yet'));
+                this.createButton('UNITS', gameWidth / 2 - 125, 440, () => this.changeMenu('units'));
                 this.createButton('QUIT', gameWidth / 2 - 125, 530, () => {
                     const modal = document.getElementById('optionnalModal');
                     this.stage.destroy();
@@ -340,15 +399,21 @@ export class TowerMenuManager {
                 });
                 break;
             case 'solo':
-                this.createButton('START GAME', gameWidth / 2 - 125, 350, () => this.launchSoloGame());
+                this.createButton('START GAME', gameWidth / 2 - 125, 440, () => this.launchSoloGame());
                 this.createButton('BACK', gameWidth / 2 - 125, 530, () => {
                     this.changeMenu('play');
                 });
                 break;
             case 'multi':
-                this.createButton('SEARCH GAME', gameWidth / 2 - 125, 350, () => this.launchMultiGame());
+                this.createButton('SEARCH GAME', gameWidth / 2 - 125, 440, () => this.launchMultiGame());
                 this.createButton('BACK', gameWidth / 2 - 125, 530, () => {
                     this.changeMenu('play');
+                });
+                break;
+            case 'units':
+                this.createUnitsPanel();
+                this.createButton('BACK', gameWidth / 2 - 125, 700, () => {
+                    this.changeMenu('main');
                 });
                 break;
         }
