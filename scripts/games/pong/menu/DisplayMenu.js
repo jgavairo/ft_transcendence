@@ -345,6 +345,36 @@ export class PongMenuManager {
     }
     /** Montre la liste des inscrits + waiting */
     showBracket(size, joined) {
+        if (joined.length === 2) {
+            // Overlay de transition pour la finale
+            this.menuLayer.removeChildren();
+            const overlay = new Konva.Rect({ /* ... */});
+            const title = new Konva.Text({ /* "Round 1 terminé !" */});
+            // … texte des deux qualifiés …
+            const countdown = new Konva.Text({ /* "Finale dans 5s" */});
+            this.menuLayer.add(overlay).add(title).add(countdown);
+            this.menuLayer.batchDraw();
+            let count = 5;
+            const timer = setInterval(() => {
+                count--;
+                countdown.text(`Finale dans ${count}s`);
+                this.menuLayer.batchDraw();
+                if (count === 0) {
+                    clearInterval(timer);
+                    // Détruit l’overlay et affiche la liste des finalistes
+                    overlay.destroy();
+                    title.destroy();
+                    countdown.destroy();
+                    this.renderSimpleBracket(size, joined);
+                }
+            }, 1000);
+        }
+        else {
+            // Simple liste
+            this.renderSimpleBracket(size, joined);
+        }
+    }
+    renderSimpleBracket(size, joined) {
         this.menuLayer.removeChildren();
         this.menuLayer.add(new Konva.Text({
             x: gameWidth / 2 - 130, y: 30 + 450,

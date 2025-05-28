@@ -466,31 +466,59 @@ export class PongMenuManager
     
       /** Montre la liste des inscrits + waiting */
       private showBracket(size: number, joined: string[]) {
-        this.menuLayer.removeChildren();
+        if (joined.length === 2) {
+            // Overlay de transition pour la finale
+            this.menuLayer.removeChildren();
+            const overlay = new Konva.Rect({ /* ... */ });
+            const title   = new Konva.Text({ /* "Round 1 terminé !" */ });
+            // … texte des deux qualifiés …
+            const countdown = new Konva.Text({ /* "Finale dans 5s" */ });
+            this.menuLayer.add(overlay).add(title).add(countdown);
+            this.menuLayer.batchDraw();
+        
+            let count = 5;
+            const timer = setInterval(() => {
+              count--;
+              countdown.text(`Finale dans ${count}s`);
+              this.menuLayer.batchDraw();
+              if (count === 0) {
+                clearInterval(timer);
+                // Détruit l’overlay et affiche la liste des finalistes
+                overlay.destroy();
+                title.destroy();
+                countdown.destroy();
+                this.renderSimpleBracket(size, joined);
+              }
+            }, 1000);
+        
+          } else {
+            // Simple liste
+            this.renderSimpleBracket(size, joined);
+          }
+    }
     
+    private renderSimpleBracket(size: number, joined: string[]) {
+        this.menuLayer.removeChildren();
         this.menuLayer.add(new Konva.Text({
-          x: gameWidth / 2 - 130, y: 30 + 450,
+          x: gameWidth/2 - 130, y: 30 + 450,
           text: `Tournoi ${size} joueurs`,
           fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
         }));
-    
         joined.forEach((u, i) => {
           this.menuLayer.add(new Konva.Text({
-            x: gameWidth / 2 - 100, y: 80 + i*24 + 450,
+            x: gameWidth/2 - 100, y: 80 + i*24 + 450,
             text: `• ${u}`,
             fontFamily: 'Press Start 2P', fontSize: 16, fill: '#fff'
           }));
         });
-    
         this.menuLayer.add(new Konva.Text({
-          x: gameWidth / 2 - 100, y: 80 + joined.length*24 + 10 + 450,
+          x: gameWidth/2 - 100, y: 80 + joined.length*24 + 10 + 450,
           text: `Waiting… (${joined.length}/${size})`,
           fontFamily: 'Press Start 2P', fontSize: 14, fill: '#888'
         }));
-        
         this.menuLayer.batchDraw();
-    }
-    
+      }
+
     /** Lance le match : nettoie le menu, appelle onMatchFound, branche renderPong */
     private async startMatch({ matchId, side, opponent }: MatchFoundData) {
         // 1) clear out any old menu
