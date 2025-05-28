@@ -47,7 +47,7 @@ export class Game
         // Exemple : l'IA spawn une unité toutes les 2 secondes si elle a assez d'or
         if (this.aiTimer > 2) {
             // Choix aléatoire d'une troupe
-            const troopTypes: UnitType[] = ['archer', 'knight'];
+            const troopTypes: UnitType[] = ['archer', 'knight', 'mage', 'minotaur', 'samourai', 'samouraiArcher'];
             const randomType = troopTypes[Math.floor(Math.random() * troopTypes.length)];
     
             // Essaie de spawn pour l'ennemi
@@ -139,7 +139,26 @@ export class Game
                     unit.deathTimer = 0;
                     // Faire en sorte que toutes les unités qui ciblent cette unité perdent leur cible
                     const enemySide = side === 'player' ? 'enemy' : 'player';
-                    this.state[enemySide].gold += 10;
+                    switch (unit.type)
+                    {
+                        case 'archer':
+                            this.state[enemySide].gold += GAME_CONFIG.UNITS[unit.type].cost / 2;
+                            break;
+                        case 'knight':
+                            this.state[enemySide].gold += GAME_CONFIG.UNITS[unit.type].cost / 2;
+                            break;
+                        case 'mage':
+                            this.state[enemySide].gold += GAME_CONFIG.UNITS[unit.type].cost / 2;
+                            break;
+                        case 'minotaur':
+                            this.state[enemySide].gold += GAME_CONFIG.UNITS[unit.type].cost / 2;
+                            break;
+                        case 'samourai':
+                            this.state[enemySide].gold += GAME_CONFIG.UNITS[unit.type].cost / 2;
+                            break;
+                        case 'samouraiArcher':
+                            this.state[enemySide].gold += GAME_CONFIG.UNITS[unit.type].cost / 2;
+                    }
                     this.state[enemySide].units.forEach(enemyUnit => {
                         if (enemyUnit.targetId === unit.id) {
                             enemyUnit.targetId = null;

@@ -27,7 +27,6 @@ export class GameClient {
             console.error("Canvas not found");
             return;
         }
-        this.menu.start();
         this.menu.changeMenu('main');
     }
     endMatch(winner) {
@@ -37,7 +36,6 @@ export class GameClient {
             console.error("Canvas not found");
             return;
         }
-        this.menu.start();
         this.menu.changeMenu('endMatch', winner);
         return;
     }
@@ -71,35 +69,41 @@ export class GameClient {
         let unitConfig = false;
         switch (troopType) {
             case 'archer':
-                if (playerState.gold >= 15) {
+                if (playerState.gold >= 20) {
                     this.socket.emit("command", { type: "spawn", troopType });
                     return true;
                 }
+                return false;
             case 'knight':
                 if (playerState.gold >= 50) {
                     this.socket.emit("command", { type: "spawn", troopType });
                     return true;
                 }
+                return false;
             case 'mage':
                 if (playerState.gold >= 60) {
                     this.socket.emit("command", { type: "spawn", troopType });
                     return true;
                 }
+                return false;
             case 'minotaur':
                 if (playerState.gold >= 120) {
                     this.socket.emit("command", { type: "spawn", troopType });
                     return true;
                 }
+                return false;
             case 'samourai':
                 if (playerState.gold >= 60) {
                     this.socket.emit("command", { type: "spawn", troopType });
                     return true;
                 }
+                return false;
             case 'samouraiArcher':
                 if (playerState.gold >= 50) {
                     this.socket.emit("command", { type: "spawn", troopType });
                     return true;
                 }
+                return false;
             default:
                 return false;
         }
@@ -135,7 +139,6 @@ export class GameClient {
         console.log("Canceling matchmaking");
         this.socket.emit("leaveQueue");
         this.socket.disconnect();
-        this.menu.start();
         this.menu.changeMenu('play');
     }
     cleanup() {

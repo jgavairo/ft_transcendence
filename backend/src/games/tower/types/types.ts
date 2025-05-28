@@ -1,4 +1,4 @@
-export type UnitType = 'archer' | 'knight'
+export type UnitType = 'archer' | 'knight' | 'mage' | 'minotaur' | 'samourai' | 'samouraiArcher' 
 
 export interface Unit
 {
