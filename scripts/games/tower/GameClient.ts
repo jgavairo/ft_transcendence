@@ -4,6 +4,7 @@ import { InputHandler } from './InputHandler.js';
 import { HOSTNAME, MainApp } from '../../main.js';
 import { TowerMenuManager } from './GameMenu.js';
 
+
 export class GameClient
 {
     private socket: Socket;
@@ -12,6 +13,7 @@ export class GameClient
     private username: string;
     private currentState: any = null;
     private menu: TowerMenuManager;
+    private roomId: string | null = null;
     constructor(username: string, menuManager: TowerMenuManager)
     {
         this.username = username;
@@ -34,6 +36,9 @@ export class GameClient
 
     public quitMatch()
     {
+        console.log("Quitting match with roomId:", this.roomId);
+        this.socket.emit("quitMatch", this.roomId, this.username);
+        this.roomId = null;
         this.cleanup();
         const container = document.getElementById("games-modal");
         if (!container) {
@@ -93,7 +98,9 @@ export class GameClient
         if (!this.currentState) return false;
         
         const playerState = this.renderer.getPlayerSide() === 'player' ? this.currentState.player : this.currentState.enemy;
-        let unitConfig = false;
+        const unitscount = playerState.units.length;
+        if (unitscount >= 8)
+            return false;
         switch (troopType)
         {
             case 'archer':
@@ -161,6 +168,7 @@ export class GameClient
         });
 
         this.socket.on("matchFound", (data) => {
+            this.roomId = data.roomId;
             console.log("Match found:", data);
             this.renderer.stopWaitingScreen();
             this.menu.cleanup();

@@ -698,15 +698,21 @@ const start = async () => {
                 }
 
                 // Chercher le jeu multijoueur du joueur
-                for (const [roomId, game] of towerGames.entries()) {
-                    if (roomId.startsWith('tower_')) {
+                for (const [roomId, game] of towerGames.entries())
+                {
+                    if (roomId.startsWith('tower_')) 
+                    {
                         const isPlayerOne = game.getSocketPlayerOne() === socket.id;
                         const isPlayerTwo = game.getSocketPlayerTwo() === socket.id;
                         
-                        if (isPlayerOne || isPlayerTwo) {
-                            if (command.type === 'spawn') {
+                        if (isPlayerOne || isPlayerTwo) 
+                        {
+                            if (command.type === 'spawn')
+                            {
                                 const side = isPlayerOne ? 'player' : 'enemy';
-                                game.spawnUnit(side, command.troopType);
+                                const unitscount = game.getState()[side].units.length;
+                                if (unitscount < 8)
+                                    game.spawnUnit(side, command.troopType);
                             }
                             break;
                         }
@@ -721,6 +727,17 @@ const start = async () => {
                     socket.join(roomId);
                     game.update();
                     towerNs.to(roomId).emit('gameState', game.getState());
+                }
+            });
+
+            socket.on('quitMatch', (roomId: string, username : string) => {
+                console.log(username + " leave a match, he has forfaited");
+                const game = towerGames.get(roomId);
+                console.log("Game:", game);
+                if (game) 
+                {
+                    console.log("Killing player:", username);
+                    game.killPlayer(username);
                 }
             });
             
