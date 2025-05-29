@@ -89,6 +89,18 @@ export class Game
         return true;
     }
 
+    public killPlayer(username: string): void
+    {
+        if (this.state.player.username === username)
+        {
+            this.state.player.tower = 0;
+        }
+        else
+        {
+            this.state.enemy.tower = 0;
+        }
+    }
+
     public update(): void
     {
         const now = Date.now();

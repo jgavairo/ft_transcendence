@@ -1,5 +1,6 @@
 // @ts-ignore
 import Konva from "https://cdn.skypack.dev/konva";
+const buttonPosition = 400;
 export class GameRenderer {
     loadImages() {
         const paths = {
@@ -220,7 +221,7 @@ export class GameRenderer {
             const archerButton = new Konva.Group();
             const archerImage = new Konva.Image({
                 image: this.images.archer_badge,
-                x: 480,
+                x: buttonPosition,
                 y: buttonY,
                 height: buttonHeight,
                 width: buttonWidth,
@@ -231,9 +232,7 @@ export class GameRenderer {
             this.buttonCooldowns.set(archerButton, false);
             archerButton.on('click', () => {
                 if (!this.buttonCooldowns.get(archerButton)) {
-                    console.log('Spawn archer');
                     const spawnSuccess = this.gameClient.spawnUnit('archer');
-                    console.log('Spawn success:', spawnSuccess);
                     if (spawnSuccess) {
                         this.handleButtonCooldown(archerButton, archerImage);
                     }
@@ -254,7 +253,7 @@ export class GameRenderer {
                 }
             });
             // Ajuster la position pour tenir compte du nouveau point d'origine
-            archerImage.x(480 + buttonWidth / 2);
+            archerImage.x(buttonPosition + buttonWidth / 2);
             archerImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(archerButton);
             this.buttons.push(archerButton);
@@ -262,7 +261,7 @@ export class GameRenderer {
             const knightButton = new Konva.Group();
             const knightImage = new Konva.Image({
                 image: this.images.knight_badge,
-                x: 480 + buttonSpacing,
+                x: buttonPosition + buttonSpacing,
                 y: buttonY,
                 height: buttonHeight,
                 width: buttonWidth,
@@ -296,7 +295,7 @@ export class GameRenderer {
                 }
             });
             // Ajuster la position pour tenir compte du nouveau point d'origine
-            knightImage.x(480 + buttonSpacing + buttonWidth / 2);
+            knightImage.x(buttonPosition + buttonSpacing + buttonWidth / 2);
             knightImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(knightButton);
             this.buttons.push(knightButton);
@@ -304,7 +303,7 @@ export class GameRenderer {
             const mageButton = new Konva.Group();
             const mageImage = new Konva.Image({
                 image: this.images.mage_badge,
-                x: 480 + (buttonSpacing * 2),
+                x: buttonPosition + (buttonSpacing * 2),
                 y: buttonY,
                 height: buttonHeight,
                 width: buttonWidth,
@@ -338,7 +337,7 @@ export class GameRenderer {
                 }
             });
             // Ajuster la position pour tenir compte du nouveau point d'origine
-            mageImage.x(480 + (buttonSpacing * 2) + buttonWidth / 2);
+            mageImage.x(buttonPosition + (buttonSpacing * 2) + buttonWidth / 2);
             mageImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(mageButton);
             this.buttons.push(mageButton);
@@ -346,7 +345,7 @@ export class GameRenderer {
             const minotaurButton = new Konva.Group();
             const minotaurImage = new Konva.Image({
                 image: this.images.minotaur_badge,
-                x: 480 + (buttonSpacing * 3),
+                x: buttonPosition + (buttonSpacing * 3),
                 y: buttonY,
                 height: buttonHeight,
                 width: buttonWidth,
@@ -380,7 +379,7 @@ export class GameRenderer {
                 }
             });
             // Ajuster la position pour tenir compte du nouveau point d'origine
-            minotaurImage.x(480 + (buttonSpacing * 3) + buttonWidth / 2);
+            minotaurImage.x(buttonPosition + (buttonSpacing * 3) + buttonWidth / 2);
             minotaurImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(minotaurButton);
             this.buttons.push(minotaurButton);
@@ -388,7 +387,7 @@ export class GameRenderer {
             const samouraiButton = new Konva.Group();
             const samouraiImage = new Konva.Image({
                 image: this.images.samourai_badge,
-                x: 480 + (buttonSpacing * 4),
+                x: buttonPosition + (buttonSpacing * 4),
                 y: buttonY,
                 height: buttonHeight,
                 width: buttonWidth,
@@ -422,7 +421,7 @@ export class GameRenderer {
                 }
             });
             // Ajuster la position pour tenir compte du nouveau point d'origine
-            samouraiImage.x(480 + (buttonSpacing * 4) + buttonWidth / 2);
+            samouraiImage.x(buttonPosition + (buttonSpacing * 4) + buttonWidth / 2);
             samouraiImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(samouraiButton);
             this.buttons.push(samouraiButton);
@@ -430,7 +429,7 @@ export class GameRenderer {
             const samouraiArcherButton = new Konva.Group();
             const samouraiArcherImage = new Konva.Image({
                 image: this.images.samouraiArcher_badge,
-                x: 480 + (buttonSpacing * 5),
+                x: buttonPosition + (buttonSpacing * 5),
                 y: buttonY,
                 height: buttonHeight,
                 width: buttonWidth,
@@ -464,7 +463,7 @@ export class GameRenderer {
                 }
             });
             // Ajuster la position pour tenir compte du nouveau point d'origine
-            samouraiArcherImage.x(480 + (buttonSpacing * 5) + buttonWidth / 2);
+            samouraiArcherImage.x(buttonPosition + (buttonSpacing * 5) + buttonWidth / 2);
             samouraiArcherImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(samouraiArcherButton);
             this.buttons.push(samouraiArcherButton);
