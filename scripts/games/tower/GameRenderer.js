@@ -2,6 +2,43 @@
 import Konva from "https://cdn.skypack.dev/konva";
 const buttonPosition = 400;
 export class GameRenderer {
+    constructor(canvasId, gameClient) {
+        this.buttons = []; // Pour stocker les boutons
+        this.isDestroyed = false;
+        this.cooldownAnimationIds = [];
+        this.buttonCooldowns = new Map();
+        this.cooldownDuration = 2000; // 2 secondes en millisecondes
+        this.cooldownSize = 15; // Taille réduite du cercle de cooldown
+        this.playerSide = 'player';
+        this.matchIsEnded = false;
+        this.animationFrame = 0;
+        this.lastAnimationFrame = 0;
+        this.animationSpeed = 120;
+        this.deathAnimationSpeed = 300; // Animation de mort plus lente
+        this.frameCount = 8; // Toutes les animations ont maintenant 8 frames
+        this.frameWidth = 128;
+        this.frameHeight = 128;
+        this.images = {};
+        // Map pour suivre les frames de mort et leur timing
+        this.deathAnimationFrames = new Map();
+        this.waitingAnimationFrame = null;
+        this.dots = '';
+        this.lastDotUpdate = 0;
+        this.dotUpdateInterval = 500; // Mise à jour des points toutes les 500ms
+        this.gameClient = gameClient;
+        this.stage = new Konva.Stage({
+            container: canvasId,
+            width: 1200,
+            height: 800
+        });
+        this.layer = new Konva.Layer();
+        this.buttonsLayer = new Konva.Layer();
+        this.stage.add(this.layer);
+        this.stage.add(this.buttonsLayer);
+        this.loadImages().then(() => {
+            this.createUnitButtons();
+        });
+    }
     loadImages() {
         const paths = {
             background: '/assets/games/Tower/TowerBackground.png',
@@ -9,7 +46,7 @@ export class GameRenderer {
             enemyBase: '/assets/games/Tower/rightTower.png',
             coin: '/assets/games/Tower/coin.png',
             endBackground: '/assets/games/Tower/endMatch.png',
-            waitingBackground: '/assets/games/Tower/waitingScreen.png', // Ajouter l'image de fin
+            waitingBackground: '/assets/games/Tower/waitingScreen.png',
             // Knight //////////////////////////////////////////////////////////////////////
             //
             // -------------- Badge
@@ -119,43 +156,6 @@ export class GameRenderer {
         });
         return Promise.all(promises).then(() => { });
     }
-    constructor(canvasId, gameClient) {
-        this.buttons = []; // Pour stocker les boutons
-        this.isDestroyed = false;
-        this.cooldownAnimationIds = [];
-        this.buttonCooldowns = new Map();
-        this.cooldownDuration = 2000; // 2 secondes en millisecondes
-        this.cooldownSize = 15; // Taille réduite du cercle de cooldown
-        this.playerSide = 'player';
-        this.matchIsEnded = false;
-        this.animationFrame = 0;
-        this.lastAnimationFrame = 0;
-        this.animationSpeed = 120;
-        this.deathAnimationSpeed = 300; // Animation de mort plus lente
-        this.frameCount = 8; // Toutes les animations ont maintenant 8 frames
-        this.frameWidth = 128;
-        this.frameHeight = 128;
-        this.images = {};
-        // Map pour suivre les frames de mort et leur timing
-        this.deathAnimationFrames = new Map();
-        this.waitingAnimationFrame = null;
-        this.dots = '';
-        this.lastDotUpdate = 0;
-        this.dotUpdateInterval = 500; // Mise à jour des points toutes les 500ms
-        this.gameClient = gameClient;
-        this.stage = new Konva.Stage({
-            container: canvasId,
-            width: 1200,
-            height: 800
-        });
-        this.layer = new Konva.Layer();
-        this.buttonsLayer = new Konva.Layer();
-        this.stage.add(this.layer);
-        this.stage.add(this.buttonsLayer);
-        this.loadImages().then(() => {
-            this.createUnitButtons();
-        });
-    }
     handleButtonCooldown(button, image) {
         if (this.isDestroyed) {
             return;
@@ -166,12 +166,12 @@ export class GameRenderer {
         this.buttonCooldowns.set(button, true);
         // Créer le groupe pour le cooldown
         const cooldownGroup = new Konva.Group({
-            x: image.x() - image.width() / 2 + 10, // Décalage de 10px du bord
+            x: image.x() - image.width() / 2 + 10,
             y: image.y() - image.height() / 2 + 10 // Décalage de 10px du bord
         });
         // Arc de progression (cercle plein)
         const cooldownArc = new Konva.Arc({
-            innerRadius: 0, // Commence au centre pour un cercle plein
+            innerRadius: 0,
             outerRadius: Math.max(0, this.cooldownSize / 2),
             angle: 0,
             rotation: -90,

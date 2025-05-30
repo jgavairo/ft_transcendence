@@ -21,13 +21,13 @@ let start = false;
 export let forfait = false;
 // Tableau de couleurs pour chaque joueur/raquette
 const PADDLE_COLORS = [
-    '#00eaff', // bleu-cyan
-    '#ff00c8', // rose
-    '#ffe156', // jaune
+    '#00eaff',
+    '#ff00c8',
+    '#ffe156',
     '#7cff00', // vert (pour un 4e joueur éventuel)
 ];
 // Dessine l'état de la partie Tri-Pong
-export async function renderPong(state) {
+export async function renderPong(state, isTournament = false) {
     //if alreadyPLayed = NOT DISPLAY TUTO
     // 1) motion blur: on dessine un calque semi-transparent au lieu de tout clear
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
@@ -185,19 +185,21 @@ export async function renderPong(state) {
     });
     // 7) overlay game over
     if (state.gameOver) {
-        setGameoverTrue();
-        // 1) On trouve l’indice du gagnant (celui qui a encore des vies > 0)
-        const winnerIndex = state.paddles.findIndex(p => p.lives > 0);
-        // 2) On prend sa couleur de pad
-        const padColor = PADDLE_COLORS[winnerIndex % PADDLE_COLORS.length];
-        // 3) On détermine son nom (soit dans playerNames[], soit mySide/opponentName)
-        const winnerName = Array.isArray(playerNames) && playerNames.length === state.paddles.length
-            ? playerNames[winnerIndex]
-            : (winnerIndex === mySide ? playerName : opponentName);
-        // 4) On lance l’animation finale avec nom + couleur
-        animateEnd(winnerName, padColor);
-        renderGameOverMessage(state);
-        start = false; // pour remettre la particule en pause si tu veux
+        if (!isTournament) {
+            setGameoverTrue();
+            // 1) On trouve l’indice du gagnant (celui qui a encore des vies > 0)
+            const winnerIndex = state.paddles.findIndex(p => p.lives > 0);
+            // 2) On prend sa couleur de pad
+            const padColor = PADDLE_COLORS[winnerIndex % PADDLE_COLORS.length];
+            // 3) On détermine son nom (soit dans playerNames[], soit mySide/opponentName)
+            const winnerName = Array.isArray(playerNames) && playerNames.length === state.paddles.length
+                ? playerNames[winnerIndex]
+                : (winnerIndex === mySide ? playerName : opponentName);
+            // 4) On lance l’animation finale avec nom + couleur
+            animateEnd(winnerName, padColor);
+            renderGameOverMessage(state);
+            start = false; // pour remettre la particule en pause si tu veux
+        }
         //   setTimeout(() => {
         //     showGameOverOverlay();
         //   }, 1500);

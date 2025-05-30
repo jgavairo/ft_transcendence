@@ -18,6 +18,7 @@ interface Tournament {
   players: Player[];     // liste des joueurs du round en cours
   round: number;         // 0 = 1er tour, 1 = finale
   winners: Player[];     // joueurs qualifiés pour le round suivant
+  ready: Map<string, boolean>;
 }
 
 export function setupGameMatchmaking(gameNs: Namespace) {
@@ -73,7 +74,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
             size,
             players: q.slice(),
             round: 0,
-            winners: []
+            winners: [],
+            ready: new Map(q.map(p => [p.id, false]))
           };
           tournaments.set(tour.id, tour);
           tournamentQueues[size] = [];
@@ -84,16 +86,112 @@ export function setupGameMatchmaking(gameNs: Namespace) {
           );
       
           // on ré-émet une dernière fois le lobby depuis la room tournoi
+          const initialStatus = tour.players.map(p => ({
+            id:       p.id,
+            username: p.username,
+            ready:    false
+          }));
+
           gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
-            size: tour.size,
-            joined: tour.players.map(p => p.username)
+            tournamentId: tour.id,
+            size:         tour.size,
+            joined:       tour.players.map(p => p.username),
+            status:       initialStatus   // ← on passe le status dès le début
           });
-      
-          // lancement du round 1
+        }
+      });
+
+      socket.on('playerReady', ({ tournamentId }: { tournamentId: string }) => {
+        const tour = tournaments.get(tournamentId);
+        if (!tour) return;
+
+        // marque ce joueur comme prêt
+        tour.ready.set(socket.id, true);
+
+        // recompute le status et émet à tous
+        const status = tour.players.map(p => ({
+          id:       p.id,
+          username: p.username,
+          ready:    !!tour.ready.get(p.id)
+        }));
+        gameNs.to(`tour-${tournamentId}`).emit('tournamentReadyUpdate', {
+          tournamentId,
+          size:   tour.size,
+          joined: tour.players.map(p => p.username),
+          status
+        });
+
+        // si **tous** sont prêts, alors on lance les matchs
+        if ([...tour.ready.values()].every(v => v)) {
           launchMatches(gameNs, tour);
         }
       });
 
+
+      socket.on('tournamentReportResult', ({ tournamentId, matchId }: { tournamentId: string; matchId: string }) => {
+        const tour = tournaments.get(tournamentId);
+        if (!tour) return;
+
+        // 1) Récupère l'état du match pour connaître winSide
+        const state = matchStates.get(matchId);
+        if (!state) return;
+        const winSide = state.paddles.findIndex(pl => pl.lives > 0);
+
+        // 2) Extrait l'index du match depuis le matchId
+        //    ex matchId === "abc123-r0-m1"  → matchIndex = 1
+        const parts = matchId.split('-m');
+        const matchIndex = parseInt(parts[1], 10);
+
+        // 3) Calcule le “slot” du joueur A & B dans tour.players
+        const slotA = matchIndex * 2;
+        const slotB = slotA + 1;
+        const A = tour.players[slotA];
+        const B = tour.players[slotB];
+
+        // 4) Détermine winner/loser
+        const winner = winSide === 0 ? A : B;
+        const loser  = winSide === 0 ? B : A;
+
+        // 5) Ajoute aux gagnants du tournoi
+        tour.winners.push(winner);
+
+        // 6) Émet l'événement pour tous les clients du tournoi
+        gameNs.to(`tour-${tournamentId}`).emit('tournamentMatchOver', {
+    tournamentId,
+    matchId,
+    winner:  winner.username,
+    loser:   loser.username
+  });
+
+  // Si la ronde est terminée, prépare la suivante
+    const playersThisRound = tour.players.length;
+    if (tour.winners.length === playersThisRound / 2) {
+      // passe au round suivant
+      tour.round++;
+      tour.players = tour.winners.slice();
+      tour.winners = [];
+
+      // … on garde le ready map côté serveur également …
+
+      // 1) CONSTRUIT le nouveau status (all ready = false)
+      const initialStatus = tour.players.map(p => ({
+        id:       p.id,
+        username: p.username,
+        ready:    false
+      }));
+
+      // 2) RÉ-ÉMET le bracket mis à jour
+      gameNs.to(`tour-${tournamentId}`).emit('tournamentBracket', {
+        tournamentId: tour.id,
+        size:         tour.size,
+        joined:       tour.players.map(p => p.username),
+        status:       initialStatus
+      });
+
+      // 3) Après 5 s, relance les matchs
+      setTimeout(() => launchMatches(gameNs, tour), 5000);
+    }
+  });
 
 
     // 1) SOLO CLASSIC

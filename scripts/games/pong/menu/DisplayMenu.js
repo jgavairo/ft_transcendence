@@ -6,6 +6,7 @@ import { connectPong, onMatchFound, onTriMatchFound, stopGame } from "../pongGam
 import { socket as gameSocket } from "../network.js";
 import { launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
 import { renderPong } from "../renderPong.js";
+import { showNotification } from "../../../helpers/notifications.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 export class PongMenuManager {
@@ -13,7 +14,6 @@ export class PongMenuManager {
         this.particles = [];
         this.buttons = [];
         this.animationSkipped = false;
-        this.mySide = 0;
         this.myUsername = '';
         PongMenuManager.instance = this;
         const canvas = document.getElementById("games-modal");
@@ -300,17 +300,45 @@ export class PongMenuManager {
     setupSocketListeners() {
         // 1) Bracket (liste des inscrits)
         gameSocket.on('tournamentBracket', (view) => {
-            this.showBracket(view.size, view.joined);
+            this.currentTourSize = view.size;
+            if (!view.tournamentId) {
+                // Phase d’attente : j’affiche juste la liste sans bouton ready
+                this.showLobbyList(view.joined);
+            }
+            else {
+                // Phase de tournoi lancé !
+                this.currentTourId = view.tournamentId;
+                this.renderSimpleBracket(view.size, view.joined, view.status);
+            }
+        });
+        // À chaque update “ready”
+        gameSocket.on('tournamentReadyUpdate', (view) => {
+            this.renderSimpleBracket(view.size, view.joined, view.status);
         });
         // 2) Match trouvé
         gameSocket.on('tournamentMatchFound', (data) => {
             this.startMatch(data);
         });
         // 3) Tournoi terminé
-        gameSocket.on('tournamentOver', ({ winner }) => {
-            alert(`🏆 Tournoi fini ! Gagnant : ${winner}`);
-            this.changeMenu('main'); // retourne au menu principal
+        gameSocket.on('tournamentMatchOver', (data) => {
+            showNotification(`🏅 ${data.winner} a gagné contre ${data.loser}`);
         });
+    }
+    showLobbyList(joined) {
+        this.menuLayer.removeChildren();
+        this.menuLayer.add(new Konva.Text({
+            x: gameWidth / 2 - 130, y: 30 + 450,
+            text: `Waiting for player…`,
+            fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
+        }));
+        joined.forEach((u, i) => {
+            this.menuLayer.add(new Konva.Text({
+                x: gameWidth / 2 - 100, y: 80 + i * 24 + 450,
+                text: `• ${u}`,
+                fontFamily: 'Press Start 2P', fontSize: 16, fill: '#fff'
+            }));
+        });
+        this.menuLayer.batchDraw();
     }
     async joinTournamentQueue(size, username) {
         try {
@@ -325,145 +353,137 @@ export class PongMenuManager {
     async onlineTournament(size) {
         const current = await GameManager.getCurrentUser();
         const username = (current === null || current === void 0 ? void 0 : current.username) || 'Player';
+        this.myUsername = username;
         // 2) join la queue tournoi
         await this.joinTournamentQueue(size, username);
-        // 3) feedback "waiting" animé
-        const waitText = new Konva.Text({
-            x: gameWidth / 2 - 100, y: 500,
-            text: 'waiting…',
-            fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
-        });
-        this.menuLayer.add(waitText);
-        let dots = 0;
-        const anim = () => {
-            dots = (dots + 1) % 4;
-            waitText.text('waiting' + '.'.repeat(dots));
-            this.menuLayer.batchDraw();
-            setTimeout(anim, 500);
-        };
-        anim();
     }
-    /** Montre la liste des inscrits + waiting */
-    showBracket(size, joined) {
-        if (joined.length === 2) {
-            // Overlay de transition pour la finale
-            this.menuLayer.removeChildren();
-            const overlay = new Konva.Rect({ /* ... */});
-            const title = new Konva.Text({ /* "Round 1 terminé !" */});
-            // … texte des deux qualifiés …
-            const countdown = new Konva.Text({ /* "Finale dans 5s" */});
-            this.menuLayer.add(overlay).add(title).add(countdown);
-            this.menuLayer.batchDraw();
-            let count = 5;
-            const timer = setInterval(() => {
-                count--;
-                countdown.text(`Finale dans ${count}s`);
-                this.menuLayer.batchDraw();
-                if (count === 0) {
-                    clearInterval(timer);
-                    // Détruit l’overlay et affiche la liste des finalistes
-                    overlay.destroy();
-                    title.destroy();
-                    countdown.destroy();
-                    this.renderSimpleBracket(size, joined);
-                }
-            }, 1000);
-        }
-        else {
-            // Simple liste
-            this.renderSimpleBracket(size, joined);
-        }
-    }
-    renderSimpleBracket(size, joined) {
+    renderSimpleBracket(size, joined, status) {
         this.menuLayer.removeChildren();
+        // 1) On se construit un status "sécurisé"
+        const currentStatus = status
+            ? status
+            : joined.map(u => ({ id: '', username: u, ready: false }));
+        // 2) Titre
         this.menuLayer.add(new Konva.Text({
-            x: gameWidth / 2 - 130, y: 30 + 450,
+            x: gameWidth / 2 - 130,
+            y: 30 + 450,
             text: `Tournoi ${size} joueurs`,
-            fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
+            fontFamily: 'Press Start 2P',
+            fontSize: 20,
+            fill: '#00e7fe'
         }));
-        joined.forEach((u, i) => {
+        // 3) Liste des joueurs
+        currentStatus.forEach((entry, i) => {
+            const fillColor = entry.ready ? '#149414' : '#fff';
             this.menuLayer.add(new Konva.Text({
-                x: gameWidth / 2 - 100, y: 80 + i * 24 + 450,
-                text: `• ${u}`,
-                fontFamily: 'Press Start 2P', fontSize: 16, fill: '#fff'
+                x: gameWidth / 2 - 100,
+                y: 80 + i * 24 + 450,
+                text: `• ${entry.username}`,
+                fontFamily: 'Press Start 2P',
+                fontSize: 16,
+                fill: fillColor
             }));
         });
+        // 4) Compteur
+        const readyCount = currentStatus.filter(s => s.ready).length;
         this.menuLayer.add(new Konva.Text({
-            x: gameWidth / 2 - 100, y: 80 + joined.length * 24 + 10 + 450,
-            text: `Waiting… (${joined.length}/${size})`,
-            fontFamily: 'Press Start 2P', fontSize: 14, fill: '#888'
+            x: gameWidth / 2 - 100,
+            y: 80 + joined.length * 24 + 10 + 450,
+            text: `Waiting… (${readyCount}/${size} ready)`,
+            fontFamily: 'Press Start 2P',
+            fontSize: 14,
+            fill: '#888'
         }));
+        // 5) Bouton "Ready" si c'est vous et que vous n'êtes pas déjà ready
+        const me = this.myUsername;
+        const meEntry = currentStatus.find(s => s.username === me);
+        if (meEntry && !meEntry.ready) {
+            const btnX = gameWidth / 2 - 100;
+            const btnY = 700;
+            this.createButton('Ready', btnX, btnY, () => {
+                gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
+            });
+        }
+        // 6) Final draw
         this.menuLayer.batchDraw();
     }
     /** Lance le match : nettoie le menu, appelle onMatchFound, branche renderPong */
     async startMatch({ matchId, side, opponent }) {
-        // 1) clear out any old menu
+        // 1) Nettoyage de l'UI existante
         this.menuLayer.removeChildren();
         this.menuLayer.batchDraw();
-        // 2) drop any old gameState listeners
         gameSocket.removeAllListeners('gameState');
+        // 2) Connexion et réinitialisation des boutons
         connectPong(true);
-        const menu = PongMenuManager.instance;
-        // Nettoyage des éléments existants
-        menu.buttons.forEach(button => button.group.destroy());
-        menu.buttons = [];
-        menu.menuLayer.destroyChildren();
+        this.buttons.forEach(b => b.group.destroy());
+        this.buttons = [];
+        this.menuLayer.destroyChildren();
+        // 3) Récupération du pseudo
         const current = await GameManager.getCurrentUser();
         const you = (current === null || current === void 0 ? void 0 : current.username) || 'You';
-        // Affichage des joueurs
-        const player1Text = new Konva.Text({
+        // 4) Affichage des joueurs
+        const p1 = new Konva.Text({
+            x: gameWidth / 6,
+            y: 450,
             text: you,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: (gameWidth / 6),
-            y: 450,
             width: 400,
             align: 'center'
         });
-        const player2Text = new Konva.Text({
-            text: `${opponent}`,
+        const p2 = new Konva.Text({
+            x: gameWidth / 2,
+            y: 450,
+            text: opponent,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: gameWidth / 2,
-            y: 450,
             width: 400,
             align: 'center'
         });
         const countdownText = new Konva.Text({
+            x: gameWidth / 2 - 200,
+            y: 520,
             text: 'Game starting in 5',
             fontFamily: 'Press Start 2P',
             fontSize: 24,
             fill: '#fc4cfc',
-            x: gameWidth / 2 - 200,
-            y: 520,
             width: 400,
             align: 'center'
         });
-        menu.menuLayer.add(player1Text);
-        menu.menuLayer.add(player2Text);
-        menu.menuLayer.add(countdownText);
-        // Décompte
+        this.menuLayer.add(p1, p2, countdownText);
+        this.menuLayer.batchDraw();
+        // 5) Countdown avant démarrage du match
         let count = 5;
-        const countdown = setInterval(() => {
+        const timer = setInterval(() => {
             count--;
             if (count > 0) {
                 countdownText.text(`Game starting in ${count}`);
-                menu.menuLayer.batchDraw();
+                this.menuLayer.batchDraw();
             }
             else {
-                clearInterval(countdown);
+                clearInterval(timer);
+                // Démarre la simulation
                 onMatchFound({ matchId, side, you, opponent });
+                // 6) Hook unique sur gameState
+                gameSocket.on('gameState', (state) => {
+                    // A) Garde-fou si le serveur envoie un état invalide
+                    if (!state || !state.paddles)
+                        return;
+                    // B) Rend le jeu
+                    renderPong(state, true);
+                    // C) À la fin, reporte au serveur et désabonne-toi
+                    if (state.gameOver) {
+                        gameSocket.removeAllListeners('gameState');
+                        gameSocket.emit('tournamentReportResult', {
+                            tournamentId: this.currentTourId,
+                            matchId
+                        });
+                    }
+                });
             }
         }, 1000);
-        // 5) finally hook up the render loop
-        gameSocket.on('gameState', (state) => {
-            renderPong(state);
-            if (state.gameOver) {
-                gameSocket.removeAllListeners('gameState');
-            }
-        });
     }
     //fonctions tournoi fini ici
     async onlineLobby(nbPlayers) {
@@ -679,7 +699,7 @@ export class PongMenuManager {
             fontSize: 24,
             fill: padColor,
             x: gameWidth / 2 - 200,
-            y: -100, // Commence hors écran
+            y: -100,
             width: 400,
             align: 'center',
             shadowColor: padColor,
@@ -719,7 +739,7 @@ export class PongMenuManager {
             });
             this.particles.push({
                 shape: particle,
-                speed: -1 - Math.random() * 2, // Vitesse négative pour monter
+                speed: -1 - Math.random() * 2,
                 glowDirection: 1
             });
             this.backgroundLayer.add(particle);

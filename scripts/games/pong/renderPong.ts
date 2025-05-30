@@ -38,7 +38,7 @@ const PADDLE_COLORS = [
 
 
 // Dessine l'état de la partie Tri-Pong
-export async function renderPong(state: MatchState) {
+export async function renderPong(state: MatchState, isTournament = false) {
      
       //if alreadyPLayed = NOT DISPLAY TUTO
       // 1) motion blur: on dessine un calque semi-transparent au lieu de tout clear
@@ -212,6 +212,7 @@ export async function renderPong(state: MatchState) {
     });
     // 7) overlay game over
     if (state.gameOver) {
+      if (!isTournament) {
         setGameoverTrue();
         // 1) On trouve l’indice du gagnant (celui qui a encore des vies > 0)
         const winnerIndex = state.paddles.findIndex(p => p.lives > 0);
@@ -229,6 +230,7 @@ export async function renderPong(state: MatchState) {
         animateEnd(winnerName, padColor);
         renderGameOverMessage(state);
         start = false;  // pour remettre la particule en pause si tu veux
+      }
         //   setTimeout(() => {
         //     showGameOverOverlay();
         //   }, 1500);
