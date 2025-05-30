@@ -11,12 +11,9 @@ import { showNotification } from "../../../helpers/notifications.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 
-interface TournamentBracket {
-    id: string;
-    size: number;
-    joined: string[];
-}
-  
+
+type PlayerStatus = { id: string; username: string; ready: boolean };
+
 interface MatchFoundData {
     matchId: string;
     side: number;
@@ -49,7 +46,7 @@ export class PongMenuManager
     private titleImage!: Konva.Image;
     private animationSkipped: boolean = false;
     private currentTourId!: string;
-    private mySide = 0;
+    private currentTourSize!: number;
     private myUsername = '';
 
     constructor(title: boolean)
@@ -411,10 +408,33 @@ export class PongMenuManager
     //fonctions pr tournoi
 
     private setupSocketListeners() {
-
         // 1) Bracket (liste des inscrits)
-        gameSocket.on('tournamentBracket', (view: { size: number; joined: string[] }) => {
-          this.showBracket(view.size, view.joined);
+        gameSocket.on('tournamentBracket', (view: {
+            tournamentId?: string;
+            size: number;
+            joined: string[];
+            status?: PlayerStatus[];
+        }) => {
+            this.currentTourSize = view.size;
+
+        if (!view.tournamentId) {
+            // Phase d’attente : j’affiche juste la liste sans bouton ready
+            this.showLobbyList(view.joined);
+        } else {
+            // Phase de tournoi lancé !
+            this.currentTourId = view.tournamentId;
+            this.renderSimpleBracket(view.size, view.joined, view.status!);
+        }
+        });
+
+        // À chaque update “ready”
+        gameSocket.on('tournamentReadyUpdate', (view: {
+            tournamentId: string;
+            size: number;
+            joined: string[];
+            status: { id: string; username: string; ready: boolean }[];
+        }) => {
+            this.renderSimpleBracket(view.size, view.joined, view.status);
         });
       
         // 2) Match trouvé
@@ -423,12 +443,34 @@ export class PongMenuManager
         });
       
         // 3) Tournoi terminé
-        gameSocket.on('tournamentOver', ({ winner }: { winner: string }) => {
-          alert(`🏆 Tournoi fini ! Gagnant : ${winner}`);
-          this.changeMenu('main');  // retourne au menu principal
+        gameSocket.on('tournamentMatchOver', (data: {
+            tournamentId: string;
+            matchId:      string;
+            winner:       string;
+            loser:        string;
+        }) => {
+          showNotification(`🏅 ${data.winner} a gagné contre ${data.loser}`);
         });
       }
       
+      private showLobbyList(joined: string[]) {
+        this.menuLayer.removeChildren();
+        this.menuLayer.add(new Konva.Text({
+            x: gameWidth/2 - 130, y: 30 + 450,
+            text: `Waiting for player…`,
+            fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
+        }));
+        joined.forEach((u, i) => {
+            this.menuLayer.add(new Konva.Text({
+            x: gameWidth/2 - 100, y: 80 + i*24 + 450,
+            text: `• ${u}`,
+            fontFamily: 'Press Start 2P', fontSize: 16, fill: '#fff'
+            }));
+        });
+        this.menuLayer.batchDraw();
+    }
+
+
       private async joinTournamentQueue(size: 4|8, username: string) {
         try {
           const current = await GameManager.getCurrentUser();
@@ -442,163 +484,158 @@ export class PongMenuManager
       private async onlineTournament(size: 4|8) {
         const current = await GameManager.getCurrentUser();
         const username = current?.username || 'Player';
+        this.myUsername = username;
       
       
         // 2) join la queue tournoi
         await this.joinTournamentQueue(size, username);
-      
-        // 3) feedback "waiting" animé
-        const waitText = new Konva.Text({
-          x: gameWidth/2 - 100, y: 500,
-          text: 'waiting…',
-          fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
-        });
-        this.menuLayer.add(waitText);
-        let dots = 0;
-        const anim = () => {
-          dots = (dots + 1) % 4;
-          waitText.text('waiting' + '.'.repeat(dots));
-          this.menuLayer.batchDraw();
-          setTimeout(anim, 500);
-        };
-        anim();
+
       }
-    
-      /** Montre la liste des inscrits + waiting */
-      private showBracket(size: number, joined: string[]) {
-        if (joined.length === 2) {
-            // Overlay de transition pour la finale
-            this.menuLayer.removeChildren();
-            const overlay = new Konva.Rect({ /* ... */ });
-            const title   = new Konva.Text({ /* "Round 1 terminé !" */ });
-            // … texte des deux qualifiés …
-            const countdown = new Konva.Text({ /* "Finale dans 5s" */ });
-            this.menuLayer.add(overlay).add(title).add(countdown);
-            this.menuLayer.batchDraw();
-        
-            let count = 5;
-            const timer = setInterval(() => {
-              count--;
-              countdown.text(`Finale dans ${count}s`);
-              this.menuLayer.batchDraw();
-              if (count === 0) {
-                clearInterval(timer);
-                // Détruit l’overlay et affiche la liste des finalistes
-                overlay.destroy();
-                title.destroy();
-                countdown.destroy();
-                this.renderSimpleBracket(size, joined);
-              }
-            }, 1000);
-        
-          } else {
-            // Simple liste
-            this.renderSimpleBracket(size, joined);
-          }
+
+    private renderSimpleBracket(
+        size: number,
+        joined: string[],
+        status?: PlayerStatus[]
+    ) {
+    this.menuLayer.removeChildren();
+
+    // 1) On se construit un status "sécurisé"
+    const currentStatus: PlayerStatus[] = status
+        ? status
+        : joined.map(u => ({ id: '', username: u, ready: false }));
+
+    // 2) Titre
+    this.menuLayer.add(new Konva.Text({
+        x: gameWidth/2 - 130,
+        y: 30 + 450,
+        text: `Tournoi ${size} joueurs`,
+        fontFamily: 'Press Start 2P',
+        fontSize: 20,
+        fill: '#00e7fe'
+    }));
+
+    // 3) Liste des joueurs
+    currentStatus.forEach((entry, i) => {
+        const fillColor = entry.ready ? '#149414' : '#fff';
+        this.menuLayer.add(new Konva.Text({
+        x: gameWidth/2 - 100,
+        y: 80 + i * 24 + 450,
+        text: `• ${entry.username}`,
+        fontFamily: 'Press Start 2P',
+        fontSize: 16,
+        fill: fillColor
+        }));
+    });
+
+    // 4) Compteur
+    const readyCount = currentStatus.filter(s => s.ready).length;
+    this.menuLayer.add(new Konva.Text({
+        x: gameWidth/2 - 100,
+        y: 80 + joined.length * 24 + 10 + 450,
+        text: `Waiting… (${readyCount}/${size} ready)`,
+        fontFamily: 'Press Start 2P',
+        fontSize: 14,
+        fill: '#888'
+    }));
+
+    // 5) Bouton "Ready" si c'est vous et que vous n'êtes pas déjà ready
+    const me = this.myUsername;
+    const meEntry = currentStatus.find(s => s.username === me);
+    if (meEntry && !meEntry.ready) {
+        const btnX = gameWidth/2 - 100;
+        const btnY = 700;
+        this.createButton('Ready', btnX, btnY, () => {
+        gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
+        });
     }
-    
-    private renderSimpleBracket(size: number, joined: string[]) {
-        this.menuLayer.removeChildren();
-        this.menuLayer.add(new Konva.Text({
-          x: gameWidth/2 - 130, y: 30 + 450,
-          text: `Tournoi ${size} joueurs`,
-          fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
-        }));
-        joined.forEach((u, i) => {
-          this.menuLayer.add(new Konva.Text({
-            x: gameWidth/2 - 100, y: 80 + i*24 + 450,
-            text: `• ${u}`,
-            fontFamily: 'Press Start 2P', fontSize: 16, fill: '#fff'
-          }));
-        });
-        this.menuLayer.add(new Konva.Text({
-          x: gameWidth/2 - 100, y: 80 + joined.length*24 + 10 + 450,
-          text: `Waiting… (${joined.length}/${size})`,
-          fontFamily: 'Press Start 2P', fontSize: 14, fill: '#888'
-        }));
-        this.menuLayer.batchDraw();
-      }
+
+    // 6) Final draw
+    this.menuLayer.batchDraw();
+    }
 
     /** Lance le match : nettoie le menu, appelle onMatchFound, branche renderPong */
     private async startMatch({ matchId, side, opponent }: MatchFoundData) {
-        // 1) clear out any old menu
+        // 1) Nettoyage de l'UI existante
         this.menuLayer.removeChildren();
         this.menuLayer.batchDraw();
-        // 2) drop any old gameState listeners
         gameSocket.removeAllListeners('gameState');
-      
-        connectPong(true);
-      
-        const menu = PongMenuManager.instance;
-        // Nettoyage des éléments existants
-        menu.buttons.forEach(button => button.group.destroy());
-        menu.buttons = [];
-        menu.menuLayer.destroyChildren();
 
+        // 2) Connexion et réinitialisation des boutons
+        connectPong(true);
+        this.buttons.forEach(b => b.group.destroy());
+        this.buttons = [];
+        this.menuLayer.destroyChildren();
+
+        // 3) Récupération du pseudo
         const current = await GameManager.getCurrentUser();
         const you = current?.username || 'You';
 
-        // Affichage des joueurs
-        const player1Text = new Konva.Text({
+        // 4) Affichage des joueurs
+        const p1 = new Konva.Text({
+            x: gameWidth / 6,
+            y: 450,
             text: you,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: (gameWidth / 6),
-            y: 450,
             width: 400,
             align: 'center'
         });
-
-        const player2Text = new Konva.Text({
-            text: `${opponent}`,
+        const p2 = new Konva.Text({
+            x: gameWidth / 2,
+            y: 450,
+            text: opponent,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: gameWidth / 2,
-            y: 450,
             width: 400,
             align: 'center'
         });
-
         const countdownText = new Konva.Text({
+            x: gameWidth / 2 - 200,
+            y: 520,
             text: 'Game starting in 5',
             fontFamily: 'Press Start 2P',
             fontSize: 24,
             fill: '#fc4cfc',
-            x: gameWidth / 2 - 200,
-            y: 520,
             width: 400,
             align: 'center'
         });
+        this.menuLayer.add(p1, p2, countdownText);
+        this.menuLayer.batchDraw();
 
-        menu.menuLayer.add(player1Text);
-        menu.menuLayer.add(player2Text);
-        menu.menuLayer.add(countdownText);
-
-        // Décompte
+        // 5) Countdown avant démarrage du match
         let count = 5;
-        const countdown = setInterval(() => {
+        const timer = setInterval(() => {
             count--;
             if (count > 0) {
-                countdownText.text(`Game starting in ${count}`);
-                menu.menuLayer.batchDraw();
+            countdownText.text(`Game starting in ${count}`);
+            this.menuLayer.batchDraw();
             } else {
-                clearInterval(countdown);
-                onMatchFound({ matchId, side, you, opponent });
+            clearInterval(timer);
+            // Démarre la simulation
+            onMatchFound({ matchId, side, you, opponent });
+
+            // 6) Hook unique sur gameState
+            gameSocket.on('gameState', (state?: MatchState) => {
+                // A) Garde-fou si le serveur envoie un état invalide
+                if (!state || !state.paddles) return;
+
+                // B) Rend le jeu
+                renderPong(state, true);
+
+                // C) À la fin, reporte au serveur et désabonne-toi
+                if (state.gameOver) {
+                gameSocket.removeAllListeners('gameState');
+                gameSocket.emit('tournamentReportResult', {
+                    tournamentId: this.currentTourId,
+                    matchId
+                });
+                }
+            });
             }
         }, 1000);
-
-        
-      
-        // 5) finally hook up the render loop
-        gameSocket.on('gameState', (state: MatchState) => {
-          renderPong(state);
-          if (state.gameOver) {
-            gameSocket.removeAllListeners('gameState');
-          }
-        });
-      }
+    }
     //fonctions tournoi fini ici
 
 
