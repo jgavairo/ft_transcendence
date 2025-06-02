@@ -1,4 +1,4 @@
-import {profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML, changeUsernameModalHTML} from '../../sourcepage.js'
+import {profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML, changeUsernameModalHTML, changeEmailModalHTML} from '../../sourcepage.js'
 import { MainApp, HOSTNAME } from '../../main.js'
 import api from '../../helpers/api.js'
 import { showErrorNotification, showNotification } from '../../helpers/notifications.js';
@@ -47,6 +47,13 @@ export async function setupProfileModal() {
     if (changeUsernameButton) {
         changeUsernameButton.addEventListener('click', () => {
             changeUsername();
+        });
+    }
+
+    const changeEmailButton = document.getElementById('changeEmailButton');
+    if (changeEmailButton) {
+        changeEmailButton.addEventListener('click', () => {
+            changeEmail();
         });
     }
 
@@ -203,6 +210,12 @@ function isValidUsername(username: string)
     return usernameRegex.test(username);
 }
 
+function isValidEmail(email: string)
+{
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
 function changeUsername()
 {
     console.log('changeUsername');
@@ -253,6 +266,59 @@ function changeUsername()
             {
                 headerProfileButton.textContent = newUsername.value;
             }
+        }
+        else
+        {
+            showErrorNotification(data.message);
+        }
+    });
+}
+
+function changeEmail()
+{
+    console.log('changeEmail');
+    const modal = document.getElementById('profile-modal');
+    if (!modal)
+        return;
+    modal.innerHTML = changeEmailModalHTML;
+
+    const closeButton = document.getElementById('backToProfileSettings');
+    if (!closeButton)
+        return;
+    closeButton.addEventListener('click', () => {
+        setupProfileModal();
+    });
+
+    const sendNewEmailButton = document.getElementById('changeEmailButton');
+    if (!sendNewEmailButton)
+        return;
+    sendNewEmailButton.addEventListener('click', async () => {
+        console.log('sendNewEmailButton clicked');
+        const newEmail = document.getElementById('newEmail') as HTMLInputElement;
+        if (!newEmail)
+        {
+            showErrorNotification('Please fill in all fields');
+            return;
+        }
+        if (newEmail.value === '')
+        {
+            showErrorNotification('New email cannot be empty');
+            return;
+        }
+        if (!isValidEmail(newEmail.value))
+        {
+            showErrorNotification('Invalid email');
+            return;
+        }
+        const response = await api.post(`https://${HOSTNAME}:8443/api/user/changeEmail`, 
+        {
+            newEmail: newEmail.value
+        });
+        const data = await response.json();
+        if (data.success)
+        {
+            showNotification('Email updated successfully.');
+            setupProfileModal();
         }
         else
         {

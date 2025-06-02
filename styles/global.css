@@ -840,6 +840,67 @@ body
 	background-color: #113d5e;
 }
 
+.changeEmail-modal
+{
+	border-radius: 10px;
+    padding: 20px;
+    width: 300px;
+    margin: 0 auto;
+}
+
+.changeEmail-modal h2 {
+	text-align: center;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.changeEmail-modal .changeEmailInput
+{
+	padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #444;
+
+}
+
+.changeEmail-modal-content {
+	padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.changeEmail-modal-content .changeEmailInput
+{
+    background-color: #a3a3a36c;
+	border-radius: 7px;
+	padding: 5px;
+	margin: 10px 0;
+	width: 100%;
+	color: rgb(255, 255, 255);
+}
+
+.changeEmail-modal #changeEmailButton
+{
+    height: 2rem;
+    position: relative;
+    left: 10%;
+    margin-top: 1rem;
+    width: 80%;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.changeEmail-modal #changeEmailButton:hover
+{
+	transition: 0.3s;
+	background-color: #113d5e;
+}
+
 .gameInfosModal {
     position: fixed;
     top: 50%;
