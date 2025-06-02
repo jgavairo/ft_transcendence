@@ -21,6 +21,9 @@ interface Tournament {
   ready: Map<string, boolean>;
 }
 
+// Gestion des rooms privées
+export const privateRooms = new Map<string, { sockets: Socket[]; usernames: string[]; maxPlayers: number }>();
+
 export function setupGameMatchmaking(gameNs: Namespace) {
   const playerInfo = new Map<string, PlayerInfo>();
   // Nouvelle Map pour stocker l'association socket_id -> user_id
@@ -32,9 +35,6 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   // Map des tournois complets ou en attente, groupés par id
   const tournaments = new Map<string, Tournament>();
   const tournamentQueues: { [k in 4|8]: Player[] } = { 4: [], 8: [] };
-
-  // Gestion des rooms privées
-  const privateRooms = new Map<string, { sockets: Socket[]; usernames: string[]; maxPlayers: number }>();
 
   // Fonction utilitaire pour récupérer l'ID utilisateur à partir d'un socket_id
   function getUserIdFromSocketId(socketId: string): string | undefined {

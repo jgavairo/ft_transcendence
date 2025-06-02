@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
-import { showErrorNotification } from "../../helpers/notifications.js";
+import { showErrorNotification, showNotification } from "../../helpers/notifications.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 
 async function fetchCurrentUser(): Promise<string | null> {
@@ -51,6 +51,18 @@ function handleGameInviteLink() {
             const url = new URL((target as HTMLAnchorElement).href);
             const roomId = url.searchParams.get('room');
             if (!roomId) return;
+            // Vérifier si la room existe avant d'ouvrir le modal
+            try {
+                const resp = await fetch(`/api/pong/room-exists?roomId=${encodeURIComponent(roomId)}`, { credentials: "include" });
+                const data = await resp.json();
+                if (!data.success || !data.exists) {
+                    showErrorNotification("link expired");
+                    return;
+                }
+            } catch (err) {
+                showErrorNotification("link expired");
+                return;
+            }
             // Charge la page library en arrière-plan pour éviter de garder community
             // Simule un vrai clic sur le bouton library pour tout gérer comme un utilisateur
             const libraryBtn = document.getElementById('librarybutton');
