@@ -1,4 +1,4 @@
-import { profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML } from '../../sourcepage.js';
+import { profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML, changeUsernameModalHTML } from '../../sourcepage.js';
 import { MainApp, HOSTNAME } from '../../main.js';
 import api from '../../helpers/api.js';
 import { showErrorNotification, showNotification } from '../../helpers/notifications.js';
@@ -33,6 +33,12 @@ export async function setupProfileModal() {
     if (changePasswordButton) {
         changePasswordButton.addEventListener('click', () => {
             changePassword();
+        });
+    }
+    const changeUsernameButton = document.getElementById('changeUsernameButton');
+    if (changeUsernameButton) {
+        changeUsernameButton.addEventListener('click', () => {
+            changeUsername();
         });
     }
     const saveBioButton = document.getElementById('saveBioButton');
@@ -155,6 +161,57 @@ function setupChangeProfilePictureModal() {
         catch (error) {
             console.error('Error changing profile picture:', error);
             showErrorNotification('Failed to change profile picture.');
+        }
+    });
+}
+function isValidUsername(username) {
+    const usernameRegex = /^(?=.{3,20}$)(?!.*[_.-]{2})[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/;
+    return usernameRegex.test(username);
+}
+function changeUsername() {
+    console.log('changeUsername');
+    const modal = document.getElementById('profile-modal');
+    if (!modal)
+        return;
+    modal.innerHTML = changeUsernameModalHTML;
+    const closeButton = document.getElementById('backToProfileSettings');
+    if (!closeButton)
+        return;
+    closeButton.addEventListener('click', () => {
+        setupProfileModal();
+    });
+    const sendNewUsernameButton = document.getElementById('changeUsernameButton');
+    if (!sendNewUsernameButton)
+        return;
+    sendNewUsernameButton.addEventListener('click', async () => {
+        console.log('sendNewUsernameButton clicked');
+        const newUsername = document.getElementById('newUsername');
+        if (!newUsername) {
+            showErrorNotification('Please fill in all fields');
+            return;
+        }
+        if (newUsername.value === '') {
+            showErrorNotification('New username cannot be empty');
+            return;
+        }
+        if (!isValidUsername(newUsername.value)) {
+            showErrorNotification('Invalid username');
+            return;
+        }
+        const response = await api.post(`https://${HOSTNAME}:8443/api/user/changeUsername`, {
+            newUsername: newUsername.value
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Username updated successfully.');
+            setupProfileModal();
+            const headerProfileButton = document.querySelector('.profileName');
+            if (headerProfileButton) {
+                headerProfileButton.textContent = newUsername.value;
+            }
+        }
+        else {
+            showErrorNotification(data.message);
         }
     });
 }
