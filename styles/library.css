@@ -16,8 +16,9 @@
 
 .main-section {
   margin-left: 25%;
-  width:100%;
+  width: 75%;
   height: 84vh;
+  overflow-y: auto;
 }
 
 .empty-message {
