@@ -10,12 +10,13 @@ import { showNotification } from "../../../helpers/notifications.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 export class PongMenuManager {
-    constructor(title) {
+    constructor(title = true, showMainMenu = true) {
         this.particles = [];
         this.buttons = [];
         this.animationSkipped = false;
         this.myUsername = '';
         PongMenuManager.instance = this;
+        this.showMainMenu = showMainMenu;
         const canvas = document.getElementById("games-modal");
         if (!canvas) {
             console.error("Canvas not found");
@@ -74,7 +75,8 @@ export class PongMenuManager {
                 this.animationSkipped = true;
                 cancelAnimationFrame(animationFrame);
                 this.stage.off('click', skipAnimation);
-                this.changeMenu('main');
+                if (this.showMainMenu)
+                    this.changeMenu('main');
             }
         };
         const animate = () => {
@@ -85,7 +87,8 @@ export class PongMenuManager {
             }
             else {
                 this.stage.off('click', skipAnimation);
-                this.changeMenu('main');
+                if (this.showMainMenu)
+                    this.changeMenu('main');
             }
         };
         this.stage.on('click', skipAnimation);
@@ -528,7 +531,7 @@ export class PongMenuManager {
     start() {
         this.animateParticles();
         setTimeout(() => {
-            if (!this.animationSkipped)
+            if (!this.animationSkipped && this.showMainMenu)
                 this.changeMenu('main');
         }, 2000);
         console.log("Menu displayed");
@@ -891,39 +894,71 @@ export class PongMenuManager {
         }, 1000);
     }
     // Crée une room privée non listée, met l'utilisateur en attente dans la room (sans afficher l'ID)
-    async privateLobby(nbPlayers) {
+    // Si roomId est fourni, on rejoint la room existante et on affiche l'écran du salon
+    async privateLobby(nbPlayers, roomId) {
         const currentUser = await GameManager.getCurrentUser();
         const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
         connectPong(true);
-        gameSocket.emit('createPrivateRoom', { username, nbPlayers }, (data) => {
-            this.menuLayer.destroyChildren();
-            const waitingText = new Konva.Text({
-                text: 'Waiting for other players to join...',
-                fontFamily: 'Press Start 2P',
-                fontSize: 20,
-                fill: '#fc4cfc',
-                x: gameWidth / 2 - 250,
-                y: 470,
-                width: 500,
-                align: 'center',
+        if (roomId) {
+            // Rejoindre une room existante (invitation)
+            gameSocket.emit('joinPrivateRoom', { roomId, username }, (data) => {
+                this.menuLayer.destroyChildren();
+                const waitingText = new Konva.Text({
+                    text: 'Waiting for other players to join...',
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 20,
+                    fill: '#fc4cfc',
+                    x: gameWidth / 2 - 250,
+                    y: 470,
+                    width: 500,
+                    align: 'center',
+                });
+                this.menuLayer.add(waitingText);
+                this.createButton('INVITE', gameWidth / 2 - 100, 530, () => {
+                    this.showInvitingList(1, data.roomId);
+                });
+                this.createButton('BACK', gameWidth / 2 - 100, 600, () => {
+                    gameSocket.emit('leavePrivateRoom', { roomId: data.roomId });
+                    waitingText.destroy();
+                    const quitButton = this.buttons.find(button => button.text === 'QUIT');
+                    if (quitButton)
+                        quitButton.group.destroy();
+                    gameSocket.disconnect();
+                    this.changeMenu('multi');
+                });
+                this.menuLayer.batchDraw();
             });
-            this.menuLayer.add(waitingText);
-            // Ajout du bouton INVITE
-            this.createButton('INVITE', gameWidth / 2 - 100, 530, () => {
-                this.showInvitingList(1, data.roomId); // Pass roomId
+        }
+        else {
+            // Création d'une nouvelle room
+            gameSocket.emit('createPrivateRoom', { username, nbPlayers }, (data) => {
+                this.menuLayer.destroyChildren();
+                const waitingText = new Konva.Text({
+                    text: 'Waiting for other players to join...',
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 20,
+                    fill: '#fc4cfc',
+                    x: gameWidth / 2 - 250,
+                    y: 470,
+                    width: 500,
+                    align: 'center',
+                });
+                this.menuLayer.add(waitingText);
+                this.createButton('INVITE', gameWidth / 2 - 100, 530, () => {
+                    this.showInvitingList(1, data.roomId);
+                });
+                this.createButton('BACK', gameWidth / 2 - 100, 600, () => {
+                    gameSocket.emit('leavePrivateRoom', { roomId: data.roomId });
+                    waitingText.destroy();
+                    const quitButton = this.buttons.find(button => button.text === 'QUIT');
+                    if (quitButton)
+                        quitButton.group.destroy();
+                    gameSocket.disconnect();
+                    this.changeMenu('multi');
+                });
+                this.menuLayer.batchDraw();
             });
-            this.createButton('BACK', gameWidth / 2 - 100, 600, () => {
-                gameSocket.emit('leavePrivateRoom', { roomId: data.roomId });
-                waitingText.destroy();
-                // Find and destroy the button from the buttons array
-                const quitButton = this.buttons.find(button => button.text === 'QUIT');
-                if (quitButton)
-                    quitButton.group.destroy();
-                gameSocket.disconnect();
-                this.changeMenu('multi');
-            });
-            this.menuLayer.batchDraw();
-        });
+        }
     }
     /**
      * Affiche un overlay styled comme peopleList, listant tous les possesseurs du jeu avec un bouton INVITER
