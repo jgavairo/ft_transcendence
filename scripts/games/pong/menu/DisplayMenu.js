@@ -910,9 +910,9 @@ export class PongMenuManager {
             this.menuLayer.add(waitingText);
             // Ajout du bouton INVITE
             this.createButton('INVITE', gameWidth / 2 - 100, 530, () => {
-                this.showInvitingList(1); // 1 pour Pong, peut être modifié pour d'autres jeux
+                this.showInvitingList(1, data.roomId); // Pass roomId
             });
-            this.createButton('QUIT', gameWidth / 2 - 100, 600, () => {
+            this.createButton('BACK', gameWidth / 2 - 100, 600, () => {
                 gameSocket.emit('leavePrivateRoom', { roomId: data.roomId });
                 waitingText.destroy();
                 // Find and destroy the button from the buttons array
@@ -928,8 +928,9 @@ export class PongMenuManager {
     /**
      * Affiche un overlay styled comme peopleList, listant tous les possesseurs du jeu avec un bouton INVITER
      * @param gameId L'identifiant du jeu (ex: 1 pour Pong)
+     * @param roomId L'identifiant de la room privée à partager
      */
-    async showInvitingList(gameId) {
+    async showInvitingList(gameId, roomId) {
         // Import dynamique pour éviter les cycles
         const { fetchUsernames } = await import("../../../pages/community/peopleList.js");
         const { GameManager } = await import("../../../managers/gameManager.js");
@@ -987,12 +988,6 @@ export class PongMenuManager {
         title.className = "invite-title";
         title.textContent = "Inviter un joueur";
         container.appendChild(title);
-        // Bouton de fermeture
-        const closeBtn = document.createElement("button");
-        closeBtn.className = "invite-close-btn";
-        closeBtn.textContent = "✖";
-        closeBtn.onclick = () => overlay.remove();
-        container.appendChild(closeBtn);
         // Liste des possesseurs
         owners.forEach((person) => {
             const item = document.createElement("div");
@@ -1016,7 +1011,32 @@ export class PongMenuManager {
             const inviteBtn = document.createElement("button");
             inviteBtn.className = "invite-btn";
             inviteBtn.textContent = "INVITER";
-            // Pas d'action pour l'instant
+            inviteBtn.onclick = async () => {
+                // Envoie un message privé dans le chat avec un lien cliquable
+                const currentUser = await GameManager.getCurrentUser();
+                const fromUsername = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
+                // Génère un lien d'invitation (exemple: /pong/join?room=xxx)
+                let link = roomId ? `${window.location.origin}/pong/join?room=${roomId}` : window.location.origin;
+                const message = `@${person.username} Clique ici pour rejoindre ma partie Pong : <a href='${link}' target='_blank'>Rejoindre la partie</a>`;
+                // Envoie via le chat (Socket.IO)
+                try {
+                    const { HOSTNAME } = await import("../../../main.js");
+                    const ioClient = (await import("socket.io-client")).io;
+                    const socket = ioClient(`https://${HOSTNAME}:8443/chat`, {
+                        transports: ['websocket', 'polling'],
+                        withCredentials: true,
+                        reconnection: true,
+                        reconnectionAttempts: 5,
+                        reconnectionDelay: 1000
+                    });
+                    socket.emit("sendPrivateMessage", { to: person.username, author: fromUsername, content: message }, () => { });
+                }
+                catch (e) {
+                    console.error("Erreur lors de l'envoi de l'invitation privée :", e);
+                }
+                // Optionnel : feedback visuel
+                showNotification(`Invitation envoyée à ${person.username} dans le chat !`);
+            };
             item.appendChild(inviteBtn);
             container.appendChild(item);
         });

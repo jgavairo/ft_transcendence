@@ -46,11 +46,17 @@ export async function renderRankings(gameId, container, currentUser) {
             <button id="scrollToCurrentUser" class="scrollButton">Go to My Rank</button>
         </div>
     `;
-    // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
-    const playerNames = container.querySelectorAll('.playerName');
-    playerNames.forEach(playerName => {
-        playerName.addEventListener('click', () => {
+    // Ajouter un événement de clic sur chaque ITEM (et non plus seulement sur le nom) pour afficher la carte de profil
+    const rankingItems = container.querySelectorAll('.rankingItem');
+    rankingItems.forEach(item => {
+        item.addEventListener('click', (e) => {
             var _a;
+            // Éviter double ouverture si clic sur un sous-élément interactif
+            if (e.target.closest('button, a'))
+                return;
+            const playerName = item.querySelector('.playerName');
+            if (!playerName)
+                return;
             const username = playerName.getAttribute('data-username');
             const profilePicture = playerName.getAttribute('data-profile-picture') || 'default-profile.png';
             const email = playerName.getAttribute('data-email');
@@ -169,11 +175,16 @@ export async function showGameDetails(gameIdOrObj) {
     // Afficher le classement en utilisant la nouvelle fonction
     const rankingsContainer = details.querySelector('#rankings-container');
     await renderRankings(game.id, rankingsContainer, currentUser);
-    // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
-    const friendNames = details.querySelectorAll('.friendName');
-    friendNames.forEach(friendName => {
-        friendName.addEventListener('click', () => {
+    // Ajouter un événement de clic sur chaque ITEM friend (et non plus seulement sur le nom) pour afficher la carte de profil
+    const friendItems = details.querySelectorAll('.friendItem');
+    friendItems.forEach(item => {
+        item.addEventListener('click', (e) => {
             var _a;
+            if (e.target.closest('button, a'))
+                return;
+            const friendName = item.querySelector('.friendName');
+            if (!friendName)
+                return;
             const username = friendName.getAttribute('data-username');
             const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
             const email = friendName.getAttribute('data-email');
