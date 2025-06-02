@@ -36,12 +36,37 @@
 	margin-top: 2%;
 	display: grid;
     justify-items: center;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 32px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 42px;
     padding: 32px;
 	overflow-y: auto;
 	scrollbar-width: none;
 	position: relative;
+}
+
+@media (max-width: 1200px) {
+  .gamescontainer {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 24px;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .gamescontainer {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .gamescontainer {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    padding: 4px;
+    width: 98%;
+  }
 }
 
 .gamecard {
