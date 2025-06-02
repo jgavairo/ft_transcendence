@@ -699,7 +699,7 @@ export class PongMenuManager {
             fontSize: 24,
             fill: padColor,
             x: gameWidth / 2 - 200,
-            y: -100,
+            y: -100, // Commence hors écran
             width: 400,
             align: 'center',
             shadowColor: padColor,
@@ -739,7 +739,7 @@ export class PongMenuManager {
             });
             this.particles.push({
                 shape: particle,
-                speed: -1 - Math.random() * 2,
+                speed: -1 - Math.random() * 2, // Vitesse négative pour monter
                 glowDirection: 1
             });
             this.backgroundLayer.add(particle);
@@ -798,12 +798,12 @@ export class PongMenuManager {
             align: 'center'
         });
         const countdownText = new Konva.Text({
+            x: gameWidth / 2 - 200,
+            y: 520,
             text: 'Game starting in 5',
             fontFamily: 'Press Start 2P',
             fontSize: 24,
             fill: '#fc4cfc',
-            x: gameWidth / 2 - 200,
-            y: 520,
             width: 400,
             align: 'center'
         });
@@ -908,7 +908,11 @@ export class PongMenuManager {
                 align: 'center',
             });
             this.menuLayer.add(waitingText);
-            this.createButton('QUIT', gameWidth / 2 - 100, 600, () => {
+            // Ajout du bouton INVITE
+            this.createButton('INVITE', gameWidth / 2 - 100, 530, () => {
+                this.showInvitingList(1, data.roomId); // Pass roomId
+            });
+            this.createButton('BACK', gameWidth / 2 - 100, 600, () => {
                 gameSocket.emit('leavePrivateRoom', { roomId: data.roomId });
                 waitingText.destroy();
                 // Find and destroy the button from the buttons array
@@ -920,6 +924,124 @@ export class PongMenuManager {
             });
             this.menuLayer.batchDraw();
         });
+    }
+    /**
+     * Affiche un overlay styled comme peopleList, listant tous les possesseurs du jeu avec un bouton INVITER
+     * @param gameId L'identifiant du jeu (ex: 1 pour Pong)
+     * @param roomId L'identifiant de la room privée à partager
+     */
+    async showInvitingList(gameId, roomId) {
+        // Import dynamique pour éviter les cycles
+        const { fetchUsernames } = await import("../../../pages/community/peopleList.js");
+        const { GameManager } = await import("../../../managers/gameManager.js");
+        // Récupérer tous les utilisateurs
+        const people = await fetchUsernames();
+        // Récupérer l'utilisateur courant
+        let currentUsername = null;
+        try {
+            const resp = await fetch(`/api/user/infos`, { credentials: "include" });
+            const data = await resp.json();
+            if (data.success && data.user && data.user.username) {
+                currentUsername = data.user.username;
+            }
+        }
+        catch (_a) { }
+        // Récupérer la liste des jeux (pour avoir user_ids)
+        const allGames = await GameManager.getGameList();
+        const game = allGames.find((g) => g.id === gameId);
+        let userIds = [];
+        try {
+            userIds = JSON.parse(game.user_ids || '[]');
+        }
+        catch (_b) {
+            userIds = [];
+        }
+        // Filtrer les utilisateurs possédant le jeu et qui ne sont pas le joueur lui-même
+        const owners = people.filter((p) => userIds.includes(p.id) && p.username !== currentUsername);
+        // Supprimer overlay existant
+        let existingOverlay = document.getElementById("inviteOverlay");
+        if (existingOverlay)
+            existingOverlay.remove();
+        // Injecte le CSS si pas déjà présent
+        if (!document.getElementById("invite-overlay-css")) {
+            const link = document.createElement("link");
+            link.id = "invite-overlay-css";
+            link.rel = "stylesheet";
+            link.href = "/styles/inviteOverlay.css";
+            document.head.appendChild(link);
+        }
+        // Overlay principal
+        const overlay = document.createElement("div");
+        overlay.id = "inviteOverlay";
+        overlay.className = "invite-overlay";
+        // Fermer l'overlay si on clique à l'extérieur du container
+        overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) {
+                overlay.remove();
+            }
+        });
+        // Container styled comme inviteOverlay
+        const container = document.createElement("div");
+        container.className = "invite-container";
+        // Titre
+        const title = document.createElement("h2");
+        title.className = "invite-title";
+        title.textContent = "Inviter un joueur";
+        container.appendChild(title);
+        // Liste des possesseurs
+        owners.forEach((person) => {
+            const item = document.createElement("div");
+            item.className = "invite-list-item";
+            // Info à gauche
+            const info = document.createElement("div");
+            info.className = "invite-info";
+            // Photo
+            const img = document.createElement("img");
+            img.className = "invite-profile-pic";
+            img.src = person.profile_picture || "default-profile.png";
+            img.alt = person.username;
+            // Nom
+            const name = document.createElement("span");
+            name.className = "invite-username";
+            name.textContent = person.username;
+            info.appendChild(img);
+            info.appendChild(name);
+            item.appendChild(info);
+            // Bouton INVITER à droite
+            const inviteBtn = document.createElement("button");
+            inviteBtn.className = "invite-btn";
+            inviteBtn.textContent = "INVITER";
+            inviteBtn.onclick = async () => {
+                // Envoie un message privé dans le chat avec un lien cliquable
+                const currentUser = await GameManager.getCurrentUser();
+                const fromUsername = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
+                // Génère un lien d'invitation (exemple: /pong/join?room=xxx)
+                let link = roomId ? `${window.location.origin}/pong/join?room=${roomId}` : window.location.origin;
+                const message = `@${person.username} Clique ici pour rejoindre ma partie Pong : <a href='${link}' target='_blank'>Rejoindre la partie</a>`;
+                // Envoie via le chat (Socket.IO)
+                try {
+                    const { HOSTNAME } = await import("../../../main.js");
+                    const ioClient = (await import("socket.io-client")).io;
+                    const socket = ioClient(`https://${HOSTNAME}:8443/chat`, {
+                        transports: ['websocket', 'polling'],
+                        withCredentials: true,
+                        reconnection: true,
+                        reconnectionAttempts: 5,
+                        reconnectionDelay: 1000
+                    });
+                    socket.emit("sendPrivateMessage", { to: person.username, author: fromUsername, content: message }, () => { });
+                }
+                catch (e) {
+                    console.error("Erreur lors de l'envoi de l'invitation privée :", e);
+                }
+                // Optionnel : feedback visuel
+                showNotification(`Invitation envoyée à ${person.username} dans le chat !`);
+            };
+            item.appendChild(inviteBtn);
+            container.appendChild(item);
+        });
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
     }
 }
 export async function displayMenu() {

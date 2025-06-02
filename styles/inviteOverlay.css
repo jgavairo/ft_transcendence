@@ -1,0 +1,90 @@
+/* Styles pour l'overlay d'invitation de joueurs (indépendant de peopleList) */
+.invite-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.45);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.invite-container {
+  background: #1e2a38;
+  border-radius: 1rem;
+  padding: 2rem 2.5rem;
+  min-width: 340px;
+  max-width: 95vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 24px #0007;
+  position: relative;
+}
+.invite-title {
+  color: #fff;
+  margin-bottom: 1.2rem;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+.invite-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  background: none;
+  color: #fff;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.invite-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.5rem;
+  background: #1e2a38;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  transition: none;
+}
+/* Désactive le hover sur l'item */
+.invite-list-item:hover {
+  background: #1e2a38;
+  transform: none;
+  box-shadow: none;
+  z-index: auto;
+}
+.invite-info {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.invite-profile-pic {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 1rem;
+  box-shadow: 0 1px 4px #0002;
+  border: 2px solid #263549;
+}
+.invite-username {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  text-align: left;
+}
+.invite-btn {
+  background-color: #294162;
+  color: white;
+  border: none;
+  padding: 6px 18px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.15s;
+  margin-left: auto;
+}
+.invite-btn:hover {
+  background-color: #3a5b87;
+  transform: scale(1.08);
+}
