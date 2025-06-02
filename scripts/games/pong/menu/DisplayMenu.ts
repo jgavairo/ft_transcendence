@@ -999,12 +999,12 @@ export class PongMenuManager
         });
 
         const countdownText = new Konva.Text({
+            x: gameWidth / 2 - 200,
+            y: 520,
             text: 'Game starting in 5',
             fontFamily: 'Press Start 2P',
             fontSize: 24,
             fill: '#fc4cfc',
-            x: gameWidth / 2 - 200,
-            y: 520,
             width: 400,
             align: 'center'
         });
@@ -1119,6 +1119,10 @@ export class PongMenuManager
                 align: 'center',
             });
             this.menuLayer.add(waitingText);
+            // Ajout du bouton INVITE
+            this.createButton('INVITE', gameWidth / 2 - 100, 530, () => {
+                this.showInvitingList(1); // 1 pour Pong, peut être modifié pour d'autres jeux
+            });
             this.createButton('QUIT', gameWidth / 2 - 100, 600, () => {
                 gameSocket.emit('leavePrivateRoom', { roomId: data.roomId });
                 waitingText.destroy();
@@ -1130,6 +1134,138 @@ export class PongMenuManager
             });
             this.menuLayer.batchDraw();
         });
+    }
+
+    /**
+     * Affiche un overlay styled comme peopleList, listant tous les possesseurs du jeu avec un bouton INVITER
+     * @param gameId L'identifiant du jeu (ex: 1 pour Pong)
+     */
+    public async showInvitingList(gameId: number) {
+        // Import dynamique pour éviter les cycles
+        const { fetchUsernames } = await import("../../../pages/community/peopleList.js");
+        const { GameManager } = await import("../../../managers/gameManager.js");
+        // Récupérer tous les utilisateurs
+        const people = await fetchUsernames();
+        // Récupérer l'utilisateur courant
+        let currentUsername = null;
+        try {
+            const resp = await fetch(`/api/user/infos`, { credentials: "include" });
+            const data = await resp.json();
+            if (data.success && data.user && data.user.username) {
+                currentUsername = data.user.username;
+            }
+        } catch {}
+        // Récupérer la liste des jeux (pour avoir user_ids)
+        const allGames = await GameManager.getGameList();
+        const game = allGames.find((g: any) => g.id === gameId);
+        let userIds: number[] = [];
+        try {
+            userIds = JSON.parse((game as any).user_ids || '[]');
+        } catch {
+            userIds = [];
+        }
+        // Filtrer les utilisateurs possédant le jeu et qui ne sont pas le joueur lui-même
+        const owners = people.filter((p: any) => userIds.includes(p.id) && p.username !== currentUsername);
+        // Supprimer overlay existant
+        let existingOverlay = document.getElementById("inviteOverlay");
+        if (existingOverlay) existingOverlay.remove();
+        // Overlay principal
+        const overlay = document.createElement("div");
+        overlay.id = "inviteOverlay";
+        overlay.style.position = "fixed";
+        overlay.style.top = "0";
+        overlay.style.left = "0";
+        overlay.style.width = "100vw";
+        overlay.style.height = "100vh";
+        overlay.style.background = "rgba(0,0,0,0.45)";
+        overlay.style.zIndex = "10000";
+        overlay.style.display = "flex";
+        overlay.style.justifyContent = "center";
+        overlay.style.alignItems = "center";
+        // Container styled comme peopleList
+        const container = document.createElement("div");
+        container.style.background = "#1e2a38";
+        container.style.borderRadius = "1rem";
+        container.style.padding = "2rem 2.5rem";
+        container.style.minWidth = "340px";
+        container.style.maxWidth = "95vw";
+        container.style.maxHeight = "80vh";
+        container.style.overflowY = "auto";
+        container.style.boxShadow = "0 4px 24px #0007";
+        container.style.position = "relative";
+        // Titre
+        const title = document.createElement("h2");
+        title.textContent = "Inviter un joueur";
+        title.style.color = "#fff";
+        title.style.marginBottom = "1.2rem";
+        title.style.textAlign = "center";
+        container.appendChild(title);
+        // Bouton de fermeture
+        const closeBtn = document.createElement("button");
+        closeBtn.textContent = "✖";
+        closeBtn.style.position = "absolute";
+        closeBtn.style.top = "18px";
+        closeBtn.style.right = "24px";
+        closeBtn.style.background = "none";
+        closeBtn.style.color = "#fff";
+        closeBtn.style.border = "none";
+        closeBtn.style.fontSize = "1.5rem";
+        closeBtn.style.cursor = "pointer";
+        closeBtn.onclick = () => overlay.remove();
+        container.appendChild(closeBtn);
+        // Liste des possesseurs
+        owners.forEach((person: any) => {
+            const item = document.createElement("div");
+            item.className = "friend-item";
+            item.style.display = "flex";
+            item.style.alignItems = "center";
+            item.style.justifyContent = "space-between";
+            item.style.padding = "0.7rem 0.5rem";
+            item.style.background = "#1e2a38";
+            item.style.borderRadius = "0.5rem";
+            item.style.marginBottom = "0.5rem";
+            // Info à gauche
+            const info = document.createElement("div");
+            info.className = "friend-info";
+            info.style.display = "flex";
+            info.style.alignItems = "center";
+            // Photo
+            const img = document.createElement("img");
+            img.src = person.profile_picture || "default-profile.png";
+            img.alt = person.username;
+            img.style.width = "38px";
+            img.style.height = "38px";
+            img.style.borderRadius = "50%";
+            img.style.marginRight = "1rem";
+            img.style.objectFit = "cover";
+            // Nom
+            const name = document.createElement("span");
+            name.className = "friend-name";
+            name.textContent = person.username;
+            name.style.color = "#fff";
+            name.style.fontWeight = "bold";
+            name.style.fontSize = "1rem";
+            info.appendChild(img);
+            info.appendChild(name);
+            item.appendChild(info);
+            // Bouton INVITER à droite
+            const inviteBtn = document.createElement("button");
+            inviteBtn.className = "toggle-button";
+            inviteBtn.textContent = "INVITER";
+            inviteBtn.style.marginLeft = "auto";
+            inviteBtn.style.background = "#294162";
+            inviteBtn.style.color = "#fff";
+            inviteBtn.style.border = "none";
+            inviteBtn.style.padding = "6px 18px";
+            inviteBtn.style.borderRadius = "8px";
+            inviteBtn.style.fontSize = "1rem";
+            inviteBtn.style.cursor = "pointer";
+            // Pas d'action pour l'instant
+            item.appendChild(inviteBtn);
+            container.appendChild(item);
+        });
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
     }
 }
 
