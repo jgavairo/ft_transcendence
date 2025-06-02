@@ -589,7 +589,41 @@ body
     font-style: normal;
 }
 
+.profile-modal .profile-modal-button-container
+{
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
 .profile-modal .profile-modal-button-password
+{
+    margin: 0 auto;
+    padding: 10px;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+	transition: 0.3s;
+    cursor: pointer;
+	margin-top: 2rem;
+}
+
+.profile-modal .profile-modal-button-username
+{
+    margin: 0 auto;
+    padding: 10px;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+	transition: 0.3s;
+    cursor: pointer;
+	margin-top: 2rem;
+}
+
+.profile-modal .profile-modal-button-email
 {
     margin: 0 auto;
     padding: 10px;
@@ -619,6 +653,24 @@ body
 
 
 .profile-modal .profile-modal-button-password:hover
+{
+	background-color: #113d5e;
+	transition: 0.3s;
+}
+
+.profile-modal .profile-modal-button-username:hover
+{
+	background-color: #113d5e;
+	transition: 0.3s;
+}
+
+.profile-modal .profile-modal-button-username:hover
+{
+	background-color: #113d5e;
+	transition: 0.3s;
+}
+
+.profile-modal .profile-modal-button-email:hover
 {
 	background-color: #113d5e;
 	transition: 0.3s;
@@ -722,6 +774,67 @@ body
 }
 
 .changePassword-modal #changePasswordButton:hover
+{
+	transition: 0.3s;
+	background-color: #113d5e;
+}
+
+.changeUsername-modal
+{
+	border-radius: 10px;
+    padding: 20px;
+    width: 300px;
+    margin: 0 auto;
+}
+
+.changeUsername-modal h2 {
+	text-align: center;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.changeUsername-modal .changeUsernameInput
+{
+	padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #444;
+
+}
+
+.changeUsername-modal-content {
+	padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.changeUsername-modal-content .changeUsernameInput
+{
+    background-color: #a3a3a36c;
+	border-radius: 7px;
+	padding: 5px;
+	margin: 10px 0;
+	width: 100%;
+	color: rgb(255, 255, 255);
+}
+
+.changeUsername-modal #changeUsernameButton
+{
+    height: 2rem;
+    position: relative;
+    left: 10%;
+    margin-top: 1rem;
+    width: 80%;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.changeUsername-modal #changeUsernameButton:hover
 {
 	transition: 0.3s;
 	background-color: #113d5e;

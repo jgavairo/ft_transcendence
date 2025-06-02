@@ -952,6 +952,13 @@ export class DatabaseManager
         }
         return blockedUsers;
     }
+
+    public async updateUsername(userId: number, newUsername: string): Promise<void> 
+    {
+        if (!this.db) 
+            throw new Error('Database not initialized');
+        await this.db.run('UPDATE users SET username = ? WHERE id = ?', [newUsername, userId]);
+    }
 }
 
 export const dbManager = DatabaseManager.getInstance();

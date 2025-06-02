@@ -209,11 +209,17 @@ app.post<{ Body: ChangePasswordRequest }>('/api/user/changePassword', { preHandl
 app.post('/api/user/block', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return userRoutes.blockUser(request, reply);
 });
+
 app.post('/api/user/unblock', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return userRoutes.unblockUser(request, reply);
 });
+
 app.post('/api/user/isBlocked', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return userRoutes.isBlocked(request, reply);
+});
+
+app.post('/api/user/changeUsername', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return userRoutes.changeUsername(request, reply);
 });
 
 ////////////////////

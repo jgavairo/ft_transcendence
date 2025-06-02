@@ -199,6 +199,63 @@ const isBlockedHandler = async (request: FastifyRequest, reply: FastifyReply) =>
     }
 };
 
+function isValidUsername(username: string)
+{
+    const usernameRegex = /^(?=.{3,20}$)(?!.*[_.-]{2})[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/;
+    return usernameRegex.test(username);
+}
+
+const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);
+        if (!user || !user.id)
+        {
+            return reply.status(404).send
+            ({
+                success: false,
+                message: "User not found"
+            });
+        }
+        const newUsername = (request.body as { newUsername: string }).newUsername;
+        if (!newUsername)
+        {
+            return reply.status(400).send({ success: false, message: "New username required" });
+        }
+        if (newUsername === user.username)
+        {
+            return reply.status(400).send({ success: false, message: "New username cannot be the same as the current username" });
+        }
+        const userWithNewUsername = await dbManager.getUserByUsername(newUsername);
+        if (userWithNewUsername)
+        {
+            return reply.status(400).send({ success: false, message: "Username already exists" });
+        }
+        if (!isValidUsername(newUsername))
+        {
+            return reply.status(400).send({ success: false, message: "Invalid username" });
+        }
+        await dbManager.updateUsername(user.id, newUsername);
+        return reply.send
+        ({
+            success: true,
+            message: "Username updated successfully"
+        });
+    }
+    catch (error)
+    {
+        console.error("Erreur détaillée:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+}
+
+
+
 export const userRoutes = 
 {
     getInfos: getInfosHandler,
@@ -209,4 +266,5 @@ export const userRoutes =
     blockUser: blockUserHandler,
     unblockUser: unblockUserHandler,
     isBlocked: isBlockedHandler,
+    changeUsername: changeUsernameHandler
 };

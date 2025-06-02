@@ -136,8 +136,16 @@ const profileModalHTML = (username, email, profilePicture, bio) => `
                 <textarea id="bioInput" class="bio-input" placeholder="Write something about yourself...">${bio}</textarea>
                 <button id="saveBioButton" class="profile-modal-button-bio">Save Bio</button>
               </div>
-              <div id="changePassword">
-                <button id="changePasswordButton" class="profile-modal-button-password">Change password</button>
+              <div class="profile-modal-button-container">
+                <div id="changePassword">
+                  <button id="changePasswordButton" class="profile-modal-button-password">Change password</button>
+                </div>
+                <div id="changeEmail">
+                  <button id="changeEmailButton" class="profile-modal-button-email">Change email</button>
+                </div>
+                <div id="changeUsername">
+                  <button id="changeUsernameButton" class="profile-modal-button-username">Change username</button>
+                </div>
               </div>
             </div>
           </div>
@@ -170,6 +178,18 @@ const changePasswordModalHTML = `
             </div>
         </div>
 `;
+const changeUsernameModalHTML = `
+        <div class="changeUsername-modal-header">
+            <button class="backArrow" id="backToProfileSettings" aria-label="Back">←</button>
+        </div>
+        <div class="changeUsername-modal" id="changeUsername-modal">
+            <h2>Change username</h2>
+            <div class="changePassword-modal-content">
+                <input type="text" class="changePasswordInput" id="newUsername" placeholder="New username" />
+                <button id="changeUsernameButton">Change username</button>
+            </div>
+        </div>
+`;
 const gameModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="game-modal" id="games-modal" style="width: 1216px; height: 816px;">
@@ -192,4 +212,4 @@ const gameInfosModalHTML = (game, inLibrary) => `
   </div>
 </div>
 </div>`;
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML };
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML, changeUsernameModalHTML };
