@@ -190,6 +190,18 @@ const changeUsernameModalHTML = `
             </div>
         </div>
 `;
+const changeEmailModalHTML = `
+        <div class="changeEmail-modal-header">
+            <button class="backArrow" id="backToProfileSettings" aria-label="Back">←</button>
+        </div>
+        <div class="changeEmail-modal" id="changeEmail-modal">
+            <h2>Change email</h2>
+            <div class="changePassword-modal-content">
+                <input type="text" class="changePasswordInput" id="newEmail" placeholder="New email" />
+                <button id="changeEmailButton">Change email</button>
+            </div>
+        </div>
+`;
 const gameModalHTML = `
     <div class="modal-overlay" id="modalWindow">
         <div class="game-modal" id="games-modal" style="width: 1216px; height: 816px;">
@@ -212,4 +224,4 @@ const gameInfosModalHTML = (game, inLibrary) => `
   </div>
 </div>
 </div>`;
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML, changeUsernameModalHTML };
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML, changeUsernameModalHTML, changeEmailModalHTML };

@@ -959,6 +959,13 @@ export class DatabaseManager
             throw new Error('Database not initialized');
         await this.db.run('UPDATE users SET username = ? WHERE id = ?', [newUsername, userId]);
     }
+
+    public async updateEmail(userId: number, newEmail: string): Promise<void> 
+    {
+        if (!this.db) 
+            throw new Error('Database not initialized');
+        await this.db.run('UPDATE users SET email = ? WHERE id = ?', [newEmail, userId]);
+    }
 }
 
 export const dbManager = DatabaseManager.getInstance();

@@ -222,6 +222,10 @@ app.post('/api/user/changeUsername', { preHandler: authMiddleware }, async (requ
     return userRoutes.changeUsername(request, reply);
 });
 
+app.post('/api/user/changeEmail', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return userRoutes.changeEmail(request, reply);
+});
+
 ////////////////////
 // PROFILE ROUTES //
 ////////////////////

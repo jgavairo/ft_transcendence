@@ -254,7 +254,60 @@ const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyRepl
     }
 }
 
+function isValidEmail(email: string)
+{
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
 
+const changeEmailHandler = async (request: FastifyRequest, reply: FastifyReply) =>
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);
+        if (!user || !user.id)
+        {
+            return reply.status(404).send
+            ({
+                success: false,
+                message: "User not found"
+            });
+        }
+        const newEmail = (request.body as { newEmail: string }).newEmail;
+        if (!newEmail)
+        {
+            return reply.status(400).send({ success: false, message: "New email required" });
+        }
+        if (newEmail === user.email)
+        {
+            return reply.status(400).send({ success: false, message: "New email cannot be the same as the current email" });
+        }
+        const userWithNewEmail = await dbManager.getUserByEmail(newEmail);
+        if (userWithNewEmail)
+        {
+            return reply.status(400).send({ success: false, message: "Email already exists" });
+        }
+        if (!isValidEmail(newEmail))
+        {
+            return reply.status(400).send({ success: false, message: "Invalid email" });
+        }
+        await dbManager.updateEmail(user.id, newEmail);
+        return reply.send
+        ({
+            success: true,
+            message: "Email updated successfully"
+        });
+    }
+    catch (error)
+    {
+        console.error("Erreur détaillée:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+}
 
 export const userRoutes = 
 {
@@ -266,5 +319,6 @@ export const userRoutes =
     blockUser: blockUserHandler,
     unblockUser: unblockUserHandler,
     isBlocked: isBlockedHandler,
-    changeUsername: changeUsernameHandler
+    changeUsername: changeUsernameHandler,
+    changeEmail: changeEmailHandler
 };
