@@ -53,6 +53,19 @@ function handleGameInviteLink() {
             const roomId = url.searchParams.get('room');
             if (!roomId)
                 return;
+            // Vérifier si la room existe avant d'ouvrir le modal
+            try {
+                const resp = await fetch(`/api/pong/room-exists?roomId=${encodeURIComponent(roomId)}`, { credentials: "include" });
+                const data = await resp.json();
+                if (!data.success || !data.exists) {
+                    showErrorNotification("link expired");
+                    return;
+                }
+            }
+            catch (err) {
+                showErrorNotification("link expired");
+                return;
+            }
             // Charge la page library en arrière-plan pour éviter de garder community
             // Simule un vrai clic sur le bouton library pour tout gérer comme un utilisateur
             const libraryBtn = document.getElementById('librarybutton');

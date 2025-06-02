@@ -67,9 +67,26 @@ const isFirstGameHandler = async ( request: FastifyRequest, reply:   FastifyRepl
     }
   };
 
+// --- ROOM EXISTS HANDLER ---
+export const roomExistsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+        // On récupère la Map des rooms privées depuis le module matchmaking
+        const { privateRooms } = await import('../games/pong/matchmaking.js');
+        const roomId = (request.query as any).roomId as string;
+        if (!roomId) {
+            return reply.status(400).send({ success: false, message: 'Missing roomId' });
+        }
+        const exists = privateRooms && privateRooms.has(roomId);
+        return reply.send({ success: true, exists });
+    } catch (err) {
+        return reply.status(500).send({ success: false, message: 'Internal error' });
+    }
+};
+
 export const gameRoutes = 
 {
     getAllGames: getAllGamesHandler,
     isFirstGame: isFirstGameHandler,
-    hasPlayed: hasPlayedHandler
+    hasPlayed: hasPlayedHandler,
+    roomExists: roomExistsHandler
 };
