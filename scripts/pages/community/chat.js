@@ -42,6 +42,57 @@ async function fetchChatHistory(username) {
         return [];
     }
 }
+// Ajout : gestion des liens d'invitation de partie Pong
+function handleGameInviteLink() {
+    document.addEventListener('click', async function (e) {
+        const target = e.target;
+        if (target && target.tagName === 'A' && target.href && target.href.includes('/pong/join?room=')) {
+            e.preventDefault();
+            // Extraire l'ID de la room depuis l'URL
+            const url = new URL(target.href);
+            const roomId = url.searchParams.get('room');
+            if (!roomId)
+                return;
+            // Charge la page library en arrière-plan pour éviter de garder community
+            // Simule un vrai clic sur le bouton library pour tout gérer comme un utilisateur
+            const libraryBtn = document.getElementById('librarybutton');
+            if (libraryBtn) {
+                libraryBtn.click();
+                // Attendre que la page soit bien affichée avant d'ouvrir le modal (petit délai)
+                await new Promise(res => setTimeout(res, 100));
+            }
+            // Ouvre le modal de jeu façon overlay
+            let modal = document.getElementById('optionnalModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'optionnalModal';
+                document.body.appendChild(modal);
+            }
+            modal.innerHTML = `
+              <div class="modal-overlay" id="modalWindow">
+                <div class="game-modal" id="games-modal"></div>
+                <button class="close-modal" id="closeGameModal">&times;</button>
+              </div>
+            `;
+            document.getElementById('closeGameModal').onclick = () => { modal.innerHTML = ''; };
+            // Charge le menu Pong et rejoint la room
+            const { PongMenuManager } = await import('../../games/pong/menu/DisplayMenu.js');
+            const { socket: gameSocket } = await import('../../games/pong/network.js');
+            const { GameManager } = await import('../../managers/gameManager.js');
+            // Instancie le menu si besoin
+            // @ts-ignore
+            if (!PongMenuManager["instance"]) {
+                new PongMenuManager(false); // Ne pas afficher le menu principal si on rejoint via lien
+            }
+            // Récupère le username courant
+            const currentUser = await GameManager.getCurrentUser();
+            const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || 'Player';
+            // Affiche l'écran du salon (lobby) en rejoignant la room existante
+            // 2 joueurs par défaut (peut être adapté si besoin)
+            PongMenuManager["instance"].privateLobby(2, roomId);
+        }
+    });
+}
 export async function setupChat() {
     const input = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendMessage");
@@ -330,4 +381,5 @@ export async function setupChat() {
     });
     // Vider le cache partagé au début de setupChat
     clearBlockedCache();
+    handleGameInviteLink();
 }
