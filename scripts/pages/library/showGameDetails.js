@@ -29,10 +29,10 @@ export async function renderRankings(gameId, container, currentUser) {
             <div class="rankingContainer">
                 <ul class="rankingList">
                     ${rankedPeople.map((person, index) => `
-                        <li class="rankingItem" id="user-${person.username}">
+                        <li class="rankingItem" id="user-${person.username}" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}" data-user-id="${person.id}">
                             <span class="numberRank">${index + 1}</span> <!-- Numéro de classement -->
                             <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
-                            <span class="playerName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
+                            <span class="playerName">
                                 ${person.username}
                             </span>
                             ${index === 0 ? '<span class="medal">🥇</span>' : ''}
@@ -46,16 +46,15 @@ export async function renderRankings(gameId, container, currentUser) {
             <button id="scrollToCurrentUser" class="scrollButton">Go to My Rank</button>
         </div>
     `;
-    // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
-    const playerNames = container.querySelectorAll('.playerName');
-    playerNames.forEach(playerName => {
-        playerName.addEventListener('click', () => {
-            var _a;
-            const username = playerName.getAttribute('data-username');
-            const profilePicture = playerName.getAttribute('data-profile-picture') || 'default-profile.png';
-            const email = playerName.getAttribute('data-email');
-            const bio = playerName.getAttribute('data-bio') || 'No bio available';
-            const userId = ((_a = people.find(person => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
+    // Ajouter un événement de clic sur chaque rankingItem pour afficher la carte de profil
+    const rankingItems = container.querySelectorAll('.rankingItem');
+    rankingItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const username = item.getAttribute('data-username');
+            const profilePicture = item.getAttribute('data-profile-picture') || 'default-profile.png';
+            const email = item.getAttribute('data-email');
+            const bio = item.getAttribute('data-bio') || 'No bio available';
+            const userId = parseInt(item.getAttribute('data-user-id') || '0', 10);
             showProfileCard(username, profilePicture, email, bio, userId);
         });
     });
@@ -169,15 +168,16 @@ export async function showGameDetails(gameIdOrObj) {
     // Afficher le classement en utilisant la nouvelle fonction
     const rankingsContainer = details.querySelector('#rankings-container');
     await renderRankings(game.id, rankingsContainer, currentUser);
-    // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
-    const friendNames = details.querySelectorAll('.friendName');
-    friendNames.forEach(friendName => {
-        friendName.addEventListener('click', () => {
+    // Ajouter un événement de clic sur chaque friendItem pour afficher la carte de profil
+    const friendItems = details.querySelectorAll('.friendItem');
+    friendItems.forEach(friendItem => {
+        friendItem.addEventListener('click', () => {
             var _a;
-            const username = friendName.getAttribute('data-username');
-            const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
-            const email = friendName.getAttribute('data-email');
-            const bio = friendName.getAttribute('data-bio') || 'No bio available';
+            const friendNameSpan = friendItem.querySelector('.friendName');
+            const username = friendNameSpan.getAttribute('data-username');
+            const profilePicture = friendNameSpan.getAttribute('data-profile-picture') || 'default-profile.png';
+            const email = friendNameSpan.getAttribute('data-email');
+            const bio = friendNameSpan.getAttribute('data-bio') || 'No bio available';
             const userId = ((_a = people.find(person => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
             showProfileCard(username, profilePicture, email, bio, userId);
         });
