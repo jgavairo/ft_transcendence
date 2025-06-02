@@ -1,4 +1,4 @@
-import { profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML, changeUsernameModalHTML, changeEmailModalHTML } from '../../sourcepage.js';
+import { profileModalHTML, uploadPictureFormHTML, changePasswordModalHTML, changeUsernameModalHTML, changeEmailModalHTML, changeDoubleAuthentificationModalHTML, disable2FAModalHTML } from '../../sourcepage.js';
 import { MainApp, HOSTNAME } from '../../main.js';
 import api from '../../helpers/api.js';
 import { showErrorNotification, showNotification } from '../../helpers/notifications.js';
@@ -8,7 +8,7 @@ export async function setupProfileModal() {
         return;
     const userInfos = await MainApp.getUserInfo();
     const profilePictureWithTimestamp = `${userInfos.profile_picture}?t=${Date.now()}`;
-    modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, profilePictureWithTimestamp, userInfos.bio || '');
+    modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, profilePictureWithTimestamp, userInfos.bio || '', userInfos.two_factor_enabled);
     const closeButton = document.getElementById('closeProfileModal');
     if (closeButton) {
         closeButton.addEventListener('click', () => {
@@ -45,6 +45,18 @@ export async function setupProfileModal() {
     if (changeEmailButton) {
         changeEmailButton.addEventListener('click', () => {
             changeEmail();
+        });
+    }
+    const changeDoubleAuthentificationButton = document.getElementById('enable2FAButton');
+    if (changeDoubleAuthentificationButton) {
+        changeDoubleAuthentificationButton.addEventListener('click', () => {
+            changeDoubleAuthentification();
+        });
+    }
+    const disable2FAButton = document.getElementById('disable2FAButton');
+    if (disable2FAButton) {
+        disable2FAButton.addEventListener('click', () => {
+            disable2FA();
         });
     }
     const saveBioButton = document.getElementById('saveBioButton');
@@ -267,4 +279,83 @@ function changeEmail() {
             showErrorNotification(data.message);
         }
     });
+}
+async function disable2FA() {
+    console.log('disable2FA');
+    const modal = document.getElementById('profile-modal');
+    if (!modal)
+        return;
+    modal.innerHTML = disable2FAModalHTML;
+    const closeButton = document.getElementById('backToProfileSettings');
+    if (!closeButton)
+        return;
+    closeButton.addEventListener('click', () => {
+        setupProfileModal();
+    });
+    const disable2FAButton = document.getElementById('disable2FAButton');
+    if (!disable2FAButton)
+        return;
+    disable2FAButton.addEventListener('click', async () => {
+        console.log('disable2FAButton clicked');
+        const password = document.getElementById('password');
+        if (!password) {
+            showErrorNotification('Please fill in all fields');
+            return;
+        }
+        if (password.value === '') {
+            showErrorNotification('Password cannot be empty');
+            return;
+        }
+        const response = await api.post(`https://${HOSTNAME}:8443/api/user/disable2FA`, {
+            password: password.value
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('2FA disabled successfully.');
+            setupProfileModal();
+        }
+        else {
+            showErrorNotification(data.message);
+        }
+    });
+}
+async function changeDoubleAuthentification() {
+    console.log('changeDoubleAuthentification');
+    const modal = document.getElementById('profile-modal');
+    if (!modal)
+        return;
+    modal.innerHTML = changeDoubleAuthentificationModalHTML;
+    const closeButton = document.getElementById('backToProfileSettings');
+    if (!closeButton)
+        return;
+    closeButton.addEventListener('click', () => {
+        setupProfileModal();
+    });
+    const response = await api.get(`https://${HOSTNAME}:8443/api/user/send2FACode`);
+    const data = await response.json();
+    if (data.success) {
+        showNotification('2FA code sent successfully, check your mailbox.');
+        const enableDoubleAuthentificationButton = document.getElementById('changeDoubleAuthentificationButton');
+        if (!enableDoubleAuthentificationButton)
+            return;
+        enableDoubleAuthentificationButton.addEventListener('click', async () => {
+            console.log('enableDoubleAuthentificationButton clicked');
+            const code = document.getElementById('code');
+            if (!code)
+                return;
+            const response = await api.post(`https://${HOSTNAME}:8443/api/user/enable2FA`, {
+                code: code.value
+            });
+            const data = await response.json();
+            if (data.success) {
+                showNotification('2FA enabled successfully.');
+                setupProfileModal();
+            }
+            else
+                showErrorNotification(data.message);
+        });
+    }
+    else {
+        showErrorNotification(data.message);
+    }
 }

@@ -226,6 +226,18 @@ app.post('/api/user/changeEmail', { preHandler: authMiddleware }, async (request
     return userRoutes.changeEmail(request, reply);
 });
 
+app.get('/api/user/send2FACode', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return userRoutes.send2FACode(request, reply);
+});
+
+app.post('/api/user/enable2FA', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return userRoutes.enable2FA(request, reply);
+});
+
+app.post('/api/user/disable2FA', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return userRoutes.disable2FA(request, reply);
+});
+
 ////////////////////
 // PROFILE ROUTES //
 ////////////////////
