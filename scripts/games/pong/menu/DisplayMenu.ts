@@ -1195,12 +1195,6 @@ export class PongMenuManager
         title.className = "invite-title";
         title.textContent = "Inviter un joueur";
         container.appendChild(title);
-        // Bouton de fermeture
-        const closeBtn = document.createElement("button");
-        closeBtn.className = "invite-close-btn";
-        closeBtn.textContent = "✖";
-        closeBtn.onclick = () => overlay.remove();
-        container.appendChild(closeBtn);
         // Liste des possesseurs
         owners.forEach((person: any) => {
             const item = document.createElement("div");
