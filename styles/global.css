@@ -651,6 +651,68 @@ body
     transition: 0.3s;
 }
 
+.profile-modal .profile-modal-button-disable2fa
+{
+    margin: 0 auto;
+    padding: 10px;
+    background-color: var(--vert);
+    border: none;
+    border-radius: 5px;
+    color: white;
+    border: 1px solid #ffffff;
+    font-weight: bold;
+	transition: 0.3s;
+    cursor: pointer;
+	margin-top: 2rem;
+}
+
+
+.profile-modal .profile-modal-button-disable2fa:hover
+{
+	background-color: var(--rouge);
+	transition: 0.3s;
+}
+
+.profile-modal .profile-modal-button-enable2fa
+{
+    margin: 0 auto;
+    padding: 10px;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    border: 1px solid #ffffff;
+    font-weight: bold;
+	transition: 0.3s;
+    cursor: pointer;
+	margin-top: 2rem;
+}
+
+.profile-modal .button-disable2fa
+{
+	margin: 0 auto;
+    padding: 10px;
+    background-color: var(--rouge);
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+	transition: 0.3s;
+    cursor: pointer;
+	margin-top: 2rem;
+}
+
+.profile-modal .button-disable2fa:hover
+{
+	background-color: #690000;
+	transition: 0.3s;
+}
+
+.profile-modal .profile-modal-button-enable2fa:hover
+{
+	background-color: var(--vert);
+	transition: 0.3s;
+}
 
 .profile-modal .profile-modal-button-password:hover
 {
@@ -779,6 +841,27 @@ body
 	background-color: #113d5e;
 }
 
+.profile-modal #changeDoubleAuthentificationButton
+{
+    position: relative;
+    left: 10%;
+    margin-top: 1rem;
+    width: 80%;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.profile-modal #changeDoubleAuthentificationButton:hover
+{
+	transition: 0.3s;
+	background-color: #113d5e;
+}
+
 .changeUsername-modal
 {
 	border-radius: 10px;
@@ -900,6 +983,68 @@ body
 	transition: 0.3s;
 	background-color: #113d5e;
 }
+
+.changeDoubleAuthentification-modal
+{
+	border-radius: 10px;
+    padding: 20px;
+    width: 300px;
+    margin: 0 auto;
+}
+
+.changeDoubleAuthentification-modal h2 {
+	text-align: center;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.changeDoubleAuthentification-modal .changeDoubleAuthentificationInput
+{
+	padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #444;
+
+}
+
+.changeDoubleAuthentification-modal-content {
+	padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.changeDoubleAuthentification-modal-content .changeDoubleAuthentificationInput
+{
+    background-color: #a3a3a36c;
+	border-radius: 7px;
+	padding: 5px;
+	margin: 10px 0;
+	width: 100%;
+	color: rgb(255, 255, 255);
+}
+
+.changeDoubleAuthentification-modal #enable2FAButton
+{
+    position: relative;
+    left: 10%;
+    margin-top: 1rem;
+    width: 80%;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.changeDoubleAuthentification-modal #enable2FAButton:hover
+{
+	transition: 0.3s;
+	background-color: #113d5e;
+}
+
+
 
 .gameInfosModal {
     position: fixed;

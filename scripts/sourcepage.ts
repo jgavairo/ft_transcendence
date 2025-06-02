@@ -118,7 +118,7 @@ const registerModalHTML = `
             <button id="registerRequestButton" class="signupButton">Sign up</button>
 `;
 
-const profileModalHTML = (username: string, email: string, profilePicture: string, bio: string) => `
+const profileModalHTML = (username: string, email: string, profilePicture: string, bio: string, twoFactorEnabled: boolean) => `
     <div class="modal-overlay" id="modalOverlay">
         <div class="profile-modal" id="profile-modal">
           <div class="profile-modal-header">
@@ -155,6 +155,16 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
                 <div id="changeUsername">
                   <button id="changeUsernameButton" class="profile-modal-button-username">Change username</button>
                 </div>
+                </div>
+              <div id="doubleAuthentification">
+                  ${twoFactorEnabled ? 
+                      `<button id="disable2FAButton" class="profile-modal-button-disable2fa">
+                          Disable 2FA Security
+                      </button>` : 
+                      `<button id="enable2FAButton" class="profile-modal-button-enable2fa">
+                          Enable 2FA Security
+                      </button>`
+                  }
               </div>
             </div>
           </div>
@@ -190,6 +200,19 @@ const changePasswordModalHTML = `
         </div>
 `;
 
+const disable2FAModalHTML = `
+        <div class="changePassword-modal-header">
+            <button class="backArrow" id="backToProfileSettings" aria-label="Back">←</button>
+        </div>
+        <div class="changePassword-modal" id="changePassword-modal">
+            <h2>Disable 2FA</h2>
+            <div class="changePassword-modal-content">
+                <input type="password" class="changePasswordInput" id="password" placeholder="Password" />
+                <button id="disable2FAButton" class="button-disable2fa">Disable 2FA</button>
+            </div>
+        </div>
+`;
+
 const changeUsernameModalHTML = `
         <div class="changeUsername-modal-header">
             <button class="backArrow" id="backToProfileSettings" aria-label="Back">←</button>
@@ -212,6 +235,19 @@ const changeEmailModalHTML = `
             <div class="changePassword-modal-content">
                 <input type="text" class="changePasswordInput" id="newEmail" placeholder="New email" />
                 <button id="changeEmailButton">Change email</button>
+            </div>
+        </div>
+`;
+
+const changeDoubleAuthentificationModalHTML = `
+        <div class="changeDoubleAuthentification-modal-header">
+            <button class="backArrow" id="backToProfileSettings" aria-label="Back">←</button>
+        </div>
+        <div class="changeDoubleAuthentification-modal" id="changeDoubleAuthentification-modal">
+            <h2>Verify your email</h2>
+            <div class="changeDoubleAuthentification-modal-content">
+                <input type="text" class="changeDoubleAuthentificationInput" id="code" placeholder="Secret code" />
+                <button id="changeDoubleAuthentificationButton">Verify email and activate 2FA</button>
             </div>
         </div>
 `;
@@ -240,4 +276,4 @@ const gameInfosModalHTML = (game: any, inLibrary: boolean) => `
 </div>
 </div>`
 
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML, changeUsernameModalHTML, changeEmailModalHTML };
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML, changeUsernameModalHTML, changeEmailModalHTML, changeDoubleAuthentificationModalHTML, disable2FAModalHTML };

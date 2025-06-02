@@ -2,6 +2,16 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { dbManager } from "../database/database.js";
 import { authMiddleware } from '../middleware/auth.js';
 import bcrypt from 'bcrypt';
+import nodemailer from 'nodemailer';
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: 
+    {
+        user: process.env.EMAIL_ADDRESS,
+        pass: process.env.EMAIL_PASSWORD
+    }
+});
 
 export interface AuthenticatedRequest extends FastifyRequest
 {
@@ -40,7 +50,10 @@ const getInfosHandler = async (request: FastifyRequest, reply: FastifyReply) =>
                 profile_picture: user.profile_picture,
                 bio: user.bio || '',
                 created_at: user.created_at,
-                library: user.library || []
+                library: user.library || [],
+                two_factor_enabled: user.two_factor_enabled,
+                two_factor_code: user.two_factor_code,
+                two_factor_code_expiration: user.two_factor_code_expiration
             }
         });
     } 
@@ -309,6 +322,125 @@ const changeEmailHandler = async (request: FastifyRequest, reply: FastifyReply) 
     }
 }
 
+const send2FACodeHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);
+        if (!user || !user.id)
+        {
+            return reply.status(404).send({
+                success: false,
+                message: "User not found"
+            });
+        }
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        await dbManager.update2FACode(user.id, code);
+        const mailOptions = {
+            from: process.env.EMAIL_ADDRESS,
+            to: user.email,
+            subject: 'Your 2FA Code - ft_transcendence',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2>Your Two-Factor Authentication Code</h2>
+                    <p>Here is your verification code:</p>
+                    <h1 style="font-size: 32px; letter-spacing: 5px; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px;">
+                        ${code}
+                    </h1>
+                    <p>This code will expire in 5 minutes.</p>
+                    <p>If you didn't request this code, please ignore this email.</p>
+                </div>
+            `
+        };
+        await transporter.sendMail(mailOptions);
+        return reply.send({ success: true, code });
+    }
+    catch (error)
+    {
+        console.error("process.env.EMAIL_ADDRESS:", process.env.EMAIL_ADDRESS);
+        console.error("process.env.EMAIL_PASSWORD:", process.env.EMAIL_PASSWORD);
+        console.error("Erreur détaillée:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+}
+
+const enable2FAHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);
+        if (!user || !user.id)
+        {
+            return reply.status(404).send({
+                success: false,
+                message: "User not found"
+            });
+        }
+        const code = (request.body as { code: string }).code;
+        if (!code)
+        {
+            return reply.status(400).send({ success: false, message: "Code required" });
+        }
+        if (code !== user.two_factor_code)
+        {
+            return reply.status(401).send({ success: false, message: "Invalid code" });
+        }
+        const date = Date.now();
+        if (!user.two_factor_code_expiration || user.two_factor_code_expiration < date)
+        {
+            return reply.status(401).send({ success: false, message: "Code expired" });
+        }
+        await dbManager.enable2FA(user.id);
+        return reply.send({ success: true });
+    }
+    catch (error)
+    {
+        console.error("Erreur détaillée:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+}
+
+const disable2FAHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);
+        if (!user || !user.id)
+        {
+            return reply.status(404).send({
+                success: false,
+                message: "User not found"
+            });
+        }
+        const password = (request.body as { password: string }).password;
+        if (!password)
+        {
+            return reply.status(400).send({ success: false, message: "Password required" });
+        }
+        const realPasswordHash = await dbManager.getUserPassword(user.id);
+        const isValid = await bcrypt.compare(password, realPasswordHash);
+        if (!isValid)
+        {
+            return reply.status(401).send({ success: false, message: "Invalid password" });
+        }
+        await dbManager.disable2FA(user.id);
+        return reply.send({ success: true });
+    }
+    catch (error)
+    {
+        console.error("Erreur détaillée:", error);
+        
+    }
+}
 export const userRoutes = 
 {
     getInfos: getInfosHandler,
@@ -320,5 +452,8 @@ export const userRoutes =
     unblockUser: unblockUserHandler,
     isBlocked: isBlockedHandler,
     changeUsername: changeUsernameHandler,
-    changeEmail: changeEmailHandler
+    changeEmail: changeEmailHandler,
+    send2FACode: send2FACodeHandler,
+    enable2FA: enable2FAHandler,
+    disable2FA: disable2FAHandler
 };

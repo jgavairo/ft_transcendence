@@ -21,6 +21,9 @@ export interface User {
     friends: number [];
     friend_requests: number[];
     blocked_users?: string[]; // Ajouté pour le blocage
+    two_factor_enabled?: boolean;
+    two_factor_code?: string;
+    two_factor_code_expiration?: number;
 }
 
 export interface Game {
@@ -965,6 +968,31 @@ export class DatabaseManager
         if (!this.db) 
             throw new Error('Database not initialized');
         await this.db.run('UPDATE users SET email = ? WHERE id = ?', [newEmail, userId]);
+        await this.db.run('UPDATE users SET two_factor_enabled = 0 WHERE id = ?', [userId]);
+    }
+
+    public async update2FACode(userId: number, code: string): Promise<void>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        await this.db.run('UPDATE users SET two_factor_code = ? WHERE id = ?', [code, userId]);
+        await this.db.run('UPDATE users SET two_factor_code_expiration = ? WHERE id = ?', [new Date().getTime() + 1000 * 60 * 5, userId]);
+    }
+
+    public async enable2FA(userId: number): Promise<void>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        await this.db.run('UPDATE users SET two_factor_enabled = 1 WHERE id = ?', [userId]);
+        await this.db.run('UPDATE users SET two_factor_code = NULL WHERE id = ?', [userId]);
+        await this.db.run('UPDATE users SET two_factor_code_expiration = NULL WHERE id = ?', [userId]);
+    }
+
+    public async disable2FA(userId: number): Promise<void>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        await this.db.run('UPDATE users SET two_factor_enabled = 0 WHERE id = ?', [userId]);
     }
 }
 
