@@ -1,5 +1,6 @@
 import { gameModalHTML } from "../../sourcepage.js";
 import { displayMenu } from "./menu/DisplayMenu.js";
+import { displayMenuFromLink } from "./menu/DisplayMenu.js";
 
 export function launchPong() 
 {
@@ -9,3 +10,10 @@ export function launchPong()
     modal.innerHTML = gameModalHTML;
     displayMenu();
 };
+
+export function launchPongFromLink(roomId: string) {
+    const modal = document.getElementById('optionnalModal');
+    if (!modal) return;
+    modal.innerHTML = gameModalHTML;
+    displayMenuFromLink(roomId);
+}
