@@ -1075,7 +1075,21 @@ export class PongMenuManager
             shadowOpacity: 0.8
         });
 
+        // Ajout du texte du timer
+        let secondsLeft = 2.5;
+        const timerText = new Konva.Text({
+            text: `Returning to menu in ${secondsLeft.toFixed(1)}s...`,
+            fontFamily: 'Press Start 2P',
+            fontSize: 14,
+            fill: '#ffe156',
+            x: gameWidth / 2 - 200,
+            y: 550,
+            width: 450,
+            align: 'center',
+        });
+
         this.menuLayer.add(winnerText);
+        this.menuLayer.add(timerText);
 
         // Animation d'entrée du texte
         const finalY = 300;
@@ -1089,12 +1103,19 @@ export class PongMenuManager
             }
             else 
             {
-                // Ne pas afficher de bouton MENU, retour auto au menu après 2.5s
-                setTimeout(() => {
-                    this.stage.destroy();
-                    stopGame();
-                    displayMenu();
-                }, 2500);
+                // Timer de redirection
+                let interval = setInterval(() => {
+                    secondsLeft -= 0.1;
+                    if (secondsLeft > 0) {
+                        timerText.text(`Returning to menu in ${secondsLeft.toFixed(1)}s...`);
+                        this.menuLayer.batchDraw();
+                    } else {
+                        clearInterval(interval);
+                        this.stage.destroy();
+                        stopGame();
+                        displayMenu();
+                    }
+                }, 100);
             }
         };
 
