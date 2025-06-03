@@ -1,12 +1,11 @@
 // matchmaking.ts
 import type { Namespace, Socket } from 'socket.io';
 import { startMatch, updateMatch, MatchState } from './gameSimulation.js';
-import { startTriMatch, TriMatchState } from './TripongSimulation.js';
 import { dbManager } from '../../database/database.js';
 
 interface PlayerInfo {
-  side: number;               // 0|1 pour bi-pong, 0|1|2 pour tri-pong, -1 pour solo modes
-  mode: 'solo' | 'multi' | 'tri' | 'solo-tri';
+  side: number;               // 0|1 pour bi-pong, -1 pour solo modes
+  mode: 'solo' | 'multi';
   roomId?: string;
 }
 
@@ -29,9 +28,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   // Nouvelle Map pour stocker l'association socket_id -> user_id
   const socketToUserId = new Map<string, string>();
   let classicQueue: Player[] = [];
-  let triQueue: Player[] = [];
   const matchStates = new Map<string, MatchState>();
-  const triMatchStates = new Map<string, TriMatchState>();
   // Map des tournois complets ou en attente, groupés par id
   const tournaments = new Map<string, Tournament>();
   const tournamentQueues: { [k in 4|8]: Player[] } = { 4: [], 8: [] };
@@ -215,30 +212,6 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       }, 1000 / 60);
     });
 
-    // 2) SOLO TRI-PONG
-    socket.on('startSoloTri', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l'association socket_id -> user_id si disponible
-      if (userId) {
-        socketToUserId.set(socket.id, userId);
-      }
-      
-      const m = startTriMatch([socket, socket, socket], gameNs, true);
-      triMatchStates.set(m.roomId, m);
-      playerInfo.set(socket.id, { side: 0, mode: 'solo-tri' });
-      socket.join(m.roomId);
-      socket.emit('matchFoundTri', {
-        roomId: m.roomId,
-        side: 0,
-        players: [username, username, username],
-        mode: 'solo-tri'
-      });
-      const iv = setInterval(() => {
-        updateMatch(m, gameNs);
-        gameNs.to(m.roomId).emit('gameState', m);
-        if (m.gameOver) clearInterval(iv);
-      }, 1000 / 60);
-    });
-
     // 3) 2-JOUEURS MATCHMAKING
     socket.on('joinQueue', ({ username, userId }: { username: string, userId?: string }) => {
       // Stocker l'association socket_id -> user_id si disponible
@@ -311,30 +284,6 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       m.paddles[data.side].direction = data.direction;
     });
 
-    // 5) 3-JOUEURS TRIPONG MATCHMAKING
-    socket.on('joinTriQueue', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l'association socket_id -> user_id si disponible
-      if (userId) {
-        socketToUserId.set(socket.id, userId);
-      }
-      
-      if (!triQueue.some(p => p.id === socket.id)) {
-        triQueue.push({ id: socket.id, username });
-      }
-      attemptTriMatch();
-    });
-
-    socket.on('movePaddleTri', (data: { side: number; direction: 'up' | 'down' | null }) => {
-      const info = playerInfo.get(socket.id);
-      if (!info) return;
-      if (info.mode === 'tri' && info.side !== data.side) return;
-      if (info.mode !== 'tri' && info.mode !== 'solo-tri') return;
-      const roomId = [...socket.rooms].find(r => r !== socket.id);
-      if (!roomId) return;
-      const m = triMatchStates.get(roomId)!;
-      m.paddles[data.side].direction = data.direction;
-    });
-
     // Nouvel événement pour récupérer l'ID utilisateur à partir d'un socket_id
     socket.on('getUserIdFromSocketId', (data: { socketId: string }, callback: (userId: string | null) => void) => {
       const userId = getUserIdFromSocketId(data.socketId);
@@ -344,7 +293,6 @@ export function setupGameMatchmaking(gameNs: Namespace) {
     // 6) DÉCONNEXION
     socket.on('disconnect', () => {
       classicQueue = classicQueue.filter(p => p.id !== socket.id);
-      triQueue     = triQueue.filter(p => p.id !== socket.id);
     });
 
     // --- ROOM PRIVÉE ---
@@ -393,23 +341,6 @@ export function setupGameMatchmaking(gameNs: Namespace) {
             opponent: room.usernames[0],
             user1Id: room.sockets[0].id,
             user2Id: room.sockets[1].id
-          });
-          const iv = setInterval(() => {
-            updateMatch(m, gameNs);
-            gameNs.to(roomId).emit('gameState', m);
-            if (m.gameOver) clearInterval(iv);
-          }, 1000 / 60);
-        } else if (room.maxPlayers === 3) {
-          const m = startTriMatch(room.sockets, gameNs, false);
-          triMatchStates.set(roomId, m);
-          room.sockets.forEach((s, i) => {
-            playerInfo.set(s.id, { side: i, mode: 'tri' });
-            s.emit('matchFoundTri', {
-              roomId,
-              side: i,
-              players: room.usernames,
-              mode: 'multi'
-            });
           });
           const iv = setInterval(() => {
             updateMatch(m, gameNs);
@@ -493,28 +424,6 @@ export function setupGameMatchmaking(gameNs: Namespace) {
             }
           }
         }
-      }, 1000 / 60);
-    }
-  }
-
-
-  // --- FONCTION D'ASSOCIATION POUR 3-JOUEURS TRI-PONG ---
-  function attemptTriMatch() {
-    while (triQueue.length >= 3) {
-      const trio = triQueue.splice(0, 3);
-      const socks = trio.map(p => gameNs.sockets.get(p.id)!).filter(Boolean);
-      const m = startTriMatch(socks, gameNs, false);
-      triMatchStates.set(m.roomId, m);
-      const players = trio.map(p => p.username);
-      socks.forEach((s, i) => {
-        playerInfo.set(s.id, { side: i, mode: 'tri' });
-        s.join(m.roomId);
-        s.emit('matchFoundTri', { roomId: m.roomId, side: i, players, mode:'multi' });
-      });
-      const iv = setInterval(() => {
-        updateMatch(m, gameNs);
-        gameNs.to(m.roomId).emit('gameState', m);
-        if (m.gameOver) clearInterval(iv);
       }, 1000 / 60);
     }
   }
