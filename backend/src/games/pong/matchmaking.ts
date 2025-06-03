@@ -16,9 +16,22 @@ interface Tournament {
   id: string;
   size: 4|8;
   players: Player[];     // liste des joueurs du round en cours
+  allPlayers: Player[];
   round: number;         // 0 = 1er tour, 1 = finale
   winners: Player[];     // joueurs qualifiés pour le round suivant
   ready: Map<string, boolean>;
+  playRound?: (pairs: Array<[Player, Player]>, round: number) => void; // pour 8 joueurs
+}
+
+interface BasicTournament {
+  id: string;
+  players: Player[];
+  ready: Map<string, boolean>;
+  round: number; // 0 = demi-finales, 1 = finale
+  matches: { [k: string]: { players: [Player, Player], winner?: Player } };
+  finalists: Player[];
+  finalReady: Map<string, boolean>;
+  champion?: Player;
 }
 
 // Gestion des rooms privées
@@ -33,8 +46,15 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   const matchStates = new Map<string, MatchState>();
   const triMatchStates = new Map<string, TriMatchState>();
   // Map des tournois complets ou en attente, groupés par id
-  const tournaments = new Map<string, Tournament>();
+  // On stocke des BasicTournament pour le tournoi 4 joueurs
+  const tournaments = new Map<string, BasicTournament>();
   const tournamentQueues: { [k in 4|8]: Player[] } = { 4: [], 8: [] };
+
+  // Gestion des rooms privées
+  const privateRooms = new Map<string, { sockets: Socket[]; usernames: string[]; maxPlayers: number }>();
+
+  // Map pour stocker les intervalles de chaque match de tournoi
+  const tournamentMatchIntervals = new Map<string, NodeJS.Timeout>();
 
   // Fonction utilitaire pour récupérer l'ID utilisateur à partir d'un socket_id
   function getUserIdFromSocketId(socketId: string): string | undefined {
@@ -44,16 +64,12 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   gameNs.on('connection', socket => {
     
     // TOURNAMENT
-    socket.on( 'joinTournamentQueue', async ({ size, username, userId }: {
-        size: 4 | 8
-        username: string
-        userId?: string
-      }) => {
+    socket.on( 'joinTournamentQueue', async ({ username, userId }: { username: string, userId?: string }) => {
         // Optionnel : stocker l’ID utilisateur pour retrouver plus tard
         if (userId) socketToUserId.set(socket.id, userId);
   
         // Push FIFO si pas déjà présent
-        const q = tournamentQueues[size];
+        const q = tournamentQueues[4];
         if (!q.find(p => p.id === socket.id)) {
           q.push({ id: socket.id, username });
         }
@@ -62,141 +78,193 @@ export function setupGameMatchmaking(gameNs: Namespace) {
           gameNs.sockets
             .get(p.id)
             ?.emit('tournamentBracket', {
-              size,
+              size: 4,
               joined: q.map(p2 => p2.username)
             })
         );
   
         // Dès que la file est pleine, créer et lancer le tournoi
-        if (q.length === size) {
-          const tour: Tournament = {
+        if (q.length === 4) {
+          const tour: BasicTournament = {
             id: crypto.randomUUID(),
-            size,
             players: q.slice(),
+            ready: new Map(q.map((p: Player) => [p.id, false])),
             round: 0,
-            winners: [],
-            ready: new Map(q.map(p => [p.id, false]))
+            matches: {},
+            finalists: [],
+            finalReady: new Map(),
           };
-          tournaments.set(tour.id, tour);
-          tournamentQueues[size] = [];
-      
-          // tous dans la même room (pour la suite)
-          tour.players.forEach(p =>
-            gameNs.sockets.get(p.id)?.join(`tour-${tour.id}`)
-          );
-      
-          // on ré-émet une dernière fois le lobby depuis la room tournoi
-          const initialStatus = tour.players.map(p => ({
-            id:       p.id,
-            username: p.username,
-            ready:    false
-          }));
-
+          tournaments.set(tour.id, tour as any);
+          tournamentQueues[4] = [];
+          tour.players.forEach((p: Player) => gameNs.sockets.get(p.id)?.join(`tour-${tour.id}`));
           gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
             tournamentId: tour.id,
-            size:         tour.size,
-            joined:       tour.players.map(p => p.username),
-            status:       initialStatus   // ← on passe le status dès le début
+            size: 4,
+            joined: tour.players.map((p: Player) => p.username),
+            status: tour.players.map((p: Player) => ({ id: p.id, username: p.username, ready: false, eliminated: false }))
           });
         }
       });
 
       socket.on('playerReady', ({ tournamentId }: { tournamentId: string }) => {
-        const tour = tournaments.get(tournamentId);
+        const tour = tournaments.get(tournamentId) as BasicTournament;
         if (!tour) return;
-
-        // marque ce joueur comme prêt
-        tour.ready.set(socket.id, true);
-
-        // recompute le status et émet à tous
-        const status = tour.players.map(p => ({
-          id:       p.id,
-          username: p.username,
-          ready:    !!tour.ready.get(p.id)
-        }));
-        gameNs.to(`tour-${tournamentId}`).emit('tournamentReadyUpdate', {
-          tournamentId,
-          size:   tour.size,
-          joined: tour.players.map(p => p.username),
-          status
-        });
-
-        // si **tous** sont prêts, alors on lance les matchs
-        if ([...tour.ready.values()].every(v => v)) {
-          launchMatches(gameNs, tour);
+        if (tour.round === 0) {
+          tour.ready.set(socket.id, true);
+          gameNs.to(`tour-${tour.id}`).emit('tournamentReadyUpdate', {
+            tournamentId: tour.id,
+            size: 4,
+            joined: tour.players.map((p: Player) => p.username),
+            status: tour.players.map((p: Player) => ({
+              id: p.id,
+              username: p.username,
+              ready: tour.ready.get(p.id) || false,
+              eliminated: false
+            }))
+          });
+          if ([...tour.ready.values()].every((v: boolean) => v)) {
+            // Lancer les deux demi-finales
+            tour.round = 0;
+            const [A, B, C, D] = tour.players;
+            const match1Id = `${tour.id}-demi1`;
+            const match2Id = `${tour.id}-demi2`;
+            tour.matches[match1Id] = { players: [A, B] };
+            tour.matches[match2Id] = { players: [C, D] };
+            // Boucle explicite pour éviter le problème de typage
+            const demiFinales: [Player, Player, string][] = [
+              [A, B, match1Id],
+              [C, D, match2Id]
+            ];
+            for (const [p1, p2, matchId] of demiFinales) {
+              const s1 = gameNs.sockets.get(p1.id)!;
+              const s2 = gameNs.sockets.get(p2.id)!;
+              s1.join(matchId);
+              s2.join(matchId);
+              playerInfo.set(p1.id, { side: 0, mode: 'multi', roomId: matchId });
+              playerInfo.set(p2.id, { side: 1, mode: 'multi', roomId: matchId });
+              s1.emit('tournamentMatchFound', { matchId, side: 0, opponent: p2.username });
+              s2.emit('tournamentMatchFound', { matchId, side: 1, opponent: p1.username });
+              const state = startMatch([s1, s2], gameNs, false, matchId);
+              matchStates.set(matchId, state);
+              const iv = setInterval(() => {
+                updateMatch(state, gameNs);
+                gameNs.to(matchId).emit('gameState', state);
+                if (state.gameOver) clearInterval(iv);
+              }, 1000 / 60);
+            }
+          }
+        } else if (tour.round === 1) {
+          tour.finalReady.set(socket.id, true);
+          gameNs.to(`tour-${tour.id}`).emit('tournamentReadyUpdate', {
+            tournamentId: tour.id,
+            size: 4,
+            joined: tour.finalists.map((p: Player) => p.username),
+            status: tour.finalists.map((p: Player) => ({
+              id: p.id,
+              username: p.username,
+              ready: tour.finalReady.get(p.id) || false,
+              eliminated: false
+            }))
+          });
+          if ([...tour.finalReady.values()].every((v: boolean) => v)) {
+            // Lancer la finale
+            const [F1, F2] = tour.finalists;
+            const finalId = `${tour.id}-final`;
+            const s1 = gameNs.sockets.get(F1.id)!;
+            const s2 = gameNs.sockets.get(F2.id)!;
+            s1.join(finalId);
+            s2.join(finalId);
+            playerInfo.set(F1.id, { side: 0, mode: 'multi', roomId: finalId });
+            playerInfo.set(F2.id, { side: 1, mode: 'multi', roomId: finalId });
+            s1.emit('tournamentMatchFound', { matchId: finalId, side: 0, opponent: F2.username });
+            s2.emit('tournamentMatchFound', { matchId: finalId, side: 1, opponent: F1.username });
+            const state = startMatch([s1, s2], gameNs, false, finalId);
+            matchStates.set(finalId, state);
+            const iv = setInterval(() => {
+              updateMatch(state, gameNs);
+              gameNs.to(finalId).emit('gameState', state);
+              if (state.gameOver) clearInterval(iv);
+            }, 1000 / 60);
+          }
         }
       });
 
+      socket.on('tournamentReportResult', ({ tournamentId, matchId }) => {
+      const tour = tournaments.get(tournamentId) as BasicTournament;
+      if (!tour) return;
+      const state = matchStates.get(matchId);
+      if (!state) return;
 
-      socket.on('tournamentReportResult', ({ tournamentId, matchId }: { tournamentId: string; matchId: string }) => {
-        const tour = tournaments.get(tournamentId);
-        if (!tour) return;
+      const winSide = state.paddles.findIndex(pl => pl.lives > 0);
+      const matchObj = tour.matches[matchId] as { players: [Player, Player], winner?: Player };
+      if (!matchObj) return;
+      const [P1, P2] = matchObj.players;
+      const winner = winSide === 0 ? P1 : P2;
+      matchObj.winner = winner;
 
-        // 1) Récupère l'état du match pour connaître winSide
-        const state = matchStates.get(matchId);
-        if (!state) return;
-        const winSide = state.paddles.findIndex(pl => pl.lives > 0);
+      // --- Mise à jour du bracket pour le 1er tour ---
+      if (tour.round === 0) {
+        const allMatches = Object.values(tour.matches) as { players: [Player, Player], winner?: Player }[];
+        const allPlayers = tour.players;
+        const status = allPlayers.map(p => {
+          // Trouver le match de p
+          const m = allMatches.find(m2 => m2.players.some(pl => pl.id === p.id));
+          // Si le match existe et qu’il y a un winner, on marque éliminé si p n’est pas le winner
+          const eliminated = m?.winner ? (m.winner.id !== p.id) : false;
+          return {
+            id: p.id,
+            username: p.username,
+            ready: false,
+            eliminated: eliminated
+          };
+        });
 
-        // 2) Extrait l'index du match depuis le matchId
-        //    ex matchId === "abc123-r0-m1"  → matchIndex = 1
-        const parts = matchId.split('-m');
-        const matchIndex = parseInt(parts[1], 10);
+        // > On renvoie au client la vue complète des 4 joueurs
+        gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
+          tournamentId: tour.id,
+          size: 4,
+          joined: allPlayers.map(p => p.username),
+          status: status
+        });
+      }
 
-        // 3) Calcule le “slot” du joueur A & B dans tour.players
-        const slotA = matchIndex * 2;
-        const slotB = slotA + 1;
-        const A = tour.players[slotA];
-        const B = tour.players[slotB];
+      // --- Si les 2 demi-finales sont terminées, on prépare la finale ---
+      const allMatches = Object.values(tour.matches) as { players: [Player, Player], winner?: Player }[];
+      if (tour.round === 0 && allMatches.filter(m => m.winner).length === 2) {
+        tour.round = 1;
+        // Récupérer les 2 gagnants des demi-finales
+        tour.finalists = allMatches.map(m => m.winner!) as Player[];
+        tour.finalReady = new Map(tour.finalists.map(p => [p.id, false]));
 
-        // 4) Détermine winner/loser
-        const winner = winSide === 0 ? A : B;
-        const loser  = winSide === 0 ? B : A;
+        gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
+          tournamentId: tour.id,
+          size: 4,
+          joined: tour.players.map(p => p.username),
+          status: tour.players.map(p => {
+            // pour chaque joueur, on cherche si éliminé
+            const m = allMatches.find(m2 => m2.players.some(pl => pl.id === p.id));
+            const eliminated = m?.winner ? (m.winner.id !== p.id) : false;
+            return { id: p.id, username: p.username, ready: false, eliminated: eliminated };
+          })
+        });
+        setTimeout(() => {
+          launchFinal4(gameNs, tour);
+        }, 3000);
 
-        // 5) Ajoute aux gagnants du tournoi
-        tour.winners.push(winner);
+        return;
+      }
 
-        // 6) Émet l'événement pour tous les clients du tournoi
-        gameNs.to(`tour-${tournamentId}`).emit('tournamentMatchOver', {
-    tournamentId,
-    matchId,
-    winner:  winner.username,
-    loser:   loser.username
-  });
-
-  // Si la ronde est terminée, prépare la suivante
-    const playersThisRound = tour.players.length;
-    if (tour.winners.length === playersThisRound / 2) {
-      // passe au round suivant
-      tour.round++;
-      tour.players = tour.winners.slice();
-      tour.winners = [];
-
-      // … on garde le ready map côté serveur également …
-
-      // 1) CONSTRUIT le nouveau status (all ready = false)
-      const initialStatus = tour.players.map(p => ({
-        id:       p.id,
-        username: p.username,
-        ready:    false
-      }));
-
-      // 2) RÉ-ÉMET le bracket mis à jour
-      gameNs.to(`tour-${tournamentId}`).emit('tournamentBracket', {
-        tournamentId: tour.id,
-        size:         tour.size,
-        joined:       tour.players.map(p => p.username),
-        status:       initialStatus
-      });
-
-      // 3) Après 5 s, relance les matchs
-      setTimeout(() => launchMatches(gameNs, tour), 5000);
-    }
-  });
+      if (tour.round === 1) {
+        tour.champion = winner;
+        gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: winner.username });
+        tournaments.delete(tour.id);
+      }
+    });
 
 
     // 1) SOLO CLASSIC
     socket.on('startSolo', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l'association socket_id -> user_id si disponible
+      // Stocker l’association socket_id -> user_id si disponible
       if (userId) {
         socketToUserId.set(socket.id, userId);
       }
@@ -217,7 +285,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
 
     // 2) SOLO TRI-PONG
     socket.on('startSoloTri', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l'association socket_id -> user_id si disponible
+      // Stocker l’association socket_id -> user_id si disponible
       if (userId) {
         socketToUserId.set(socket.id, userId);
       }
@@ -241,7 +309,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
 
     // 3) 2-JOUEURS MATCHMAKING
     socket.on('joinQueue', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l'association socket_id -> user_id si disponible
+      // Stocker l’association socket_id -> user_id si disponible
       if (userId) {
         socketToUserId.set(socket.id, userId);
       }
@@ -435,67 +503,264 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   function launchMatches(ns: Namespace, tour: Tournament) {
     const players = tour.players;
     tour.winners = [];
-  
-    // On crée autant de matchs que nécessaire
+
     for (let i = 0; i < players.length; i += 2) {
       const A = players[i], B = players[i + 1];
       const matchId = `${tour.id}-r${tour.round}-m${i/2}`;
-      const sA = ns.sockets.get(A.id)!, sB = ns.sockets.get(B.id)!;
+      const sA = ns.sockets.get(A.id)!;
+      const sB = ns.sockets.get(B.id)!;
   
-      // Prépare la room et le match
+      // → Room + playerInfo
       sA.join(matchId);
       sB.join(matchId);
       playerInfo.set(A.id, { side: 0, mode: 'multi', roomId: matchId });
       playerInfo.set(B.id, { side: 1, mode: 'multi', roomId: matchId });
   
-      // Envoie le signal “match trouvé”
+      // → Signal “match trouvé”
       sA.emit('tournamentMatchFound', { matchId, side: 0, opponent: B.username });
       sB.emit('tournamentMatchFound', { matchId, side: 1, opponent: A.username });
   
-      // Démarre la sim
+      // → Lancer la simulation
       const state = startMatch([sA, sB], ns, false);
       matchStates.set(matchId, state);
   
+      // → Lancer l'intervalle et le stocker dans la Map
       const iv = setInterval(() => {
         updateMatch(state, ns);
         ns.to(matchId).emit('gameState', state);
-  
+
         if (state.gameOver) {
           clearInterval(iv);
+          tournamentMatchIntervals.delete(matchId);
+
           const winSide = state.paddles.findIndex(pl => pl.lives > 0);
-          tour.winners.push(winSide === 0 ? A : B);
-  
-          // Si tous les matchs du round sont finis
+          const winner  = winSide === 0 ? A : B;
+          const loser   = winSide === 0 ? B : A;
+
+          // Notifier seulement ces deux joueurs que le match est fini
+          ns.to(matchId).emit('tournamentMatchOver', {
+            tournamentId: tour.id,
+            matchId,
+            winner:  winner.username,
+            loser:   loser.username
+          });
+
+          tour.winners.push(winner);
+
+          // Si tous les matchs de ce round sont finis, préparer le round suivant
           if (tour.winners.length === players.length / 2) {
             const totalRounds = Math.log2(tour.size);
+
             if (tour.round + 1 < totalRounds) {
-              // on prépare le round suivant
+              // … calculer les perdants, ajuster tour.players, tour.ready …
               tour.round++;
               tour.players = tour.winners.slice();
-          
-              // on ré-émet le lobby des gagnants
-              ns.to(`tour-${tour.id}`).emit('tournamentBracket', {
-                size:   tour.size,
-                joined: tour.players.map(p => p.username)
-              });
-          
-              // → au lieu de lancer tout de suite, on attend 5 sec
-              setTimeout(() => {
-                launchMatches(ns, tour);
-              }, 5000);   // 5000 ms = 5 s
-          
+              tour.winners = [];
+              tour.ready.clear();
+              tour.players.forEach(p => tour.ready.set(p.id, false));
+              // Relancer les matchs du round suivant
+              launchMatches(ns, tour);
             } else {
-              // tournoi terminé
+              // Tournoi terminé
+              const champion = tour.winners[0];
+              ns.to(matchId).emit('tournamentMatchOver', {
+                tournamentId: tour.id,
+                matchId,
+                winner:  champion.username,
+                loser:   ""
+              });
               ns.to(`tour-${tour.id}`).emit('tournamentOver', {
-                winner: tour.winners[0].username
+                winner: champion.username
               });
               tournaments.delete(tour.id);
             }
           }
         }
       }, 1000 / 60);
+      tournamentMatchIntervals.set(matchId, iv);
     }
   }
+  
+  // Nouvelle logique de tournoi simple à 4 joueurs
+  function launchTournament4(ns: Namespace, tour: Tournament) {
+    // 1er tour : 2 matchs séparés
+    const [A, B, C, D] = tour.players;
+    const matchIds = [
+      `${tour.id}-demi1`, // A vs B
+      `${tour.id}-demi2`  // C vs D
+    ];
+    const pairs = [ [A, B], [C, D] ];
+    tour.winners = [];
+
+    pairs.forEach(([p1, p2], idx) => {
+      const matchId = matchIds[idx];
+      const s1 = ns.sockets.get(p1.id)!;
+      const s2 = ns.sockets.get(p2.id)!;
+      s1.join(matchId);
+      s2.join(matchId);
+      playerInfo.set(p1.id, { side: 0, mode: 'multi', roomId: matchId });
+      playerInfo.set(p2.id, { side: 1, mode: 'multi', roomId: matchId });
+      s1.emit('tournamentMatchFound', { matchId, side: 0, opponent: p2.username });
+      s2.emit('tournamentMatchFound', { matchId, side: 1, opponent: p1.username });
+      const state = startMatch([s1, s2], ns, false, matchId); // <-- PATCH: matchId comme roomId
+      matchStates.set(matchId, state);
+      const iv = setInterval(() => {
+        updateMatch(state, ns);
+        ns.to(matchId).emit('gameState', state);
+        if (state.gameOver) {
+          clearInterval(iv);
+          const winSide = state.paddles.findIndex(pl => pl.lives > 0);
+          const winner = winSide === 0 ? p1 : p2;
+          tour.winners.push(winner);
+          ns.to(matchId).emit('tournamentMatchOver', {
+            tournamentId: tour.id,
+            matchId,
+            winner: winner.username,
+            loser: winSide === 0 ? p2.username : p1.username
+          });
+          // Quand les deux gagnants sont connus, lancer la finale
+          if (tour.winners.length === 2) {
+            launchFinal4(ns, {
+              id: tour.id,
+              players: tour.winners,
+              ready: new Map(tour.winners.map(p => [p.id, false])),
+              round: 1,
+              matches: {},
+              finalists: tour.winners,
+              finalReady: new Map(tour.winners.map(p => [p.id, false])),
+              champion: undefined
+            });
+          }
+        }
+      }, 1000 / 60);
+    });
+  }
+
+  function launchFinal4(ns: Namespace, tour: BasicTournament) {
+  const [G1, G2] = tour.finalists;
+  const matchId = `${tour.id}-final`;
+  const s1 = ns.sockets.get(G1.id)!;
+  const s2 = ns.sockets.get(G2.id)!;
+
+  // 1) Les faire rejoindre la room finale
+  s1.join(matchId);
+  s2.join(matchId);
+
+  // 2) Enregistrer ou mettre à jour playerInfo si besoin
+  playerInfo.set(G1.id, { side: 0, mode: 'multi', roomId: matchId });
+  playerInfo.set(G2.id, { side: 1, mode: 'multi', roomId: matchId });
+
+  // 3) Envoyer 'tournamentMatchFound' aux deux finalistes
+  s1.emit('tournamentMatchFound', { matchId, side: 0, opponent: G2.username });
+  s2.emit('tournamentMatchFound', { matchId, side: 1, opponent: G1.username });
+
+  // 4) Démarrer la simulation du match final côté serveur
+  const state = startMatch([s1, s2], ns, false, matchId);
+  matchStates.set(matchId, state);
+
+  // 5) Boucle d’update
+  const iv = setInterval(() => {
+    updateMatch(state, ns);
+    ns.to(matchId).emit('gameState', state);
+    if (state.gameOver) {
+      clearInterval(iv);
+      const winSide = state.paddles.findIndex(pl => pl.lives > 0);
+      const winner = winSide === 0 ? G1 : G2;
+      const loser = winSide === 0 ? G2 : G1;
+
+      // Informer les joueurs du résultat de la finale
+      ns.to(matchId).emit('tournamentMatchOver', {
+        tournamentId: tour.id,
+        matchId,
+        winner: winner.username,
+        loser: loser.username
+      });
+
+      // Puis annoncer la fin du tournoi
+      ns.to(`tour-${tour.id}`).emit('tournamentOver', { winner: winner.username });
+      tournaments.delete(tour.id);
+    }
+  }, 1000 / 60);
+}
+
+  
+  // Nouvelle logique de tournoi à 8 joueurs (quart, demi, finale)
+  function launchTournament8(ns: Namespace, tour: Tournament) {
+    // 1er tour : 4 matchs (quart de finale)
+    const matchIds = [0,1,2,3].map(i => `${tour.id}-r0-m${i}`);
+    const pairs = [
+      [tour.players[0], tour.players[1]],
+      [tour.players[2], tour.players[3]],
+      [tour.players[4], tour.players[5]],
+      [tour.players[6], tour.players[7]],
+    ];
+    tour.winners = [];
+    let round = 0;
+    let winnersThisRound: Player[] = [];
+
+    function playRound(pairs: Array<[Player, Player]>, round: number) {
+      let finished = 0;
+      winnersThisRound = [];
+      pairs.forEach(([p1, p2], idx) => {
+        const matchId = `${tour.id}-r${round}-m${idx}`;
+        const s1 = ns.sockets.get(p1.id)!;
+        const s2 = ns.sockets.get(p2.id)!;
+        s1.join(matchId);
+        s2.join(matchId);
+        playerInfo.set(p1.id, { side: 0, mode: 'multi', roomId: matchId });
+        playerInfo.set(p2.id, { side: 1, mode: 'multi', roomId: matchId });
+        s1.emit('tournamentMatchFound', { matchId, side: 0, opponent: p2.username });
+        s2.emit('tournamentMatchFound', { matchId, side: 1, opponent: p1.username });
+        const state = startMatch([s1, s2], ns, false);
+        matchStates.set(matchId, state);
+        const iv = setInterval(() => {
+          updateMatch(state, ns);
+          ns.to(matchId).emit('gameState', state);
+          if (state.gameOver) {
+            clearInterval(iv);
+            const winSide = state.paddles.findIndex(pl => pl.lives > 0);
+            const winner = winSide === 0 ? p1 : p2;
+            winnersThisRound.push(winner);
+            ns.to(matchId).emit('tournamentMatchOver', {
+              tournamentId: tour.id,
+              matchId,
+              winner: winner.username,
+              loser: winSide === 0 ? p2.username : p1.username
+            });
+            finished++;
+            if (finished === pairs.length) {
+              if (pairs.length === 4) {
+                // Passer aux demi-finales
+                playRound([
+                  [winnersThisRound[0], winnersThisRound[1]],
+                  [winnersThisRound[2], winnersThisRound[3]]
+                ], round + 1);
+              } else if (pairs.length === 2) {
+                // Passer à la finale
+                playRound([[winnersThisRound[0], winnersThisRound[1]]], round + 1);
+              } else if (pairs.length === 1) {
+                // Tournoi terminé
+                const champion = winnersThisRound[0];
+                ns.to(matchId).emit('tournamentMatchOver', {
+                  tournamentId: tour.id,
+                  matchId,
+                  winner: champion.username,
+                  loser: ""
+                });
+                ns.to(`tour-${tour.id}`).emit('tournamentOver', {
+                  winner: champion.username
+                });
+                tournaments.delete(tour.id);
+              }
+            }
+          }
+        }, 1000 / 60);
+      });
+    }
+    tour.playRound = playRound;
+    playRound(pairs as [Player, Player][], 0);
+  }
+  
 
 
   // --- FONCTION D'ASSOCIATION POUR 3-JOUEURS TRI-PONG ---

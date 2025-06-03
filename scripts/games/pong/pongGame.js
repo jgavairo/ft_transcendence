@@ -304,6 +304,36 @@ export function startPong() {
     canvas.height = CH;
     initPauseMenu(canvas, ctx, displayMenu);
 }
+export function initTournamentPong(side, you, opponent) {
+    // 1) Réplication de ce que faisait onMatchFound + startPong, mais en mode tournoi
+    modePong = true;
+    soloTri = false;
+    soloMode = false; // tournoi = match 1v1, donc jamais solo
+    mySide = side;
+    playerName = you;
+    opponentName = opponent;
+    lastState = null;
+    ready = true;
+    firstFrame = false;
+    // 2) Création du <canvas> (idem startPong)
+    const modal = document.getElementById('games-modal');
+    if (modal) {
+        modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
+    }
+    running = true;
+    canvas = document.querySelector('#gameCanvas');
+    ctx = canvas.getContext('2d');
+    canvas.width = CW; // 1200
+    canvas.height = CH; // 800
+    socket.on('ballExplode', ({ x, y }) => {
+        createExplosion(x, y);
+    });
+    socket.off('matchFound');
+    socket.off('matchFoundTri');
+    socket.off('stateUpdateTri');
+    // 3) Initialiser le menu pause (idem startPong)
+    initPauseMenu(canvas, ctx, displayMenu);
+}
 // Ajout de la gestion du message de fin de partie
 export async function renderGameOverMessage(state) {
     // Affiche le message uniquement en mode multi
@@ -460,4 +490,18 @@ export function resetGame() {
     firstFrame = false;
     lastState = null;
     explosion.length = 0;
+}
+export function hideGameCanvasAndShowMenu() {
+    // Hide the game canvas if it exists
+    const gameCanvas = document.getElementById('gameCanvas');
+    if (gameCanvas) {
+        gameCanvas.style.display = 'none';
+    }
+    // Show the Konva menu layer if it exists
+    const gamesModal = document.getElementById('games-modal');
+    if (gamesModal) {
+        // If the Konva stage is still present, force a redraw
+        // (the menu manager will handle this in its event)
+        gamesModal.style.display = '';
+    }
 }

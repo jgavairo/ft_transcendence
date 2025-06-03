@@ -17,8 +17,16 @@ const PADDLE_SPEED      = Math.PI / 180 * 2;
 const MAX_DEFLECTION    = Math.PI / 6;
 const SPEED_MULTIPLIER  = 1.05;
 
-export function startMatch(socks: Socket[], nsp: Namespace, isSolo: boolean ): MatchState {
-  const roomId = `${Date.now()}`;
+// Replace la balle au centre avec la vitesse de base
+function resetBall(ball: MatchState['ball']) {
+  ball.x = 0; ball.y = 0;
+  const a = Math.random() * 2 * Math.PI;
+  ball.vx = BALL_SPEED * Math.cos(a);
+  ball.vy = BALL_SPEED * Math.sin(a);
+}
+
+export function startMatch(socks: Socket[], nsp: Namespace, isSolo: boolean, roomIdOverride?: string ): MatchState {
+  const roomId = roomIdOverride || `${Date.now()}`;
   socks.forEach(s => s.join(roomId));
 
   // Deux paddles à 90° et 270°
@@ -148,12 +156,4 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
     // Émettre l'événement de fin de partie pour rafraîchir le classement côté client
     nsp.to(match.roomId).emit('pongGameEnded', { gameId: 1 }); // 1 = id du jeu Pong
   }
-}
-
-// Replace la balle au centre avec la vitesse de base
-function resetBall(ball: MatchState['ball']) {
-  ball.x = 0; ball.y = 0;
-  const a = Math.random() * 2 * Math.PI;
-  ball.vx = BALL_SPEED * Math.cos(a);
-  ball.vy = BALL_SPEED * Math.sin(a);
 }
