@@ -878,12 +878,12 @@ export class PongMenuManager {
                 requestAnimationFrame(animate);
             }
             else {
-                // Une fois l'animation terminée, on affiche le bouton
-                this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
+                // Ne pas afficher de bouton MENU, retour auto au menu après 2.5s
+                setTimeout(() => {
                     this.stage.destroy();
                     stopGame();
                     displayMenu();
-                });
+                }, 2500);
             }
         };
         // Création de particules de victoire
@@ -989,6 +989,10 @@ export class PongMenuManager {
                 onMatchFound(data);
             }
         }, 1000);
+        // Fermer l'overlay d'invitation si présent
+        const inviteOverlay = document.getElementById("inviteOverlay");
+        if (inviteOverlay)
+            inviteOverlay.remove();
     }
     static matchFound3Players(data) {
         console.log("match found 2 players");
@@ -1055,6 +1059,10 @@ export class PongMenuManager {
                 onTriMatchFound(data);
             }
         }, 1000);
+        // Fermer l'overlay d'invitation si présent
+        const inviteOverlay = document.getElementById("inviteOverlay");
+        if (inviteOverlay)
+            inviteOverlay.remove();
     }
     // Crée une room privée non listée, met l'utilisateur en attente dans la room (sans afficher l'ID)
     // Si roomId est fourni, on rejoint la room existante et on affiche l'écran du salon
