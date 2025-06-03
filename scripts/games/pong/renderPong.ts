@@ -212,29 +212,30 @@ export async function renderPong(state: MatchState, isTournament = false) {
     });
     // 7) overlay game over
     if (state.gameOver) {
-      if (!isTournament) {
-        setGameoverTrue();
-        // 1) On trouve l’indice du gagnant (celui qui a encore des vies > 0)
-        const winnerIndex = state.paddles.findIndex(p => p.lives > 0);
-
-        // 2) On prend sa couleur de pad
-        const padColor = PADDLE_COLORS[winnerIndex % PADDLE_COLORS.length];
-
-        // 3) On détermine son nom (soit dans playerNames[], soit mySide/opponentName)
-        const winnerName =
-            Array.isArray(playerNames) && playerNames.length === state.paddles.length
-            ? playerNames[winnerIndex]
-            : (winnerIndex === mySide ? playerName : opponentName);
-
-        // 4) On lance l’animation finale avec nom + couleur
-        animateEnd(winnerName, padColor);
-        renderGameOverMessage(state);
-        start = false;  // pour remettre la particule en pause si tu veux
+      if (isTournament) {
+        // → Si on est en tournoi, on ne fait PAS l'animation de fin.
+        //    On retourne directement, le client tournament prendra le relais
+        //    (nettoyera le menu + retour au lobby).
+        return;
       }
-        //   setTimeout(() => {
-        //     showGameOverOverlay();
-        //   }, 1500);
-        return;  // on arrête le render ici
+  
+      // -- Sinon, on est en mode solo/2-players classique : on joue l'animation de fin --
+      setGameoverTrue();
+  
+      // a) trouver l'indice du gagnant (première raquette dont lives > 0)
+      const winnerIndex = state.paddles.findIndex(pl => pl.lives > 0);
+      const padColor    = PADDLE_COLORS[winnerIndex % PADDLE_COLORS.length];
+      const winnerName  = (Array.isArray(playerNames) && playerNames.length === state.paddles.length)
+        ? playerNames[winnerIndex]
+        : (winnerIndex === mySide ? playerName : opponentName);
+  
+      // b) on lance l’animation « animateEnd / displayEndMatch »
+      animateEnd(winnerName, padColor);
+      renderGameOverMessage(state);
+      start = false;  // pour remettre la particule en pause si besoin
+  
+      // on ne remonte pas plus haut
+      return;
     }
   
   }

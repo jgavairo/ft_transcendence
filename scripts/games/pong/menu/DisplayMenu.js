@@ -2,7 +2,7 @@
 import Konva from "https://cdn.skypack.dev/konva";
 import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong } from "../SocketEmit.js";
-import { connectPong, onMatchFound, onTriMatchFound, stopGame } from "../pongGame.js";
+import { connectPong, onMatchFound, onTriMatchFound, stopGame, initTournamentPong, hideGameCanvasAndShowMenu } from "../pongGame.js";
 import { socket as gameSocket } from "../network.js";
 import { launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
 import { renderPong } from "../renderPong.js";
@@ -15,6 +15,8 @@ export class PongMenuManager {
         this.buttons = [];
         this.animationSkipped = false;
         this.myUsername = '';
+        // Dans DisplayMenu.ts (ou où vous aviez startMatchTournament)
+        this.gameStateHandlers = new Map();
         PongMenuManager.instance = this;
         this.showMainMenu = showMainMenu;
         const canvas = document.getElementById("games-modal");
@@ -299,32 +301,82 @@ export class PongMenuManager {
                 break;
         }
     }
-    //fonctions pr tournoi
     setupSocketListeners() {
         // 1) Bracket (liste des inscrits)
         gameSocket.on('tournamentBracket', (view) => {
             this.currentTourSize = view.size;
-            if (!view.tournamentId) {
-                // Phase d’attente : j’affiche juste la liste sans bouton ready
-                this.showLobbyList(view.joined);
+            if (view.tournamentId && view.status) {
+                // Stocke l'ID du tournoi
+                this.currentTourId = view.tournamentId;
+                // Convertit le status brut en PlayerStatus[]
+                const fullStatus = view.status.map(s => ({
+                    id: s.id,
+                    username: s.username,
+                    ready: s.ready || false,
+                    eliminated: s.eliminated || false
+                }));
+                // Stocke la vue...
+                this.lastBracketView = {
+                    tournamentId: view.tournamentId,
+                    size: view.size,
+                    joined: view.joined,
+                    status: fullStatus
+                };
+                // Affiche le bracket
+                this.renderSimpleBracket(view.size, view.joined, fullStatus);
             }
             else {
-                // Phase de tournoi lancé !
-                this.currentTourId = view.tournamentId;
-                this.renderSimpleBracket(view.size, view.joined, view.status);
+                this.showLobbyList(view.joined);
             }
         });
         // À chaque update “ready”
         gameSocket.on('tournamentReadyUpdate', (view) => {
-            this.renderSimpleBracket(view.size, view.joined, view.status);
+            this.currentTourSize = view.size;
+            this.currentTourId = view.tournamentId;
+            // Convertir en PlayerStatus[]
+            const fullStatus = view.status.map(s => ({
+                id: s.id,
+                username: s.username,
+                ready: s.ready,
+                eliminated: s.eliminated
+            }));
+            // Mettre à jour la vue stockée
+            this.lastBracketView = {
+                tournamentId: view.tournamentId,
+                size: view.size,
+                joined: view.joined,
+                status: fullStatus
+            };
+            // Re-dessiner le bracket
+            this.renderSimpleBracket(view.size, view.joined, fullStatus);
         });
         // 2) Match trouvé
         gameSocket.on('tournamentMatchFound', (data) => {
-            this.startMatch(data);
+            this.startMatchTournament(data);
         });
         // 3) Tournoi terminé
         gameSocket.on('tournamentMatchOver', (data) => {
             showNotification(`🏅 ${data.winner} a gagné contre ${data.loser}`);
+        });
+        // Ajoutez un listener pour la fin du tournoi (victoire)
+        gameSocket.on('tournamentOver', (data) => {
+            this.menuLayer.removeChildren();
+            this.menuLayer.add(new Konva.Text({
+                x: gameWidth / 2 - 200,
+                y: 350,
+                text: `🏆 ${data.winner} a gagné le tournoi !`,
+                fontFamily: 'Press Start 2P',
+                fontSize: 24,
+                fill: '#ffe156',
+                width: 400,
+                align: 'center'
+            }));
+            this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
+                this.stage.destroy();
+                stopGame();
+                displayMenu();
+            });
+            this.menuLayer.batchDraw();
         });
     }
     showLobbyList(joined) {
@@ -360,71 +412,140 @@ export class PongMenuManager {
         // 2) join la queue tournoi
         await this.joinTournamentQueue(size, username);
     }
+    debugMenuLayerState(context) {
+        console.log(`[DEBUG][${context}] menuLayer.isVisible() =`, this.menuLayer.isVisible());
+        console.log(`[DEBUG][${context}] menuLayer.getChildren().length =`, this.menuLayer.getChildren().length);
+        this.menuLayer.getChildren().forEach((n, i) => {
+            if (n.className === 'Text') {
+                // @ts-ignore
+                console.log(`[DEBUG][${context}] Child[${i}] Text:`, n.text());
+            }
+            else if (n.className === 'Rect') {
+                // @ts-ignore
+                console.log(`[DEBUG][${context}] Child[${i}] Rect:`, n.x(), n.y(), n.width && n.width(), n.height && n.height());
+            }
+            else {
+                console.log(`[DEBUG][${context}] Child[${i}]`, n.className);
+            }
+        });
+        console.log(`[DEBUG][${context}] stage destroyed?`, this.stage.isDestroyed && this.stage.isDestroyed());
+        this.stage.getChildren().forEach((l) => {
+            console.log(`[DEBUG][${context}] stage child`, l.className, 'children:', l.getChildren && l.getChildren().length);
+        });
+    }
+    forceMenuLayerToFront() {
+        // Force le canvas du menuLayer à être tout devant (z-index max)
+        const canvases = document.querySelectorAll('#games-modal canvas');
+        if (canvases.length > 2) {
+            const menuCanvas = canvases[2];
+            menuCanvas.style.zIndex = '1000';
+            menuCanvas.style.display = '';
+            menuCanvas.style.opacity = '1';
+        }
+    }
     renderSimpleBracket(size, joined, status) {
+        // Cacher uniquement le canvas HTML du jeu (pas les canvas Konva)
+        const gameCanvas = document.getElementById('gameCanvas');
+        if (gameCanvas) {
+            gameCanvas.style.zIndex = '0'; // ou display: 'none' si tu veux vraiment le cacher
+        }
+        // Affiche le menuLayer au-dessus
+        this.menuLayer.moveToTop();
+        this.menuLayer.show();
         this.menuLayer.removeChildren();
-        // 1) On se construit un status "sécurisé"
-        const currentStatus = status
-            ? status
-            : joined.map(u => ({ id: '', username: u, ready: false }));
-        // 2) Titre
+        // Titre du bracket
+        let title = `Tournoi ${size} joueurs`;
+        if (status.length === 2 && joined.length === 2) {
+            title = 'Finale';
+        }
         this.menuLayer.add(new Konva.Text({
             x: gameWidth / 2 - 130,
             y: 30 + 450,
-            text: `Tournoi ${size} joueurs`,
+            text: title,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe'
         }));
-        // 3) Liste des joueurs
-        currentStatus.forEach((entry, i) => {
-            const fillColor = entry.ready ? '#149414' : '#fff';
+        // Affichage des joueurs et statut
+        status.forEach((entry, i) => {
+            const yPos = 80 + i * 24 + 450;
+            let fillColor = '#fff';
+            let opacity = 1;
+            let textDecoration = undefined;
+            if (entry.eliminated) {
+                fillColor = '#555';
+                opacity = 0.5;
+                textDecoration = 'line-through';
+            }
+            else if (entry.ready) {
+                fillColor = '#149414';
+            }
             this.menuLayer.add(new Konva.Text({
                 x: gameWidth / 2 - 100,
-                y: 80 + i * 24 + 450,
+                y: yPos,
                 text: `• ${entry.username}`,
                 fontFamily: 'Press Start 2P',
                 fontSize: 16,
-                fill: fillColor
+                fill: fillColor,
+                opacity: opacity,
+                textDecoration: textDecoration
             }));
+            // Affiche le bouton "Ready" uniquement pour soi, si non prêt et non éliminé
+            if (entry.username === this.myUsername && !entry.eliminated && !entry.ready) {
+                this.createButton('Ready', gameWidth / 2 + 120, 690, () => {
+                    if (this.currentTourId) {
+                        gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
+                        // Désactive le bouton Ready immédiatement après clic
+                        const btn = this.buttons.find(b => b.text === 'Ready');
+                        if (btn) {
+                            btn.group.listening(false);
+                            const btnText = btn.group.findOne((n) => n.className === 'Text');
+                            if (btnText)
+                                btnText.text('Ready...');
+                            this.menuLayer.batchDraw();
+                        }
+                    }
+                });
+            }
         });
-        // 4) Compteur
-        const readyCount = currentStatus.filter(s => s.ready).length;
+        // Texte "Waiting..."
+        const readyCount = status.filter(s => s.ready && !s.eliminated).length;
+        let waitingText = `Waiting… (${readyCount}/${status.length} ready)`;
+        if (status.length === 2 && joined.length === 2) {
+            waitingText = `En attente des finalistes (${readyCount}/2 prêts)`;
+        }
         this.menuLayer.add(new Konva.Text({
             x: gameWidth / 2 - 100,
             y: 80 + joined.length * 24 + 10 + 450,
-            text: `Waiting… (${readyCount}/${size} ready)`,
+            text: waitingText,
             fontFamily: 'Press Start 2P',
             fontSize: 14,
             fill: '#888'
         }));
-        // 5) Bouton "Ready" si c'est vous et que vous n'êtes pas déjà ready
-        const me = this.myUsername;
-        const meEntry = currentStatus.find(s => s.username === me);
-        if (meEntry && !meEntry.ready) {
-            const btnX = gameWidth / 2 - 100;
-            const btnY = 700;
-            this.createButton('Ready', btnX, btnY, () => {
-                gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
-            });
-        }
-        // 6) Final draw
         this.menuLayer.batchDraw();
     }
-    /** Lance le match : nettoie le menu, appelle onMatchFound, branche renderPong */
-    async startMatch({ matchId, side, opponent }) {
-        // 1) Nettoyage de l'UI existante
+    async startMatchTournament({ matchId, side, opponent }) {
+        // 1) Nettoyage de l’UI
         this.menuLayer.removeChildren();
         this.menuLayer.batchDraw();
-        gameSocket.removeAllListeners('gameState');
-        // 2) Connexion et réinitialisation des boutons
-        connectPong(true);
-        this.buttons.forEach(b => b.group.destroy());
-        this.buttons = [];
-        this.menuLayer.destroyChildren();
-        // 3) Récupération du pseudo
-        const current = await GameManager.getCurrentUser();
-        const you = (current === null || current === void 0 ? void 0 : current.username) || 'You';
-        // 4) Affichage des joueurs
+        this.debugMenuLayerState('startMatchTournament:before');
+        // 1b) Si un handler existait pour CE matchId, on le retire
+        const prevHandler = this.gameStateHandlers.get(matchId);
+        if (prevHandler) {
+            gameSocket.off(`gameState`, prevHandler);
+            this.gameStateHandlers.delete(matchId);
+        }
+        // 2) Récupérer le pseudo (GameManager peut échouer si token invalide)
+        let you;
+        try {
+            const current = await GameManager.getCurrentUser();
+            you = (current === null || current === void 0 ? void 0 : current.username) || 'You';
+        }
+        catch (err) {
+            console.warn('getCurrentUser a levé une erreur; on continue avec “You”', err);
+            you = 'You';
+        }
+        // 3) Affichage Konva des pseudos + countdown
         const p1 = new Konva.Text({
             x: gameWidth / 6,
             y: 450,
@@ -457,7 +578,7 @@ export class PongMenuManager {
         });
         this.menuLayer.add(p1, p2, countdownText);
         this.menuLayer.batchDraw();
-        // 5) Countdown avant démarrage du match
+        // 4) Compte à rebours 5 → 1
         let count = 5;
         const timer = setInterval(() => {
             count--;
@@ -467,24 +588,61 @@ export class PongMenuManager {
             }
             else {
                 clearInterval(timer);
-                // Démarre la simulation
-                onMatchFound({ matchId, side, you, opponent });
-                // 6) Hook unique sur gameState
-                gameSocket.on('gameState', (state) => {
-                    // A) Garde-fou si le serveur envoie un état invalide
+                // 5) Création du canvas + init tournoi
+                initTournamentPong(side, you, opponent);
+                // 6) Abonnement STRICT “gameState:<matchId>”
+                const handler = (state) => {
                     if (!state || !state.paddles)
                         return;
-                    // B) Rend le jeu
                     renderPong(state, true);
-                    // C) À la fin, reporte au serveur et désabonne-toi
                     if (state.gameOver) {
-                        gameSocket.removeAllListeners('gameState');
+                        // a) Désabonnement du listener gameState pour ce match
+                        gameSocket.off(`gameState`, handler);
+                        this.gameStateHandlers.delete(matchId);
+                        // b) Informer le serveur que ce match est terminé
                         gameSocket.emit('tournamentReportResult', {
                             tournamentId: this.currentTourId,
                             matchId
                         });
+                        // c) Hide the game canvas so the bracket is visible
+                        hideGameCanvasAndShowMenu();
+                        // d) Force redraw of the bracket layer immediately
+                        if (this.lastBracketView) {
+                            const { size, joined, status } = this.lastBracketView;
+                            this.renderSimpleBracket(size, joined, status);
+                            this.menuLayer.show();
+                            this.menuLayer.batchDraw();
+                            this.debugMenuLayerState('startMatchTournament:afterRender');
+                            this.forceMenuLayerToFront();
+                        }
+                        // e) Afficher explicitement un bracket d'attente même si aucun event n'est encore arrivé
+                        setTimeout(() => {
+                            console.log('[TOURNOI] state.gameOver détecté, tentative d\'affichage du bracket');
+                            if (this.lastBracketView) {
+                                const { size, joined, status } = this.lastBracketView;
+                                console.log('[TOURNOI] lastBracketView présent, renderSimpleBracket appelé', this.lastBracketView);
+                                this.renderSimpleBracket(size, joined, status);
+                                this.menuLayer.show();
+                                this.menuLayer.batchDraw();
+                            }
+                            else {
+                                this.menuLayer.removeChildren();
+                                this.menuLayer.add(new Konva.Text({
+                                    x: gameWidth / 2 - 130,
+                                    y: 350,
+                                    text: 'En attente du prochain match... (bracket)',
+                                    fontFamily: 'Press Start 2P',
+                                    fontSize: 20,
+                                    fill: '#00e7fe'
+                                }));
+                                this.menuLayer.show();
+                                this.menuLayer.batchDraw();
+                            }
+                        }, 200);
                     }
-                });
+                };
+                this.gameStateHandlers.set(matchId, handler);
+                gameSocket.on(`gameState`, handler);
             }
         }, 1000);
     }
