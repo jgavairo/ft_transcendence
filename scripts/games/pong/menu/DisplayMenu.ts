@@ -1078,24 +1078,24 @@ export class PongMenuManager
         this.menuLayer.add(winnerText);
 
         // Animation d'entrée du texte
-            const finalY = 300;
-            const speed = 5;
-            const animate = () => 
+        const finalY = 300;
+        const speed = 5;
+        const animate = () => 
+        {
+            if (winnerText.y() < finalY) {
+                winnerText.y(winnerText.y() + speed);
+                this.menuLayer.batchDraw();
+                requestAnimationFrame(animate);
+            }
+            else 
             {
-                if (winnerText.y() < finalY) {
-                    winnerText.y(winnerText.y() + speed);
-                    this.menuLayer.batchDraw();
-                    requestAnimationFrame(animate);
-                }
-                else 
-                {
-                    // Une fois l'animation terminée, on affiche le bouton
-                    this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
-                        this.stage.destroy();
-                        stopGame();
-                        displayMenu();
-                    });
-                }
+                // Ne pas afficher de bouton MENU, retour auto au menu après 2.5s
+                setTimeout(() => {
+                    this.stage.destroy();
+                    stopGame();
+                    displayMenu();
+                }, 2500);
+            }
         };
 
         // Création de particules de victoire
@@ -1157,7 +1157,7 @@ export class PongMenuManager
 
     public static matchFound2Players(data: any) : void
     {
-        console.log("match found 2 players");
+                console.log("match found 2 players");
         const menu = PongMenuManager.instance;
         
         // Nettoyage des éléments existants
@@ -1215,6 +1215,10 @@ export class PongMenuManager
                 onMatchFound(data);
             }
         }, 1000);
+
+        // Fermer l'overlay d'invitation si présent
+        const inviteOverlay = document.getElementById("inviteOverlay");
+        if (inviteOverlay) inviteOverlay.remove();
     }
 
     public static matchFound3Players(data: any) : void
@@ -1289,6 +1293,10 @@ export class PongMenuManager
                 onTriMatchFound(data);
             }
         }, 1000);
+
+        // Fermer l'overlay d'invitation si présent
+        const inviteOverlay = document.getElementById("inviteOverlay");
+        if (inviteOverlay) inviteOverlay.remove();
     }
 
     // Crée une room privée non listée, met l'utilisateur en attente dans la room (sans afficher l'ID)
