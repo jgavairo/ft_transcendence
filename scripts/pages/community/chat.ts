@@ -64,11 +64,9 @@ function handleGameInviteLink() {
                 return;
             }
             // Charge la page library en arrière-plan pour éviter de garder community
-            // Simule un vrai clic sur le bouton library pour tout gérer comme un utilisateur
             const libraryBtn = document.getElementById('librarybutton');
             if (libraryBtn) {
                 libraryBtn.click();
-                // Attendre que la page soit bien affichée avant d'ouvrir le modal (petit délai)
                 await new Promise(res => setTimeout(res, 100));
             }
             // Ouvre le modal de jeu façon overlay
@@ -85,21 +83,9 @@ function handleGameInviteLink() {
               </div>
             `;
             document.getElementById('closeGameModal')!.onclick = () => { modal!.innerHTML = ''; };
-            // Charge le menu Pong et rejoint la room
-            const { PongMenuManager } = await import('../../games/pong/menu/DisplayMenu.js');
-            const { socket: gameSocket } = await import('../../games/pong/network.js');
-            const { GameManager } = await import('../../managers/gameManager.js');
-            // Instancie le menu si besoin
-            // @ts-ignore
-            if (!(PongMenuManager as any)["instance"]) {
-                new PongMenuManager(false); // Ne pas afficher le menu principal si on rejoint via lien
-            }
-            // Récupère le username courant
-            const currentUser = await GameManager.getCurrentUser();
-            const username = currentUser?.username || 'Player';
-            // Affiche l'écran du salon (lobby) en rejoignant la room existante
-            // 2 joueurs par défaut (peut être adapté si besoin)
-            (PongMenuManager as any)["instance"].privateLobby(2, roomId);
+            // Appel la fonction centralisée pour lancer Pong via le lien
+            const { launchPongFromLink } = await import('../../games/pong/main.js');
+            launchPongFromLink(roomId);
         }
     });
 }

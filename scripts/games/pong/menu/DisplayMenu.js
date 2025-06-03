@@ -290,7 +290,7 @@ export class PongMenuManager {
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('multi'));
                 break;
             case 'multi-3':
-                this.createButton('PRIVATE', gameWidth / 2 - 100, 450, () => this.privateLobby(3));
+                // Suppression du bouton PRIVATE pour 3 joueurs
                 this.createButton('ONLINE', gameWidth / 2 - 100, 520, () => this.onlineLobby(3));
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('multi'));
                 break;
@@ -929,6 +929,11 @@ export class PongMenuManager {
         // Lancement des animations
         animate();
         animateVictoryParticles();
+        // À la fin de l'animation, si on était dans une privateLobby, on quitte la room
+        if (this.privateRoomId) {
+            gameSocket.emit('leavePrivateRoom', { roomId: this.privateRoomId });
+            this.privateRoomId = undefined;
+        }
     }
     static matchFound2Players(data) {
         console.log("match found 2 players");
@@ -1054,12 +1059,18 @@ export class PongMenuManager {
     // Crée une room privée non listée, met l'utilisateur en attente dans la room (sans afficher l'ID)
     // Si roomId est fourni, on rejoint la room existante et on affiche l'écran du salon
     async privateLobby(nbPlayers, roomId) {
+        if (nbPlayers !== 2) {
+            // Ne rien faire si ce n'est pas 2 joueurs
+            showNotification('Le mode privé n\'est disponible que pour 2 joueurs.');
+            return;
+        }
         const currentUser = await GameManager.getCurrentUser();
         const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
         connectPong(true);
         if (roomId) {
             // Rejoindre une room existante (invitation)
             gameSocket.emit('joinPrivateRoom', { roomId, username }, (data) => {
+                this.privateRoomId = data.roomId;
                 this.menuLayer.destroyChildren();
                 const waitingText = new Konva.Text({
                     text: 'Waiting for other players to join...',
@@ -1072,24 +1083,30 @@ export class PongMenuManager {
                     align: 'center',
                 });
                 this.menuLayer.add(waitingText);
-                this.createButton('INVITE', gameWidth / 2 - 100, 530, () => {
-                    this.showInvitingList(1, data.roomId);
-                });
-                this.createButton('BACK', gameWidth / 2 - 100, 600, () => {
-                    gameSocket.emit('leavePrivateRoom', { roomId: data.roomId });
+                // Animation du texte
+                let dotCount = 0;
+                const animateText = () => {
+                    dotCount = (dotCount + 1) % 4;
+                    waitingText.text('waiting for opponent(s)' + '.'.repeat(dotCount));
+                    this.menuLayer.batchDraw();
+                    setTimeout(animateText, 500);
+                };
+                animateText();
+                // Nettoyage des boutons existants
+                this.buttons.forEach(button => button.group.destroy());
+                this.buttons = [];
+                this.createButton('CANCEL', gameWidth / 2 - 100, 670, () => {
+                    // Nettoyage du texte d'attente
                     waitingText.destroy();
-                    const quitButton = this.buttons.find(button => button.text === 'QUIT');
-                    if (quitButton)
-                        quitButton.group.destroy();
                     gameSocket.disconnect();
                     this.changeMenu('multi');
                 });
-                this.menuLayer.batchDraw();
             });
         }
         else {
             // Création d'une nouvelle room
             gameSocket.emit('createPrivateRoom', { username, nbPlayers }, (data) => {
+                this.privateRoomId = data.roomId;
                 this.menuLayer.destroyChildren();
                 const waitingText = new Konva.Text({
                     text: 'Waiting for other players to join...',
@@ -1205,13 +1222,18 @@ export class PongMenuManager {
             inviteBtn.className = "invite-btn";
             inviteBtn.textContent = "INVITER";
             inviteBtn.onclick = async () => {
+                const now = Date.now();
+                const lastInvite = parseInt(localStorage.getItem('lastPongInviteTs') || '0', 10);
+                if (now - lastInvite < 10000) {
+                    showNotification(`Veuillez attendre ${Math.ceil((10000 - (now - lastInvite)) / 1000)}s avant de renvoyer une invitation.`);
+                    return;
+                }
+                localStorage.setItem('lastPongInviteTs', now.toString());
                 // Envoie un message privé dans le chat avec un lien cliquable
                 const currentUser = await GameManager.getCurrentUser();
                 const fromUsername = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
-                // Génère un lien d'invitation (exemple: /pong/join?room=xxx)
                 let link = roomId ? `${window.location.origin}/pong/join?room=${roomId}` : window.location.origin;
                 const message = `@${person.username} Clique ici pour rejoindre ma partie Pong : <a href='${link}' target='_blank'>Rejoindre la partie</a>`;
-                // Envoie via le chat (Socket.IO)
                 try {
                     const { HOSTNAME } = await import("../../../main.js");
                     const ioClient = (await import("socket.io-client")).io;
@@ -1227,7 +1249,6 @@ export class PongMenuManager {
                 catch (e) {
                     console.error("Erreur lors de l'envoi de l'invitation privée :", e);
                 }
-                // Optionnel : feedback visuel
                 showNotification(`Invitation envoyée à ${person.username} dans le chat !`);
             };
             item.appendChild(inviteBtn);
@@ -1236,9 +1257,19 @@ export class PongMenuManager {
         overlay.appendChild(container);
         document.body.appendChild(overlay);
     }
+    startFromLink(roomId) {
+        this.animateParticles();
+        // Lance directement le lobby privé avec le roomId (2 joueurs par défaut)
+        this.privateLobby(2, roomId);
+        console.log("Menu displayed from link");
+    }
 }
 export async function displayMenu() {
     const menu = new PongMenuManager(true);
     console.log("game started");
     menu.start();
+}
+export async function displayMenuFromLink(roomId) {
+    const menu = new PongMenuManager(false, false); // pas de titre, pas de menu principal
+    menu.startFromLink(roomId);
 }

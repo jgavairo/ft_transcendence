@@ -417,6 +417,10 @@ export function setupGameMatchmaking(gameNs: Namespace) {
 
     // --- ROOM PRIVÉE ---
     socket.on('createPrivateRoom', ({ username, nbPlayers }, callback) => {
+      if (nbPlayers !== 2) {
+        callback({ error: 'Le mode privé n\'est disponible que pour 2 joueurs.' });
+        return;
+      }
       const roomId = crypto.randomUUID();
       privateRooms.set(roomId, { sockets: [socket], usernames: [username], maxPlayers: nbPlayers });
       socket.join(roomId);
@@ -429,6 +433,10 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         callback({ error: 'Room not found' });
         return;
       }
+      if (room.maxPlayers !== 2) {
+        callback({ error: 'Le mode privé n\'est disponible que pour 2 joueurs.' });
+        return;
+      }
       if (room.sockets.length >= room.maxPlayers) {
         callback({ error: 'Room is full' });
         return;
@@ -439,62 +447,48 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       callback({ roomId });
       // Si la room est pleine, on lance la partie
       if (room.sockets.length === room.maxPlayers) {
-        if (room.maxPlayers === 2) {
-          const m = startMatch(room.sockets, gameNs, false);
-          matchStates.set(roomId, m);
-          playerInfo.set(room.sockets[0].id, { side: 0, mode: 'multi' });
-          playerInfo.set(room.sockets[1].id, { side: 1, mode: 'multi' });
-          room.sockets[0].emit('matchFound', {
-            roomId,
-            side: 0,
-            mode: 'multi',
-            you: room.usernames[0],
-            opponent: room.usernames[1],
-            user1Id: room.sockets[0].id,
-            user2Id: room.sockets[1].id
-          });
-          room.sockets[1].emit('matchFound', {
-            roomId,
-            side: 1,
-            mode: 'multi',
-            you: room.usernames[1],
-            opponent: room.usernames[0],
-            user1Id: room.sockets[0].id,
-            user2Id: room.sockets[1].id
-          });
-          const iv = setInterval(() => {
-            updateMatch(m, gameNs);
-            gameNs.to(roomId).emit('gameState', m);
-            if (m.gameOver) clearInterval(iv);
-          }, 1000 / 60);
-        } else if (room.maxPlayers === 3) {
-          const m = startTriMatch(room.sockets, gameNs, false);
-          triMatchStates.set(roomId, m);
-          room.sockets.forEach((s, i) => {
-            playerInfo.set(s.id, { side: i, mode: 'tri' });
-            s.emit('matchFoundTri', {
-              roomId,
-              side: i,
-              players: room.usernames,
-              mode: 'multi'
-            });
-          });
-          const iv = setInterval(() => {
-            updateMatch(m, gameNs);
-            gameNs.to(roomId).emit('gameState', m);
-            if (m.gameOver) clearInterval(iv);
-          }, 1000 / 60);
-        }
-        privateRooms.delete(roomId);
+        // --- 2 joueurs ---
+        const m = startMatch(room.sockets, gameNs, false);
+        matchStates.set(roomId, m);
+        playerInfo.set(room.sockets[0].id, { side: 0, mode: 'multi' });
+        playerInfo.set(room.sockets[1].id, { side: 1, mode: 'multi' });
+        room.sockets[0].emit('matchFound', {
+          roomId,
+          side: 0,
+          mode: 'multi',
+          you: room.usernames[0],
+          opponent: room.usernames[1],
+          user1Id: room.sockets[0].id,
+          user2Id: room.sockets[1].id
+        });
+        room.sockets[1].emit('matchFound', {
+          roomId,
+          side: 1,
+          mode: 'multi',
+          you: room.usernames[1],
+          opponent: room.usernames[0],
+          user1Id: room.sockets[0].id,
+          user2Id: room.sockets[1].id
+        });
+        const iv = setInterval(() => {
+          updateMatch(m, gameNs);
+          gameNs.to(roomId).emit('gameState', m);
+          if (m.gameOver) {
+            clearInterval(iv);
+            privateRooms.delete(roomId); // Suppression de la room à la fin de la partie
+          }
+        }, 1000 / 60);
       }
     });
 
     socket.on('leavePrivateRoom', ({ roomId }) => {
       const room = privateRooms.get(roomId);
       if (room) {
-        room.sockets = room.sockets.filter(s => s.id !== socket.id);
-        room.usernames = room.usernames.filter((_, i) => room.sockets[i].id !== socket.id);
-        if (room.sockets.length === 0) privateRooms.delete(roomId);
+        // Détacher toutes les sockets restantes de la room
+        room.sockets.forEach(s => {
+          s.leave(roomId);
+        });
+        privateRooms.delete(roomId);
       }
       socket.leave(roomId);
     });
