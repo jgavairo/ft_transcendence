@@ -4,6 +4,7 @@ import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
+import { showErrorNotification } from "../../helpers/notifications.js";
 
 async function fetchCurrentUser(): Promise<string | null> {
     try {
@@ -158,6 +159,7 @@ export async function setupChatWidget() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
+        // Suppression de la détection et du rendu des liens d'invitation Pong
         if (!self && mentionMatch) {
             messageContent.innerHTML = content.replace(
                 /^@(\w+)/,
@@ -368,12 +370,68 @@ export async function setupChatWidget() {
     });
     
     // Vider le cache partagé au début de setupChatWidget
+    // Vider le cache partagé au début de setupChatWidget
     clearBlockedCache();
+    handleGameInviteLinkForWidget();
+}
+
+// Gestion des liens d'invitation Pong pour le chat widget flottant
+export function handleGameInviteLinkForWidget() {
+    document.addEventListener('click', async function (e) {
+        const target = e.target as HTMLElement | null;
+        if (target && target.tagName === 'A' && (target as HTMLAnchorElement).href && (target as HTMLAnchorElement).href.includes('/pong/join?room=')) {
+            e.preventDefault();
+            // Extraire l'ID de la room depuis l'URL
+            const url = new URL((target as HTMLAnchorElement).href);
+            const roomId = url.searchParams.get('room');
+            if (!roomId) return;
+            // Vérifier si la room existe avant d'ouvrir le modal
+            try {
+                const resp = await fetch(`/api/pong/room-exists?roomId=${encodeURIComponent(roomId)}`, { credentials: "include" });
+                const data = await resp.json();
+                if (!data.success || !data.exists) {
+                    showErrorNotification("Lien d'invitation expiré ou invalide.");
+                    return;
+                }
+            } catch (err) {
+                showErrorNotification("Lien d'invitation expiré ou invalide.");
+                return;
+            }
+            // Charge la page library en arrière-plan pour éviter de garder community
+            const libraryBtn = document.getElementById('librarybutton');
+            if (libraryBtn) {
+                libraryBtn.click();
+                await new Promise(res => setTimeout(res, 100));
+            }
+            // Ouvre le modal de jeu façon overlay
+            let modal = document.getElementById('optionnalModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'optionnalModal';
+                document.body.appendChild(modal);
+            }
+            modal.innerHTML = `
+              <div class="modal-overlay" id="modalWindow">
+                <div class="game-modal" id="games-modal"></div>
+                <button class="close-modal" id="closeGameModal">&times;</button>
+              </div>
+            `;
+            document.getElementById('closeGameModal')!.onclick = () => { modal!.innerHTML = ''; };
+            // Appel la fonction centralisée pour lancer Pong via le lien
+            const { launchPongFromLink } = await import('../../games/pong/main.js');
+            launchPongFromLink(roomId);
+        }
+    });
 }
 
 export function removeChatWidget() {
     const widget = document.getElementById("chat-widget");
     if (widget) {
         widget.remove();
+    }
+    // Optionally remove mention box if present
+    const mentionBox = document.getElementById("mention-suggestions");
+    if (mentionBox) {
+        mentionBox.remove();
     }
 }
