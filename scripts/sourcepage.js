@@ -161,7 +161,11 @@ const profileModalHTML = (username, email, profilePicture, bio, twoFactorEnabled
                 <div id="changeUsername">
                   <button id="changeUsernameButton" class="profile-modal-button-username">Change username</button>
                 </div>
-                ` : ''}
+                ` : `
+                <div id="changeUsername">
+                  <button id="changeUsernameButton" class="profile-modal-button-username">Change username</button>
+                </div>
+                `}
               </div>
               ${!isGoogleAccount ? `
               <div id="doubleAuthentification">
