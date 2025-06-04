@@ -154,6 +154,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
             }
           }
         } else if (tour.round === 1) {
+          // Only allow 'Ready' for the final if both semi-finals are finished and both finalists are known
+          if (!tour.finalists || tour.finalists.length !== 2) return;
           tour.finalReady.set(socket.id, true);
           gameNs.to(`tour-${tour.id}`).emit('tournamentReadyUpdate', {
             tournamentId: tour.id,
@@ -242,12 +244,6 @@ export function setupGameMatchmaking(gameNs: Namespace) {
           }, 3000);
 
           return;
-        }
-
-        if (tour.round === 1) {
-          tour.champion = winner;
-          gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: winner.username });
-          tournaments.delete(tour.id);
         }
       });
 
