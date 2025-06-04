@@ -227,6 +227,27 @@ export async function setupChat() {
 
     let canSend = true;
     const COOLDOWN_MS = 1000;
+    // Variable pour suivre les messages non lus
+    let unreadCount = 0;
+    
+    // Fonction pour afficher le badge de notification
+    function showBadge() {
+        const badge = document.getElementById('chatBadge');
+        if (badge) {
+            badge.textContent = unreadCount.toString();
+            badge.style.display = 'block';
+        }
+    }
+    
+    // Fonction pour réinitialiser le compteur de messages non lus
+    function resetBadge() {
+        unreadCount = 0;
+        const badge = document.getElementById('chatBadge');
+        if (badge) {
+            badge.style.display = 'none';
+        }
+    }
+    
     // Envoyer un message au serveur
     sendBtn.addEventListener("click", async () => {
         // Revérifie l'authentification à chaque envoi

@@ -390,11 +390,9 @@ export function handleGameInviteLinkForWidget() {
                 const resp = await fetch(`/api/pong/room-exists?roomId=${encodeURIComponent(roomId)}`, { credentials: "include" });
                 const data = await resp.json();
                 if (!data.success || !data.exists) {
-                    showErrorNotification("Lien d'invitation expiré ou invalide.");
                     return;
                 }
             } catch (err) {
-                showErrorNotification("Lien d'invitation expiré ou invalide.");
                 return;
             }
             // Charge la page library en arrière-plan pour éviter de garder community
