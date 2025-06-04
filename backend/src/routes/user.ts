@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
+export const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: 
     {

@@ -1,4 +1,4 @@
-import { loginModalHTML, registerModalHTML } from "../sourcepage.js";
+import { loginModalHTML, registerModalHTML, twoFactorModalHTML } from "../sourcepage.js";
 import { HOSTNAME, MainApp, updateChatWidgetVisibility } from "../main.js";
 import { showNotification, showErrorNotification } from "../helpers/notifications.js";
 import api from "../helpers/api.js";
@@ -52,6 +52,52 @@ export class LoginManager {
                 .then(data => {
                 console.log('backend response:', data);
                 if (data.success) {
+                    if (data.message === "2FA") {
+                        showNotification("2FA code sent to your email");
+                        const modal = document.getElementById('optionnalModal');
+                        if (!modal)
+                            return;
+                        modal.innerHTML = twoFactorModalHTML;
+                        const backToLogin = document.getElementById('backToLogin');
+                        if (!backToLogin)
+                            return;
+                        backToLogin.addEventListener('click', async (e) => {
+                            e.preventDefault();
+                            const modal = document.getElementById('optionnalModal');
+                            if (!modal)
+                                return;
+                            modal.innerHTML = loginModalHTML;
+                            this.setupLoginModal();
+                        });
+                        const loginButton = document.getElementById('loginButton');
+                        if (!loginButton)
+                            return;
+                        loginButton.addEventListener('click', async (e) => {
+                            e.preventDefault();
+                            console.log('login button clicked');
+                            const code = document.getElementById('code').value;
+                            if (!code) {
+                                showErrorNotification("Please enter a code");
+                                return;
+                            }
+                            api.post(`https://${HOSTNAME}:8443/api/auth/confirm2FA`, { username, code })
+                                .then(response => response.json())
+                                .then(data => {
+                                console.log('backend response:', data);
+                                if (data.success) {
+                                    console.log('Login successful, user data:', data);
+                                    this.removeLoginModal();
+                                    MainApp.setupHeader();
+                                    MainApp.setupCurrentPage();
+                                    setupProfileButton();
+                                    updateChatWidgetVisibility();
+                                }
+                                else
+                                    showErrorNotification(data.message);
+                            });
+                        });
+                        return;
+                    }
                     console.log('Login successful, user data:', data);
                     this.removeLoginModal();
                     MainApp.setupHeader();
@@ -127,4 +173,3 @@ export class LoginManager {
         });
     }
 }
-LoginManager.AUTH_KEY = "isauthed";
