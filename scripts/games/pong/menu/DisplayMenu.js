@@ -1199,7 +1199,8 @@ export class PongMenuManager {
         connectPong(true);
         if (roomId) {
             // Rejoindre une room existante (invitation)
-            gameSocket.emit('joinPrivateRoom', { roomId, username }, (data) => {
+            const userId = currentUser === null || currentUser === void 0 ? void 0 : currentUser.id;
+            gameSocket.emit('joinPrivateRoom', { roomId, username, userId }, (data) => {
                 this.privateRoomId = data.roomId;
                 this.menuLayer.destroyChildren();
                 const waitingText = new Konva.Text({
@@ -1235,7 +1236,8 @@ export class PongMenuManager {
         }
         else {
             // Création d'une nouvelle room
-            gameSocket.emit('createPrivateRoom', { username, nbPlayers }, (data) => {
+            const userId = currentUser === null || currentUser === void 0 ? void 0 : currentUser.id;
+            gameSocket.emit('createPrivateRoom', { username, nbPlayers, userId }, (data) => {
                 this.privateRoomId = data.roomId;
                 this.menuLayer.destroyChildren();
                 const waitingText = new Konva.Text({

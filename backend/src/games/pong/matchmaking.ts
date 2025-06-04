@@ -402,7 +402,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
     });
 
     // --- ROOM PRIVÉE ---
-    socket.on('createPrivateRoom', ({ username, nbPlayers }, callback) => {
+    socket.on('createPrivateRoom', ({ username, nbPlayers, userId }, callback) => {
+      if (userId) socketToUserId.set(socket.id, userId);
       const roomId = crypto.randomUUID();
       privateRooms.set(roomId, { sockets: [socket], usernames: [username], maxPlayers: nbPlayers });
       socket.join(roomId);
@@ -436,8 +437,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
             mode: 'multi',
             you: room.usernames[0],
             opponent: room.usernames[1],
-            user1Id: room.sockets[0].id,
-            user2Id: room.sockets[1].id
+            user1Id: getUserIdFromSocketId(room.sockets[0].id) || room.sockets[0].id,
+            user2Id: getUserIdFromSocketId(room.sockets[1].id) || room.sockets[1].id
           });
           room.sockets[1].emit('matchFound', {
             roomId,
@@ -445,8 +446,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
             mode: 'multi',
             you: room.usernames[1],
             opponent: room.usernames[0],
-            user1Id: room.sockets[0].id,
-            user2Id: room.sockets[1].id
+            user1Id: getUserIdFromSocketId(room.sockets[0].id) || room.sockets[0].id,
+            user2Id: getUserIdFromSocketId(room.sockets[1].id) || room.sockets[1].id
           });
           const iv = setInterval(() => {
             updateMatch(m, gameNs);

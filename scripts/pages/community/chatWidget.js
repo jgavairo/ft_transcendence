@@ -4,7 +4,6 @@ import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
-import { showErrorNotification } from "../../helpers/notifications.js";
 async function fetchCurrentUser() {
     try {
         const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, { credentials: "include" });
@@ -386,12 +385,10 @@ export function handleGameInviteLinkForWidget() {
                 const resp = await fetch(`/api/pong/room-exists?roomId=${encodeURIComponent(roomId)}`, { credentials: "include" });
                 const data = await resp.json();
                 if (!data.success || !data.exists) {
-                    showErrorNotification("Lien d'invitation expiré ou invalide.");
                     return;
                 }
             }
             catch (err) {
-                showErrorNotification("Lien d'invitation expiré ou invalide.");
                 return;
             }
             // Charge la page library en arrière-plan pour éviter de garder community
