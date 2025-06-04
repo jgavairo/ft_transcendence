@@ -241,14 +241,6 @@ const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyRepl
                 message: "User not found"
             });
         }
-        const is_google_account = await dbManager.isGoogleAccount(user.id);
-        if (is_google_account)
-        {
-            return reply.status(401).send({
-                success: false,
-                message: "Google account cannot change username"
-            });
-        }
         const newUsername = (request.body as { newUsername: string }).newUsername;
         if (!newUsername)
         {
