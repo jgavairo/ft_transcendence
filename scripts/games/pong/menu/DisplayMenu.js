@@ -304,6 +304,7 @@ export class PongMenuManager {
     setupSocketListeners() {
         // 1) Bracket (liste des inscrits)
         gameSocket.on('tournamentBracket', (view) => {
+            console.log('[DEBUG][tournamentBracket] view:', view); // Ajout log défensif
             this.currentTourSize = view.size;
             if (view.tournamentId && view.status) {
                 // Stocke l'ID du tournoi
@@ -322,6 +323,7 @@ export class PongMenuManager {
                     joined: view.joined,
                     status: fullStatus
                 };
+                console.log('[DEBUG][tournamentBracket] lastBracketView:', this.lastBracketView); // Ajout log
                 // Affiche le bracket
                 this.renderSimpleBracket(view.size, view.joined, fullStatus);
             }
@@ -436,16 +438,25 @@ export class PongMenuManager {
     forceMenuLayerToFront() {
         // Force le canvas du menuLayer à être tout devant (z-index max)
         const canvases = document.querySelectorAll('#games-modal canvas');
-        if (canvases.length > 2) {
-            const menuCanvas = canvases[2];
+        canvases.forEach((c, i) => {
+            const canvas = c;
+            canvas.style.zIndex = '0';
+            canvas.style.display = '';
+            canvas.style.opacity = '1';
+            console.log(`[DEBUG] canvas[${i}] z-index:`, canvas.style.zIndex, 'display:', canvas.style.display, 'opacity:', canvas.style.opacity);
+        });
+        if (canvases.length > 0) {
+            const menuCanvas = canvases[canvases.length - 1];
             menuCanvas.style.zIndex = '1000';
             menuCanvas.style.display = '';
             menuCanvas.style.opacity = '1';
+            console.log('[DEBUG] menuLayer canvas forced to z-index 1000');
         }
     }
     renderSimpleBracket(size, joined, status) {
+        console.log('[DEBUG][renderSimpleBracket] joined:', joined, 'status:', status); // Log défensif
         // Cacher uniquement le canvas HTML du jeu (pas les canvas Konva)
-        const gameCanvas = document.getElementById('gameCanvas');
+        const gameCanvas = document.getElementById('game-modal');
         if (gameCanvas) {
             gameCanvas.style.zIndex = '0'; // ou display: 'none' si tu veux vraiment le cacher
         }
@@ -467,7 +478,9 @@ export class PongMenuManager {
             fill: '#00e7fe'
         }));
         // Affichage des joueurs et statut
-        status.forEach((entry, i) => {
+        // Filtrage défensif des doublons
+        const uniqueStatus = status.filter((entry, idx, arr) => arr.findIndex(e => e.username === entry.username) === idx);
+        uniqueStatus.forEach((entry, i) => {
             const yPos = 80 + i * 24 + 450;
             let fillColor = '#fff';
             let opacity = 1;
@@ -523,6 +536,14 @@ export class PongMenuManager {
             fill: '#888'
         }));
         this.menuLayer.batchDraw();
+        this.menuLayer.show();
+        this.menuLayer.moveToTop();
+        this.forceMenuLayerToFront();
+        if (this.stage && typeof this.stage.draw === 'function') {
+            this.stage.draw();
+            console.log('[DEBUG] stage.draw() called after menuLayer batchDraw');
+        }
+        console.log('[DEBUG] renderSimpleBracket: menuLayer visible?', this.menuLayer.isVisible());
     }
     async startMatchTournament({ matchId, side, opponent }) {
         // 1) Nettoyage de l’UI
@@ -611,8 +632,8 @@ export class PongMenuManager {
                             const { size, joined, status } = this.lastBracketView;
                             this.renderSimpleBracket(size, joined, status);
                             this.menuLayer.show();
+                            this.menuLayer.moveToTop();
                             this.menuLayer.batchDraw();
-                            this.debugMenuLayerState('startMatchTournament:afterRender');
                             this.forceMenuLayerToFront();
                         }
                         // e) Afficher explicitement un bracket d'attente même si aucun event n'est encore arrivé
@@ -623,7 +644,9 @@ export class PongMenuManager {
                                 console.log('[TOURNOI] lastBracketView présent, renderSimpleBracket appelé', this.lastBracketView);
                                 this.renderSimpleBracket(size, joined, status);
                                 this.menuLayer.show();
+                                this.menuLayer.moveToTop();
                                 this.menuLayer.batchDraw();
+                                this.forceMenuLayerToFront();
                             }
                             else {
                                 this.menuLayer.removeChildren();
