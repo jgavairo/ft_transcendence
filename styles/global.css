@@ -281,6 +281,62 @@ body
 	cursor: pointer;
 }
 
+.twofaModal {
+    background-color: #171A21;
+	border: 8px solid #263549;
+    padding: 30px;
+    border-radius: 10px;
+    width: 740px;
+	height: 320px;
+    color: white;
+}
+
+.twofaModal h2 {
+    text-align: center;
+    margin-bottom: 20px;
+	font-weight: bold;
+	font-size: 28px;
+    color: #ffffff;
+}
+
+.twofaModal .login-form
+{
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 30px;
+	height: 40%;
+}
+
+.twofaModal input {
+	
+	background-color: #a3a3a36c;
+	border-radius: 7px;
+	padding: 5px;
+	margin: 10px 0;
+	width: 60%;
+	color: rgb(255, 255, 255);
+}
+
+.twofaModal .loginButton {
+    width: 20%;
+    padding: 10px;
+    margin-top: 20px;
+	margin-left: 40%;
+    background-color: #195887;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.twofaModal .loginButton:hover {
+    background-color: #113d5e;
+	transition: 0.3s;
+}
+
 .profile-modal {
     background-color: #171A21;
     border: 8px solid #263549;

@@ -994,6 +994,14 @@ export class DatabaseManager
             throw new Error('Database not initialized');
         await this.db.run('UPDATE users SET two_factor_enabled = 0 WHERE id = ?', [userId]);
     }
+
+    public async set2FACode(userId: number, code: string): Promise<void>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        await this.db.run('UPDATE users SET two_factor_code = ? WHERE id = ?', [code, userId]);
+        await this.db.run('UPDATE users SET two_factor_code_expiration = ? WHERE id = ?', [new Date().getTime() + 1000 * 60 * 5, userId]);
+    }
 }
 
 export const dbManager = DatabaseManager.getInstance();

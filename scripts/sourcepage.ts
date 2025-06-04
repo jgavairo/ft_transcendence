@@ -104,6 +104,21 @@ const loginModalHTML = `
     </div>
 `;
 
+const twoFactorModalHTML = `
+    <div class="modal-overlay" id="modalWindow">
+        <div class="twofaModal" id="twofaModal">
+            <div class="changePassword-modal-header">
+                <button class="backArrow" id="backToLogin" aria-label="Back">←</button>
+            </div>
+            <h2>Please enter the code sent to your email</h2>
+            <form id="loginForm" class = "login-form">
+                <input type="text" id="code" placeholder="Code" required>
+                </form>
+            <button id="loginButton" class="loginButton">Verify</button>
+        </div>
+    </div>
+`;
+
 const registerModalHTML = `
             <div class="registerModalTitle">
                 <button id="cancelButton" class="cancelButton">Cancel</button>
@@ -276,4 +291,4 @@ const gameInfosModalHTML = (game: any, inLibrary: boolean) => `
 </div>
 </div>`
 
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML, changeUsernameModalHTML, changeEmailModalHTML, changeDoubleAuthentificationModalHTML, disable2FAModalHTML };
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML, changeUsernameModalHTML, changeEmailModalHTML, changeDoubleAuthentificationModalHTML, disable2FAModalHTML, twoFactorModalHTML };

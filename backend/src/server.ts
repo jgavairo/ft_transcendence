@@ -127,6 +127,10 @@ app.post('/api/auth/login', async (request: FastifyRequest, reply: FastifyReply)
     return authRoutes.login(request, reply);
 });
 
+app.post('/api/auth/confirm2FA', async (request: FastifyRequest, reply: FastifyReply) => {
+    return authRoutes.confirm2FA(request, reply);
+});
+
 app.get("/api/auth/logout", { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return authRoutes.logout(request, reply);
 });

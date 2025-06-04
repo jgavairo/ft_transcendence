@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { dbManager } from "../database/database.js";
 import { JWT_SECRET } from "../server.js";
+import { transporter } from './user.js';
 
 const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
     try 
@@ -21,7 +22,7 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
         
         const user = await dbManager.getUserByUsername(username);
         
-        if (!user) 
+        if (!user || !user.id) 
         {
             return res.status(401).send({
                 success: false,
@@ -37,36 +38,65 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
                 message: "Password is incorrect for this username: " + username
             });
         }
-        
-        const token = jwt.sign
-        (
-            { userId: user.id },
-            JWT_SECRET,
-            { expiresIn: '1h' }
-        );
 
-        res.setCookie
-        ('token', token, 
+        const is2faEnabled = user.two_factor_enabled;
+        if (is2faEnabled)
         {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/',
-            maxAge: 24 * 60 * 60 * 1000 // 24 heures
-        });
-
-        return res.send
-        ({
-            success: true,
-            message: "Connection successful",
-            user: 
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            await dbManager.set2FACode(user.id, code);
+            transporter.sendMail({
+                from: process.env.EMAIL_ADDRESS,
+                to: user.email,
+                subject: "Your 2FA Code - ft_transcendence",
+                html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2>Your Two-Factor Authentication Code</h2>
+                    <p>Here is your verification code:</p>
+                    <h1 style="font-size: 32px; letter-spacing: 5px; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px;">
+                        ${code}
+                    </h1>
+                    <p>This code will expire in 5 minutes.</p>
+                    <p>If you didn't request this code, please ignore this email.</p>
+                </div>
+            `
+            });
+            return res.status(200).send({
+                success: true,
+                message: "2FA",
+            });
+        }
+        else
+        {
+            const token = jwt.sign
+            (
+                { userId: user.id },
+                JWT_SECRET,
+                { expiresIn: '1h' }
+            );
+    
+            res.setCookie
+            ('token', token, 
             {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                profile_picture: user.profile_picture
-            }
-        });
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                path: '/',
+                maxAge: 24 * 60 * 60 * 1000 // 24 heures
+            });
+    
+            return res.send
+            ({
+                success: true,
+                message: "Connection successful",
+                user: 
+                {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    profile_picture: user.profile_picture
+                }
+            });
+        }
     } 
     catch (error) 
     {
@@ -226,11 +256,51 @@ export const googleAuthHandler = async (userInfo: { email?: string; name?: strin
     return { user, token };
 };
 
+const confirm2FAHandler = async (req: FastifyRequest, res: FastifyReply) => 
+{
+    const { username, code } = req.body as { username: string; code: string };
+    console.log("Confirming 2FA with code:", code);
+    const user = await dbManager.getUserByUsername(username);
+    if (!user)
+    {
+        return res.status(401).send({ success: false, message: "User not found" });
+    }
+    if (user.two_factor_code !== code)
+    {
+        return res.status(401).send({ success: false, message: "Invalid code" });
+    }
+    if (!user.two_factor_code_expiration || user.two_factor_code_expiration < Date.now())
+    {
+        return res.status(401).send({ success: false, message: "Code expired" });
+    }
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+    
+    res.setCookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 24 * 60 * 60 * 1000 // 24 heures
+    });
+
+    return res.status(200).send({ 
+        success: true, 
+        message: "2FA confirmed",
+        user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            profile_picture: user.profile_picture
+        }
+    });
+};
+
 export const authRoutes = 
 {
     login: loginHandler,
     register: registerHandler,
     checkAuth: checkAuthHandler,
     logout: logoutHandler,
-    googleAuth: googleAuthHandler
+    googleAuth: googleAuthHandler,
+    confirm2FA: confirm2FAHandler
 };
