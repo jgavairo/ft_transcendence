@@ -103,7 +103,7 @@ export class LoginManager {
                     MainApp.setupHeader();
                     MainApp.setupCurrentPage();
                     setupProfileButton();
-                    updateChatWidgetVisibility(); // Affiche le chat après login
+                    updateChatWidgetVisibility();
                 }
                 else {
                     showErrorNotification(data.message);
@@ -171,5 +171,29 @@ export class LoginManager {
                 });
             });
         });
+    }
+    static async logout() {
+        try {
+            const response = await api.get(`https://${HOSTNAME}:8443/api/auth/logout`);
+            const data = await response.json();
+            console.log('response:', data);
+            if (data.success) {
+                showNotification("Logged out successfully");
+                const main = document.getElementById('main');
+                if (!main)
+                    return;
+                main.innerHTML = "";
+                disconnectNotificationSocket();
+                updateChatWidgetVisibility();
+                LoginManager.showLoginModal();
+            }
+            else {
+                showErrorNotification(data.message);
+            }
+        }
+        catch (error) {
+            console.error('Error during logout:', error);
+            showErrorNotification("Error during logout");
+        }
     }
 }

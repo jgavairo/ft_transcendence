@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { dbManager } from "../database/database.js";
-import { JWT_SECRET } from "../server.js";
+import { app, JWT_SECRET, userSocketMap } from "../server.js";
 import { transporter } from './user.js';
 
 const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
@@ -38,7 +38,14 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
                 message: "Password is incorrect for this username: " + username
             });
         }
-
+        if (userSocketMap.get(username))
+        {
+            const socketId = userSocketMap.get(username);
+            if (socketId)
+            {
+                app.io.of('/notification').to(socketId).emit('logout', { username: username });
+            }
+        }
         const is2faEnabled = user.two_factor_enabled;
         if (is2faEnabled)
         {
