@@ -299,11 +299,27 @@ export async function setupChat() {
     socket.on("receiveMessage", async (messageData: { author: string, content: string }) => {
         if (messageData.author === username) return;
         if (await isBlocked(messageData.author)) return;
+        // Si l'auteur n'est pas connu, on recharge la liste des utilisateurs
+        if (!userMap.has(messageData.author)) {
+            const newUsers = await fetchUsernames();
+            userMap.clear();
+            newUsers.forEach(user => userMap.set(user.username, user));
+            // Recharge la peopleList si elle est affichée
+            if (document.getElementById('friendList')) {
+                const { renderPeopleList } = await import('./peopleList.js');
+                renderPeopleList();
+            }
+        }
         addMessage(messageData.content, messageData.author, false);
     });
 
     socket.on("receivePrivateMessage", async (messageData: { author: string, content: string }) => {
         if (await isBlocked(messageData.author)) return;
+        if (!userMap.has(messageData.author)) {
+            const newUsers = await fetchUsernames();
+            userMap.clear();
+            newUsers.forEach(user => userMap.set(user.username, user));
+        }
         addMessage(messageData.content, messageData.author, false);
     });
 

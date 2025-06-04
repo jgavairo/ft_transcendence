@@ -368,6 +368,25 @@ export async function setupChatWidget() {
     // Vider le cache partagé au début de setupChatWidget
     clearBlockedCache();
     handleGameInviteLinkForWidget();
+    // --- Listen for real-time user registration event (Socket.IO) ---
+    const notificationSocket = io(`https://${HOSTNAME}:8443/notification`, {
+        transports: ['websocket', 'polling'],
+        withCredentials: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+    });
+    notificationSocket.on("connect", () => {
+        notificationSocket.emit("register", { username });
+    });
+    notificationSocket.on("userRegistered", () => {
+        // Rafraîchir la peopleList si elle est affichée
+        import("./peopleList.js").then(mod => {
+            if (document.getElementById('friendList')) {
+                mod.renderPeopleList();
+            }
+        });
+    });
 }
 // Gestion des liens d'invitation Pong pour le chat widget flottant
 export function handleGameInviteLinkForWidget() {
