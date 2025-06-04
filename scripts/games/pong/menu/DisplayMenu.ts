@@ -789,9 +789,16 @@ export class PongMenuManager
           const { size, joined, status } = this.lastBracketView;
           // Si on est en finale (status.length === 2) mais qu'il y a encore des joueurs non éliminés dans le bracket, on affiche juste un message d'attente
           const isFinale = status.length === 2 && size === 4;
+          // On vérifie si on est encore "en game" (pas encore éliminé et pas encore ready)
+          const me = status.find(s => s.username === this.myUsername);
+          const iAmInGame = me && !me.eliminated && !me.ready;
           const nonFinalists = status.filter(s => !s.eliminated);
-          if (isFinale && nonFinalists.length > 2) {
-            // Affiche "En attente des autres matchs..."
+          if (isFinale && nonFinalists.length > 2 && iAmInGame) {
+            // Si je suis encore en train de jouer, ne rien afficher (laisser la game tourner)
+            return;
+          }
+          if (isFinale && nonFinalists.length > 2 && !iAmInGame) {
+            // Si j'ai fini mon match mais d'autres non, afficher l'attente
             this.menuLayer.add(new Konva.Text({
               x: gameWidth / 2 - 200,
               y: 350,
