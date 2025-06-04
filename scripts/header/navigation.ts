@@ -53,6 +53,16 @@ export async function setupHeader()
 		renderPeopleList();
 	});
 
+	notificationSocket.on("notification", (data) => {
+		if (data.message)
+			showNotification(data.message);
+	});
+
+	notificationSocket.on("logout", (data) => {
+		console.log("logout", data.username);
+		LoginManager.logout();
+	});
+
 	if (data && data.success)
 		notificationSocket.emit('register', {username: data.user.username});
 }

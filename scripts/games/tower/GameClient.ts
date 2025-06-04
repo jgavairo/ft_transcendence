@@ -3,6 +3,7 @@ import { GameRenderer } from './GameRenderer.js';
 import { InputHandler } from './InputHandler.js';
 import { HOSTNAME, MainApp } from '../../main.js';
 import { TowerMenuManager } from './GameMenu.js';
+import { showNotification } from '../../helpers/notifications.js';
 
 
 export class GameClient
@@ -183,7 +184,7 @@ export class GameClient
             // Envoyer un signal que nous sommes prêts
             this.socket.emit("ready", data.roomId);
         });
-
+        
         if (!this.socket.connected) {
             this.socket.connect();
         }

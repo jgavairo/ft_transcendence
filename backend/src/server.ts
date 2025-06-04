@@ -663,7 +663,8 @@ const start = async () => {
                 userSocketMapTower.set(socket.id, username);
             });
             
-            socket.on('joinQueue', (username: string) => {
+            socket.on('joinQueue', (username: string) =>
+            {
                 towerQueue.push({id: socket.id, username: username});
                 attemptMatch();
             });
