@@ -51,9 +51,6 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   const tournaments = new Map<string, BasicTournament>();
   const tournamentQueues: { [k in 4|8]: Player[] } = { 4: [], 8: [] };
 
-  // Gestion des rooms privées
-  const privateRooms = new Map<string, { sockets: Socket[]; usernames: string[]; maxPlayers: number }>();
-
   // Map pour stocker les intervalles de chaque match de tournoi
   const tournamentMatchIntervals = new Map<string, NodeJS.Timeout>();
 
