@@ -253,6 +253,22 @@ export function setupSearchInput() {
 }
 
 export async function showProfileCard(username: string, profilePicture: string, email: string, bio: string, userId: number) {
+    // À chaque ouverture, on va chercher les infos utilisateur à jour
+    let userInfo = null;
+    try {
+        const resp = await fetch(`https://${HOSTNAME}:8443/api/users?username=${encodeURIComponent(username)}`, { credentials: 'include' });
+        const data = await resp.json();
+        if (data.success && Array.isArray(data.users)) {
+            userInfo = data.users.find((u: any) => u.username === username);
+        }
+    } catch (e) { userInfo = null; }
+    if (userInfo) {
+        profilePicture = userInfo.profile_picture || 'default-profile.png';
+        email = userInfo.email || 'Email not available';
+        bio = userInfo.bio || 'No bio available';
+        userId = userInfo.id || userId;
+    }
+
     // Vérifiez si une carte existe déjà et la supprimez
     let existingCard = document.getElementById("profileOverlay");
     if (existingCard) {
