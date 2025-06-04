@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     attempting_friend_ids TEXT DEFAULT '[]',
     friends TEXT DEFAULT '[]',
     friend_requests TEXT DEFAULT '[]',
-    blocked_users TEXT DEFAULT '[]'
+    blocked_users TEXT DEFAULT '[]',
+    is_google_account BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS messages (

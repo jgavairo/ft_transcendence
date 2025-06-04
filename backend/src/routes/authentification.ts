@@ -237,7 +237,8 @@ export const googleAuthHandler = async (userInfo: { email?: string; name?: strin
             profile_picture: picture || '../assets/profile_pictures/default.png',
             friends: [],
             friend_requests: [],
-            attempting_friend_ids: []
+            attempting_friend_ids: [],
+            is_google_account: true
         });
         user = await dbManager.getUserById(userID);
         console.log("New user created:", user);
