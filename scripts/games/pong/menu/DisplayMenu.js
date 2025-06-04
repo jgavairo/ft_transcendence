@@ -609,12 +609,37 @@ export class PongMenuManager {
         // 1) Nettoyage de l’UI
         this.menuLayer.removeChildren();
         this.menuLayer.batchDraw();
-        // Si tout le monde est ready, on lance le jeu, sinon on affiche le bracket et le bouton Ready
+        // On attend que tous les matchs du tour soient terminés avant d'afficher le bouton Ready pour la finale
         if (this.lastBracketView) {
             const { size, joined, status } = this.lastBracketView;
+            // Si on est en finale (status.length === 2) mais qu'il y a encore des joueurs non éliminés dans le bracket, on affiche juste un message d'attente
+            const isFinale = status.length === 2 && size === 4;
+            // On vérifie si on est encore "en game" (pas encore éliminé et pas encore ready)
+            const me = status.find(s => s.username === this.myUsername);
+            const iAmInGame = me && !me.eliminated && !me.ready;
+            const nonFinalists = status.filter(s => !s.eliminated);
+            if (isFinale && nonFinalists.length > 2 && iAmInGame) {
+                // Si je suis encore en train de jouer, ne rien afficher (laisser la game tourner)
+                return;
+            }
+            if (isFinale && nonFinalists.length > 2 && !iAmInGame) {
+                // Si j'ai fini mon match mais d'autres non, afficher l'attente
+                this.menuLayer.add(new Konva.Text({
+                    x: gameWidth / 2 - 200,
+                    y: 350,
+                    text: 'En attente que les autres matchs se terminent...',
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 20,
+                    fill: '#00e7fe',
+                    width: 400,
+                    align: 'center'
+                }));
+                this.menuLayer.batchDraw();
+                return;
+            }
+            // Sinon, logique normale : si tout le monde est ready, on lance le jeu, sinon on affiche le bracket et le bouton Ready
             const allReady = status.filter(s => !s.eliminated).every(s => s.ready);
             if (allReady) {
-                // 2) Récupérer le pseudo (GameManager peut échouer si token invalide)
                 let you;
                 try {
                     const current = await GameManager.getCurrentUser();
@@ -623,7 +648,6 @@ export class PongMenuManager {
                 catch (err) {
                     you = 'You';
                 }
-                // 3) Affichage Konva des pseudos + countdown
                 const p1 = new Konva.Text({
                     x: gameWidth / 6,
                     y: 450,
@@ -656,7 +680,6 @@ export class PongMenuManager {
                 });
                 this.menuLayer.add(p1, p2, countdownText);
                 this.menuLayer.batchDraw();
-                // 4) Compte à rebours 5 → 1
                 let count = 5;
                 const timer = setInterval(() => {
                     count--;
@@ -666,9 +689,7 @@ export class PongMenuManager {
                     }
                     else {
                         clearInterval(timer);
-                        // 5) Création du canvas + init tournoi
                         initTournamentPong(side, you, opponent);
-                        // 6) Abonnement STRICT “gameState:<matchId>”
                         const handler = (state) => {
                             if (!state || !state.paddles)
                                 return;
