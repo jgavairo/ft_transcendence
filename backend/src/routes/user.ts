@@ -53,7 +53,8 @@ const getInfosHandler = async (request: FastifyRequest, reply: FastifyReply) =>
                 library: user.library || [],
                 two_factor_enabled: user.two_factor_enabled,
                 two_factor_code: user.two_factor_code,
-                two_factor_code_expiration: user.two_factor_code_expiration
+                two_factor_code_expiration: user.two_factor_code_expiration,
+                is_google_account: user.is_google_account
             }
         });
     } 
@@ -146,6 +147,14 @@ const changePasswordHandler = async (request: FastifyRequest<{ Body: ChangePassw
                 message: "User not found"
             });
         }
+        const is_google_account = await dbManager.isGoogleAccount(user.id);
+        if (is_google_account)
+        {
+            return reply.status(401).send({
+                success: false,
+                message: "Google account cannot change password"
+            });
+        }
         const realPasswordHash = await dbManager.getUserPassword(user.id);
         const isValid = await bcrypt.compare(request.body.oldPassword, realPasswordHash);
         if (!isValid)
@@ -232,6 +241,14 @@ const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyRepl
                 message: "User not found"
             });
         }
+        const is_google_account = await dbManager.isGoogleAccount(user.id);
+        if (is_google_account)
+        {
+            return reply.status(401).send({
+                success: false,
+                message: "Google account cannot change username"
+            });
+        }
         const newUsername = (request.body as { newUsername: string }).newUsername;
         if (!newUsername)
         {
@@ -285,6 +302,14 @@ const changeEmailHandler = async (request: FastifyRequest, reply: FastifyReply) 
             ({
                 success: false,
                 message: "User not found"
+            });
+        }
+        const is_google_account = await dbManager.isGoogleAccount(user.id);
+        if (is_google_account)
+        {
+            return reply.status(401).send({
+                success: false,
+                message: "Google account cannot change email"
             });
         }
         const newEmail = (request.body as { newEmail: string }).newEmail;
@@ -441,6 +466,33 @@ const disable2FAHandler = async (request: FastifyRequest, reply: FastifyReply) =
         
     }
 }
+
+const isGoogleUserHandler = async (request: FastifyRequest, reply: FastifyReply) => 
+{
+    try
+    {
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);
+        if (!user || !user.id)
+        {
+            return reply.status(404).send
+            ({
+                success: false,
+                message: "User not found"
+            });
+        }
+        return reply.send({ success: true, isGoogleUser: user.is_google_account });
+    }
+    catch (error)
+    {
+        console.error("Erreur détaillée:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Erreur serveur"
+        });
+    }
+}
+
 export const userRoutes = 
 {
     getInfos: getInfosHandler,
@@ -455,5 +507,6 @@ export const userRoutes =
     changeEmail: changeEmailHandler,
     send2FACode: send2FACodeHandler,
     enable2FA: enable2FAHandler,
-    disable2FA: disable2FAHandler
+    disable2FA: disable2FAHandler,
+    isGoogleUser: isGoogleUserHandler
 };

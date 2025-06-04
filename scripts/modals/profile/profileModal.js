@@ -8,7 +8,7 @@ export async function setupProfileModal() {
         return;
     const userInfos = await MainApp.getUserInfo();
     const profilePictureWithTimestamp = `${userInfos.profile_picture}?t=${Date.now()}`;
-    modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, profilePictureWithTimestamp, userInfos.bio || '', userInfos.two_factor_enabled);
+    modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, profilePictureWithTimestamp, userInfos.bio || '', userInfos.two_factor_enabled, userInfos.is_google_account);
     const closeButton = document.getElementById('closeProfileModal');
     if (closeButton) {
         closeButton.addEventListener('click', () => {

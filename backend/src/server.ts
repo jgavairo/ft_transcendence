@@ -242,6 +242,10 @@ app.post('/api/user/disable2FA', { preHandler: authMiddleware }, async (request:
     return userRoutes.disable2FA(request, reply);
 });
 
+app.get('/api/user/isGoogleUser', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return userRoutes.isGoogleUser(request, reply);
+});
+
 ////////////////////
 // PROFILE ROUTES //
 ////////////////////

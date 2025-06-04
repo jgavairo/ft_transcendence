@@ -24,6 +24,7 @@ export interface User {
     two_factor_enabled?: boolean;
     two_factor_code?: string;
     two_factor_code_expiration?: number;
+    is_google_account?: boolean;
 }
 
 export interface Game {
@@ -192,8 +193,8 @@ export class DatabaseManager
         if (!this.db)
             throw new Error('Database not initialized');
         const result = await this.db.run(
-            'INSERT INTO users (username, email, password_hash, profile_picture, bio, library) VALUES (?, ?, ?, ?, ?, ?)',
-            [user.username, user.email, user.password_hash, user.profile_picture, '', JSON.stringify([])]
+            'INSERT INTO users (username, email, password_hash, profile_picture, bio, library, is_google_account) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [user.username, user.email, user.password_hash, user.profile_picture, '', JSON.stringify([]), user.is_google_account === true ? 1 : 0]
         );
         if (!result.lastID)
             throw new Error('Failed to create new user');
@@ -215,7 +216,7 @@ export class DatabaseManager
         if (!this.db)
             throw new Error('Database not initialized');
         const result = await this.db.get(
-            'SELECT * FROM users WHERE id = ?',
+            'SELECT *, CASE WHEN is_google_account = 1 THEN true ELSE false END as is_google_account FROM users WHERE id = ?',
             [id]
         );
         return result;
@@ -1001,6 +1002,14 @@ export class DatabaseManager
             throw new Error('Database not initialized');
         await this.db.run('UPDATE users SET two_factor_code = ? WHERE id = ?', [code, userId]);
         await this.db.run('UPDATE users SET two_factor_code_expiration = ? WHERE id = ?', [new Date().getTime() + 1000 * 60 * 5, userId]);
+    }
+
+    public async isGoogleAccount(userId: number): Promise<boolean>
+    {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const user = await this.getUserById(userId);
+        return user?.is_google_account || false;
     }
 }
 

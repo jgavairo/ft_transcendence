@@ -133,7 +133,7 @@ const registerModalHTML = `
             <button id="registerRequestButton" class="signupButton">Sign up</button>
 `;
 
-const profileModalHTML = (username: string, email: string, profilePicture: string, bio: string, twoFactorEnabled: boolean) => `
+const profileModalHTML = (username: string, email: string, profilePicture: string, bio: string, twoFactorEnabled: boolean, isGoogleAccount: boolean) => `
     <div class="modal-overlay" id="modalOverlay">
         <div class="profile-modal" id="profile-modal">
           <div class="profile-modal-header">
@@ -161,6 +161,7 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
                 <button id="saveBioButton" class="profile-modal-button-bio">Save Bio</button>
               </div>
               <div class="profile-modal-button-container">
+                ${!isGoogleAccount ? `
                 <div id="changePassword">
                   <button id="changePasswordButton" class="profile-modal-button-password">Change password</button>
                 </div>
@@ -170,7 +171,9 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
                 <div id="changeUsername">
                   <button id="changeUsernameButton" class="profile-modal-button-username">Change username</button>
                 </div>
-                </div>
+                ` : ''}
+              </div>
+              ${!isGoogleAccount ? `
               <div id="doubleAuthentification">
                   ${twoFactorEnabled ? 
                       `<button id="disable2FAButton" class="profile-modal-button-disable2fa">
@@ -181,6 +184,7 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
                       </button>`
                   }
               </div>
+              ` : ''}
             </div>
           </div>
         </div>
