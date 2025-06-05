@@ -419,7 +419,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
     // Ajoutez la bio
     const bioElement = document.createElement("p");
     bioElement.className = "profile-card-bio";
-    bioElement.textContent = bio || "No bio available";
+    bioElement.textContent = bio || 'No bio available';
 
     // Ajoutez un bouton pour fermer la carte
     const closeButton = document.createElement("button");
@@ -429,10 +429,19 @@ export async function showProfileCard(username: string, profilePicture: string, 
         overlay.remove();
     });
 
-    // Ajoutez une section pour les statistiques
-    const statsSection = document.createElement("div");
-    statsSection.className = "profile-card-stats";
-    statsSection.textContent = "Loading stats...";
+    // Section fusionnée stats + historique
+    let statsAndHistorySection = document.createElement("div");
+    statsAndHistorySection.className = "profile-card-stats";
+    statsAndHistorySection.style.position = "relative";
+
+    // Conteneur pour stats (pour mise en page plus jolie)
+    let statsContainer = document.createElement("div");
+    statsContainer.className = "profile-card-stats-block";
+    statsContainer.style.display = "flex";
+    statsContainer.style.justifyContent = "space-around";
+    statsContainer.style.alignItems = "center";
+    statsContainer.style.gap = "2.5rem";
+    statsContainer.style.margin = "10px 0 18px 0";
 
     // Récupérez les statistiques de l'utilisateur
     try {
@@ -440,60 +449,42 @@ export async function showProfileCard(username: string, profilePicture: string, 
             credentials: 'include',
         });
         const rankings = await response.json();
-        
-        // Convertir en nombre pour s'assurer que la comparaison fonctionne
         const userIdAsNumber = Number(userId);
-        
-        // Afficher les données pour le débogage
-        console.log("Rankings data:", rankings);
-        console.log("Looking for userId:", userIdAsNumber);
-        
-        // Trouver les stats de l'utilisateur en s'assurant que les types correspondent
         const userStats = rankings.find((ranking: any) => Number(ranking.userId) === userIdAsNumber);
-        
         if (userStats) {
-            console.log("Found user stats:", userStats);
             const { win, loss } = userStats;
             const playedGames = win + loss;
             const ratio = loss === 0 ? win : (win / loss).toFixed(2);
-
-            statsSection.innerHTML = `
-                <h4>1vs1 Online Stats</h4>
-                <p><strong>Wins:</strong> ${win}</p>
-                <p><strong>Losses:</strong> ${loss}</p>
-                <p><strong>Games Played:</strong> ${playedGames}</p>
-                <p><strong>Win/Loss Ratio:</strong> ${ratio}</p>
+            statsContainer.innerHTML = `
+                <div class="stat-item"><div class="stat-label">Wins</div><div class="stat-value">${win}</div></div>
+                <div class="stat-item"><div class="stat-label">Losses</div><div class="stat-value">${loss}</div></div>
+                <div class="stat-item"><div class="stat-label">Games</div><div class="stat-value">${playedGames}</div></div>
+                <div class="stat-item"><div class="stat-label">Ratio</div><div class="stat-value">${ratio}</div></div>
             `;
         } else {
-            console.log("No stats found for userId:", userIdAsNumber);
-            statsSection.textContent = "No stats available.";
+            statsContainer.innerHTML = `<div style='text-align:center;width:100%'>No stats available.</div>`;
         }
     } catch (error) {
-        console.error("Error fetching user stats:", error);
-        statsSection.textContent = "Failed to load stats.";
+        statsContainer.innerHTML = `<div style='text-align:center;width:100%'>Failed to load stats.</div>`;
     }
 
-    // Ajoutez le bouton block/unblock en haut à gauche AVANT les autres éléments
-    card.appendChild(topLeftContainer);
+    // Ajout du conteneur stats (le dropdown sera ajouté au-dessus par displayMatchHistory)
+    statsAndHistorySection.appendChild(statsContainer);
 
-    // Ajoutez les éléments à la carte
+    // Ajoutez la carte à l'overlay
+    card.appendChild(topLeftContainer);
     card.appendChild(closeButton);
     card.appendChild(img);
     card.appendChild(name);
     card.appendChild(emailElement);
     card.appendChild(bioElement);
-    // (ne pas ajouter blockButton ici, il est déjà dans topLeftContainer)
-    card.appendChild(statsSection);
-
-    // Ajoutez la carte à l'overlay
+    card.appendChild(statsAndHistorySection); // Encadré fusionné
     overlay.appendChild(card);
-
-    // Ajoutez l'overlay au body
     document.body.appendChild(overlay);
 
-    // Récupérez et affichez l'historique des matchs
+    // Récupérez et affichez l'historique des matchs dans le même encadré fusionné
     const matchHistory = await fetchMatchHistory(userId);
-    displayMatchHistory(matchHistory, userId);
+    displayMatchHistory(matchHistory, userId, statsAndHistorySection, statsContainer);
 }
 
 // Fonction pour récupérer l'historique des matchs d'un utilisateur
@@ -558,21 +549,12 @@ async function getPongGameId(): Promise<number> {
 }
 
 // Fonction pour afficher l'historique des matchs dans la carte de profil
-async function displayMatchHistory(matches: any[], userId: number) {
-    const card = document.getElementById("profileCard");
-    if (!card) return;
+// displayMatchHistory: ajoute le dropdown en haut de statsAndHistorySection, puis stats, puis le tableau
+async function displayMatchHistory(matches: any[], userId: number, container: HTMLElement, statsContainer?: HTMLElement) {
+    if (!container) return;
 
-    let historySection = document.querySelector(".profile-card-match-history");
-    if (!historySection) {
-        historySection = document.createElement("div");
-        historySection.className = "profile-card-match-history";
-        card.appendChild(historySection);
-    }
-
-    const historyTitle = document.createElement("h4");
-    historyTitle.textContent = "Match History";
-    historySection.innerHTML = "";
-    historySection.appendChild(historyTitle);
+    // Supprime tout sauf le statsContainer (si fourni)
+    container.innerHTML = "";
 
     // Récupérer la liste des jeux depuis l'API pour avoir les noms corrects
     let gamesList: { [id: number]: string } = {};
@@ -610,6 +592,8 @@ async function displayMatchHistory(matches: any[], userId: number) {
     let select = document.createElement("select");
     select.className = "match-history-game-filter";
     select.style.marginBottom = "10px";
+    select.style.display = "block";
+    select.style.margin = "0 auto 18px auto";
     const allOption = document.createElement("option");
     allOption.value = "";
     allOption.textContent = "All games";
@@ -620,14 +604,18 @@ async function displayMatchHistory(matches: any[], userId: number) {
         option.textContent = name;
         select.appendChild(option);
     }
-    historySection.appendChild(select);
+    container.appendChild(select);
+    // Ajoute le bloc stats juste sous le dropdown
+    if (statsContainer) container.appendChild(statsContainer);
 
     // Fonction pour afficher le tableau filtré
     async function renderTable(gameId: number | null) {
-        if (!historySection) return;
-        historySection.innerHTML = "";
-        historySection.appendChild(historyTitle);
-        historySection.appendChild(select);
+        if (!container) return;
+        // Ne pas effacer le dropdown ni le bloc stats
+        // Supprime tout sauf le dropdown et le bloc stats
+        while (container.children.length > 2) {
+            container.removeChild(container.lastChild!);
+        }
         let filteredMatches = matches;
         if (gameId) {
             filteredMatches = matches.filter(m => m.game_id === gameId);
@@ -635,10 +623,10 @@ async function displayMatchHistory(matches: any[], userId: number) {
         if (filteredMatches.length === 0) {
             const noMatches = document.createElement("p");
             noMatches.textContent = "No match history available.";
-            historySection.appendChild(noMatches);
+            container.appendChild(noMatches);
             return;
         }
-        const recentMatches = filteredMatches.slice(0, 5);
+        const recentMatches = filteredMatches.slice(0, 10); // Limite à 10 matchs
         const matchTable = document.createElement("table");
         matchTable.className = "match-history-table";
         const tableHeader = document.createElement("tr");
@@ -686,26 +674,14 @@ async function displayMatchHistory(matches: any[], userId: number) {
                 console.error("Error displaying match:", error, match);
             }
         }
-        historySection.appendChild(matchTable);
-        // Voir plus/moins
-        if (filteredMatches.length > 5) {
-            const viewMoreLink = document.createElement("a");
-            viewMoreLink.textContent = "View all matches";
-            viewMoreLink.href = "#";
-            viewMoreLink.className = "view-more-matches";
-            viewMoreLink.addEventListener("click", (e) => {
-                e.preventDefault();
-                renderFullTable(filteredMatches);
-            });
-            historySection.appendChild(viewMoreLink);
-        }
+        container.appendChild(matchTable);
+        // Plus de bouton "show all matches"
     }
     // Affichage du tableau complet
     async function renderFullTable(filteredMatches: any[]) {
-        if (!historySection) return;
-        historySection.innerHTML = "";
-        historySection.appendChild(historyTitle);
-        historySection.appendChild(select);
+        if (!container) return;
+        container.innerHTML = "";
+        container.appendChild(select);
         const matchTable = document.createElement("table");
         matchTable.className = "match-history-table";
         const tableHeader = document.createElement("tr");
@@ -753,7 +729,7 @@ async function displayMatchHistory(matches: any[], userId: number) {
                 console.error("Error displaying full match:", error, match);
             }
         }
-        historySection.appendChild(matchTable);
+        container.appendChild(matchTable);
         const showLessLink = document.createElement("a");
         showLessLink.textContent = "Show less";
         showLessLink.href = "#";
@@ -762,7 +738,7 @@ async function displayMatchHistory(matches: any[], userId: number) {
             e.preventDefault();
             renderTable(Number(select.value) || null);
         });
-        historySection.appendChild(showLessLink);
+        container.appendChild(showLessLink);
     }
 
     // Listener du dropdown : filtre local, pas de reload
@@ -770,7 +746,5 @@ async function displayMatchHistory(matches: any[], userId: number) {
         const selectedGameId = select.value ? Number(select.value) : null;
         renderTable(selectedGameId);
     });
-
-    // Affichage initial
     renderTable(null);
 }
