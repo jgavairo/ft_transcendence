@@ -518,8 +518,46 @@ async function fetchMatchHistory(userId: number): Promise<any[]> {
     }
 }
 
+let towerGameId: number | null = null;
+async function getTowerGameId(): Promise<number> {
+    if (towerGameId !== null) return towerGameId;
+    try {
+        const res = await api.get('/api/games/getAll');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.games)) {
+            const tower = data.games.find((g: any) => g.name.toLowerCase() === 'tower');
+            if (tower) {
+                towerGameId = tower.id;
+                return tower.id;
+            }
+        }
+    } catch (e) {
+        console.error("Erreur lors de la récupération de l'id Tower:", e);
+    }
+    return 3; // fallback
+}
+
+let pongGameId: number | null = null;
+async function getPongGameId(): Promise<number> {
+    if (pongGameId !== null) return pongGameId;
+    try {
+        const res = await api.get('/api/games/getAll');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.games)) {
+            const pong = data.games.find((g: any) => g.name.toLowerCase() === 'pong');
+            if (pong) {
+                pongGameId = pong.id;
+                return pong.id;
+            }
+        }
+    } catch (e) {
+        console.error("Erreur lors de la récupération de l'id Pong:", e);
+    }
+    return 1; // fallback
+}
+
 // Fonction pour afficher l'historique des matchs dans la carte de profil
-function displayMatchHistory(matches: any[], userId: number) {
+async function displayMatchHistory(matches: any[], userId: number) {
     const card = document.getElementById("profileCard");
     if (!card) return;
 
@@ -576,22 +614,24 @@ function displayMatchHistory(matches: any[], userId: number) {
             const isUser1 = match.user1_id === userId;
             const userLives = isUser1 ? match.user1_lives : match.user2_lives;
             const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
-            
-            // Calculer les points marqués (3 vies au départ, points = 3 - vies de l'adversaire)
-            const userPoints = 3 - opponentLives;
-            const opponentPoints = 3 - userLives;
-            
-            // Déterminer le résultat
-            const result = userLives > opponentLives ? "Victory" : "Defeat";
-            
-            // Récupérer le nom de l'adversaire en utilisant les noms réels des joueurs
+            const towerId = await getTowerGameId();
+            const pongId = await getPongGameId();
+            let userPoints, opponentPoints;
+            if (match.game_id === towerId) {
+                userPoints = Math.max(0, Math.min(100, Number(userLives)));
+                opponentPoints = Math.max(0, Math.min(100, Number(opponentLives)));
+            } else if (match.game_id === pongId) {
+                // Pour Pong, score = 3 - vies de l'adversaire
+                userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
+                opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
+            } else {
+                userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
+                opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
+            }
+            const result = userPoints > opponentPoints ? "Victory" : "Defeat";
             const opponentName = isUser1 ? match.user2Name : match.user1Name;
             const userName = isUser1 ? match.user1Name : match.user2Name;
-            
-            // Formater la date
             const matchDate = new Date(match.match_date).toLocaleDateString();
-            
-            // Créer la ligne du tableau avec le nouveau format et les points marqués
             const row = document.createElement("tr");
             row.className = result.toLowerCase();
             row.innerHTML = `
@@ -617,31 +657,36 @@ function displayMatchHistory(matches: any[], userId: number) {
         viewMoreLink.textContent = "View all matches";
         viewMoreLink.href = "#";
         viewMoreLink.className = "view-more-matches";
-        viewMoreLink.addEventListener("click", (e) => {
+        viewMoreLink.addEventListener("click", async (e) => {
             e.preventDefault();
             if (historySection) {
                 historySection.innerHTML = "";
                 historySection.appendChild(historyTitle);
-                
                 const fullMatchTable = document.createElement("table");
                 fullMatchTable.className = "match-history-table";
                 fullMatchTable.appendChild(tableHeader.cloneNode(true));
-                
                 for (const match of matches) {
                     try {
                         const isUser1 = match.user1_id === userId;
                         const userLives = isUser1 ? match.user1_lives : match.user2_lives;
                         const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
-                        
-                        // Calculer les points marqués (3 vies au départ, points = 3 - vies de l'adversaire)
-                        const userPoints = 3 - opponentLives;
-                        const opponentPoints = 3 - userLives;
-                        
-                        const result = userLives > opponentLives ? "Victory" : "Defeat";
+                        const towerId = await getTowerGameId();
+                        const pongId = await getPongGameId();
+                        let userPoints, opponentPoints;
+                        if (match.game_id === towerId) {
+                            userPoints = Math.max(0, Math.min(100, Number(userLives)));
+                            opponentPoints = Math.max(0, Math.min(100, Number(opponentLives)));
+                        } else if (match.game_id === pongId) {
+                            userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
+                            opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
+                        } else {
+                            userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
+                            opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
+                        }
+                        const result = userPoints > opponentPoints ? "Victory" : "Defeat";
                         const opponentName = isUser1 ? match.user2Name : match.user1Name;
                         const userName = isUser1 ? match.user1Name : match.user2Name;
                         const matchDate = new Date(match.match_date).toLocaleDateString();
-                        
                         const row = document.createElement("tr");
                         row.className = result.toLowerCase();
                         row.innerHTML = `
@@ -656,7 +701,6 @@ function displayMatchHistory(matches: any[], userId: number) {
                         console.error("Error displaying full match:", error, match);
                     }
                 }
-                
                 historySection.appendChild(fullMatchTable);
                 
                 const showLessLink = document.createElement("a");

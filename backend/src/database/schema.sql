@@ -60,11 +60,13 @@ CREATE TABLE IF NOT EXISTS match_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user1_id INTEGER NOT NULL,
     user2_id INTEGER NOT NULL,
+    game_id INTEGER NOT NULL,
     user1_lives INTEGER NOT NULL,
     user2_lives INTEGER NOT NULL,
     match_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user1_id) REFERENCES users (id),
-    FOREIGN KEY (user2_id) REFERENCES users (id)
+    FOREIGN KEY (user2_id) REFERENCES users (id),
+    FOREIGN KEY (game_id) REFERENCES games (id)
 );
 
 

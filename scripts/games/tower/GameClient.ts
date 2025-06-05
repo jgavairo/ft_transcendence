@@ -15,6 +15,7 @@ export class GameClient
     private currentState: any = null;
     private menu: TowerMenuManager;
     private roomId: string | null = null;
+    private static towerGameId: number | null = null;
     constructor(username: string, menuManager: TowerMenuManager)
     {
         this.username = username;
@@ -211,5 +212,53 @@ export class GameClient
         console.log("Starting solo game with username:", this.username);
         this.socket.emit("playSolo", this.username);
         this.menu.cleanup();
+    }
+
+    private static async getTowerGameId(): Promise<number> {
+        if (this.towerGameId !== null) return this.towerGameId;
+        try {
+            const res = await fetch('/api/games/getAll', { credentials: 'include' });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.games)) {
+                const tower = data.games.find((g: any) => g.name.toLowerCase() === 'tower');
+                if (tower) {
+                    this.towerGameId = tower.id;
+                    return tower.id;
+                }
+            }
+        } catch (e) {
+            console.error('Erreur lors de la récupération de l\'id du jeu Tower:', e);
+        }
+        return 3; // fallback
+    }
+
+    public async sendMatchToHistory(winner: string) {
+        if (!this.currentState) return;
+        // Récupérer les infos nécessaires
+        const playerId = this.currentState.player?.id || null;
+        const enemyId = this.currentState.enemy?.id || null;
+        const playerScore = Math.max(0, Math.min(100, Math.round(this.currentState.player?.tower ?? 0)));
+        const enemyScore = Math.max(0, Math.min(100, Math.round(this.currentState.enemy?.tower ?? 0)));
+        // Si les IDs ne sont pas présents dans le state, on ne peut pas envoyer l'historique
+        if (!playerId || !enemyId) return;
+        try {
+            const gameId = await GameClient.getTowerGameId();
+            await fetch('/api/match/addToHistory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    user1Id: playerId,
+                    user2Id: enemyId,
+                    gameId: gameId,
+                    user1Lives: playerScore,
+                    user2Lives: enemyScore,
+                }),
+            });
+        } catch (e) {
+            console.error('Erreur lors de l\'envoi de l\'historique Tower:', e);
+        }
     }
 }

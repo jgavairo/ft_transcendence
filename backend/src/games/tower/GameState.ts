@@ -12,6 +12,8 @@ export class Game
 
     private aiTimer: number = 0;
 
+    private _historySaved?: boolean;
+
     constructor(socketPlayerOne: string, socketPlayerTwo: string, isMultiplayer: boolean)
     {
         this.socketPlayerOne = socketPlayerOne;
@@ -339,5 +341,13 @@ export class Game
 
     public getSocketPlayerTwo(): string {
         return this.socketPlayerTwo;
+    }
+
+    // Ajout d'un getter/setter pour l'extérieur
+    public get historySaved(): boolean | undefined {
+        return this._historySaved;
+    }
+    public set historySaved(val: boolean | undefined) {
+        this._historySaved = val;
     }
 }

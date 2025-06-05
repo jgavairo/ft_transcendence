@@ -429,14 +429,15 @@ app.get('/api/hostname', async (request: FastifyRequest, reply: FastifyReply) =>
 
 app.post('/api/match/addToHistory', { preHandler: authMiddleware }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
     try {
-        const { user1Id, user2Id, user1Lives, user2Lives } = request.body as {
+        const { user1Id, user2Id, gameId, user1Lives, user2Lives } = request.body as {
             user1Id: string | number;
             user2Id: string | number;
+            gameId: number;
             user1Lives: number;
             user2Lives: number;
         };
 
-        if (!user1Id || !user2Id || user1Lives === undefined || user2Lives === undefined) {
+        if (!user1Id || !user2Id || gameId === undefined || user1Lives === undefined || user2Lives === undefined) {
             return reply.status(400).send({ error: 'Missing required fields' });
         }
 
@@ -498,8 +499,8 @@ app.post('/api/match/addToHistory', { preHandler: authMiddleware }, async (reque
             return reply.status(400).send({ error: 'User IDs must be valid numbers after conversion' });
         }
 
-        console.log(`Ajout d'un match à l'historique: user1Id=${finalUser1Id}, user2Id=${finalUser2Id}, lives: ${user1Lives}-${user2Lives}`);
-        await dbManager.addMatchToHistory(finalUser1Id, finalUser2Id, user1Lives, user2Lives);
+        console.log(`Ajout d'un match à l'historique: user1Id=${finalUser1Id}, user2Id=${finalUser2Id}, gameId=${gameId}, lives: ${user1Lives}-${user2Lives}`);
+        await dbManager.addMatchToHistory(finalUser1Id, finalUser2Id, gameId, user1Lives, user2Lives);
         return reply.status(200).send({ success: true, message: 'Match added to history' });
     } catch (error) {
         console.error('Error adding match to history:', error);
@@ -739,6 +740,36 @@ const start = async () => {
                     if (roomId.startsWith('tower_')) {
                         game.update();
                         towerNs.to(roomId).emit('gameState', game.getState());
+                        // Ajout : enregistrer l'historique si la partie est finie et pas déjà enregistré
+                        if (game.getState().finish && !game.historySaved) {
+                            (async () => {
+                                try {
+                                    const playerUsername = game.getState().player.username;
+                                    const enemyUsername = game.getState().enemy.username;
+                                    const player = await dbManager.getUserByUsername(playerUsername);
+                                    const enemy = await dbManager.getUserByUsername(enemyUsername);
+                                    if (player && player.id !== undefined && enemy && enemy.id !== undefined) {
+                                        // Récupérer l'id du jeu Tower (par défaut 3, à adapter si besoin)
+                                        const towerGame = await dbManager.getAllGames();
+                                        const tower = towerGame.find(g => g.name.toLowerCase() === 'tower');
+                                        const towerGameId = tower ? tower.id : 3;
+                                        // HP restants = score sur 100 pour Tower, borné à [0,100] et arrondi à l'entier le plus proche
+                                        const playerRaw = game.getState().player.tower;
+                                        const enemyRaw = game.getState().enemy.tower;
+                                        const playerScore = Math.max(0, Math.min(100, Math.round((playerRaw / 500) * 100)));
+                                        const enemyScore = Math.max(0, Math.min(100, Math.round((enemyRaw / 500) * 100)));
+                                        await dbManager.addMatchToHistory(player.id, enemy.id, towerGameId, playerScore, enemyScore);
+                                        console.log(`[Tower] Match history saved for ${player.username} vs ${enemy.username} (score: ${playerScore}-${enemyScore}, game_id: ${towerGameId})`);
+                                    } else {
+                                        console.warn('[Tower] Could not find user IDs for match history:', playerUsername, enemyUsername);
+                                    }
+                                } catch (err) {
+                                    console.error('[Tower] Error saving match history:', err);
+                                }
+                                // Marquer comme déjà enregistré
+                                game.historySaved = true;
+                            })();
+                        }
                     }
                 }
             }, 1000 / GAME_CONFIG.TICK_RATE);

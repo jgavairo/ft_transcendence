@@ -721,6 +721,7 @@ export class DatabaseManager
     public async addMatchToHistory(
         user1Id: number,
         user2Id: number,
+        gameId: number,
         user1Lives: number,
         user2Lives: number
     ): Promise<void> {
@@ -730,11 +731,11 @@ export class DatabaseManager
             // Vérifier si un match similaire a été ajouté dans les dernières secondes
             const recentMatch = await this.db.get(
                 `SELECT * FROM match_history 
-                 WHERE user1_id = ? AND user2_id = ? 
+                 WHERE user1_id = ? AND user2_id = ? AND game_id = ?
                  AND user1_lives = ? AND user2_lives = ? 
                  AND datetime(match_date) >= datetime('now', '-5 seconds')
                  LIMIT 1`,
-                [user1Id, user2Id, user1Lives, user2Lives]
+                [user1Id, user2Id, gameId, user1Lives, user2Lives]
             );
 
             // Si un match similaire existe déjà, ne pas l'ajouter
@@ -744,11 +745,11 @@ export class DatabaseManager
             }
 
             await this.db.run(
-                `INSERT INTO match_history (user1_id, user2_id, user1_lives, user2_lives, match_date)
-                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-                [user1Id, user2Id, user1Lives, user2Lives]
+                `INSERT INTO match_history (user1_id, user2_id, game_id, user1_lives, user2_lives, match_date)
+                 VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                [user1Id, user2Id, gameId, user1Lives, user2Lives]
             );
-            console.log(`Match added to history: User1 (${user1Id}) vs User2 (${user2Id})`);
+            console.log(`Match added to history: User1 (${user1Id}) vs User2 (${user2Id}) for game ${gameId}`);
         } catch (error) {
             console.error('Error adding match to history:', error);
             throw error;
