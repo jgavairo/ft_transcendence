@@ -117,9 +117,10 @@
 /* Styles pour la carte "profil" */
 .profile-card {
     position: fixed;
-    top: 50%;
+    top: 40px;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
+    bottom: unset;
     background-color: #1e2a38;
     border-radius: 12px;
     padding: 1.5rem;
