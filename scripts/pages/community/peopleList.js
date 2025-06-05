@@ -449,15 +449,17 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     displayMatchHistory(matchHistory, userId);
 }
 // Fonction pour récupérer l'historique des matchs d'un utilisateur
-async function fetchMatchHistory(userId) {
+async function fetchMatchHistory(userId, gameId) {
     try {
-        // Utiliser l'API pour récupérer l'historique des matchs avec les noms des joueurs
-        const response = await fetch(`https://${HOSTNAME}:8443/api/match/history/${userId}`, {
+        let url = `https://${HOSTNAME}:8443/api/match/history/${userId}`;
+        if (gameId !== undefined && gameId !== null) {
+            url += `?gameId=${gameId}`;
+        }
+        const response = await fetch(url, {
             credentials: 'include',
         });
         if (response.ok) {
             const data = await response.json();
-            console.log("Match history data:", data);
             return data.matches || [];
         }
         else {
@@ -512,161 +514,222 @@ async function getPongGameId() {
 }
 // Fonction pour afficher l'historique des matchs dans la carte de profil
 async function displayMatchHistory(matches, userId) {
-    var _a;
     const card = document.getElementById("profileCard");
     if (!card)
         return;
-    // Vérifier s'il y a déjà une section d'historique des matchs, sinon en créer une nouvelle
     let historySection = document.querySelector(".profile-card-match-history");
     if (!historySection) {
         historySection = document.createElement("div");
         historySection.className = "profile-card-match-history";
         card.appendChild(historySection);
     }
-    // Définir le titre de la section
     const historyTitle = document.createElement("h4");
     historyTitle.textContent = "Match History";
-    if (historySection) {
+    historySection.innerHTML = "";
+    historySection.appendChild(historyTitle);
+    // Récupérer la liste des jeux depuis l'API pour avoir les noms corrects
+    let gamesList = {};
+    try {
+        const res = await api.get('/api/games/getAll');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.games)) {
+            for (const game of data.games) {
+                gamesList[game.id] = game.name;
+            }
+        }
+    }
+    catch (e) { }
+    // Récupérer la liste des jeux présents dans tous les matchs (pas seulement filtrés)
+    const uniqueGames = {};
+    for (const match of matches) {
+        if (gamesList[match.game_id]) {
+            uniqueGames[match.game_id] = gamesList[match.game_id];
+        }
+        else if (match.gameName && match.game_id) {
+            uniqueGames[match.game_id] = match.gameName;
+        }
+    }
+    if (Object.keys(uniqueGames).length === 0) {
+        for (const match of matches) {
+            if (gamesList[match.game_id]) {
+                uniqueGames[match.game_id] = gamesList[match.game_id];
+            }
+            else if (match.game_id) {
+                uniqueGames[match.game_id] = `Game #${match.game_id}`;
+            }
+        }
+    }
+    const gameOptions = Object.entries(uniqueGames);
+    // Créer le dropdown une seule fois
+    let select = document.createElement("select");
+    select.className = "match-history-game-filter";
+    select.style.marginBottom = "10px";
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "All games";
+    select.appendChild(allOption);
+    for (const [id, name] of gameOptions) {
+        const option = document.createElement("option");
+        option.value = id;
+        option.textContent = name;
+        select.appendChild(option);
+    }
+    historySection.appendChild(select);
+    // Fonction pour afficher le tableau filtré
+    async function renderTable(gameId) {
+        if (!historySection)
+            return;
         historySection.innerHTML = "";
         historySection.appendChild(historyTitle);
-    }
-    if (matches.length === 0) {
-        const noMatches = document.createElement("p");
-        noMatches.textContent = "No match history available.";
-        if (historySection) {
+        historySection.appendChild(select);
+        let filteredMatches = matches;
+        if (gameId) {
+            filteredMatches = matches.filter(m => m.game_id === gameId);
+        }
+        if (filteredMatches.length === 0) {
+            const noMatches = document.createElement("p");
+            noMatches.textContent = "No match history available.";
             historySection.appendChild(noMatches);
+            return;
         }
-        return;
-    }
-    // Récupérer le nom du profil affiché
-    const profileName = ((_a = document.querySelector(".profile-card-name")) === null || _a === void 0 ? void 0 : _a.textContent) || "User";
-    // Limiter à 5 matchs maximum pour ne pas surcharger l'interface
-    const recentMatches = matches.slice(0, 5);
-    // Créer un tableau pour les matchs
-    const matchTable = document.createElement("table");
-    matchTable.className = "match-history-table";
-    // Créer l'en-tête du tableau avec le nouveau format
-    const tableHeader = document.createElement("tr");
-    tableHeader.innerHTML = `
-        <th>Result</th>
-        <th>Player</th>
-        <th>Score</th>
-        <th>Opponent</th>
-        <th>Date</th>
-    `;
-    matchTable.appendChild(tableHeader);
-    // Ajouter chaque match au tableau
-    for (const match of recentMatches) {
-        try {
-            // Déterminer si l'utilisateur affiché est user1 ou user2
-            const isUser1 = match.user1_id === userId;
-            const userLives = isUser1 ? match.user1_lives : match.user2_lives;
-            const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
-            const towerId = await getTowerGameId();
-            const pongId = await getPongGameId();
-            let userPoints, opponentPoints;
-            if (match.game_id === towerId) {
-                userPoints = Math.max(0, Math.min(100, Number(userLives)));
-                opponentPoints = Math.max(0, Math.min(100, Number(opponentLives)));
-            }
-            else if (match.game_id === pongId) {
-                // Pour Pong, score = 3 - vies de l'adversaire
-                userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
-                opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
-            }
-            else {
-                userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
-                opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
-            }
-            const result = userPoints > opponentPoints ? "Victory" : "Defeat";
-            const opponentName = isUser1 ? match.user2Name : match.user1Name;
-            const userName = isUser1 ? match.user1Name : match.user2Name;
-            const matchDate = new Date(match.match_date).toLocaleDateString();
-            const row = document.createElement("tr");
-            row.className = result.toLowerCase();
-            row.innerHTML = `
-                <td class="${result.toLowerCase()}">${result}</td>
-                <td class="player-name">${userName}</td>
-                <td class="score-cell"><span class="user-score">${userPoints}</span> - <span class="opponent-score">${opponentPoints}</span></td>
-                <td class="opponent-name">${opponentName}</td>
-                <td class="match-date">${matchDate}</td>
-            `;
-            matchTable.appendChild(row);
-        }
-        catch (error) {
-            console.error("Error displaying match:", error, match);
-        }
-    }
-    if (historySection) {
-        historySection.appendChild(matchTable);
-    }
-    // Ajouter un lien pour voir tous les matchs si nécessaire
-    if (matches.length > 5) {
-        const viewMoreLink = document.createElement("a");
-        viewMoreLink.textContent = "View all matches";
-        viewMoreLink.href = "#";
-        viewMoreLink.className = "view-more-matches";
-        viewMoreLink.addEventListener("click", async (e) => {
-            e.preventDefault();
-            if (historySection) {
-                historySection.innerHTML = "";
-                historySection.appendChild(historyTitle);
-                const fullMatchTable = document.createElement("table");
-                fullMatchTable.className = "match-history-table";
-                fullMatchTable.appendChild(tableHeader.cloneNode(true));
-                for (const match of matches) {
-                    try {
-                        const isUser1 = match.user1_id === userId;
-                        const userLives = isUser1 ? match.user1_lives : match.user2_lives;
-                        const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
-                        const towerId = await getTowerGameId();
-                        const pongId = await getPongGameId();
-                        let userPoints, opponentPoints;
-                        if (match.game_id === towerId) {
-                            userPoints = Math.max(0, Math.min(100, Number(userLives)));
-                            opponentPoints = Math.max(0, Math.min(100, Number(opponentLives)));
-                        }
-                        else if (match.game_id === pongId) {
-                            userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
-                            opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
-                        }
-                        else {
-                            userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
-                            opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
-                        }
-                        const result = userPoints > opponentPoints ? "Victory" : "Defeat";
-                        const opponentName = isUser1 ? match.user2Name : match.user1Name;
-                        const userName = isUser1 ? match.user1Name : match.user2Name;
-                        const matchDate = new Date(match.match_date).toLocaleDateString();
-                        const row = document.createElement("tr");
-                        row.className = result.toLowerCase();
-                        row.innerHTML = `
-                            <td class="${result.toLowerCase()}">${result}</td>
-                            <td class="player-name">${userName}</td>
-                            <td class="score-cell"><span class="user-score">${userPoints}</span> - <span class="opponent-score">${opponentPoints}</span></td>
-                            <td class="opponent-name">${opponentName}</td>
-                            <td class="match-date">${matchDate}</td>
-                        `;
-                        fullMatchTable.appendChild(row);
-                    }
-                    catch (error) {
-                        console.error("Error displaying full match:", error, match);
-                    }
+        const recentMatches = filteredMatches.slice(0, 5);
+        const matchTable = document.createElement("table");
+        matchTable.className = "match-history-table";
+        const tableHeader = document.createElement("tr");
+        tableHeader.innerHTML = `
+            <th>Result</th>
+            <th>Player</th>
+            <th>Score</th>
+            <th>Opponent</th>
+            <th>Date</th>
+        `;
+        matchTable.appendChild(tableHeader);
+        for (const match of recentMatches) {
+            try {
+                const isUser1 = match.user1_id === userId;
+                const userLives = isUser1 ? match.user1_lives : match.user2_lives;
+                const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
+                const towerId = await getTowerGameId();
+                const pongId = await getPongGameId();
+                let userPoints, opponentPoints;
+                if (match.game_id === towerId) {
+                    userPoints = Math.max(0, Math.min(100, Number(userLives)));
+                    opponentPoints = Math.max(0, Math.min(100, Number(opponentLives)));
                 }
-                historySection.appendChild(fullMatchTable);
-                const showLessLink = document.createElement("a");
-                showLessLink.textContent = "Show less";
-                showLessLink.href = "#";
-                showLessLink.className = "view-less-matches";
-                showLessLink.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    displayMatchHistory(matches, userId);
-                });
-                historySection.appendChild(showLessLink);
+                else if (match.game_id === pongId) {
+                    userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
+                    opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
+                }
+                else {
+                    userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
+                    opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
+                }
+                const result = userPoints > opponentPoints ? "Victory" : "Defeat";
+                const opponentName = isUser1 ? match.user2Name : match.user1Name;
+                const userName = isUser1 ? match.user1Name : match.user2Name;
+                const matchDate = new Date(match.match_date).toLocaleDateString();
+                const row = document.createElement("tr");
+                row.className = result.toLowerCase();
+                row.innerHTML = `
+                    <td class="${result.toLowerCase()}">${result}</td>
+                    <td class="player-name">${userName}</td>
+                    <td class="score-cell"><span class="user-score">${userPoints}</span> - <span class="opponent-score">${opponentPoints}</span></td>
+                    <td class="opponent-name">${opponentName}</td>
+                    <td class="match-date">${matchDate}</td>
+                `;
+                matchTable.appendChild(row);
             }
-        });
-        if (historySection) {
+            catch (error) {
+                console.error("Error displaying match:", error, match);
+            }
+        }
+        historySection.appendChild(matchTable);
+        // Voir plus/moins
+        if (filteredMatches.length > 5) {
+            const viewMoreLink = document.createElement("a");
+            viewMoreLink.textContent = "View all matches";
+            viewMoreLink.href = "#";
+            viewMoreLink.className = "view-more-matches";
+            viewMoreLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                renderFullTable(filteredMatches);
+            });
             historySection.appendChild(viewMoreLink);
         }
     }
+    // Affichage du tableau complet
+    async function renderFullTable(filteredMatches) {
+        if (!historySection)
+            return;
+        historySection.innerHTML = "";
+        historySection.appendChild(historyTitle);
+        historySection.appendChild(select);
+        const matchTable = document.createElement("table");
+        matchTable.className = "match-history-table";
+        const tableHeader = document.createElement("tr");
+        tableHeader.innerHTML = `
+            <th>Result</th>
+            <th>Player</th>
+            <th>Score</th>
+            <th>Opponent</th>
+            <th>Date</th>
+        `;
+        matchTable.appendChild(tableHeader);
+        for (const match of filteredMatches) {
+            try {
+                const isUser1 = match.user1_id === userId;
+                const userLives = isUser1 ? match.user1_lives : match.user2_lives;
+                const opponentLives = isUser1 ? match.user2_lives : match.user1_lives;
+                const towerId = await getTowerGameId();
+                const pongId = await getPongGameId();
+                let userPoints, opponentPoints;
+                if (match.game_id === towerId) {
+                    userPoints = Math.max(0, Math.min(100, Number(userLives)));
+                    opponentPoints = Math.max(0, Math.min(100, Number(opponentLives)));
+                }
+                else if (match.game_id === pongId) {
+                    userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
+                    opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
+                }
+                else {
+                    userPoints = Math.max(0, Math.min(3, 3 - Number(opponentLives)));
+                    opponentPoints = Math.max(0, Math.min(3, 3 - Number(userLives)));
+                }
+                const result = userPoints > opponentPoints ? "Victory" : "Defeat";
+                const opponentName = isUser1 ? match.user2Name : match.user1Name;
+                const userName = isUser1 ? match.user1Name : match.user2Name;
+                const matchDate = new Date(match.match_date).toLocaleDateString();
+                const row = document.createElement("tr");
+                row.className = result.toLowerCase();
+                row.innerHTML = `
+                    <td class="${result.toLowerCase()}">${result}</td>
+                    <td class="player-name">${userName}</td>
+                    <td class="score-cell"><span class="user-score">${userPoints}</span> - <span class="opponent-score">${opponentPoints}</span></td>
+                    <td class="opponent-name">${opponentName}</td>
+                    <td class="match-date">${matchDate}</td>
+                `;
+                matchTable.appendChild(row);
+            }
+            catch (error) {
+                console.error("Error displaying full match:", error, match);
+            }
+        }
+        historySection.appendChild(matchTable);
+        const showLessLink = document.createElement("a");
+        showLessLink.textContent = "Show less";
+        showLessLink.href = "#";
+        showLessLink.className = "view-less-matches";
+        showLessLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            renderTable(Number(select.value) || null);
+        });
+        historySection.appendChild(showLessLink);
+    }
+    // Listener du dropdown : filtre local, pas de reload
+    select.addEventListener("change", () => {
+        const selectedGameId = select.value ? Number(select.value) : null;
+        renderTable(selectedGameId);
+    });
+    // Affichage initial
+    renderTable(null);
 }
