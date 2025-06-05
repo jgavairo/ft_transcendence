@@ -6,20 +6,20 @@ import { HOSTNAME } from "../../main.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
 
-async function fetchCurrentUser(): Promise<string | null> {
+async function fetchCurrentUser(): Promise<{ id: number, username: string } | null> {
     try {
         const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, { credentials: "include" });
         const data = await response.json();
-        if (data.success) return data.user.username;
+        if (data.success) return { id: data.user.id, username: data.user.username };
         return null;
     } catch {
         return null;
     }
 }
 
-async function fetchChatHistory(username: string): Promise<{ author: string, content: string, timestamp?: string }[]> {
+async function fetchChatHistory(userId: number): Promise<{ author: number, content: string, timestamp?: string }[]> {
     try {
-        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history?username=${encodeURIComponent(username)}`, { credentials: "include" });
+        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history?userId=${userId}`, { credentials: "include" });
         const data = await response.json();
         if (data.success) return data.messages;
         return [];
@@ -124,32 +124,32 @@ export async function setupChatWidget() {
     closeBtn.onclick = () => { chatWindow.style.display = "none"; chatBubble.style.display = "flex"; };
 
     const users = await fetchUsernames();
-    
-    const userMap = new Map(users.map(user => [user.username, user]));
+    const userMap = new Map(users.map(user => [user.id, user]));
     const usernames = users.map(u => u.username);
-    let lastAuthor: string | null = null;
+    let lastAuthor: number | null = null;
     let lastMsgWrapper: HTMLDivElement | null = null;
 
-    const addMessage = (content: string, author: string, self = true) => {
-        const isGrouped = lastAuthor === author;
+    const addMessage = (content: string, authorIdRaw: number|string, self = true) => {
+        const authorId = Number(authorIdRaw);
+        const isGrouped = lastAuthor === authorId;
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `chat-widget-messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
         if (!self && !isGrouped) {
-            const user = userMap.get(author);
+            const user = userMap.get(authorId);
             const usernameSpan = document.createElement("span");
-            usernameSpan.textContent = user?.username || author;
+            usernameSpan.textContent = user?.username || `User#${authorId}`;
             usernameSpan.className = `chat-widget-messenger-username`;
             msgWrapper.appendChild(usernameSpan);
         }
         const row = document.createElement("div");
         row.className = "chat-widget-messenger-message-row";
         if (!self && !isGrouped) {
-            const user = userMap.get(author);
+            const user = userMap.get(authorId);
             const profileImg = document.createElement("img");
             profileImg.src = user?.profile_picture || "default-profile.png";
-            profileImg.alt = `${author}'s profile picture`;
+            profileImg.alt = `${user?.username || authorId}'s profile picture`;
             profileImg.className = "chat-widget-messenger-avatar";
-            profileImg.onclick = () => showProfileCard(user?.username || author, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+            profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
             row.appendChild(profileImg);
         } else {
             const spacer = document.createElement("div");
@@ -159,17 +159,20 @@ export async function setupChatWidget() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
-        // Suppression de la détection et du rendu des liens d'invitation Pong
-        if (!self && mentionMatch) {
-            messageContent.innerHTML = content.replace(
-                /^@(\w+)/,
-                '<span class="chat-widget-mention">@$1</span>'
-            );
-        } else if (self && mentionMatch) {
-            messageContent.innerHTML = content.replace(
-                /^@(\w+)/,
-                '<span class="chat-widget-mention self">@$1</span>'
-            );
+        if (mentionMatch) {
+            // Cherche l'utilisateur mentionné pour afficher son nom et sa photo
+            const mentionedUser = users.find(u => u.username === mentionMatch[1]);
+            if (mentionedUser) {
+                messageContent.innerHTML = content.replace(
+                    /^@(\w+)/,
+                    `<span class="chat-widget-mention">@${mentionedUser.username}</span>`
+                );
+            } else {
+                messageContent.innerHTML = content.replace(
+                    /^@(\w+)/,
+                    '<span class="chat-widget-mention">@$1</span>'
+                );
+            }
         } else {
             messageContent.textContent = content;
         }
@@ -178,21 +181,20 @@ export async function setupChatWidget() {
         msgWrapper.appendChild(row);
         chatContainer.appendChild(msgWrapper);
         chatContainer.scrollTop = chatContainer.scrollHeight;
-        lastAuthor = author;
+        lastAuthor = authorId;
         lastMsgWrapper = msgWrapper;
     };
-    const username = await fetchCurrentUser();
-    if (!username) return;
+    const currentUser = await fetchCurrentUser();
+    if (!currentUser) return;
 
     // Charger l'historique des messages
-    const chatHistory = await fetchChatHistory(username);
+    const chatHistory = await fetchChatHistory(currentUser.id);
     // Affichage de l'historique avec groupement
-    let prevAuthor: string | null = null;
+    let prevAuthor: number | null = null;
     for (const message of chatHistory) {
-        const isSelf = message.author === username;
-        if (!isSelf && await isBlocked(message.author)) continue;
+        const isSelf = message.author === currentUser.id;
+        if (!isSelf && await isBlocked(userMap.get(message.author)?.username || "")) continue;
         addMessage(message.content, message.author, isSelf);
-        prevAuthor = message.author;
     }
     const socket = io(`https://${HOSTNAME}:8443/chat`, {
         transports: ['websocket', 'polling'],
@@ -203,7 +205,7 @@ export async function setupChatWidget() {
     });
     socket.on("connect", () => {
         console.log("Connected to Socket.IO server");
-        socket.emit("register", { username });
+        socket.emit("register", { userId: currentUser.id, username: currentUser.username });
     });
 
     socket.on("connect_error", (error) => {
@@ -217,11 +219,9 @@ export async function setupChatWidget() {
     let canSend = true;
     const COOLDOWN_MS = 1000;
     sendBtn.addEventListener("click", async () => {
-
         if (!canSend) return;
-
-        const username = await fetchCurrentUser();
-        if (!username) {
+        const currentUser = await fetchCurrentUser();
+        if (!currentUser) {
             if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>Vous avez été déconnecté. Merci de vous reconnecter pour utiliser le chat.</div>";
             if (input) input.style.display = 'none';
             if (sendBtn) sendBtn.style.display = 'none';
@@ -234,15 +234,20 @@ export async function setupChatWidget() {
         }
         canSend = false;
         sendBtn.disabled = true;
-
         const mentionMatch = text.match(/^@(\w+)/);
         if (mentionMatch) {
-            const targetUsername = mentionMatch[1];
-            socket.emit("sendPrivateMessage", { to: targetUsername, author: username, content: text }, (response: { success: boolean; error?: string }) => {});
-            addMessage(text, username, true);
+            const targetUser = users.find(u => u.username === mentionMatch[1]);
+            if (!targetUser) {
+                showErrorNotification("User not found");
+                canSend = true;
+                sendBtn.disabled = false;
+                return;
+            }
+            socket.emit("sendPrivateMessage", { to: String(targetUser.id), author: String(currentUser.id), content: text }, (response: { success: boolean; error?: string }) => {});
+            addMessage(text, currentUser.id, true);
         } else {
-            socket.emit("sendMessage", { author: username, content: text }, (response: { success: boolean; error?: string }) => {});
-            addMessage(text, username, true);
+            socket.emit("sendMessage", { author: String(currentUser.id), content: text }, (response: { success: boolean; error?: string }) => {});
+            addMessage(text, currentUser.id, true);
         }
         input.value = "";
         setTimeout(() => {
@@ -256,30 +261,30 @@ export async function setupChatWidget() {
         }
     });
     input.addEventListener("keydown", e => { if (e.key === "Enter") sendBtn.click(); });
-    socket.on("receiveMessage", async (messageData: { author: string, content: string }) => {
-        if (messageData.author === username) return;
-        if (await isBlocked(messageData.author)) return;
-        // Si l'auteur n'est pas connu, on recharge la liste des utilisateurs
-        if (!userMap.has(messageData.author)) {
+    socket.on("receiveMessage", async (messageData: { author: number|string, content: string }) => {
+        const authorId = Number(messageData.author);
+        if (authorId === currentUser.id) return;
+        if (await isBlocked(userMap.get(authorId)?.username || "")) return;
+        if (!userMap.has(authorId)) {
             const newUsers = await fetchUsernames();
             userMap.clear();
-            newUsers.forEach(user => userMap.set(user.username, user));
+            newUsers.forEach(user => userMap.set(user.id, user));
         }
-        addMessage(messageData.content, messageData.author, false);
+        addMessage(messageData.content, authorId, false);
         if (chatWindow.style.display !== "flex") {
             unreadCount++;
             showBadge();
         }
     });
-
-    socket.on("receivePrivateMessage", async (messageData: { author: string, content: string }) => {
-        if (await isBlocked(messageData.author)) return;
-        if (!userMap.has(messageData.author)) {
+    socket.on("receivePrivateMessage", async (messageData: { author: number|string, content: string }) => {
+        const authorId = Number(messageData.author);
+        if (await isBlocked(userMap.get(authorId)?.username || "")) return;
+        if (!userMap.has(authorId)) {
             const newUsers = await fetchUsernames();
             userMap.clear();
-            newUsers.forEach(user => userMap.set(user.username, user));
+            newUsers.forEach(user => userMap.set(user.id, user));
         }
-        addMessage(messageData.content, messageData.author, false);
+        addMessage(messageData.content, authorId, false);
         if (chatWindow.style.display !== "flex") {
             unreadCount++;
             showBadge();
@@ -338,7 +343,7 @@ export async function setupChatWidget() {
              mentionActive = true;
              mentionStart = before.lastIndexOf("@");
              const search = match[1].toLowerCase();
-             filteredSuggestions = usernames.filter(u => u.toLowerCase().startsWith(search) && u !== username).slice(0, 8);
+             filteredSuggestions = usernames.filter(u => u.toLowerCase().startsWith(search) && u !== currentUser.username).slice(0, 8);
              updateMentionBox();
          } else {
              mentionActive = false;
