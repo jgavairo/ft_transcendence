@@ -403,31 +403,62 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     statsContainer.style.alignItems = "center";
     statsContainer.style.gap = "2.5rem";
     statsContainer.style.margin = "10px 0 18px 0";
-    // Récupérez les statistiques de l'utilisateur
+    // Récupérez les statistiques de l'utilisateur pour tous les jeux
+    let allStats = { win: 0, loss: 0 };
+    let perGameStats = {};
     try {
-        const response = await fetch(`https://${HOSTNAME}:8443/api/games/1/rankings`, {
-            credentials: 'include',
-        });
-        const rankings = await response.json();
-        const userIdAsNumber = Number(userId);
-        const userStats = rankings.find((ranking) => Number(ranking.userId) === userIdAsNumber);
-        if (userStats) {
-            const { win, loss } = userStats;
-            const playedGames = win + loss;
-            const ratio = loss === 0 ? win : (win / loss).toFixed(2);
-            statsContainer.innerHTML = `
-                <div class="stat-item"><div class="stat-label">Wins</div><div class="stat-value">${win}</div></div>
-                <div class="stat-item"><div class="stat-label">Losses</div><div class="stat-value">${loss}</div></div>
-                <div class="stat-item"><div class="stat-label">Games</div><div class="stat-value">${playedGames}</div></div>
-                <div class="stat-item"><div class="stat-label">Ratio</div><div class="stat-value">${ratio}</div></div>
-            `;
+        const response = await fetch(`https://${HOSTNAME}:8443/api/games/getAll`, { credentials: 'include' });
+        const gamesData = await response.json();
+        const rankingsResponse = await fetch(`https://${HOSTNAME}:8443/api/games/1/rankings`, { credentials: 'include' });
+        const pongRankings = await rankingsResponse.json();
+        // On va chercher les stats pour tous les jeux
+        let allRankings = [];
+        if (gamesData.success && Array.isArray(gamesData.games)) {
+            for (const game of gamesData.games) {
+                const res = await fetch(`https://${HOSTNAME}:8443/api/games/${game.id}/rankings`, { credentials: 'include' });
+                const stats = await res.json();
+                if (Array.isArray(stats)) {
+                    allRankings = allRankings.concat(stats.map((r) => (Object.assign(Object.assign({}, r), { gameId: game.id }))));
+                }
+            }
         }
-        else {
-            statsContainer.innerHTML = `<div style='text-align:center;width:100%'>No stats available.</div>`;
+        const userIdAsNumber = Number(userId);
+        for (const stat of allRankings) {
+            if (Number(stat.userId) === userIdAsNumber) {
+                allStats.win += stat.win;
+                allStats.loss += stat.loss;
+                perGameStats[stat.gameId] = { win: stat.win, loss: stat.loss };
+            }
         }
     }
     catch (error) {
-        statsContainer.innerHTML = `<div style='text-align:center;width:100%'>Failed to load stats.</div>`;
+        allStats = { win: 0, loss: 0 };
+        perGameStats = {};
+    }
+    // Fonction pour mettre à jour l'affichage des stats selon le jeu sélectionné
+    function updateStatsDisplay(gameId) {
+        let win, loss;
+        const key = gameId && gameId !== "" ? Number(gameId) : null;
+        if (!key) {
+            win = allStats.win;
+            loss = allStats.loss;
+        }
+        else if (perGameStats[key]) {
+            win = perGameStats[key].win;
+            loss = perGameStats[key].loss;
+        }
+        else {
+            win = 0;
+            loss = 0;
+        }
+        const playedGames = win + loss;
+        const ratio = loss === 0 ? win : (win / loss).toFixed(2);
+        statsContainer.innerHTML = `
+            <div class="stat-item"><div class="stat-label">Wins</div><div class="stat-value">${win}</div></div>
+            <div class="stat-item"><div class="stat-label">Losses</div><div class="stat-value">${loss}</div></div>
+            <div class="stat-item"><div class="stat-label">Games</div><div class="stat-value">${playedGames}</div></div>
+            <div class="stat-item"><div class="stat-label">W/L Ratio</div><div class="stat-value">${ratio}</div></div>
+        `;
     }
     // Ajout du conteneur stats (le dropdown sera ajouté au-dessus par displayMatchHistory)
     statsAndHistorySection.appendChild(statsContainer);
@@ -443,7 +474,7 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     document.body.appendChild(overlay);
     // Récupérez et affichez l'historique des matchs dans le même encadré fusionné
     const matchHistory = await fetchMatchHistory(userId);
-    displayMatchHistory(matchHistory, userId, statsAndHistorySection, statsContainer);
+    displayMatchHistory(matchHistory, userId, statsAndHistorySection, statsContainer, updateStatsDisplay);
 }
 // Fonction pour récupérer l'historique des matchs d'un utilisateur
 async function fetchMatchHistory(userId, gameId) {
@@ -511,10 +542,9 @@ async function getPongGameId() {
 }
 // Fonction pour afficher l'historique des matchs dans la carte de profil
 // displayMatchHistory: ajoute le dropdown en haut de statsAndHistorySection, puis stats, puis le tableau
-async function displayMatchHistory(matches, userId, container, statsContainer) {
+async function displayMatchHistory(matches, userId, container, statsContainer, updateStatsDisplay) {
     if (!container)
         return;
-    // Supprime tout sauf le statsContainer (si fourni)
     container.innerHTML = "";
     // Récupérer la liste des jeux depuis l'API pour avoir les noms corrects
     let gamesList = {};
@@ -569,6 +599,8 @@ async function displayMatchHistory(matches, userId, container, statsContainer) {
     // Ajoute le bloc stats juste sous le dropdown
     if (statsContainer)
         container.appendChild(statsContainer);
+    if (updateStatsDisplay)
+        updateStatsDisplay(""); // Affiche les stats "all games" par défaut
     // Fonction pour afficher le tableau filtré
     async function renderTable(gameId) {
         if (!container)
@@ -711,8 +743,10 @@ async function displayMatchHistory(matches, userId, container, statsContainer) {
     }
     // Listener du dropdown : filtre local, pas de reload
     select.addEventListener("change", () => {
-        const selectedGameId = select.value ? Number(select.value) : null;
-        renderTable(selectedGameId);
+        const selectedGameId = select.value ? select.value : null;
+        if (updateStatsDisplay)
+            updateStatsDisplay(selectedGameId);
+        renderTable(selectedGameId ? Number(selectedGameId) : null);
     });
     renderTable(null);
 }
