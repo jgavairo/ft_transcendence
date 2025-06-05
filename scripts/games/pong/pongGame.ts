@@ -382,6 +382,25 @@ export function initTournamentPong(side: number, you: string, opponent: string) 
 
 
 // Ajout de la gestion du message de fin de partie
+let pongGameId: number | null = null;
+async function getPongGameId(): Promise<number> {
+  if (pongGameId !== null) return pongGameId;
+  try {
+    const res = await fetch('/api/games/getAll', { credentials: 'include' });
+    const data = await res.json();
+    if (data.success && Array.isArray(data.games)) {
+      const pong = data.games.find((g: any) => g.name.toLowerCase() === 'pong');
+      if (pong) {
+        pongGameId = pong.id;
+        return pong.id;
+      }
+    }
+  } catch (e) {
+    console.error("Erreur lors de la récupération de l'id Pong:", e);
+  }
+  return 1; // fallback
+}
+
 export async function renderGameOverMessage(state: MatchState) {
   // Affiche le message uniquement en mode multi
   if (soloMode) return;
@@ -512,6 +531,7 @@ export async function renderGameOverMessage(state: MatchState) {
           user2Lives
         });
         
+        const gameId = await getPongGameId();
         const historyResponse = await fetch('/api/match/addToHistory', {
           method: 'POST',
           headers: {
@@ -521,6 +541,7 @@ export async function renderGameOverMessage(state: MatchState) {
           body: JSON.stringify({
             user1Id: finalUser1Id,
             user2Id: finalUser2Id,
+            gameId: gameId,
             user1Lives,
             user2Lives,
           }),
