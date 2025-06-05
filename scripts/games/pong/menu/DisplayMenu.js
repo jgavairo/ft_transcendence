@@ -1363,7 +1363,8 @@ export class PongMenuManager {
                 localStorage.setItem('lastPongInviteTs', now.toString());
                 // Envoie un message privé dans le chat avec un lien cliquable
                 const currentUser = await GameManager.getCurrentUser();
-                const fromUsername = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
+                // Utiliser l'id utilisateur pour le champ author
+                const fromId = currentUser === null || currentUser === void 0 ? void 0 : currentUser.id;
                 let link = roomId ? `${window.location.origin}/pong/join?room=${roomId}` : window.location.origin;
                 const message = `@${person.username} Clique ici pour rejoindre ma partie Pong : <a href='${link}' target='_blank'>Rejoindre la partie</a>`;
                 try {
@@ -1376,7 +1377,8 @@ export class PongMenuManager {
                         reconnectionAttempts: 5,
                         reconnectionDelay: 1000
                     });
-                    socket.emit("sendPrivateMessage", { to: person.username, author: fromUsername, content: message }, () => { });
+                    // Envoie l'id utilisateur dans author
+                    socket.emit("sendPrivateMessage", { to: person.id, author: fromId, content: message }, () => { });
                 }
                 catch (e) {
                     console.error("Erreur lors de l'envoi de l'invitation privée :", e);

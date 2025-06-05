@@ -3,26 +3,28 @@ import { dbManager } from "../database/database.js";
 
 const getChatHistoryHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-        const username = (request.query as any).username as string;
+        // On récupère l'id utilisateur depuis la query (author est maintenant un number)
+        const userId = Number((request.query as any).userId);
         const messages = await dbManager.getLastMessages(50);
 
-        // Filtrer les messages publics ou mentionnant l'utilisateur
+        // Récupérer le username de l'utilisateur courant
+        const user = await dbManager.getUserById(userId);
+        const username = user?.username;
         const filteredMessages = messages.filter(msg => {
             const mentionMatch = msg.content.match(/^@(\w+)/);
-            // Message public (pas de mention)
-            if (!mentionMatch) return true;
-            // Message privé pour cet utilisateur ou envoyé par lui-même
-            return mentionMatch[1] === username || msg.author === username;
+            if (!mentionMatch) return true; // message public
+            // Afficher si la mention correspond à l'utilisateur courant ou si c'est un message envoyé par lui-même
+            return (mentionMatch[1] === username) || (msg.author === userId);
         });
 
-        // Enrichir les messages comme avant
+        // Enrichir les messages avec infos utilisateur (id → username/avatar)
         const enrichedMessages = await Promise.all(
             filteredMessages.map(async (message) => {
-                const user = await dbManager.getUserByUsername(message.author);
+                const user = await dbManager.getUserById(message.author);
                 return {
                     ...message,
                     profile_picture: user?.profile_picture || "default-profile.png",
-                    username: user?.username || "Unknown User"
+                    username: user?.username || `User#${message.author}`
                 };
             })
         );

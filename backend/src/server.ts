@@ -562,22 +562,43 @@ const start = async () => {
         ////////////////////////////////
         const chatNs = app.io.of('/chat');
         chatNs.on('connection', (socket: Socket) => {
-                socket.on('register', (data) => {
-        userSocketMapChat.set(data.username, socket.id);
-        console.log("chat namespace userSocketMap:", JSON.stringify(Array.from(userSocketMapChat.entries())));
-        });
+            socket.on('register', (data) => {
+                // data doit contenir userId et username
+                if (data.userId !== undefined) {
+                    userSocketMapChat.set(String(data.userId), socket.id);
+                }
+                // Pour compatibilité, on garde aussi l'ancien mapping si besoin
+                if (data.username) {
+                    userSocketMapChat.set(data.username, socket.id);
+                }
+                console.log("chat namespace userSocketMap:", JSON.stringify(Array.from(userSocketMapChat.entries())));
+            });
 
             socket.on('sendPrivateMessage', async (data, callback) => {
                 try {
                     const {to, author, content } = data;
-                    await dbManager.saveMessage(data.author, data.content);
-                    const targetSocketid = userSocketMapChat.get(to);
+                    // author est maintenant un id utilisateur (number)
+                    await dbManager.saveMessage(author, content);
+                    const targetSocketid = userSocketMapChat.get(String(to));
+                    const authorSocketid = userSocketMapChat.get(String(author));
+                    // Récupérer les infos de l'auteur pour enrichir le message
+                    let authorUser = null;
+                    try {
+                        authorUser = await dbManager.getUserById(Number(author));
+                    } catch {}
+                    const authorInfo = authorUser ? {
+                        id: authorUser.id,
+                        username: authorUser.username,
+                        profile_picture: authorUser.profile_picture
+                    } : { id: author, username: `User#${author}`, profile_picture: null };
                     if (targetSocketid) {
-                        chatNs.to(targetSocketid).emit('receivePrivateMessage', {author, content });
-                        if (callback) callback({ success: true });
-                    } else {
-                        if (callback) callback({ success: false, error: 'User not connected' });
+                        chatNs.to(targetSocketid).emit('receivePrivateMessage', {author: authorInfo.id, content, authorInfo });
                     }
+                    // (Suppression de l'envoi au sender)
+                    // if (authorSocketid) {
+                    //     chatNs.to(authorSocketid).emit('receivePrivateMessage', {author: authorInfo.id, content, authorInfo });
+                    // }
+                    if (callback) callback({ success: true });
                 } catch (error) {
                     if (callback) {
                         callback({ success: false, error: 'Failed to send private message' });
@@ -588,7 +609,7 @@ const start = async () => {
             socket.on('sendMessage', async (data, callback) => {
                 try 
                 {
-                    // Sauvegarder le message dans la base de données
+                    // author est maintenant un id utilisateur (number)
                     await dbManager.saveMessage(data.author, data.content);
 
                     // Diffuser le message à tous les clients connectés

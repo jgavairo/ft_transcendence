@@ -5,14 +5,14 @@ import { HOSTNAME } from "../../main.js";
 import { showErrorNotification, showNotification } from "../../helpers/notifications.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 
-async function fetchCurrentUser(): Promise<string | null> {
+async function fetchCurrentUser(): Promise<{ id: number, username: string } | null> {
     try {
         const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, {
             credentials: "include",
         });
         const data = await response.json();
         if (data.success) {
-            return data.user.username;
+            return { id: data.user.id, username: data.user.username };
         } else {
             console.error("Failed to fetch user info:", data.message);
             return null;
@@ -23,9 +23,9 @@ async function fetchCurrentUser(): Promise<string | null> {
     }
 }
 
-async function fetchChatHistory(username: string): Promise<{ author: string, content: string, timestamp: string }[]> {
+async function fetchChatHistory(userId: number): Promise<{ author: number, content: string, timestamp: string }[]> {
     try {
-        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history?username=${encodeURIComponent(username)}`, {
+        const response = await fetch(`https://${HOSTNAME}:8443/api/chat/history?userId=${userId}`, {
             credentials: "include"
         });
         const data = await response.json();
@@ -106,8 +106,8 @@ export async function setupChat() {
     }
 
     // Vérification auth avant d'afficher le chat
-    let username = await fetchCurrentUser();
-    if (!username) {
+    let currentUser = await fetchCurrentUser();
+    if (!currentUser) {
         if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>Vous devez être connecté pour utiliser le chat.</div>";
         if (input) input.style.display = 'none';
         if (sendBtn) sendBtn.style.display = 'none';
@@ -121,20 +121,21 @@ export async function setupChat() {
 
     // Récupérer les informations des utilisateurs
     const users = await fetchUsernames();
-    const userMap = new Map(users.map(user => [user.username, user]));
+    const userMap = new Map(users.map(user => [user.id, user]));
     const usernames = users.map(u => u.username);
 
     // Grouper les messages par auteur pour un affichage Messenger-like
-    let lastAuthor: string | null = null;
-    const addMessage = (content: string, author: string, self = true) => {
-        const isGrouped = lastAuthor === author;
+    let lastAuthor: number | null = null;
+    const addMessage = (content: string, authorIdRaw: number|string, self = true) => {
+        const authorId = Number(authorIdRaw);
+        const isGrouped = lastAuthor === authorId;
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
         // Affiche le nom uniquement pour les messages reçus et seulement pour le premier message du groupe
         if (!self && !isGrouped) {
-            const user = userMap.get(author);
+            const user = userMap.get(authorId);
             const usernameSpan = document.createElement("span");
-            usernameSpan.textContent = user?.username || author;
+            usernameSpan.textContent = user?.username || `User#${authorId}`;
             usernameSpan.className = `messenger-username`;
             msgWrapper.appendChild(usernameSpan);
         }
@@ -159,12 +160,12 @@ export async function setupChat() {
         messageContent.className = `messenger-bubble${self ? " self" : ""}${mentionClass}`;
         if (!self && !isGrouped) {
             // Avatar à gauche, bulle à droite
-            const user = userMap.get(author);
+            const user = userMap.get(authorId);
             const profileImg = document.createElement("img");
             profileImg.src = user?.profile_picture || "default-profile.png";
-            profileImg.alt = `${author}'s profile picture`;
+            profileImg.alt = `${user?.username || authorId}'s profile picture`;
             profileImg.className = "messenger-avatar";
-            profileImg.onclick = () => showProfileCard(user?.username || author, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+            profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
             row.appendChild(profileImg);
             row.appendChild(messageContent);
         } else if (!self && isGrouped) {
@@ -189,18 +190,17 @@ export async function setupChat() {
         msgWrapper.appendChild(row);
         chatContainer.appendChild(msgWrapper);
         chatContainer.scrollTop = chatContainer.scrollHeight;
-        lastAuthor = author;
+        lastAuthor = authorId;
     };
 
     // Charger l'historique des messages
-    const chatHistory = await fetchChatHistory(username);
+    const chatHistory = await fetchChatHistory(currentUser.id);
     // Affichage de l'historique avec groupement
-    let prevAuthor: string | null = null;
+    let prevAuthor: number | null = null;
     for (const message of chatHistory) {
-        const isSelf = message.author === username;
-        if (!isSelf && await isBlocked(message.author)) continue;
+        const isSelf = message.author === currentUser.id;
+        if (!isSelf && await isBlocked(userMap.get(message.author)?.username || "")) continue;
         addMessage(message.content, message.author, isSelf);
-        prevAuthor = message.author;
     }
 
     // Connecter le client au serveur socket.IO
@@ -214,7 +214,11 @@ export async function setupChat() {
 
     socket.on("connect", () => {
         console.log("Connected to Socket.IO server");
-        socket.emit("register", { username });
+        if (!currentUser) {
+            // Impossible d'émettre le register sans utilisateur courant
+            return;
+        }
+        socket.emit("register", { userId: currentUser.id, username: currentUser.username });
     });
 
     socket.on("connect_error", (error) => {
@@ -254,8 +258,8 @@ export async function setupChat() {
         if (!canSend) {
             return;
         }
-        username = await fetchCurrentUser();
-        if (!username) {
+        currentUser = await fetchCurrentUser();
+        if (!currentUser) {
             if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>Vous avez été déconnecté. Merci de vous reconnecter pour utiliser le chat.</div>";
             if (input) input.style.display = 'none';
             if (sendBtn) sendBtn.style.display = 'none';
@@ -266,20 +270,25 @@ export async function setupChat() {
             const mentionMatch = text.match(/^@(\w+)/);
             canSend = false;
             sendBtn.disabled = true;
-            
-            if (mentionMatch && mentionMatch[1] === username) {
+            if (mentionMatch && mentionMatch[1] === currentUser.username) {
                 showErrorNotification("You can't mention yourself.");
                 canSend = true;
                 sendBtn.disabled = false;
                 return;
             }
             if (mentionMatch) {
-                const targetUsername = mentionMatch[1];
-                socket.emit("sendPrivateMessage", { to: targetUsername, author: username, content: text }, (response: { success: boolean; error?: string }) => {});
-                addMessage(text, username, true);
+                const targetUser = users.find(u => u.username === mentionMatch[1]);
+                if (!targetUser) {
+                    showErrorNotification("User not found");
+                    canSend = true;
+                    sendBtn.disabled = false;
+                    return;
+                }
+                socket.emit("sendPrivateMessage", { to: String(targetUser.id), author: String(currentUser.id), content: text }, (response: { success: boolean; error?: string }) => {});
+                addMessage(text, currentUser.id, true);
             } else {
-                socket.emit("sendMessage", { author: username, content: text }, (response: { success: boolean; error?: string }) => {});
-                addMessage(text, username, true);
+                socket.emit("sendMessage", { author: currentUser.id, content: text }, (response: { success: boolean; error?: string }) => {});
+                addMessage(text, currentUser.id, true);
             }
             input.value = "";
             setTimeout(() => {
@@ -296,27 +305,42 @@ export async function setupChat() {
     });
 
     // Recevoir un message du serveur
-    socket.on("receiveMessage", async (messageData: { author: string, content: string }) => {
-        if (messageData.author === username) return;
-        if (await isBlocked(messageData.author)) return;
-        // Si l'auteur n'est pas connu, on recharge la liste des utilisateurs
-        if (!userMap.has(messageData.author)) {
+    socket.on("receiveMessage", async (messageData: { author: number|string, content: string }) => {
+        const authorId = Number(messageData.author);
+        if (!currentUser) return;
+        if (authorId === currentUser.id) return;
+        if (await isBlocked(userMap.get(authorId)?.username || "")) return;
+        if (!userMap.has(authorId)) {
             const newUsers = await fetchUsernames();
             userMap.clear();
-            newUsers.forEach(user => userMap.set(user.username, user));
-            // Ne pas actualiser peopleList ici
+            newUsers.forEach(user => userMap.set(user.id, user));
+            if (document.getElementById('friendList')) {
+                const { renderPeopleList } = await import('./peopleList.js');
+                renderPeopleList();
+            }
         }
-        addMessage(messageData.content, messageData.author, false);
+        addMessage(messageData.content, authorId, false);
     });
 
-    socket.on("receivePrivateMessage", async (messageData: { author: string, content: string }) => {
-        if (await isBlocked(messageData.author)) return;
-        if (!userMap.has(messageData.author)) {
-            const newUsers = await fetchUsernames();
-            userMap.clear();
-            newUsers.forEach(user => userMap.set(user.username, user));
+    socket.on("receivePrivateMessage", async (messageData: { author: number|string, content: string, authorInfo?: any }) => {
+        const authorId = Number(messageData.author);
+        // Toujours mettre à jour le userMap avec les infos reçues
+        if (messageData.authorInfo) {
+            userMap.set(authorId, {
+                id: messageData.authorInfo.id,
+                username: messageData.authorInfo.username,
+                profile_picture: messageData.authorInfo.profile_picture,
+                email: '',
+                bio: '',
+                isOnline: false
+            });
         }
-        addMessage(messageData.content, messageData.author, false);
+        if (await isBlocked(userMap.get(authorId)?.username || "")) return;
+        if (!userMap.has(authorId)) {
+            const newUsers = await fetchUsernames();
+            newUsers.forEach(user => userMap.set(user.id, user));
+        }
+        addMessage(messageData.content, authorId, false);
     });
 
     // Suggestion de mention @
@@ -377,7 +401,11 @@ export async function setupChat() {
             mentionActive = true;
             mentionStart = before.lastIndexOf("@");
             const search = match[1].toLowerCase();
-            filteredSuggestions = usernames.filter(u => u.toLowerCase().startsWith(search) && u !== username).slice(0, 8);
+            if (!currentUser) {
+                filteredSuggestions = [];
+            } else {
+                filteredSuggestions = usernames.filter(u => u.toLowerCase().startsWith(search) && u !== currentUser?.username).slice(0, 8);
+            }
             updateMentionBox();
         } else {
             mentionActive = false;
