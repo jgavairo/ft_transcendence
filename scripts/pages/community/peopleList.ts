@@ -80,13 +80,17 @@ export async function renderPeopleList(filter: string = "") {
             // Ajouter l'image de profil
             const img = document.createElement("img");
             const isOnline = await FriendsManager.isOnline(person.username);
-            if (isOnline)
-                img.className = "profile-picture online";
-            else
-                img.className = "profile-picture";
+            img.className = "profile-picture";
             img.src = person.profile_picture || "default-profile.png";
             img.alt = `${person.username}'s profile picture`;
 
+            // Ajout du cercle vert si en ligne
+            if (isOnline) {
+                const indicator = document.createElement("span");
+                indicator.className = "online-indicator";
+                profileContainer.appendChild(indicator);
+                profileContainer.classList.add("has-online-indicator");
+            }
             profileContainer.appendChild(img);
 
             // Supprimer l'overlay "view"

@@ -298,11 +298,7 @@ export async function setupChat() {
             const newUsers = await fetchUsernames();
             userMap.clear();
             newUsers.forEach(user => userMap.set(user.username, user));
-            // Recharge la peopleList si elle est affichée
-            if (document.getElementById('friendList')) {
-                const { renderPeopleList } = await import('./peopleList.js');
-                renderPeopleList();
-            }
+            // Ne pas actualiser peopleList ici
         }
         addMessage(messageData.content, messageData.author, false);
     });
@@ -315,25 +311,6 @@ export async function setupChat() {
             newUsers.forEach(user => userMap.set(user.username, user));
         }
         addMessage(messageData.content, messageData.author, false);
-    });
-    // --- Listen for real-time user registration event (Socket.IO) ---
-    const notificationSocket = io(`https://${HOSTNAME}:8443/notification`, {
-        transports: ['websocket', 'polling'],
-        withCredentials: true,
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000
-    });
-    notificationSocket.on("connect", () => {
-        notificationSocket.emit("register", { username });
-    });
-    notificationSocket.on("userRegistered", () => {
-        // Rafraîchir la peopleList si elle est affichée
-        import("./peopleList.js").then(mod => {
-            if (document.getElementById('friendList')) {
-                mod.renderPeopleList();
-            }
-        });
     });
     // Suggestion de mention @
     let mentionActive = false;

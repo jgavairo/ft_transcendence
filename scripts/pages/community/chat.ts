@@ -304,11 +304,7 @@ export async function setupChat() {
             const newUsers = await fetchUsernames();
             userMap.clear();
             newUsers.forEach(user => userMap.set(user.username, user));
-            // Recharge la peopleList si elle est affichée
-            if (document.getElementById('friendList')) {
-                const { renderPeopleList } = await import('./peopleList.js');
-                renderPeopleList();
-            }
+            // Ne pas actualiser peopleList ici
         }
         addMessage(messageData.content, messageData.author, false);
     });
