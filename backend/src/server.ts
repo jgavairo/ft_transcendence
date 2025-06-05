@@ -512,26 +512,22 @@ app.post('/api/match/addToHistory', { preHandler: authMiddleware }, async (reque
 app.get('/api/match/history/:userId', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
         const { userId } = request.params as { userId: string };
-        
+        const gameId = request.query && (request.query as any).gameId ? Number((request.query as any).gameId) : undefined;
         if (!userId) {
             return reply.status(400).send({ error: 'userId is required' });
         }
-
         // Récupérer l'historique des matchs depuis la base de données
-        const matchHistory = await dbManager.getMatchHistoryForUser(Number(userId));
-        
+        const matchHistory = await dbManager.getMatchHistoryForUser(Number(userId), gameId);
         // Pour chaque match, récupérer les noms des utilisateurs
         const matchesWithNames = await Promise.all(matchHistory.map(async match => {
             const user1 = await dbManager.getUserById(match.user1_id);
             const user2 = await dbManager.getUserById(match.user2_id);
-            
             return {
                 ...match,
                 user1Name: user1 ? user1.username : `User #${match.user1_id}`,
                 user2Name: user2 ? user2.username : `User #${match.user2_id}`
             };
         }));
-
         return reply.status(200).send({ 
             success: true, 
             matches: matchesWithNames 

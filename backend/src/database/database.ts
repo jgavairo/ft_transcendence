@@ -776,19 +776,29 @@ export class DatabaseManager
         }
     }
 
-    public async getMatchHistoryForUser(userId: number): Promise<any[]> {
+    public async getMatchHistoryForUser(userId: number, gameId?: number): Promise<any[]> {
         if (!this.db) throw new Error('Database not initialized');
-
         try {
-            const results = await this.db.all(
-                `SELECT * 
-                 FROM match_history 
-                 WHERE user1_id = ? OR user2_id = ? 
-                 ORDER BY match_date DESC 
-                 LIMIT 20`,
-                [userId, userId]
-            );
-
+            let results;
+            if (gameId !== undefined && gameId !== null) {
+                results = await this.db.all(
+                    `SELECT * 
+                     FROM match_history 
+                     WHERE (user1_id = ? OR user2_id = ?) AND game_id = ?
+                     ORDER BY match_date DESC 
+                     LIMIT 20`,
+                    [userId, userId, gameId]
+                );
+            } else {
+                results = await this.db.all(
+                    `SELECT * 
+                     FROM match_history 
+                     WHERE user1_id = ? OR user2_id = ? 
+                     ORDER BY match_date DESC 
+                     LIMIT 20`,
+                    [userId, userId]
+                );
+            }
             return results || [];
         } catch (error) {
             console.error('Error fetching match history for user:', error);
