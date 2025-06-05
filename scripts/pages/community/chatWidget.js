@@ -252,6 +252,12 @@ export async function setupChatWidget() {
             return;
         if (await isBlocked(messageData.author))
             return;
+        // Si l'auteur n'est pas connu, on recharge la liste des utilisateurs
+        if (!userMap.has(messageData.author)) {
+            const newUsers = await fetchUsernames();
+            userMap.clear();
+            newUsers.forEach(user => userMap.set(user.username, user));
+        }
         addMessage(messageData.content, messageData.author, false);
         if (chatWindow.style.display !== "flex") {
             unreadCount++;
@@ -261,6 +267,11 @@ export async function setupChatWidget() {
     socket.on("receivePrivateMessage", async (messageData) => {
         if (await isBlocked(messageData.author))
             return;
+        if (!userMap.has(messageData.author)) {
+            const newUsers = await fetchUsernames();
+            userMap.clear();
+            newUsers.forEach(user => userMap.set(user.username, user));
+        }
         addMessage(messageData.content, messageData.author, false);
         if (chatWindow.style.display !== "flex") {
             unreadCount++;
@@ -368,25 +379,6 @@ export async function setupChatWidget() {
     // Vider le cache partagé au début de setupChatWidget
     clearBlockedCache();
     handleGameInviteLinkForWidget();
-    // --- Listen for real-time user registration event (Socket.IO) ---
-    const notificationSocket = io(`https://${HOSTNAME}:8443/notification`, {
-        transports: ['websocket', 'polling'],
-        withCredentials: true,
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000
-    });
-    notificationSocket.on("connect", () => {
-        notificationSocket.emit("register", { username });
-    });
-    notificationSocket.on("userRegistered", () => {
-        // Rafraîchir la peopleList si elle est affichée
-        import("./peopleList.js").then(mod => {
-            if (document.getElementById('friendList')) {
-                mod.renderPeopleList();
-            }
-        });
-    });
 }
 // Gestion des liens d'invitation Pong pour le chat widget flottant
 export function handleGameInviteLinkForWidget() {

@@ -363,3 +363,20 @@
   box-shadow: 0 1px 4px #0002;
   border: 2px solid #263549;
 }
+
+.has-online-indicator {
+  position: relative;
+}
+
+.online-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 2.5px solid #4caf50;
+  pointer-events: none;
+  z-index: 2;
+}

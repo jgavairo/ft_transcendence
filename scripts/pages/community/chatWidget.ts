@@ -259,6 +259,12 @@ export async function setupChatWidget() {
     socket.on("receiveMessage", async (messageData: { author: string, content: string }) => {
         if (messageData.author === username) return;
         if (await isBlocked(messageData.author)) return;
+        // Si l'auteur n'est pas connu, on recharge la liste des utilisateurs
+        if (!userMap.has(messageData.author)) {
+            const newUsers = await fetchUsernames();
+            userMap.clear();
+            newUsers.forEach(user => userMap.set(user.username, user));
+        }
         addMessage(messageData.content, messageData.author, false);
         if (chatWindow.style.display !== "flex") {
             unreadCount++;
@@ -268,6 +274,11 @@ export async function setupChatWidget() {
 
     socket.on("receivePrivateMessage", async (messageData: { author: string, content: string }) => {
         if (await isBlocked(messageData.author)) return;
+        if (!userMap.has(messageData.author)) {
+            const newUsers = await fetchUsernames();
+            userMap.clear();
+            newUsers.forEach(user => userMap.set(user.username, user));
+        }
         addMessage(messageData.content, messageData.author, false);
         if (chatWindow.style.display !== "flex") {
             unreadCount++;
