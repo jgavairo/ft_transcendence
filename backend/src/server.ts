@@ -756,6 +756,14 @@ const start = async () => {
                                         const enemyScore = Math.max(0, Math.min(100, Math.round((enemyRaw / 500) * 100)));
                                         await dbManager.addMatchToHistory(player.id, enemy.id, towerGameId, playerScore, enemyScore);
                                         console.log(`[Tower] Match history saved for ${player.username} vs ${enemy.username} (score: ${playerScore}-${enemyScore}, game_id: ${towerGameId})`);
+                                        // Ajout victoires/défaites Tower multi
+                                        if (game.getState().winner === playerUsername) {
+                                            await dbManager.incrementPlayerWins(towerGameId, player.id);
+                                            await dbManager.incrementPlayerLosses(towerGameId, enemy.id);
+                                        } else if (game.getState().winner === enemyUsername) {
+                                            await dbManager.incrementPlayerWins(towerGameId, enemy.id);
+                                            await dbManager.incrementPlayerLosses(towerGameId, player.id);
+                                        }
                                     } else {
                                         console.warn('[Tower] Could not find user IDs for match history:', playerUsername, enemyUsername);
                                     }
