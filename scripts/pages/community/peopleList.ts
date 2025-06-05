@@ -495,7 +495,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
             <div class="stat-item"><div class="stat-label">Wins</div><div class="stat-value">${win}</div></div>
             <div class="stat-item"><div class="stat-label">Losses</div><div class="stat-value">${loss}</div></div>
             <div class="stat-item"><div class="stat-label">Games</div><div class="stat-value">${playedGames}</div></div>
-            <div class="stat-item"><div class="stat-label">W/L Ratio</div><div class="stat-value">${ratio}</div></div>
+            <div class="stat-item"><div class="stat-label">Ratio</div><div class="stat-value">${ratio}</div></div>
         `;
     }
 
