@@ -663,126 +663,277 @@ export class PongMenuManager
         size: number,
         joined: string[],
         status: PlayerStatus[],
-        force = false
       ) {
-        console.log('[DEBUG] renderSimpleBracket called', {tournamentEnded: PongMenuManager.tournamentEnded, force, size, joined, status});
-        // Prevent bracket rendering if tournament is over
-        if (PongMenuManager.tournamentEnded) {
-          // Affiche explicitement l'écran de fin si ce n'est pas déjà fait
-          this.menuLayer.removeChildren();
-          let winner = '';
-          if (this.lastBracketView && this.lastBracketView.status) {
-            const winnerEntry = this.lastBracketView.status.find(s => !s.eliminated);
-            winner = winnerEntry ? winnerEntry.username : '';
-          }
-          const winnerText = winner ? `🏆 ${winner} wins the tournament!` : 'Tournament over!';
-          this.menuLayer.add(new Konva.Text({
-            x: gameWidth / 2 - 200,
-            y: 350,
-            text: winnerText,
-            fontFamily: 'Press Start 2P',
-            fontSize: 24,
-            fill: '#ffe156',
-            width: 400,
-            align: 'center'
-          }));
-          this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
-            PongMenuManager.tournamentEnded = false;
-            console.log('[DEBUG] MENU button clicked, tournamentEnded:', PongMenuManager.tournamentEnded);
-            this.activeTournamentMatchId = null;
-            this.stage.destroy();
-            stopGame();
-            displayMenu();
-          });
-          this.menuLayer.batchDraw();
-          return;
-        }
-        // Robust check: ensure Konva container is present in DOM
+        if (PongMenuManager.tournamentEnded) return;
         const canvas = document.getElementById('games-modal');
         const konvaDiv = canvas && canvas.querySelector('.konvajs-content');
         if (!canvas || !konvaDiv) {
           this.initStageAndLayers();
         }
-        
-        // Affiche le menuLayer au-dessus
         this.menuLayer.moveToTop();
         this.menuLayer.show();
         this.menuLayer.removeChildren();
 
-        // Titre du bracket
-        let title = `Tournament ${size} players`;
-        if (status.length === 2 && joined.length === 2) {
-          title = 'Final';
-        }
+        let title = `Pong Tournament (${size} players)`;
         this.menuLayer.add(new Konva.Text({
-          x: gameWidth / 2 - 130,
+          x: gameWidth / 2 - 180,
           y: 30 + 450,
           text: title,
           fontFamily: 'Press Start 2P',
-          fontSize: 20,
-          fill: '#00e7fe'
+          fontSize: 22,
+          fill: '#00e7fe',
+          width: 360,
+          align: 'center'
         }));
 
-        // Affichage des joueurs et statut
-        // Filtrage défensif des doublons
-        const uniqueStatus = status.filter(
-          (entry, idx, arr) => arr.findIndex(e => e.username === entry.username) === idx
-        );
-        uniqueStatus.forEach((entry, i) => {
-          const yPos = 80 + i * 24 + 450;
-          let fillColor = '#fff';
-          let opacity = 1;
-          let textDecoration: 'line-through' | undefined = undefined;
-          if (entry.eliminated) {
-            fillColor = '#555';
-            opacity = 0.5;
-            textDecoration = 'line-through';
-          } else if (entry.ready) {
-            fillColor = '#149414';
+        const players = joined;
+        const statusMap = Object.fromEntries(status.map(s => [s.username, s]));
+
+        if (size === 4 && players.length === 4) {
+          // 4-player bracket
+          const y0 = 90 + 450;
+          const x0 = gameWidth / 2 - 220;
+          const lineHeight = 38;
+          let demi1 = [players[0], players[1]];
+          let demi2 = [players[2], players[3]];
+          // Defensive: only draw if player exists
+          demi1.forEach((p, i) => {
+            if (p && statusMap[p]) {
+              this.menuLayer.add(new Konva.Text({
+                x: x0,
+                y: y0 + i * lineHeight,
+                text: `${i === 0 ? '┌─' : '└─'} ${p}${p === this.myUsername ? ' (You)' : ''}${statusMap[p].eliminated ? ' ❌' : statusMap[p].ready ? ' ✔️' : ''}`,
+                fontFamily: 'Press Start 2P',
+                fontSize: 16,
+                fill: p === this.myUsername ? '#ffe156' : (statusMap[p].eliminated ? '#888' : '#00e7fe')
+              }));
+            }
+          });
+          demi2.forEach((p, i) => {
+            if (p && statusMap[p]) {
+              this.menuLayer.add(new Konva.Text({
+                x: x0,
+                y: y0 + (2 + i) * lineHeight + 20,
+                text: `${i === 0 ? '┌─' : '└─'} ${p}${p === this.myUsername ? ' (You)' : ''}${statusMap[p].eliminated ? ' ❌' : statusMap[p].ready ? ' ✔️' : ''}`,
+                fontFamily: 'Press Start 2P',
+                fontSize: 16,
+                fill: p === this.myUsername ? '#ffe156' : (statusMap[p].eliminated ? '#888' : '#00e7fe')
+              }));
+            }
+          });
+
+          // Correction principale :
+          // Si le joueur n'a pas fini sa demi-finale, on affiche uniquement le message d'attente
+          const me = statusMap[this.myUsername];
+          const isInDemi1 = demi1.includes(this.myUsername);
+          const isInDemi2 = demi2.includes(this.myUsername);
+          const myDemi = isInDemi1 ? demi1 : isInDemi2 ? demi2 : null;
+          let myDemiDone = false;
+          if (myDemi && myDemi[0] && myDemi[1] && statusMap[myDemi[0]] && statusMap[myDemi[1]]) {
+            myDemiDone = statusMap[myDemi[0]].eliminated !== statusMap[myDemi[1]].eliminated;
           }
-          this.menuLayer.add(new Konva.Text({
-            x: gameWidth / 2 - 100,
-            y: yPos,
-            text: `• ${entry.username}`,
-            fontFamily: 'Press Start 2P',
-            fontSize: 16,
-            fill: fillColor,
-            opacity: opacity,
-            textDecoration: textDecoration
-          }));
-          // Affiche le bouton "Ready" uniquement pour soi, si non prêt et non éliminé
-          if (entry.username === this.myUsername && !entry.eliminated && !entry.ready) {
-            this.createButton('Ready', gameWidth / 2 - 100, 690, () => {
-              if (this.currentTourId) {
+          // SUPPRESSION du bloc qui bloque le flux :
+          // if (me && !me.eliminated && !me.ready && !myDemiDone) {
+          //   this.menuLayer.add(new Konva.Text({
+          //     x: gameWidth / 2 - 200,
+          //     y: y0 + 2 * lineHeight + 80,
+          //     text: 'Match in progress... Finish your match!',
+          //     fontFamily: 'Press Start 2P',
+          //     fontSize: 18,
+          //     fill: '#ffe156',
+          //     width: 400,
+          //     align: 'center'
+          //   }));
+          //   this.menuLayer.batchDraw();
+          //   return;
+          // }
+
+          // Remove pink arrows and update final logic
+          // Afficher la finale uniquement si les deux demi-finales sont terminées
+          const demi1Done = demi1[0] && demi1[1] && statusMap[demi1[0]] && statusMap[demi1[1]] && statusMap[demi1[0]].eliminated !== statusMap[demi1[1]].eliminated;
+          const demi2Done = demi2[0] && demi2[1] && statusMap[demi2[0]] && statusMap[demi2[1]] && statusMap[demi2[0]].eliminated !== statusMap[demi2[1]].eliminated;
+          const finalists = [demi1, demi2].map(pair => pair.find(p => p && statusMap[p] && !statusMap[p].eliminated));
+          const bothFinalistsKnown = finalists[0] && finalists[1];
+          if (demi1Done && demi2Done && bothFinalistsKnown) {
+            const finalist1 = finalists[0];
+            const finalist2 = finalists[1];
+            this.menuLayer.add(new Konva.Text({
+              x: x0 + 260,
+              y: y0 + 1.5 * lineHeight + 10,
+              text: `🏆 Final: ${finalist1} vs ${finalist2}`,
+              fontFamily: 'Press Start 2P',
+              fontSize: 18,
+              fill: '#ffe156'
+            }));
+            // READY button uniquement pour les finalistes non éliminés et non ready
+            if (me && !me.eliminated && !me.ready && (this.myUsername === finalist1 || this.myUsername === finalist2)) {
+              this.createButton('READY', gameWidth / 2 - 100, gameHeight - 180, () => {
                 gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
-                // Désactive le bouton Ready immédiatement après clic
-                const btn = this.buttons.find(b => b.text === 'Ready');
-                if (btn) {
-                  btn.group.listening(false);
-                  const btnText = btn.group.findOne((n: any) => n.className === 'Text');
-                  if (btnText) { btnText.text('Ready...'); }
-                  this.menuLayer.batchDraw();
-                }
-              }
-            });
+                this.buttons.forEach(btn => btn.group.hide());
+                this.menuLayer.add(new Konva.Text({
+                  x: gameWidth / 2 - 100,
+                  y: gameHeight - 120,
+                  text: 'Waiting for the other finalist...',
+                  fontFamily: 'Press Start 2P',
+                  fontSize: 16,
+                  fill: '#888',
+                  width: 200,
+                  align: 'center'
+                }));
+                this.menuLayer.batchDraw();
+              });
+            } else if (me && (this.myUsername === finalist1 || this.myUsername === finalist2) && me.ready) {
+              this.menuLayer.add(new Konva.Text({
+                x: gameWidth / 2 - 100,
+                y: gameHeight - 120,
+                text: 'You are ready! Waiting for the other finalist...',
+                fontFamily: 'Press Start 2P',
+                fontSize: 16,
+                fill: '#ffe156',
+                width: 300,
+                align: 'center'
+              }));
+            }
+            this.menuLayer.batchDraw();
+            return;
+          } else if (demi1Done || demi2Done) {
+            // Une seule demi-finale est finie : attendre l'autre
+            this.menuLayer.add(new Konva.Text({
+              x: x0 + 260,
+              y: y0 + 1.5 * lineHeight + 10,
+              text: `Waiting for the other semi-final to finish...`,
+              fontFamily: 'Press Start 2P',
+              fontSize: 16,
+              fill: '#888',
+              width: 300,
+              align: 'center'
+            }));
+            this.menuLayer.batchDraw();
+            return;
           }
-        });
-
-        // Texte "Waiting..."
-        const readyCount = status.filter(s => s.ready && !s.eliminated).length;
-        let waitingText = `Waiting... (${readyCount}/${status.length} ready)`;
-        if (status.length === 2 && joined.length === 2) {
-          waitingText = `Waiting for both finalists to be ready (${readyCount}/2 ready)`;
+          // Correction : READY button dès que le joueur n'est pas éliminé et pas ready
+          if (me && !me.eliminated && !me.ready) {
+            this.createButton('READY', gameWidth / 2 - 100, gameHeight - 80, () => {
+              gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
+              this.buttons.forEach(btn => btn.group.hide());
+              this.menuLayer.add(new Konva.Text({
+                x: gameWidth / 2 - 100,
+                y: gameHeight - 120,
+                text: 'Waiting for other player...',
+                fontFamily: 'Press Start 2P',
+                fontSize: 16,
+                fill: '#888',
+                width: 200,
+                align: 'center'
+              }));
+              this.menuLayer.batchDraw();
+            });
+          } else if (me && !me.eliminated && me.ready && myDemi) {
+            // Trouver l'autre joueur de la demi-finale
+            const other = myDemi.find(p => p !== this.myUsername);
+            if (other && statusMap[other] && !statusMap[other].ready) {
+              this.menuLayer.add(new Konva.Text({
+                x: gameWidth / 2 - 100,
+                y: gameHeight - 120,
+                text: 'Waiting for other player...',
+                fontFamily: 'Press Start 2P',
+                fontSize: 16,
+                fill: '#ffe156',
+                width: 300,
+                align: 'center'
+              }));
+              this.menuLayer.batchDraw();
+              return;
+            }
+            // Si les deux sont ready, ne rien afficher (le match va se lancer)
+          }
+        } else if (size === 4 && players.length === 2) {
+          // Final round: only 2 players left (fallback)
+          const p1 = players[0], p2 = players[1];
+          if (p1 && p2 && statusMap[p1] && statusMap[p2]) {
+            // Draw a visually distinct final bracket
+            const yFinal = 120 + 450;
+            const xFinal = gameWidth / 2 - 180;
+            const finalist1 = statusMap[p1];
+            const finalist2 = statusMap[p2];
+            // Show both names, highlight user, show READY/WAITING icons
+            const getStatusIcon = (s: PlayerStatus) => s.eliminated ? '❌' : s.ready ? '✔️' : '⏳';
+            const getStatusText = (s: PlayerStatus) => s.eliminated ? 'Eliminated' : s.ready ? 'Ready' : 'Waiting';
+            this.menuLayer.add(new Konva.Text({
+              x: xFinal,
+              y: yFinal,
+              text: `🏆 FINAL`,
+              fontFamily: 'Press Start 2P',
+              fontSize: 22,
+              fill: '#ffe156',
+              width: 360,
+              align: 'center'
+            }));
+            this.menuLayer.add(new Konva.Text({
+              x: xFinal,
+              y: yFinal + 40,
+              text: `${getStatusIcon(finalist1)} ${finalist1.username}${finalist1.username === this.myUsername ? ' (You)' : ''}  —  ${getStatusText(finalist1)}`,
+              fontFamily: 'Press Start 2P',
+              fontSize: 18,
+              fill: finalist1.username === this.myUsername ? '#ffe156' : (finalist1.eliminated ? '#888' : '#00e7fe'),
+              width: 360,
+              align: 'center'
+            }));
+            this.menuLayer.add(new Konva.Text({
+              x: xFinal,
+              y: yFinal + 80,
+              text: `${getStatusIcon(finalist2)} ${finalist2.username}${finalist2.username === this.myUsername ? ' (You)' : ''}  —  ${getStatusText(finalist2)}`,
+              fontFamily: 'Press Start 2P',
+              fontSize: 18,
+              fill: finalist2.username === this.myUsername ? '#ffe156' : (finalist2.eliminated ? '#888' : '#00e7fe'),
+              width: 360,
+              align: 'center'
+            }));
+            // READY button logic: only if user is a finalist, not eliminated, not ready
+            const me = statusMap[this.myUsername];
+            if (me && !me.eliminated && !me.ready && (this.myUsername === p1 || this.myUsername === p2)) {
+              this.createButton('READY', gameWidth / 2 - 100, gameHeight - 180, () => {
+                gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
+                this.buttons.forEach(btn => btn.group.hide());
+                this.menuLayer.add(new Konva.Text({
+                  x: gameWidth / 2 - 100,
+                  y: gameHeight - 120,
+                  text: 'Waiting for the other finalist...',
+                  fontFamily: 'Press Start 2P',
+                  fontSize: 16,
+                  fill: '#888',
+                  width: 200,
+                  align: 'center'
+                }));
+                this.menuLayer.batchDraw();
+              });
+            } else if (me && (this.myUsername === p1 || this.myUsername === p2) && me.ready) {
+              this.menuLayer.add(new Konva.Text({
+                x: gameWidth / 2 - 100,
+                y: gameHeight - 120,
+                text: 'You are ready! Waiting for the other finalist...',
+                fontFamily: 'Press Start 2P',
+                fontSize: 16,
+                fill: '#ffe156',
+                width: 300,
+                align: 'center'
+              }));
+            }
+          }
+        } else {
+          // Fallback: show all players and their status
+          status.forEach((entry, i) => {
+            this.menuLayer.add(new Konva.Text({
+              x: gameWidth / 2 - 200,
+              y: 80 + i * 24 + 450,
+              text: `${entry.username} ${entry.eliminated ? '(eliminated)' : entry.ready ? '(ready)' : ''}`,
+              fontFamily: 'Press Start 2P',
+              fontSize: 16,
+              fill: entry.eliminated ? '#888' : '#00e7fe'
+            }));
+          });
         }
-        this.menuLayer.add(new Konva.Text({
-          x: gameWidth / 2 - 100,
-          y: 80 + joined.length * 24 + 10 + 450,
-          text: waitingText,
-          fontFamily: 'Press Start 2P',
-          fontSize: 14,
-          fill: '#888'
-        }));
-
+        
         this.menuLayer.batchDraw();
         this.menuLayer.show();
         this.menuLayer.moveToTop();
