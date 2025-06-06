@@ -683,6 +683,36 @@ const start = async () => {
             
             socket.on('joinQueue', (username: string) =>
             {
+                // Vérifier si le joueur est déjà dans la queue avec un socket actif
+                const alreadyInQueue = towerQueue.some(player => 
+                    player.username === username && 
+                    towerNs.sockets.has(player.id)
+                );
+                if (alreadyInQueue) {
+                    socket.emit('error', { message: 'Vous êtes déjà dans la file d\'attente' });
+                    return;
+                }
+
+                // Nettoyer les entrées de queue invalides pour ce joueur
+                const index = towerQueue.findIndex(player => 
+                    player.username === username && 
+                    !towerNs.sockets.has(player.id)
+                );
+                if (index !== -1) {
+                    towerQueue.splice(index, 1);
+                }
+
+                // Vérifier si le joueur est déjà dans une partie en cours
+                const existingGame = Array.from(towerGames.entries()).find(([_, game]) => {
+                    const state = game.getState();
+                    return state.player.username === username || state.enemy.username === username;
+                });
+
+                if (existingGame) {
+                    socket.emit('error', { message: 'Vous êtes déjà dans une partie en cours' });
+                    return;
+                }
+
                 towerQueue.push({id: socket.id, username: username});
                 attemptMatch();
             });
@@ -736,7 +766,8 @@ const start = async () => {
                     if (roomId.startsWith('tower_')) {
                         game.update();
                         towerNs.to(roomId).emit('gameState', game.getState());
-                        // Ajout : enregistrer l'historique si la partie est finie et pas déjà enregistré
+                        
+                        // Si la partie est terminée, nettoyer après un délai
                         if (game.getState().finish && !game.historySaved) {
                             (async () => {
                                 try {
@@ -770,8 +801,11 @@ const start = async () => {
                                 } catch (err) {
                                     console.error('[Tower] Error saving match history:', err);
                                 }
-                                // Marquer comme déjà enregistré
                                 game.historySaved = true;
+                                    
+                                towerGames.delete(roomId);
+                                console.log(`[Tower] Game ${roomId} cleaned up after completion`);
+
                             })();
                         }
                     }
@@ -835,7 +869,10 @@ const start = async () => {
             socket.on('disconnect', () =>
             {
                 clearInterval(gameLoop);
-                towerGames.delete(socket.id);
+                // Ne supprimer que la partie solo si elle existe
+                if (towerGames.has(socket.id)) {
+                    towerGames.delete(socket.id);
+                }
                 console.log('Client déconnecté du namespace /tower:', socket.id);
             });
         });

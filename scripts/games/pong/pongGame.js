@@ -7,6 +7,7 @@ import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js';
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
 import { initPauseMenu, showPauseMenu, drawPauseMenu, onEscapeKey } from './pauseMenu.js';
+import { showErrorNotification } from '../../helpers/notifications.js';
 // Variables réseau
 export let mySide;
 let roomId;
@@ -125,7 +126,7 @@ export function stopGame() {
     // 2) Débrancher les écouteurs clavier
     // window.removeEventListener('keydown', onKeyDown);
     // window.removeEventListener('keyup',   onKeyUp);
-    // 4) Mettre à l’arrêt le module de particules/explosions
+    // 4) Mettre à l'arrêt le module de particules/explosions
     explosion.length = 0;
     // 5) Nettoyer le canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -203,6 +204,12 @@ export function connectPong(isOnline) {
                 }
             }
         }
+    });
+    // Ajouter la gestion des erreurs
+    socket.on('error', (data) => {
+        showErrorNotification(data.message);
+        // Retourner au menu principal
+        hideGameCanvasAndShowMenu();
     });
 }
 // En haut du fichier

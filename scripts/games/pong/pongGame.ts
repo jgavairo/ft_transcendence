@@ -10,6 +10,7 @@ import { initPauseMenu, showPauseMenu, drawPauseMenu, onEscapeKey } from './paus
 import api from '../../helpers/api.js';
 import { HOSTNAME } from '../../main.js';
 import { drawTutorialSolo1, drawTutorialSolo2 } from './showTutorial.js';
+import { showErrorNotification } from '../../helpers/notifications.js';
 
 
 // Interface de l'état de partie reçue du serveur
@@ -166,7 +167,7 @@ export function stopGame() {
   // window.removeEventListener('keydown', onKeyDown);
   // window.removeEventListener('keyup',   onKeyUp);
 
-  // 4) Mettre à l’arrêt le module de particules/explosions
+  // 4) Mettre à l'arrêt le module de particules/explosions
   explosion.length = 0;
 
   // 5) Nettoyer le canvas
@@ -251,6 +252,13 @@ export function connectPong(isOnline: boolean) {
         }
       }
     }
+  });
+
+  // Ajouter la gestion des erreurs
+  socket.on('error', (data: { message: string }) => {
+    showErrorNotification(data.message);
+    // Retourner au menu principal
+    hideGameCanvasAndShowMenu();
   });
 }
 

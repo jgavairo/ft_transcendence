@@ -63,7 +63,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
     
     // TOURNAMENT
     socket.on( 'joinTournamentQueue', async ({ username, userId }: { username: string, userId?: string }) => {
-        // Optionnel : stocker l’ID utilisateur pour retrouver plus tard
+        // Optionnel : stocker l'ID utilisateur pour retrouver plus tard
         if (userId) socketToUserId.set(socket.id, userId);
   
         // Push FIFO si pas déjà présent
@@ -250,7 +250,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
 
     // 1) SOLO CLASSIC
     socket.on('startSolo', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l’association socket_id -> user_id si disponible
+      // Stocker l'association socket_id -> user_id si disponible
       if (userId) {
         socketToUserId.set(socket.id, userId);
       }
@@ -271,7 +271,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
 
     // 2) SOLO TRI-PONG
     socket.on('startSoloTri', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l’association socket_id -> user_id si disponible
+      // Stocker l'association socket_id -> user_id si disponible
       if (userId) {
         socketToUserId.set(socket.id, userId);
       }
@@ -295,9 +295,16 @@ export function setupGameMatchmaking(gameNs: Namespace) {
 
     // 3) 2-JOUEURS MATCHMAKING
     socket.on('joinQueue', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l’association socket_id -> user_id si disponible
+      // Stocker l'association socket_id -> user_id si disponible
       if (userId) {
         socketToUserId.set(socket.id, userId);
+      }
+      
+      // Vérifier si le joueur est déjà dans une partie en cours
+      const currentInfo = playerInfo.get(socket.id);
+      if (currentInfo && currentInfo.mode === 'multi') {
+        socket.emit('error', { message: 'Vous êtes déjà dans une partie en cours' });
+        return;
       }
       
       if (!classicQueue.some(p => p.id === socket.id)) {
@@ -370,6 +377,13 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       // Stocker l'association socket_id -> user_id si disponible
       if (userId) {
         socketToUserId.set(socket.id, userId);
+      }
+      
+      // Vérifier si le joueur est déjà dans une partie en cours
+      const currentInfo = playerInfo.get(socket.id);
+      if (currentInfo && (currentInfo.mode === 'multi' || currentInfo.mode === 'tri')) {
+        socket.emit('error', { message: 'Vous êtes déjà dans une partie en cours' });
+        return;
       }
       
       if (!triQueue.some(p => p.id === socket.id)) {
@@ -503,7 +517,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       playerInfo.set(A.id, { side: 0, mode: 'multi', roomId: matchId });
       playerInfo.set(B.id, { side: 1, mode: 'multi', roomId: matchId });
   
-      // → Signal “match trouvé”
+      // → Signal "match trouvé"
       sA.emit('tournamentMatchFound', { matchId, side: 0, opponent: B.username });
       sB.emit('tournamentMatchFound', { matchId, side: 1, opponent: A.username });
   
@@ -646,7 +660,7 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   const state = startMatch([s1, s2], ns, false, matchId);
   matchStates.set(matchId, state);
 
-  // 5) Boucle d’update
+  // 5) Boucle d'update
   const iv = setInterval(() => {
     updateMatch(state, ns);
     ns.to(matchId).emit('gameState', state);
