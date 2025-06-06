@@ -2,6 +2,7 @@ import { io } from 'socket.io-client';
 import { GameRenderer } from './GameRenderer.js';
 import { InputHandler } from './InputHandler.js';
 import { HOSTNAME } from '../../main.js';
+import { showErrorNotification } from '../../helpers/notifications.js';
 export class GameClient {
     constructor(username, menuManager) {
         this.currentState = null;
@@ -124,6 +125,12 @@ export class GameClient {
             console.log("Connected to server Tower, sending username:", this.username);
             this.socket.emit("register", this.username);
             this.socket.emit("joinQueue", this.username);
+        });
+        this.socket.on("error", (data) => {
+            console.log("Error received:", data);
+            this.renderer.stopWaitingScreen();
+            showErrorNotification(data.message);
+            this.menu.changeMenu('play');
         });
         this.socket.on("matchFound", (data) => {
             this.roomId = data.roomId;
