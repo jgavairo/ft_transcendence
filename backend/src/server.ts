@@ -151,15 +151,20 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
 
         if (userInfo.error) {
             console.error("Google API error:", userInfo.error);
-            return reply.redirect(`https://${HOSTNAME}:8443/login?error=google`);
+            return reply.redirect(`https://${HOSTNAME}:8443/login?error=google&message=Erreur API Google`);
         }
 
         const result = await googleAuthHandler(userInfo);
         console.log("Google auth handler result:", result);
 
+        if (!result.success) {
+            const errorMessage = result.message || "Erreur lors de l'authentification Google";
+            return reply.redirect(`https://${HOSTNAME}:8443/login?error=google&message=${encodeURIComponent(errorMessage)}`);
+        }
+
         if (!result.token) {
             console.error('No token generated from googleAuthHandler');
-            return reply.redirect(`https://${HOSTNAME}:8443/login?error=google`);
+            return reply.redirect(`https://${HOSTNAME}:8443/login?error=google&message=Erreur de génération du token`);
         }
 
         console.log("Setting token cookie:", result.token);
@@ -180,7 +185,7 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
         return reply.redirect(`https://${HOSTNAME}:8443/`);
     } catch (error) {
         console.error('Error during Google authentication:', error);
-        return reply.redirect(`https://${HOSTNAME}:8443/login?error=google`);
+        return reply.redirect(`https://${HOSTNAME}:8443/login?error=google&message=Erreur lors de l'authentification`);
     }
 });
 

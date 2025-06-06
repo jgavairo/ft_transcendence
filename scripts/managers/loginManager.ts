@@ -31,6 +31,17 @@ export class LoginManager
         return data.success;
     }
 
+    private static checkGoogleAuthError(): void {
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        const message = urlParams.get('message');
+        
+        if (error === 'google' && message) {
+            showErrorNotification(decodeURIComponent(message));
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+
     static async showLoginModal(): Promise<void>
     {
         if (!await this.isLoggedIn())
@@ -41,6 +52,7 @@ export class LoginManager
                 return;
             optionnalModal.innerHTML = loginModalHTML;
             this.setupLoginModal();
+            this.checkGoogleAuthError();
         }
     }
 
@@ -135,8 +147,9 @@ export class LoginManager
         if (!googleButton)
             return;
         googleButton.addEventListener('click', async (e) => {
+            e.preventDefault();
             console.log("google button clicked");
-            await googleSignInHandler();
+            window.location.href = `https://${HOSTNAME}:8443/api/auth/google`;
         });
 
         const registerButton = document.getElementById('registerButton');

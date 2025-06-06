@@ -217,7 +217,13 @@ const logoutHandler = async (req: FastifyRequest, res: FastifyReply) =>
     });
 };
 
-export const googleAuthHandler = async (userInfo: { email?: string; name?: string; picture?: string }) => {
+interface GoogleAuthResult {
+    success: boolean;
+    message?: string;
+    token?: string;
+}
+
+export const googleAuthHandler = async (userInfo: { email?: string; name?: string; picture?: string }): Promise<GoogleAuthResult> => {
     const { email, name, picture } = userInfo;
     console.log("Google auth handler called with:", { email, name, picture });
 
@@ -227,15 +233,20 @@ export const googleAuthHandler = async (userInfo: { email?: string; name?: strin
         return { success: false, message: "Google n'a pas renvoyé d'email, impossible de créer le compte." };
     }
 
-    let username = email.split('@')[0];
-    username = username.replace(/[^a-zA-Z0-9]/g, '');
-    console.log("Generated username:", username);
-
     let user = await dbManager.getUserByEmail(email);
     console.log("User found in database:", user);
 
+    if (user && !user.is_google_account)
+    {
+        console.log("User already exists and is not a google account");
+        return { success: false, message: "User already exists and is not a google account" };
+    }
+
     if (!user)
     {
+        let username = email.split('@')[0];
+        username = username.replace(/[^a-zA-Z0-9]/g, '');
+        console.log("Generated username:", username);
         console.log("Creating new user");
         const userID = await dbManager.registerUser({
             username: username,
@@ -254,14 +265,23 @@ export const googleAuthHandler = async (userInfo: { email?: string; name?: strin
     if (!user)
     {
         console.error("Failed to create or find user");
-        return { success: false, message: "problem with google auth" };
+        return { success: false, message: "Failed to create or find user" };
+    }
+
+    if (userSocketMap.get(user.username))
+    {
+        const socketId = userSocketMap.get(user.username);
+        if (socketId)
+        {
+            app.io.of('/notification').to(socketId).emit('logout', { username: user.username });
+        }
     }
 
     console.log("Generating JWT token for user:", user.id);
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
     console.log("Token generated successfully");
     
-    return { user, token };
+    return { success: true, token };
 };
 
 const confirm2FAHandler = async (req: FastifyRequest, res: FastifyReply) => 
