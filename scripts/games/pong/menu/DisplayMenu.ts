@@ -42,6 +42,7 @@ interface Button
 export class PongMenuManager
 {
     private static instance: PongMenuManager;
+    private static tournamentEnded: boolean = false;
     private stage!: Konva.Stage;
     private backgroundLayer!: Konva.Layer;
     private titleLayer!: Konva.Layer;
@@ -468,23 +469,19 @@ export class PongMenuManager
           }) => {
           this.currentTourSize = view.size;
           if (view.tournamentId && view.status) {
-            // Stocke l'ID du tournoi
             this.currentTourId = view.tournamentId;
-            // Convertit le status brut en PlayerStatus[]
             const fullStatus: PlayerStatus[] = view.status.map(s => ({
               id:         s.id,
               username:   s.username,
               ready:      s.ready || false,
               eliminated: s.eliminated || false
             }));
-            // Stocke la vue...
             this.lastBracketView = {
               tournamentId: view.tournamentId,
               size:         view.size,
               joined:       view.joined,
               status:       fullStatus
             };
-            // Affiche le bracket
             this.renderSimpleBracket(view.size, view.joined, fullStatus);
           } else {
             this.showLobbyList(view.joined);
@@ -534,22 +531,30 @@ export class PongMenuManager
         });
       
         // 3) Tournoi terminé
-        gameSocket.on('tournamentMatchOver', (data: {
-            tournamentId: string;
-            matchId:      string;
-            winner:       string;
-            loser:        string;
-        }) => {
-          showNotification(`🏅 ${data.winner} a gagné contre ${data.loser}`);
-        });
-
-        // Ajoutez un listener pour la fin du tournoi (victoire)
         gameSocket.on('tournamentOver', (data: { winner: string }) => {
+          PongMenuManager.tournamentEnded = true;
+          console.log('[DEBUG] tournamentOver event received', data, 'tournamentEnded:', PongMenuManager.tournamentEnded);
+          this.activeTournamentMatchId = null;
           this.menuLayer.removeChildren();
+          // Do NOT call renderSimpleBracket here! Only show winner message and MENU button.
+          let winnerText = '';
+          if (this.lastBracketView) {
+            const me = this.lastBracketView.status.find(s => s.username === this.myUsername);
+            const finalists = this.lastBracketView.status.filter(s => !s.eliminated);
+            console.log('[DEBUG] tournamentOver: me', me, 'finalists', finalists);
+            if (me && !me.eliminated && finalists.length === 2 && finalists.some(f => f.username === data.winner)) {
+              winnerText = `🏆 ${data.winner} wins the tournament!`;
+            } else {
+              winnerText = `Tournament over! Winner: ${data.winner}`;
+            }
+          } else {
+            winnerText = `Tournament over! Winner: ${data.winner}`;
+          }
+          console.log('[DEBUG] tournamentOver: winnerText', winnerText);
           this.menuLayer.add(new Konva.Text({
             x: gameWidth / 2 - 200,
             y: 350,
-            text: `🏆 ${data.winner} a gagné le tournoi !`,
+            text: winnerText,
             fontFamily: 'Press Start 2P',
             fontSize: 24,
             fill: '#ffe156',
@@ -557,6 +562,9 @@ export class PongMenuManager
             align: 'center'
           }));
           this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
+            PongMenuManager.tournamentEnded = false;
+            console.log('[DEBUG] MENU button clicked, tournamentEnded:', PongMenuManager.tournamentEnded);
+            this.activeTournamentMatchId = null;
             this.stage.destroy();
             stopGame();
             displayMenu();
@@ -602,24 +610,6 @@ export class PongMenuManager
         // 2) join la queue tournoi
         await this.joinTournamentQueue(size, username);
 
-      }
-
-      private debugMenuLayerState(context: string) {
-        // Nettoyage complet : suppression de tous les console.log de debug
-        this.menuLayer.getChildren().forEach((n: any, i: number) => {
-          if (n.className === 'Text') {
-            // @ts-ignore
-            console.log(`[DEBUG][${context}] Child[${i}] Text:`, n.text());
-          } else if (n.className === 'Rect') {
-            // @ts-ignore
-            console.log(`[DEBUG][${context}] Child[${i}] Rect:`, n.x(), n.y(), n.width && n.width(), n.height && n.height());
-          } else {
-            console.log(`[DEBUG][${context}] Child[${i}]`, n.className);
-          }
-        });
-        this.stage.getChildren().forEach((l: any) => {
-          console.log(`[DEBUG][${context}] stage child`, l.className, 'children:', l.getChildren && l.getChildren().length);
-        });
       }
 
       private initStageAndLayers() {
@@ -672,8 +662,41 @@ export class PongMenuManager
       private renderSimpleBracket(
         size: number,
         joined: string[],
-        status: PlayerStatus[]
+        status: PlayerStatus[],
+        force = false
       ) {
+        console.log('[DEBUG] renderSimpleBracket called', {tournamentEnded: PongMenuManager.tournamentEnded, force, size, joined, status});
+        // Prevent bracket rendering if tournament is over
+        if (PongMenuManager.tournamentEnded) {
+          // Affiche explicitement l'écran de fin si ce n'est pas déjà fait
+          this.menuLayer.removeChildren();
+          let winner = '';
+          if (this.lastBracketView && this.lastBracketView.status) {
+            const winnerEntry = this.lastBracketView.status.find(s => !s.eliminated);
+            winner = winnerEntry ? winnerEntry.username : '';
+          }
+          const winnerText = winner ? `🏆 ${winner} wins the tournament!` : 'Tournament over!';
+          this.menuLayer.add(new Konva.Text({
+            x: gameWidth / 2 - 200,
+            y: 350,
+            text: winnerText,
+            fontFamily: 'Press Start 2P',
+            fontSize: 24,
+            fill: '#ffe156',
+            width: 400,
+            align: 'center'
+          }));
+          this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
+            PongMenuManager.tournamentEnded = false;
+            console.log('[DEBUG] MENU button clicked, tournamentEnded:', PongMenuManager.tournamentEnded);
+            this.activeTournamentMatchId = null;
+            this.stage.destroy();
+            stopGame();
+            displayMenu();
+          });
+          this.menuLayer.batchDraw();
+          return;
+        }
         // Robust check: ensure Konva container is present in DOM
         const canvas = document.getElementById('games-modal');
         const konvaDiv = canvas && canvas.querySelector('.konvajs-content');
@@ -687,9 +710,9 @@ export class PongMenuManager
         this.menuLayer.removeChildren();
 
         // Titre du bracket
-        let title = `Tournoi ${size} joueurs`;
+        let title = `Tournament ${size} players`;
         if (status.length === 2 && joined.length === 2) {
-          title = 'Finale';
+          title = 'Final';
         }
         this.menuLayer.add(new Konva.Text({
           x: gameWidth / 2 - 130,
@@ -729,7 +752,7 @@ export class PongMenuManager
           }));
           // Affiche le bouton "Ready" uniquement pour soi, si non prêt et non éliminé
           if (entry.username === this.myUsername && !entry.eliminated && !entry.ready) {
-            this.createButton('Ready', gameWidth / 2 + 120, 690, () => {
+            this.createButton('Ready', gameWidth / 2 - 100, 690, () => {
               if (this.currentTourId) {
                 gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
                 // Désactive le bouton Ready immédiatement après clic
@@ -747,9 +770,9 @@ export class PongMenuManager
 
         // Texte "Waiting..."
         const readyCount = status.filter(s => s.ready && !s.eliminated).length;
-        let waitingText = `Waiting… (${readyCount}/${status.length} ready)`;
+        let waitingText = `Waiting... (${readyCount}/${status.length} ready)`;
         if (status.length === 2 && joined.length === 2) {
-          waitingText = `En attente des finalistes (${readyCount}/2 prêts)`;
+          waitingText = `Waiting for both finalists to be ready (${readyCount}/2 ready)`;
         }
         this.menuLayer.add(new Konva.Text({
           x: gameWidth / 2 - 100,
@@ -772,8 +795,15 @@ export class PongMenuManager
       // Dans DisplayMenu.ts (ou où vous aviez startMatchTournament)
 
       private gameStateHandlers: Map<string, (state?: MatchState) => void> = new Map();
+      private activeTournamentMatchId: string | null = null;
 
       private async startMatchTournament({ matchId, side, opponent }: MatchFoundData) {
+        // Prevent double launch for the same matchId
+        if (this.activeTournamentMatchId === matchId) return;
+        // Prevent showing bracket/final screen if tournament is already over
+        if (PongMenuManager.tournamentEnded) return;
+        this.activeTournamentMatchId = matchId;
+
         // Robust check: ensure Konva container is present in DOM
         const canvas = document.getElementById('games-modal');
         const konvaDiv = canvas && canvas.querySelector('.konvajs-content');
@@ -784,35 +814,150 @@ export class PongMenuManager
         this.menuLayer.removeChildren();
         this.menuLayer.batchDraw();
 
-        // On attend que tous les matchs du tour soient terminés avant d'afficher le bouton Ready pour la finale
         if (this.lastBracketView) {
           const { size, joined, status } = this.lastBracketView;
-          // Si on est en finale (status.length === 2) mais qu'il y a encore des joueurs non éliminés dans le bracket, on affiche juste un message d'attente
           const isFinale = status.length === 2 && size === 4;
-          // On vérifie si on est encore "en game" (pas encore éliminé et pas encore ready)
           const me = status.find(s => s.username === this.myUsername);
           const iAmInGame = me && !me.eliminated && !me.ready;
-          const nonFinalists = status.filter(s => !s.eliminated);
-          if (isFinale && nonFinalists.length > 2 && iAmInGame) {
-            // Si je suis encore en train de jouer, ne rien afficher (laisser la game tourner)
+          const nonEliminated = status.filter(s => !s.eliminated);
+          if (isFinale && nonEliminated.length > 2) {
+            if (!iAmInGame) {
+              this.menuLayer.add(new Konva.Text({
+                x: gameWidth / 2 - 200,
+                y: 350,
+                text: 'Waiting for other matches to finish...',
+                fontFamily: 'Press Start 2P',
+                fontSize: 20,
+                fill: '#00e7fe',
+                width: 400,
+                align: 'center'
+              }));
+              this.menuLayer.batchDraw();
+            }
             return;
           }
-          if (isFinale && nonFinalists.length > 2 && !iAmInGame) {
-            // Si j'ai fini mon match mais d'autres non, afficher l'attente
-            this.menuLayer.add(new Konva.Text({
-              x: gameWidth / 2 - 200,
-              y: 350,
-              text: 'En attente que les autres matchs se terminent...',
-              fontFamily: 'Press Start 2P',
-              fontSize: 20,
-              fill: '#00e7fe',
-              width: 400,
-              align: 'center'
-            }));
-            this.menuLayer.batchDraw();
+          // Both semi-finals are finished, only 2 non-eliminated remain (the finalists)
+          // Show bracket and Ready button logic for finalists only
+          if (isFinale && nonEliminated.length === 2) {
+            const allReady = status.filter(s => !s.eliminated).every(s => s.ready);
+            if (allReady) {
+              let you: string;
+              try {
+                const current = await GameManager.getCurrentUser();
+                you = current?.username || 'You';
+              } catch (err) {
+                you = 'You';
+              }
+              const p1 = new Konva.Text({
+                x: gameWidth / 6,
+                y: 450,
+                text: you,
+                fontFamily: 'Press Start 2P',
+                fontSize: 20,
+                fill: '#00e7fe',
+                width: 400,
+                align: 'center'
+              });
+              const p2 = new Konva.Text({
+                x: gameWidth / 2,
+                y: 450,
+                text: opponent,
+                fontFamily: 'Press Start 2P',
+                fontSize: 20,
+                fill: '#00e7fe',
+                width: 400,
+                align: 'center'
+              });
+              const countdownText = new Konva.Text({
+                x: gameWidth / 2 - 200,
+                y: 520,
+                text: 'Game starting in 5',
+                fontFamily: 'Press Start 2P',
+                fontSize: 24,
+                fill: '#fc4cfc',
+                width: 400,
+                align: 'center'
+              });
+              this.menuLayer.add(p1, p2, countdownText);
+              this.menuLayer.batchDraw();
+              let count = 5;
+              const timer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                  countdownText.text(`Game starting in ${count}`);
+                  this.menuLayer.batchDraw();
+                } else {
+                  clearInterval(timer);
+                  initTournamentPong(side, you, opponent);
+                  const handler = (state?: MatchState) => {
+                    if (!state || !state.paddles) return;
+                    renderPong(state, true);
+                    if (state.gameOver) {
+                      gameSocket.off(`gameState`, handler);
+                      this.gameStateHandlers.delete(matchId);
+                      this.activeTournamentMatchId = null;
+                      gameSocket.emit('tournamentReportResult', {
+                        tournamentId: this.currentTourId,
+                        matchId
+                      });
+                      hideGameCanvasAndShowMenu();
+                      if (this.lastBracketView) {
+                        const { size, joined, status } = this.lastBracketView;
+                        this.renderSimpleBracket(size, joined, status);
+                        this.menuLayer.show();
+                        this.menuLayer.moveToTop();
+                        this.menuLayer.batchDraw();
+                      }
+                      setTimeout(() => {
+                        if (this.lastBracketView) {
+                          const { size, joined, status } = this.lastBracketView;
+                          this.renderSimpleBracket(size, joined, status);
+                          this.menuLayer.show();
+                          this.menuLayer.moveToTop();
+                          this.menuLayer.batchDraw();
+                        } else {
+                          this.menuLayer.removeChildren();
+                          this.menuLayer.add(new Konva.Text({
+                            x: gameWidth / 2 - 130,
+                            y: 350,
+                            text: 'Waiting for the next match... (bracket)',
+                            fontFamily: 'Press Start 2P',
+                            fontSize: 20,
+                            fill: '#00e7fe'
+                          }));
+                          this.menuLayer.show();
+                          this.menuLayer.batchDraw();
+                        }
+                      }, 200);
+                    }
+                  };
+                  this.gameStateHandlers.set(matchId, handler);
+                  gameSocket.on(`gameState`, handler);
+                }
+              }, 1000);
+            } else {
+              // Show bracket and Ready button for finalists, waiting message for others
+              this.renderSimpleBracket(size, joined, status);
+              this.menuLayer.add(new Konva.Text({
+                x: gameWidth / 2 - 200,
+                y: 350,
+                text: 'Waiting for both finalists to be ready...',
+                fontFamily: 'Press Start 2P',
+                fontSize: 18,
+                fill: '#00e7fe',
+                width: 400,
+                align: 'center'
+              }));
+              this.menuLayer.show();
+              this.menuLayer.moveToTop();
+              this.menuLayer.batchDraw();
+            }
             return;
           }
-          // Sinon, logique normale : si tout le monde est ready, on lance le jeu, sinon on affiche le bracket et le bouton Ready
+          // --- END FINAL ROUND LOGIC ---
+
+          // --- SEMI-FINALS OR OTHER ROUNDS ---
+          // Normal bracket and Ready logic
           const allReady = status.filter(s => !s.eliminated).every(s => s.ready);
           if (allReady) {
             let you: string;
@@ -869,6 +1014,7 @@ export class PongMenuManager
                   if (state.gameOver) {
                     gameSocket.off(`gameState`, handler);
                     this.gameStateHandlers.delete(matchId);
+                    this.activeTournamentMatchId = null;
                     gameSocket.emit('tournamentReportResult', {
                       tournamentId: this.currentTourId,
                       matchId
@@ -893,7 +1039,7 @@ export class PongMenuManager
                         this.menuLayer.add(new Konva.Text({
                           x: gameWidth / 2 - 130,
                           y: 350,
-                          text: 'En attente du prochain match... (bracket)',
+                          text: 'Waiting for the next match... (bracket)',
                           fontFamily: 'Press Start 2P',
                           fontSize: 20,
                           fill: '#00e7fe'
@@ -909,7 +1055,6 @@ export class PongMenuManager
               }
             }, 1000);
           } else {
-            // Affiche le bracket et le bouton Ready si besoin
             this.renderSimpleBracket(size, joined, status);
             this.menuLayer.show();
             this.menuLayer.moveToTop();
