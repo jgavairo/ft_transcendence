@@ -3,7 +3,6 @@ import { HOSTNAME, MainApp, updateChatWidgetVisibility } from "../main.js";
 import { showNotification, showErrorNotification } from "../helpers/notifications.js";
 import api from "../helpers/api.js";
 import { setupProfileButton } from "../header/navigation.js";
-import { googleSignInHandler } from "../modals/login/googleSignIn.js";
 import { disconnectNotificationSocket } from "../header/navigation.js";
 export class LoginManager {
     static async removeLoginModal() {
@@ -24,6 +23,15 @@ export class LoginManager {
         console.log('data:', data);
         return data.success;
     }
+    static checkGoogleAuthError() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        const message = urlParams.get('message');
+        if (error === 'google' && message) {
+            showErrorNotification(decodeURIComponent(message));
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
     static async showLoginModal() {
         if (!await this.isLoggedIn()) {
             disconnectNotificationSocket();
@@ -32,6 +40,7 @@ export class LoginManager {
                 return;
             optionnalModal.innerHTML = loginModalHTML;
             this.setupLoginModal();
+            this.checkGoogleAuthError();
         }
     }
     static async setupLoginModal() {
@@ -114,8 +123,9 @@ export class LoginManager {
         if (!googleButton)
             return;
         googleButton.addEventListener('click', async (e) => {
+            e.preventDefault();
             console.log("google button clicked");
-            await googleSignInHandler();
+            window.location.href = `https://${HOSTNAME}:8443/api/auth/google`;
         });
         const registerButton = document.getElementById('registerButton');
         if (!registerButton)
