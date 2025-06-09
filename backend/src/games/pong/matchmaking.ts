@@ -41,7 +41,7 @@ export const privateRooms = new Map<string, { sockets: Socket[]; usernames: stri
 
 export function setupGameMatchmaking(gameNs: Namespace) {
   const playerInfo = new Map<string, PlayerInfo>();
-  // Nouvelle Map pour stocker l’association socket_id -> user_id
+  // Nouvelle Map pour stocker l'ID utilisateur pour retrouver plus tard
   const socketToUserId = new Map<string, string>();
   let classicQueue: Player[] = [];
   let triQueue: Player[] = [];
@@ -78,7 +78,14 @@ export function setupGameMatchmaking(gameNs: Namespace) {
             .get(p.id)
             ?.emit('tournamentBracket', {
               size: 4,
-              joined: q.map(p2 => p2.username)
+              joined: q.map(p2 => p2.username),
+              status: q.map(p2 => ({
+                id: p2.id,
+                username: p2.username,
+                ready: false,
+                eliminated: false,
+                isInGame: false // Personne n'est in game tant que le tournoi n'a pas commencé
+              }))
             })
         );
   
@@ -102,7 +109,13 @@ export function setupGameMatchmaking(gameNs: Namespace) {
             tournamentId: tour.id,
             size: 4,
             joined: tour.allPlayers.map((p: Player) => p.username),
-            status: tour.allPlayers.map((p: Player) => ({ id: p.id, username: p.username, ready: false, eliminated: false }))
+            status: tour.allPlayers.map((p: Player) => ({
+              id: p.id,
+              username: p.username,
+              ready: false,
+              eliminated: false,
+              isInGame: false // default at start
+            }))
           });
         }
       });
@@ -120,7 +133,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
               id: p.id,
               username: p.username,
               ready: tour.ready.get(p.id) || false,
-              eliminated: false
+              eliminated: false,
+              isInGame: false // Personne n'est in game tant que le match n'est pas lancé
             }))
           });
           if ([...tour.ready.values()].every((v: boolean) => v)) {
@@ -166,7 +180,8 @@ export function setupGameMatchmaking(gameNs: Namespace) {
               id: p.id,
               username: p.username,
               ready: tour.finalReady.get(p.id) || false,
-              eliminated: false
+              eliminated: false,
+              isInGame: false // Personne n'est in game tant que la finale n'est pas lancée
             }))
           });
           if ([...tour.finalReady.values()].every((v: boolean) => v)) {
@@ -177,8 +192,12 @@ export function setupGameMatchmaking(gameNs: Namespace) {
               const finalId = `${tour.id}-final`;
               const s1 = gameNs.sockets.get(F1.id)!;
               const s2 = gameNs.sockets.get(F2.id)!;
-              s1.join(finalId);
-              s2.join(finalId);
+              // --- AJOUT : tous les joueurs rejoignent la room de la finale (spectateurs inclus) ---
+              tour.allPlayers.forEach(p => {
+                const sock = gameNs.sockets.get(p.id);
+                if (sock) sock.join(finalId);
+              });
+              // --- Seuls les deux finalistes sont contrôleurs ---
               playerInfo.set(F1.id, { side: 0, mode: 'multi', roomId: finalId });
               playerInfo.set(F2.id, { side: 1, mode: 'multi', roomId: finalId });
               s1.emit('tournamentMatchFound', { matchId: finalId, side: 0, opponent: F2.username });
@@ -209,13 +228,22 @@ export function setupGameMatchmaking(gameNs: Namespace) {
         // PATCH: status complet avec tous les joueurs et eliminated
         const allMatchesLocal = Object.values(tour.matches) as { players: [Player, Player], winner?: Player }[];
         const status = tour.allPlayers.map((p: Player) => {
+          // Trouver le match du joueur
           const m = allMatchesLocal.find(m2 => m2.players.some(pl => pl.id === p.id));
           const eliminated = m?.winner ? (m.winner.id !== p.id) : false;
+          // On considère ready uniquement si la map ready/finalReady le dit
+          let ready = false;
+          if (tour.round === 0) ready = tour.ready.get(p.id) || false;
+          else if (tour.round === 1 && tour.finalReady) ready = tour.finalReady.get(p.id) || false;
+          // isInGame: le joueur est dans un match non terminé et pas éliminé
+          let isInGame = false;
+          if (m && !m.winner && !eliminated) isInGame = true;
           return {
             id: p.id,
             username: p.username,
-            ready: false,
-            eliminated: eliminated
+            ready: ready,
+            eliminated: eliminated,
+            isInGame: isInGame
           };
         });
         gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
