@@ -218,6 +218,9 @@ function onKeyDown(e) {
         return;
     // --- PONG CLASSIQUE ---
     if (modePong) {
+        // Empêcher les spectateurs de contrôler si mySide est undefined/null
+        if (typeof mySide !== 'number' || mySide < 0)
+            return;
         if (soloMode) {
             // 2 paddles joués localement : 0→A/D, 1→←/→
             if (e.code === 'KeyD')
@@ -270,6 +273,9 @@ function onKeyUp(e) {
         return;
     // --- PONG CLASSIQUE ---
     if (modePong) {
+        // Empêcher les spectateurs de contrôler si mySide est undefined/null
+        if (typeof mySide !== 'number' || mySide < 0)
+            return;
         if (soloMode) {
             if (['KeyD', 'KeyA'].includes(e.code))
                 sendMove(0, null);
@@ -316,7 +322,7 @@ export function initTournamentPong(side, you, opponent) {
     modePong = true;
     soloTri = false;
     soloMode = false; // tournoi = match 1v1, donc jamais solo
-    mySide = side;
+    mySide = typeof side === 'number' ? side : -1; // -1 pour spectateur
     playerName = you;
     opponentName = opponent;
     lastState = null;
