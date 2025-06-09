@@ -140,7 +140,7 @@ export function drawPauseMenu(
   // === bouton Resume ===
   {
     const path = new Path2D();
-    // path.roundRect(btnX, btnResumeY, btnW, btnH, 5);
+    path.roundRect(btnX, btnResumeY, btnW, btnH, 5);
     ctx.fillStyle = hoverResume ? '#6506a9' : '#002eb2';
     ctx.fill(path);
     ctx.lineWidth   = 2;
@@ -157,7 +157,7 @@ export function drawPauseMenu(
   // === bouton Quit ===
   {
     const path = new Path2D();
-    // path.roundRect(btnX, btnQuitY,   btnW, btnH, 5);
+    path.roundRect(btnX, btnQuitY,   btnW, btnH, 5);
     ctx.fillStyle = hoverQuit ? '#6506a9' : '#002eb2';
     ctx.fill(path);
     ctx.lineWidth   = 2;

@@ -344,7 +344,8 @@ export class PongMenuManager {
                     id: s.id,
                     username: s.username,
                     ready: s.ready || false,
-                    eliminated: s.eliminated || false
+                    eliminated: s.eliminated || false,
+                    isInGame: typeof s.isInGame === 'boolean' ? s.isInGame : undefined
                 }));
                 this.lastBracketView = {
                     tournamentId: view.tournamentId,
@@ -367,7 +368,8 @@ export class PongMenuManager {
                 id: s.id,
                 username: s.username,
                 ready: s.ready,
-                eliminated: s.eliminated
+                eliminated: s.eliminated,
+                isInGame: typeof s.isInGame === 'boolean' ? s.isInGame : undefined
             }));
             // Mettre à jour la vue stockée
             this.lastBracketView = {
@@ -509,93 +511,70 @@ export class PongMenuManager {
     renderSimpleBracket(size, joined, status) {
         if (PongMenuManager.tournamentEnded)
             return;
+        const players = joined;
+        const statusMap = Object.fromEntries(status.map(s => [s.username, s]));
+        const me = statusMap[this.myUsername];
+        if (me && me.isInGame) {
+            console.log('[DEBUG] Player is in a match, showing overlay');
+            this.menuLayer.hide();
+            return;
+        }
         const canvas = document.getElementById('games-modal');
         const konvaDiv = canvas && canvas.querySelector('.konvajs-content');
         if (!canvas || !konvaDiv) {
             this.initStageAndLayers();
         }
-        this.menuLayer.moveToTop();
-        this.menuLayer.show();
         this.menuLayer.removeChildren();
-        let title = `Pong Tournament (${size} players)`;
-        this.menuLayer.add(new Konva.Text({
-            x: gameWidth / 2 - 180,
-            y: 30 + 450,
-            text: title,
-            fontFamily: 'Press Start 2P',
-            fontSize: 22,
-            fill: '#00e7fe',
-            width: 360,
-            align: 'center'
-        }));
-        const players = joined;
-        const statusMap = Object.fromEntries(status.map(s => [s.username, s]));
+        this.buttons.forEach(btn => btn.group.destroy());
+        this.buttons = [];
         if (size === 4 && players.length === 4) {
-            // 4-player bracket
-            const y0 = 90 + 450;
             const x0 = gameWidth / 2 - 220;
+            const y0 = 540;
             const lineHeight = 38;
-            let demi1 = [players[0], players[1]];
-            let demi2 = [players[2], players[3]];
-            // Defensive: only draw if player exists
-            demi1.forEach((p, i) => {
-                if (p && statusMap[p]) {
-                    this.menuLayer.add(new Konva.Text({
-                        x: x0,
-                        y: y0 + i * lineHeight,
-                        text: `${i === 0 ? '┌─' : '└─'} ${p}${p === this.myUsername ? ' (You)' : ''}${statusMap[p].eliminated ? ' ❌' : statusMap[p].ready ? ' ✔️' : ''}`,
-                        fontFamily: 'Press Start 2P',
-                        fontSize: 16,
-                        fill: p === this.myUsername ? '#ffe156' : (statusMap[p].eliminated ? '#888' : '#00e7fe')
-                    }));
-                }
-            });
-            demi2.forEach((p, i) => {
-                if (p && statusMap[p]) {
-                    this.menuLayer.add(new Konva.Text({
-                        x: x0,
-                        y: y0 + (2 + i) * lineHeight + 20,
-                        text: `${i === 0 ? '┌─' : '└─'} ${p}${p === this.myUsername ? ' (You)' : ''}${statusMap[p].eliminated ? ' ❌' : statusMap[p].ready ? ' ✔️' : ''}`,
-                        fontFamily: 'Press Start 2P',
-                        fontSize: 16,
-                        fill: p === this.myUsername ? '#ffe156' : (statusMap[p].eliminated ? '#888' : '#00e7fe')
-                    }));
-                }
-            });
-            // Correction principale :
-            // Si le joueur n'a pas fini sa demi-finale, on affiche uniquement le message d'attente
-            const me = statusMap[this.myUsername];
+            const demi1 = [players[0], players[1]];
+            const demi2 = [players[2], players[3]];
             const isInDemi1 = demi1.includes(this.myUsername);
             const isInDemi2 = demi2.includes(this.myUsername);
             const myDemi = isInDemi1 ? demi1 : isInDemi2 ? demi2 : null;
+            // --- NO MORE HIDE BRACKET ---
+            // Always show bracket and statuses, even if both are ready and match is in progress
+            // ...existing code continues with bracket rendering and READY/status logic...
+            // Trouver la demi-finale du joueur
+            const myDemiFinale = isInDemi1 ? demi1 : isInDemi2 ? demi2 : null;
+            // Vérifier si la demi-finale du joueur est terminée
             let myDemiDone = false;
-            if (myDemi && myDemi[0] && myDemi[1] && statusMap[myDemi[0]] && statusMap[myDemi[1]]) {
-                myDemiDone = statusMap[myDemi[0]].eliminated !== statusMap[myDemi[1]].eliminated;
+            if (myDemiFinale && myDemiFinale[0] && myDemiFinale[1] && statusMap[myDemiFinale[0]] && statusMap[myDemiFinale[1]]) {
+                myDemiDone = statusMap[myDemiFinale[0]].eliminated !== statusMap[myDemiFinale[1]].eliminated;
             }
-            // SUPPRESSION du bloc qui bloque le flux :
-            // if (me && !me.eliminated && !me.ready && !myDemiDone) {
-            //   this.menuLayer.add(new Konva.Text({
-            //     x: gameWidth / 2 - 200,
-            //     y: y0 + 2 * lineHeight + 80,
-            //     text: 'Match in progress... Finish your match!',
-            //     fontFamily: 'Press Start 2P',
-            //     fontSize: 18,
-            //     fill: '#ffe156',
-            //     width: 400,
-            //     align: 'center'
-            //   }));
-            //   this.menuLayer.batchDraw();
-            //   return;
-            // }
-            // Remove pink arrows and update final logic
-            // Afficher la finale uniquement si les deux demi-finales sont terminées
-            const demi1Done = demi1[0] && demi1[1] && statusMap[demi1[0]] && statusMap[demi1[1]] && statusMap[demi1[0]].eliminated !== statusMap[demi1[1]].eliminated;
-            const demi2Done = demi2[0] && demi2[1] && statusMap[demi2[0]] && statusMap[demi2[1]] && statusMap[demi2[0]].eliminated !== statusMap[demi2[1]].eliminated;
+            // Calculer les deux demi-finales finies une seule fois
+            let demi1Done = false, demi2Done = false;
+            if (demi1[0] && demi1[1] && statusMap[demi1[0]] && statusMap[demi1[1]]) {
+                demi1Done = statusMap[demi1[0]].eliminated !== statusMap[demi1[1]].eliminated;
+            }
+            if (demi2[0] && demi2[1] && statusMap[demi2[0]] && statusMap[demi2[1]]) {
+                demi2Done = statusMap[demi2[0]].eliminated !== statusMap[demi2[1]].eliminated;
+            }
+            const bothSemisDone = demi1Done && demi2Done;
+            // Affichage du bracket TOUJOURS
+            [demi1, demi2].forEach((pair, j) => {
+                pair.forEach((p, i) => {
+                    if (p && statusMap[p]) {
+                        this.menuLayer.add(new Konva.Text({
+                            x: x0,
+                            y: y0 + (j * 2 + i) * lineHeight,
+                            text: `${i === 0 ? '┌─' : '└─'} ${p}${p === this.myUsername ? ' (You)' : ''}${statusMap[p].eliminated ? ' ❌' : statusMap[p].ready ? ' ✔️' : ''}`,
+                            fontFamily: 'Press Start 2P',
+                            fontSize: 16,
+                            fill: p === this.myUsername ? '#ffe156' : (statusMap[p].eliminated ? '#888' : '#00e7fe')
+                        }));
+                    }
+                });
+            });
             const finalists = [demi1, demi2].map(pair => pair.find(p => p && statusMap[p] && !statusMap[p].eliminated));
             const bothFinalistsKnown = finalists[0] && finalists[1];
+            // Final round
             if (demi1Done && demi2Done && bothFinalistsKnown) {
-                const finalist1 = finalists[0];
-                const finalist2 = finalists[1];
+                const [finalist1, finalist2] = finalists;
                 this.menuLayer.add(new Konva.Text({
                     x: x0 + 260,
                     y: y0 + 1.5 * lineHeight + 10,
@@ -604,9 +583,9 @@ export class PongMenuManager {
                     fontSize: 18,
                     fill: '#ffe156'
                 }));
-                // READY button uniquement pour les finalistes non éliminés et non ready
+                // READY button for eligible finalist
                 if (me && !me.eliminated && !me.ready && (this.myUsername === finalist1 || this.myUsername === finalist2)) {
-                    this.createButton('READY', gameWidth / 2 - 100, gameHeight - 180, () => {
+                    this.createButton('READY', gameWidth / 2 - 100, gameHeight - 120, () => {
                         gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
                         this.buttons.forEach(btn => btn.group.hide());
                         this.menuLayer.add(new Konva.Text({
@@ -638,7 +617,7 @@ export class PongMenuManager {
                 return;
             }
             else if (demi1Done || demi2Done) {
-                // Une seule demi-finale est finie : attendre l'autre
+                // Only one semi-final done: show waiting message
                 this.menuLayer.add(new Konva.Text({
                     x: x0 + 260,
                     y: y0 + 1.5 * lineHeight + 10,
@@ -650,16 +629,16 @@ export class PongMenuManager {
                     align: 'center'
                 }));
                 this.menuLayer.batchDraw();
-                return;
+                // Pas de return ici !
             }
-            // Correction : READY button dès que le joueur n'est pas éliminé et pas ready
+            // READY button pour eligible semi-finalist
             if (me && !me.eliminated && !me.ready) {
-                this.createButton('READY', gameWidth / 2 - 100, gameHeight - 80, () => {
+                this.createButton('READY', gameWidth / 2 - 100, gameHeight - 120, () => {
                     gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
                     this.buttons.forEach(btn => btn.group.hide());
                     this.menuLayer.add(new Konva.Text({
                         x: gameWidth / 2 - 100,
-                        y: gameHeight - 120,
+                        y: gameHeight - 80,
                         text: 'Waiting for other player...',
                         fontFamily: 'Press Start 2P',
                         fontSize: 16,
@@ -670,36 +649,29 @@ export class PongMenuManager {
                     this.menuLayer.batchDraw();
                 });
             }
-            else if (me && !me.eliminated && me.ready && myDemi) {
-                // Trouver l'autre joueur de la demi-finale
-                const other = myDemi.find(p => p !== this.myUsername);
-                if (other && statusMap[other] && !statusMap[other].ready) {
-                    this.menuLayer.add(new Konva.Text({
-                        x: gameWidth / 2 - 100,
-                        y: gameHeight - 120,
-                        text: 'Waiting for other player...',
-                        fontFamily: 'Press Start 2P',
-                        fontSize: 16,
-                        fill: '#ffe156',
-                        width: 300,
-                        align: 'center'
-                    }));
-                    this.menuLayer.batchDraw();
-                    return;
-                }
-                // Si les deux sont ready, ne rien afficher (le match va se lancer)
+            else if (me && !me.eliminated && me.ready) {
+                this.menuLayer.add(new Konva.Text({
+                    x: gameWidth / 2 - 100,
+                    y: gameHeight - 80,
+                    text: 'You are ready! Waiting for other player...',
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 16,
+                    fill: '#ffe156',
+                    width: 300,
+                    align: 'center'
+                }));
             }
+            this.menuLayer.batchDraw();
+            return;
         }
-        else if (size === 4 && players.length === 2) {
-            // Final round: only 2 players left (fallback)
-            const p1 = players[0], p2 = players[1];
+        // Final fallback: show all players and their status (for 2 left, or fallback)
+        if (players.length === 2 && size === 4) {
+            const [p1, p2] = players;
             if (p1 && p2 && statusMap[p1] && statusMap[p2]) {
-                // Draw a visually distinct final bracket
-                const yFinal = 120 + 450;
+                const yFinal = 560;
                 const xFinal = gameWidth / 2 - 180;
                 const finalist1 = statusMap[p1];
                 const finalist2 = statusMap[p2];
-                // Show both names, highlight user, show READY/WAITING icons
                 const getStatusIcon = (s) => s.eliminated ? '❌' : s.ready ? '✔️' : '⏳';
                 const getStatusText = (s) => s.eliminated ? 'Eliminated' : s.ready ? 'Ready' : 'Waiting';
                 this.menuLayer.add(new Konva.Text({
@@ -732,10 +704,9 @@ export class PongMenuManager {
                     width: 360,
                     align: 'center'
                 }));
-                // READY button logic: only if user is a finalist, not eliminated, not ready
-                const me = statusMap[this.myUsername];
+                // READY button for eligible finalist
                 if (me && !me.eliminated && !me.ready && (this.myUsername === p1 || this.myUsername === p2)) {
-                    this.createButton('READY', gameWidth / 2 - 100, gameHeight - 180, () => {
+                    this.createButton('READY', gameWidth / 2 - 100, gameHeight - 120, () => {
                         gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
                         this.buttons.forEach(btn => btn.group.hide());
                         this.menuLayer.add(new Konva.Text({
@@ -763,21 +734,21 @@ export class PongMenuManager {
                         align: 'center'
                     }));
                 }
+                this.menuLayer.batchDraw();
+                return;
             }
         }
-        else {
-            // Fallback: show all players and their status
-            status.forEach((entry, i) => {
-                this.menuLayer.add(new Konva.Text({
-                    x: gameWidth / 2 - 200,
-                    y: 80 + i * 24 + 450,
-                    text: `${entry.username} ${entry.eliminated ? '(eliminated)' : entry.ready ? '(ready)' : ''}`,
-                    fontFamily: 'Press Start 2P',
-                    fontSize: 16,
-                    fill: entry.eliminated ? '#888' : '#00e7fe'
-                }));
-            });
-        }
+        // Fallback: show all players and their status
+        status.forEach((entry, i) => {
+            this.menuLayer.add(new Konva.Text({
+                x: gameWidth / 2 - 200,
+                y: 540 + i * 28,
+                text: `${entry.username} ${entry.eliminated ? '(eliminated)' : entry.ready ? '(ready)' : ''}`,
+                fontFamily: 'Press Start 2P',
+                fontSize: 16,
+                fill: entry.eliminated ? '#888' : '#00e7fe'
+            }));
+        });
         this.menuLayer.batchDraw();
         this.menuLayer.show();
         this.menuLayer.moveToTop();
@@ -828,6 +799,7 @@ export class PongMenuManager {
             // Show bracket and Ready button logic for finalists only
             if (isFinale && nonEliminated.length === 2) {
                 const allReady = status.filter(s => !s.eliminated).every(s => s.ready);
+                const finalistUsernames = nonEliminated.map(s => s.username);
                 if (allReady) {
                     let you;
                     try {
@@ -837,10 +809,11 @@ export class PongMenuManager {
                     catch (err) {
                         you = 'You';
                     }
+                    const isSpectator = !finalistUsernames.includes(this.myUsername);
                     const p1 = new Konva.Text({
                         x: gameWidth / 6,
                         y: 450,
-                        text: you,
+                        text: finalistUsernames[0],
                         fontFamily: 'Press Start 2P',
                         fontSize: 20,
                         fill: '#00e7fe',
@@ -850,7 +823,7 @@ export class PongMenuManager {
                     const p2 = new Konva.Text({
                         x: gameWidth / 2,
                         y: 450,
-                        text: opponent,
+                        text: finalistUsernames[1],
                         fontFamily: 'Press Start 2P',
                         fontSize: 20,
                         fill: '#00e7fe',
@@ -878,7 +851,14 @@ export class PongMenuManager {
                         }
                         else {
                             clearInterval(timer);
-                            initTournamentPong(side, you, opponent);
+                            if (isSpectator) {
+                                // Spectateur : lance le rendu sans contrôle
+                                initTournamentPong(undefined, finalistUsernames[0], finalistUsernames[1]);
+                            }
+                            else {
+                                // Finaliste : logique normale
+                                initTournamentPong(side, you, opponent);
+                            }
                             const handler = (state) => {
                                 if (!state || !state.paddles)
                                     return;

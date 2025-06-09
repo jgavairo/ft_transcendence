@@ -774,6 +774,7 @@ const start = async () => {
                         
                         // Si la partie est terminée, nettoyer après un délai
                         if (game.getState().finish && !game.historySaved) {
+                            game.historySaved = true; // <-- Déplacer ici pour éviter les doublons
                             (async () => {
                                 try {
                                     const playerUsername = game.getState().player.username;
@@ -806,8 +807,6 @@ const start = async () => {
                                 } catch (err) {
                                     console.error('[Tower] Error saving match history:', err);
                                 }
-                                game.historySaved = true;
-                                    
                                 towerGames.delete(roomId);
                                 console.log(`[Tower] Game ${roomId} cleaned up after completion`);
 

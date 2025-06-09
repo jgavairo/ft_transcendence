@@ -656,7 +656,12 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
             container.appendChild(noMatches);
             return;
         }
-        const recentMatches = filteredMatches.slice(0, 10); // Limite à 10 matchs
+        // --- Ajout d'un conteneur scrollable autour du tableau ---
+        const tableWrapper = document.createElement("div");
+        tableWrapper.style.maxHeight = "200px";
+        tableWrapper.style.overflowY = "auto";
+        tableWrapper.style.width = "100%";
+        // --------------------------------------------------------
         const matchTable = document.createElement("table");
         matchTable.className = "match-history-table";
         const tableHeader = document.createElement("tr");
@@ -668,6 +673,8 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
             <th>Date</th>
         `;
         matchTable.appendChild(tableHeader);
+        // Correction : utiliser filteredMatches.slice(0, 10) au lieu de recentMatches
+        const recentMatches = filteredMatches.slice(0, 10);
         for (const match of recentMatches) {
             try {
                 const isUser1 = match.user1_id === userId;
@@ -704,7 +711,8 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
                 console.error("Error displaying match:", error, match);
             }
         }
-        container.appendChild(matchTable);
+        tableWrapper.appendChild(matchTable);
+        container.appendChild(tableWrapper);
         // Plus de bouton "show all matches"
     }
     // Affichage du tableau complet
