@@ -15,7 +15,6 @@ import { showErrorNotification } from '../../helpers/notifications.js';
 
 // Interface de l'état de partie reçue du serveur
 export interface MatchState {
-  roomId: string;
   paddles: { id: string; phi: number; lives: number }[];
   ball: { x: number; y: number };
   gameOver: boolean;
@@ -60,6 +59,13 @@ export function setShowTutoFalse() {
   showTutorial = false;
 }
 
+// Variable pour indiquer si on est en private lobby
+export let isPrivateLobby = false;
+
+// Fonction pour activer le mode private lobby
+export function setPrivateLobbyTrue() {
+  isPrivateLobby = true;
+}
 
 window.addEventListener('keydown', onKeyDown);
 window.addEventListener('keyup',   onKeyUp);
@@ -93,6 +99,7 @@ export async function onMatchFound(data: any) {
   modePong  = true;
   soloTri   = false;
   soloMode  = data.mode === 'solo';
+  roomId    = data.roomId || '';
   mySide    = soloMode ? 0 : data.side;
   lastState = null;
   ready     = false;
@@ -430,7 +437,7 @@ export async function renderGameOverMessage(state: MatchState) {
     }
 
     // Appeler l'API en fonction du résultat
-    if (player.lives > 0 && modePong && !soloMode && !soloTri) {
+    if (!isPrivateLobby && player.lives > 0 && modePong && !soloMode && !soloTri) {
       // Victoire : appeler incrementWins
       const response = await fetch('/api/games/incrementWins', {
         method: 'POST',
@@ -449,7 +456,7 @@ export async function renderGameOverMessage(state: MatchState) {
       } else {
         console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
       }
-    } else if (player.lives <= 0 && modePong && !soloMode && !soloTri) {
+    } else if (!isPrivateLobby && player.lives <= 0 && modePong && !soloMode && !soloTri) {
       // Défaite : appeler incrementLosses
       const response = await fetch('/api/games/incrementLosses', {
         method: 'POST',

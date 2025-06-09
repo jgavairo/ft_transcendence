@@ -2,7 +2,7 @@
 import Konva from "https://cdn.skypack.dev/konva";
 import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong} from "../SocketEmit.js";
-import { connectPong, onMatchFound, onTriMatchFound, stopGame, MatchState, initTournamentPong, hideGameCanvasAndShowMenu } from "../pongGame.js";
+import { connectPong, onMatchFound, onTriMatchFound, stopGame, MatchState, initTournamentPong, hideGameCanvasAndShowMenu, setPrivateLobbyTrue } from "../pongGame.js";
 import { socket as gameSocket } from "../network.js";
 import { launchSoloPongWithTutorial, launchSoloTriWithTutorial} from "../tutorialLauncher.js";
 import { renderPong } from "../renderPong.js";
@@ -1571,7 +1571,7 @@ export class PongMenuManager
 
     public static matchFound2Players(data: any) : void
     {
-                console.log("match found 2 players");
+        console.log("match found 2 players");
         const menu = PongMenuManager.instance;
         
         // Nettoyage des éléments existants
@@ -1716,6 +1716,7 @@ export class PongMenuManager
     // Crée une room privée non listée, met l'utilisateur en attente dans la room (sans afficher l'ID)
     // Si roomId est fourni, on rejoint la room existante et on affiche l'écran du salon
     private async privateLobby(nbPlayers: number, roomId?: string) {
+        setPrivateLobbyTrue();
         if (nbPlayers !== 2) {
             // Ne rien faire si ce n'est pas 2 joueurs
             showNotification('Le mode privé n\'est disponible que pour 2 joueurs.');
