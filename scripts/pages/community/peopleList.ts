@@ -658,7 +658,7 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
         }
         // --- Ajout d'un conteneur scrollable autour du tableau ---
         const tableWrapper = document.createElement("div");
-        tableWrapper.style.maxHeight = "200px";
+        tableWrapper.style.maxHeight = "320px";
         tableWrapper.style.overflowY = "auto";
         tableWrapper.style.width = "100%";
         // --------------------------------------------------------
