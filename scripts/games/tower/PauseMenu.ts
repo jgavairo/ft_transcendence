@@ -56,7 +56,7 @@ export class PauseMenu {
         // Bouton Quitter
         const quitButton = this.createButton(450, 420, 300, 50, 'QUIT');
         quitButton.on('click', () => {
-            this.client.quitMatch();
+            this.client.quitMatch(true);
         });
 
         this.layer.add(background);

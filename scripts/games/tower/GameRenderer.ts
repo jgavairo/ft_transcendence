@@ -845,7 +845,7 @@ export class GameRenderer {
             });
 
             buttonGroup.on('click', () => {
-                this.gameClient.quitMatch();
+                this.gameClient.quitMatch(false);
             });
 
             this.layer.add(buttonGroup);
