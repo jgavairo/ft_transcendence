@@ -306,7 +306,7 @@ export class PongMenuManager {
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('main'));
                 break;
             case 'solo':
-                this.createButton('1 PLAYER', gameWidth / 2 - 100, 450, () => alert('not implemented yet'));
+                this.createButton('1 PLAYER', gameWidth / 2 - 100, 450, () => this.offlineLobby(1));
                 this.createButton('2 PLAYERS', gameWidth / 2 - 100, 520, () => this.offlineLobby(2));
                 this.createButton('3 PLAYERS', gameWidth / 2 - 100, 590, () => this.offlineLobby(3));
                 this.createButton('BACK', gameWidth / 2 - 100, 660, () => this.changeMenu('play'));
@@ -358,7 +358,7 @@ export class PongMenuManager {
                 this.showLobbyList(view.joined);
             }
         });
-        // À chaque update “ready”
+        // À chaque update "ready"
         gameSocket.on('tournamentReadyUpdate', (view) => {
             this.currentTourSize = view.size;
             this.currentTourId = view.tournamentId;
@@ -799,7 +799,7 @@ export class PongMenuManager {
         if (!canvas || !konvaDiv) {
             this.initStageAndLayers();
         }
-        // 1) Nettoyage de l’UI
+        // 1) Nettoyage de l'UI
         this.menuLayer.removeChildren();
         this.menuLayer.batchDraw();
         if (this.lastBracketView) {
@@ -1116,7 +1116,56 @@ export class PongMenuManager {
             menu.buttons.forEach(button => button.group.destroy());
             menu.buttons = [];
             menu.menuLayer.destroyChildren();
-            if (nbPlayers === 2) {
+            if (nbPlayers === 1) {
+                // Affichage des joueurs
+                const player1Text = new Konva.Text({
+                    text: `${username}1`,
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 20,
+                    fill: '#00e7fe',
+                    x: (gameWidth / 6),
+                    y: 450,
+                    width: 400,
+                    align: 'center'
+                });
+                const player2Text = new Konva.Text({
+                    text: `Bot`,
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 20,
+                    fill: '#00e7fe',
+                    x: gameWidth / 2,
+                    y: 450,
+                    width: 400,
+                    align: 'center'
+                });
+                const countdownText = new Konva.Text({
+                    text: 'Game starting in 5',
+                    fontFamily: 'Press Start 2P',
+                    fontSize: 24,
+                    fill: '#fc4cfc',
+                    x: gameWidth / 2 - 200,
+                    y: 520,
+                    width: 400,
+                    align: 'center'
+                });
+                menu.menuLayer.add(player1Text);
+                menu.menuLayer.add(player2Text);
+                menu.menuLayer.add(countdownText);
+                // Décompte
+                let count = 5;
+                const countdown = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        countdownText.text(`Game starting in ${count}`);
+                        menu.menuLayer.batchDraw();
+                    }
+                    else {
+                        clearInterval(countdown);
+                        this.launchLocalPong(nbPlayers);
+                    }
+                }, 1000);
+            }
+            else if (nbPlayers === 2) {
                 // Affichage des joueurs
                 const player1Text = new Konva.Text({
                     text: `${username}1`,
@@ -1247,6 +1296,9 @@ export class PongMenuManager {
                 // modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
                 console.log('Current user for solo 2 players:', username);
                 switch (nbPlayers) {
+                    case 1:
+                        await launchSoloPongWithTutorial(modal, username);
+                        break;
                     case 2:
                         await launchSoloPongWithTutorial(modal, username);
                         break;
