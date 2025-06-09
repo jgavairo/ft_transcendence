@@ -373,7 +373,7 @@ app.post('/api/games/incrementWins', { preHandler: authMiddleware }, async (requ
         if (!gameId || !userId) {
             return reply.status(400).send({ error: 'gameId and userId are required' });
         }
-
+        console.log("IN INCREMENT WINS");
         await dbManager.incrementPlayerWins(gameId, userId);
         return reply.status(200).send({ success: true, message: `Player ${userId}'s wins incremented for game ${gameId}` });
     } catch (error) {

@@ -35,6 +35,12 @@ export let showTutorial = false;
 export function setShowTutoFalse() {
     showTutorial = false;
 }
+// Variable pour indiquer si on est en private lobby
+export let isPrivateLobby = false;
+// Fonction pour activer le mode private lobby
+export function setPrivateLobbyTrue() {
+    isPrivateLobby = true;
+}
 window.addEventListener('keydown', onKeyDown);
 window.addEventListener('keyup', onKeyUp);
 // Fonction pour récupérer l'ID utilisateur à partir d'un socket_id
@@ -60,6 +66,7 @@ export async function onMatchFound(data) {
     modePong = true;
     soloTri = false;
     soloMode = data.mode === 'solo';
+    roomId = data.roomId || '';
     mySide = soloMode ? 0 : data.side;
     lastState = null;
     ready = false;
@@ -386,7 +393,7 @@ export async function renderGameOverMessage(state) {
             return;
         }
         // Appeler l'API en fonction du résultat
-        if (player.lives > 0 && modePong && !soloMode && !soloTri) {
+        if (!isPrivateLobby && player.lives > 0 && modePong && !soloMode && !soloTri) {
             // Victoire : appeler incrementWins
             const response = await fetch('/api/games/incrementWins', {
                 method: 'POST',
@@ -406,7 +413,7 @@ export async function renderGameOverMessage(state) {
                 console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
             }
         }
-        else if (player.lives <= 0 && modePong && !soloMode && !soloTri) {
+        else if (!isPrivateLobby && player.lives <= 0 && modePong && !soloMode && !soloTri) {
             // Défaite : appeler incrementLosses
             const response = await fetch('/api/games/incrementLosses', {
                 method: 'POST',

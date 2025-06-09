@@ -36,10 +36,11 @@ export class GameClient
         return this.renderer.getStage();
     }
 
-    public quitMatch()
+    public quitMatch(socket: boolean)
     {
         console.log("Quitting match with roomId:", this.roomId);
-        this.socket.emit("quitMatch", this.roomId, this.username);
+        if (socket)
+            this.socket.emit("quitMatch", this.roomId, this.username);
         this.roomId = null;
         this.cleanup();
         const container = document.getElementById("games-modal");

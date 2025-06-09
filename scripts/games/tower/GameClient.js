@@ -22,9 +22,10 @@ export class GameClient {
     getStage() {
         return this.renderer.getStage();
     }
-    quitMatch() {
+    quitMatch(socket) {
         console.log("Quitting match with roomId:", this.roomId);
-        this.socket.emit("quitMatch", this.roomId, this.username);
+        if (socket)
+            this.socket.emit("quitMatch", this.roomId, this.username);
         this.roomId = null;
         this.cleanup();
         const container = document.getElementById("games-modal");

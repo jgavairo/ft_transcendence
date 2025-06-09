@@ -717,7 +717,7 @@ export class GameRenderer {
                 buttonText.y(22); // Remet le texte à sa position normale
             });
             buttonGroup.on('click', () => {
-                this.gameClient.quitMatch();
+                this.gameClient.quitMatch(false);
             });
             this.layer.add(buttonGroup);
             this.layer.draw();
