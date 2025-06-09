@@ -96,6 +96,7 @@ export let playerNames: string[] = [];
 
 
 export async function onMatchFound(data: any) {
+  console.log('[PONG] isPrivateLobby before match:', isPrivateLobby);
   modePong  = true;
   soloTri   = false;
   soloMode  = data.mode === 'solo';
@@ -114,6 +115,7 @@ export async function onMatchFound(data: any) {
 }
 
 export async function onTriMatchFound(data: any) {
+  console.log('[PONG] isPrivateLobby before match:', isPrivateLobby);
   modePong  = false;
   soloTri   = data.mode === 'solo-tri';
   console.log('data mode =', data.mode);
@@ -162,6 +164,7 @@ let loopId: number | null = null;
 export function stopGame() {
   // 1) Arrêter la boucle requestAnimationFrame
   console.log('stopGame called');
+  isPrivateLobby = false;
   running = false;                    // ← désactive le rendu
   if (loopId !== null) {
     cancelAnimationFrame(loopId);
@@ -365,6 +368,7 @@ export function startPong() {
 }
 
 export function initTournamentPong(side: number | undefined, you: string, opponent: string) {
+  console.log('[PONG] isPrivateLobby before match:', isPrivateLobby);
   // 1) Réplication de ce que faisait onMatchFound + startPong, mais en mode tournoi
   modePong    = true;
   soloTri     = false;
