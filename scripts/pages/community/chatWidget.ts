@@ -139,7 +139,7 @@ export async function setupChatWidget() {
         let isSystem = false;
         let displayName = '';
         let profilePic = '';
-        if (authorIdRaw === 'system' || isNaN(authorId)) {
+        if (authorIdRaw === 'system' || isNaN(authorId) || authorIdRaw == 0) {
             isSystem = true;
             displayName = 'Team42';
             profilePic = '/assets/games/pong/pong.png';
