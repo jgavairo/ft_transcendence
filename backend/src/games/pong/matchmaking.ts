@@ -183,7 +183,9 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
               }, 1000 / 60);
             }
             // Annonce dans le chat des demi-finales
-            const msg = `[TOURNOI PONG] Demi-finales :\nMatch 1 : @${A.username} vs @${B.username}\nMatch 2 : @${C.username} vs @${D.username}`;
+            const now = new Date();
+            const heure = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const msg = `[TOURNOI PONG] Demi-finales (${heure}) :\nMatch 1 : @${A.username} vs @${B.username}\nMatch 2 : @${C.username} vs @${D.username}`;
             sendTournamentChatMessage(msg);
           }
         } else if (tour.round === 1) {
@@ -244,7 +246,9 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
                 if (state.gameOver) clearInterval(iv);
               }, 1000 / 60);
               // Annonce dans le chat de la finale
-              const msg = `[TOURNOI PONG] Finale : @${F1.username} vs @${F2.username}`;
+              const now = new Date();
+              const heure = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+              const msg = `[TOURNOI PONG] Finale (${heure}) : @${F1.username} vs @${F2.username}`;
               sendTournamentChatMessage(msg);
             }
           }

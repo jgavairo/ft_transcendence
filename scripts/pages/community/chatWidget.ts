@@ -149,6 +149,65 @@ export async function setupChatWidget() {
             profilePic = user?.profile_picture || 'default-profile.png';
         }
         const isGrouped = lastAuthor === authorId;
+        // --- Affichage spécial pour les messages de tournoi (simple, emoji coupe, un message, un match par ligne, AVEC auteur et photo) ---
+        const bracketRegex = /^\[TOURNOI( PONG)?\] (.+?)(?:\n|: )([\s\S]+)/i;
+        if (bracketRegex.test(content)) {
+            const [, , phase, matchesRaw] = content.match(bracketRegex) || [];
+            let matchLines = matchesRaw.split(/(?:\n|(?=Match \d+ :))/g).map(l => l.trim()).filter(Boolean);
+            // Ajout d'une ligne vide après l'heure
+            let msg = `🏆 ${phase}\n`;
+            matchLines.forEach((line, idx) => {
+                const matchMatch = line.match(/Match (\d+) ?: ?@?(\w+) ?vs ?@?(\w+)/i);
+                if (matchMatch) {
+                    msg += `  • @${matchMatch[2]} vs @${matchMatch[3]}\n`;
+                } else {
+                    msg += `  • ${line}\n`;
+                }
+            });
+            // Affiche dans une seule bulle de chat AVEC auteur et photo
+            const msgWrapper = document.createElement("div");
+            msgWrapper.className = `chat-widget-messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
+            if (!self && !isGrouped) {
+                const usernameSpan = document.createElement("span");
+                usernameSpan.textContent = displayName;
+                usernameSpan.className = `chat-widget-messenger-username`;
+                msgWrapper.appendChild(usernameSpan);
+            }
+            const row = document.createElement("div");
+            row.className = "chat-widget-messenger-message-row";
+            if (!self && !isGrouped) {
+                const profileImg = document.createElement("img");
+                profileImg.src = profilePic;
+                profileImg.alt = `${displayName}'s profile picture`;
+                profileImg.className = "chat-widget-messenger-avatar";
+                if (!isSystem) {
+                    const user = userMap.get(authorId);
+                    profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+                }
+                row.appendChild(profileImg);
+            } else {
+                const spacer = document.createElement("div");
+                spacer.className = "chat-widget-messenger-avatar-spacer";
+                row.appendChild(spacer);
+            }
+            const messageContent = document.createElement("div");
+            messageContent.className = `chat-widget-messenger-bubble${self ? " self" : ""}`;
+            // Affiche les sauts de ligne avec <br>
+            messageContent.innerHTML = msg.trim().replace(/\n/g, '<br>');
+            row.appendChild(messageContent);
+            if (self && !isGrouped) {
+                const spacer = document.createElement("div");
+                spacer.className = "chat-widget-messenger-avatar-spacer";
+                row.appendChild(spacer);
+            }
+            msgWrapper.appendChild(row);
+            chatContainer.appendChild(msgWrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            lastAuthor = authorId;
+            lastMsgWrapper = msgWrapper;
+            return;
+        }
+        // --- Affichage normal des messages ---
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `chat-widget-messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
         if (!self && !isGrouped) {
