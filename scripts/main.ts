@@ -1,5 +1,5 @@
 import { storePage, libraryPage, communityPage, header } from "./sourcepage.js";
-import { setupHeader } from "./header/navigation.js";
+import { setupHeader, changeActiveButton } from "./header/navigation.js";
 import { setupStore } from "./pages/store/store.js";
 import api from "./helpers/api.js";
 import { LoginManager } from "./managers/loginManager.js";
@@ -96,9 +96,35 @@ export class MainApp
             console.error('Main element not found');
             return;
         }
-        // Toujours afficher la page store par défaut après un refresh
-        mainElement.innerHTML = storePage;
-        setupStore();
+        
+        const path = window.location.pathname.slice(1) || 'store';
+        const storeButton = document.getElementById('storebutton');
+        const libraryButton = document.getElementById('librarybutton');
+        const communityButton = document.getElementById('communitybutton');
+        if (!storeButton || !libraryButton || !communityButton)
+        {
+            console.error('Buttons not found');
+            return;
+        }
+        let currentActiveButton = document.querySelector('.header .activebutton') as HTMLElement;
+
+        switch (path) {
+            case 'library':
+                changeActiveButton(currentActiveButton, libraryButton);
+                mainElement.innerHTML = libraryPage;
+                setupLibrary();
+                break;
+            case 'community':
+                changeActiveButton(currentActiveButton, communityButton);
+                mainElement.innerHTML = communityPage;
+                showCommunityPage();
+                break;
+            default:
+                changeActiveButton(currentActiveButton, storeButton);
+                mainElement.innerHTML = storePage;
+                setupStore();
+                break;
+        }
     }
 }
 console.log("MainApp");

@@ -44,6 +44,11 @@ body
 	height: 3rem;
 }
 
+.header .logo:hover
+{
+	cursor: pointer;
+}
+
 .header .activebutton
 {
 	font-size: 32px;

@@ -1,5 +1,5 @@
 const header = (username: string, profilePicture: string) => `
-			<img src="../../assets/logo.png" alt="Logo" class="w-12" />
+			<img src="../../assets/logo.png" alt="Logo" class="logo" id="logoHeader" />
 			<button class="activebutton" id="storebutton">STORE</button>
 			<button class="button" id="librarybutton">LIBRARY</button>
 			<button class="button" id="communitybutton">COMMUNITY</button>
