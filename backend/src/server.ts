@@ -870,13 +870,31 @@ const start = async () => {
                 }
             });
             
-            socket.on('disconnect', () =>
-            {
+            socket.on('disconnect', () => {
                 clearInterval(gameLoop);
-                // Ne supprimer que la partie solo si elle existe
+                
+                const username = userSocketMapTower.get(socket.id);
+                if (username) {
+                    for (const [roomId, game] of towerGames.entries()) {
+                        if (roomId.startsWith('tower_')) {
+                            const isPlayerOne = game.getSocketPlayerOne() === socket.id;
+                            const isPlayerTwo = game.getSocketPlayerTwo() === socket.id;
+                            if (isPlayerOne || isPlayerTwo) {
+                                game.killPlayer(username);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Nettoyer la partie solo si elle existe
                 if (towerGames.has(socket.id)) {
                     towerGames.delete(socket.id);
                 }
+
+                // Nettoyer la map des sockets
+                userSocketMapTower.delete(socket.id);
+                
                 console.log('Client déconnecté du namespace /tower:', socket.id);
             });
         });
