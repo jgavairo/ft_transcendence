@@ -5,6 +5,7 @@ import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
+import { handlePongInviteLinkClick } from "../../helpers/pongInviteHandler.js";
 async function fetchCurrentUser() {
     try {
         const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, { credentials: "include" });
@@ -156,7 +157,15 @@ export async function setupChatWidget() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
-        if (mentionMatch) {
+        // --- PATCH: invitation Pong envoyée par soi ---
+        const pongInviteRegex = /@([\w-]+) Clique ici pour rejoindre ma partie Pong/;
+        if (self && pongInviteRegex.test(content)) {
+            // Extraire le username cible
+            const match = content.match(pongInviteRegex);
+            const dest = match ? match[1] : "?";
+            messageContent.textContent = `invitation envoyée à : ${dest}`;
+        }
+        else if (mentionMatch) {
             // Cherche l'utilisateur mentionné pour afficher son nom et sa photo
             const mentionedUser = users.find(u => u.username === mentionMatch[1]);
             if (mentionedUser) {
@@ -392,7 +401,7 @@ export async function setupChatWidget() {
     // Vider le cache partagé au début de setupChatWidget
     // Vider le cache partagé au début de setupChatWidget
     clearBlockedCache();
-    handleGameInviteLinkForWidget();
+    document.addEventListener('click', handlePongInviteLinkClick);
 }
 // Gestion des liens d'invitation Pong pour le chat widget flottant
 export function handleGameInviteLinkForWidget() {
