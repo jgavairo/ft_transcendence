@@ -1,10 +1,12 @@
 var _a;
-import { storePage, header } from "./sourcepage.js";
-import { setupHeader } from "./header/navigation.js";
+import { storePage, libraryPage, communityPage, header } from "./sourcepage.js";
+import { setupHeader, changeActiveButton } from "./header/navigation.js";
 import { setupStore } from "./pages/store/store.js";
 import api from "./helpers/api.js";
 import { LoginManager } from "./managers/loginManager.js";
 import { setupChatWidget, removeChatWidget } from "./pages/community/chatWidget.js";
+import { showCommunityPage } from "./pages/community/community.js";
+import { setupLibrary } from "./games/library.js"; // Ajoute cette ligne si tu as une fonction d'init pour la library
 export const HOSTNAME = window.location.hostname;
 export async function updateChatWidgetVisibility() {
     // Ne recharge pas le widget chat si on est sur la page community
@@ -57,9 +59,32 @@ export class MainApp {
             console.error('Main element not found');
             return;
         }
-        // Toujours afficher la page store par défaut après un refresh
-        mainElement.innerHTML = storePage;
-        setupStore();
+        const path = window.location.pathname.slice(1) || 'store';
+        const storeButton = document.getElementById('storebutton');
+        const libraryButton = document.getElementById('librarybutton');
+        const communityButton = document.getElementById('communitybutton');
+        if (!storeButton || !libraryButton || !communityButton) {
+            console.error('Buttons not found');
+            return;
+        }
+        let currentActiveButton = document.querySelector('.header .activebutton');
+        switch (path) {
+            case 'library':
+                changeActiveButton(currentActiveButton, libraryButton);
+                mainElement.innerHTML = libraryPage;
+                setupLibrary();
+                break;
+            case 'community':
+                changeActiveButton(currentActiveButton, communityButton);
+                mainElement.innerHTML = communityPage;
+                showCommunityPage();
+                break;
+            default:
+                changeActiveButton(currentActiveButton, storeButton);
+                mainElement.innerHTML = storePage;
+                setupStore();
+                break;
+        }
     }
 }
 _a = MainApp;

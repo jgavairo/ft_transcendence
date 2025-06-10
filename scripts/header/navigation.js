@@ -12,7 +12,7 @@ import { renderPeopleList } from '../pages/community/peopleList.js';
 import { setupChatWidget, removeChatWidget } from '../pages/community/chatWidget.js';
 import { updateChatWidgetVisibility } from "../main.js";
 export let boolprofileMenu = false;
-function changeActiveButton(newButton, newActiveButton) {
+export function changeActiveButton(newButton, newActiveButton) {
     newButton.classList.replace('activebutton', 'button');
     newActiveButton.classList.replace('button', 'activebutton');
 }
@@ -65,7 +65,8 @@ function attachNavigationListeners() {
     const profilewindow = document.getElementById('profileMenu');
     const navigationButtons = document.querySelectorAll('.header button');
     const storeButton = document.getElementById('storebutton');
-    if (!storeButton)
+    const logoHeader = document.getElementById('logoHeader');
+    if (!storeButton || !logoHeader)
         return;
     const libraryButton = document.getElementById('librarybutton');
     if (!libraryButton)
@@ -78,6 +79,25 @@ function attachNavigationListeners() {
         return;
     if (!profilewindow)
         return;
+    const logoButton = document.getElementById('logoHeader');
+    if (!logoButton)
+        return;
+    logoButton.addEventListener('click', () => {
+        let currentActiveButton = document.querySelector('.header .activebutton');
+        if (currentActiveButton.id === 'storebutton')
+            return;
+        if (!currentActiveButton)
+            currentActiveButton = storeButton;
+        if (boolprofileMenu) {
+            profilewindow.innerHTML = "";
+            boolprofileMenu = false;
+        }
+        changeActiveButton(currentActiveButton, storeButton);
+        mainElement.innerHTML = storePage;
+        setupStore();
+        setupChatWidget();
+        window.history.pushState({ page: 'store' }, '', '/store');
+    });
     navigationButtons.forEach(button => {
         button.addEventListener('click', () => {
             let currentActiveButton = document.querySelector('.header .activebutton');
@@ -94,7 +114,8 @@ function attachNavigationListeners() {
                     changeActiveButton(currentActiveButton, libraryButton);
                     mainElement.innerHTML = libraryPage;
                     setupLibrary();
-                    setupChatWidget(); // Affiche la bulle de chat
+                    setupChatWidget();
+                    window.history.pushState({ page: 'library' }, '', '/library');
                     break;
                 case 'storebutton':
                     if (currentActiveButton.id === 'storebutton')
@@ -106,7 +127,8 @@ function attachNavigationListeners() {
                     changeActiveButton(currentActiveButton, storeButton);
                     mainElement.innerHTML = storePage;
                     setupStore();
-                    setupChatWidget(); // Affiche la bulle de chat
+                    setupChatWidget();
+                    window.history.pushState({ page: 'store' }, '', '/store');
                     break;
                 case 'communitybutton':
                     if (currentActiveButton.id === 'communitybutton')
@@ -118,12 +140,53 @@ function attachNavigationListeners() {
                     changeActiveButton(currentActiveButton, communityButton);
                     mainElement.innerHTML = communityPage;
                     showCommunityPage();
-                    removeChatWidget(); // Supprime la bulle de chat
+                    removeChatWidget();
+                    window.history.pushState({ page: 'community' }, '', '/community');
                     break;
             }
         });
     });
 }
+window.addEventListener('popstate', (event) => {
+    var _a;
+    const profilewindow = document.getElementById('profileMenu');
+    const storeButton = document.getElementById('storebutton');
+    const libraryButton = document.getElementById('librarybutton');
+    const communityButton = document.getElementById('communitybutton');
+    const mainElement = document.getElementById('main');
+    if (!storeButton || !libraryButton || !communityButton || !mainElement || !profilewindow)
+        return;
+    const page = ((_a = event.state) === null || _a === void 0 ? void 0 : _a.page) || 'store';
+    let currentActiveButton = document.querySelector('.header .activebutton');
+    if (!currentActiveButton)
+        currentActiveButton = storeButton;
+    if (boolprofileMenu) {
+        profilewindow.innerHTML = "";
+        boolprofileMenu = false;
+    }
+    switch (page) {
+        case 'library':
+            changeActiveButton(currentActiveButton, libraryButton);
+            mainElement.innerHTML = libraryPage;
+            setupLibrary();
+            setupChatWidget();
+            break;
+        case 'store':
+            changeActiveButton(currentActiveButton, storeButton);
+            mainElement.innerHTML = storePage;
+            setupStore();
+            setupChatWidget();
+            break;
+        case 'community':
+            changeActiveButton(currentActiveButton, communityButton);
+            mainElement.innerHTML = communityPage;
+            showCommunityPage();
+            removeChatWidget();
+            break;
+    }
+});
+const initialPage = window.location.pathname.slice(1) || 'store';
+window.history.replaceState({ page: initialPage }, '', `/${initialPage}`);
 export function setupProfileButton() {
     console.log("setupProfileButton");
     const profilewindow = document.getElementById('profileMenu');
