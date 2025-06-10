@@ -39,7 +39,7 @@ interface BasicTournament {
 // Gestion des rooms privées
 export const privateRooms = new Map<string, { sockets: Socket[]; usernames: string[]; maxPlayers: number }>();
 
-export function setupGameMatchmaking(gameNs: Namespace) {
+export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').Server) {
   const playerInfo = new Map<string, PlayerInfo>();
   // Nouvelle Map pour stocker l'ID utilisateur pour retrouver plus tard
   const socketToUserId = new Map<string, string>();
@@ -58,6 +58,22 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   // Fonction utilitaire pour récupérer l'ID utilisateur à partir d'un socket_id
   function getUserIdFromSocketId(socketId: string): string | undefined {
     return socketToUserId.get(socketId);
+  }
+
+  // Fonction utilitaire pour envoyer un message système dans le chat global
+  async function sendTournamentChatMessage(content: string) {
+    try {
+      const chatNs = io.of('/chat');
+      chatNs.emit('receiveMessage', {
+        author: 'system', // 0 ou "System" pour indiquer un message système
+        content,
+        timestamp: new Date().toISOString()
+      });
+      // Ajout : sauvegarder le message dans l'historique
+      await dbManager.saveMessage(0, content);
+    } catch (e) {
+      console.error('[TOURNOI] Impossible d\'envoyer le message chat tournoi:', e);
+    }
   }
 
   gameNs.on('connection', socket => {
@@ -166,6 +182,9 @@ export function setupGameMatchmaking(gameNs: Namespace) {
                 if (state.gameOver) clearInterval(iv);
               }, 1000 / 60);
             }
+            // Annonce dans le chat des demi-finales
+            const msg = `[TOURNOI PONG] Demi-finales :\nMatch 1 : @${A.username} vs @${B.username}\nMatch 2 : @${C.username} vs @${D.username}`;
+            sendTournamentChatMessage(msg);
           }
         } else if (tour.round === 1) {
           // Only allow 'Ready' for the final if both semi-finals are finished and both finalists are known
@@ -224,6 +243,9 @@ export function setupGameMatchmaking(gameNs: Namespace) {
                 gameNs.to(finalId).emit('gameState', state);
                 if (state.gameOver) clearInterval(iv);
               }, 1000 / 60);
+              // Annonce dans le chat de la finale
+              const msg = `[TOURNOI PONG] Finale : @${F1.username} vs @${F2.username}`;
+              sendTournamentChatMessage(msg);
             }
           }
         }
