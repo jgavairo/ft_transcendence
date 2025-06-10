@@ -4,6 +4,7 @@ import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
+import { handlePongInviteLinkClick } from "../../helpers/pongInviteHandler.js";
 async function fetchCurrentUser() {
     try {
         const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, {
@@ -41,56 +42,6 @@ async function fetchChatHistory(userId) {
         console.error("Error fetching chat history:", error);
         return [];
     }
-}
-// Ajout : gestion des liens d'invitation de partie Pong
-function handleGameInviteLink() {
-    document.addEventListener('click', async function (e) {
-        const target = e.target;
-        if (target && target.tagName === 'A' && target.href && target.href.includes('/pong/join?room=')) {
-            e.preventDefault();
-            // Extraire l'ID de la room depuis l'URL
-            const url = new URL(target.href);
-            const roomId = url.searchParams.get('room');
-            if (!roomId)
-                return;
-            // Vérifier si la room existe avant d'ouvrir le modal
-            try {
-                const resp = await fetch(`/api/pong/room-exists?roomId=${encodeURIComponent(roomId)}`, { credentials: "include" });
-                const data = await resp.json();
-                if (!data.success || !data.exists) {
-                    showErrorNotification("link expired");
-                    return;
-                }
-            }
-            catch (err) {
-                showErrorNotification("link expired");
-                return;
-            }
-            // Charge la page library en arrière-plan pour éviter de garder community
-            const libraryBtn = document.getElementById('librarybutton');
-            if (libraryBtn) {
-                libraryBtn.click();
-                await new Promise(res => setTimeout(res, 100));
-            }
-            // Ouvre le modal de jeu façon overlay
-            let modal = document.getElementById('optionnalModal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'optionnalModal';
-                document.body.appendChild(modal);
-            }
-            modal.innerHTML = `
-              <div class="modal-overlay" id="modalWindow">
-                <div class="game-modal" id="games-modal"></div>
-                <button class="close-modal" id="closeGameModal">&times;</button>
-              </div>
-            `;
-            document.getElementById('closeGameModal').onclick = () => { modal.innerHTML = ''; };
-            // Appel la fonction centralisée pour lancer Pong via le lien
-            const { launchPongFromLink } = await import('../../games/pong/main.js');
-            launchPongFromLink(roomId);
-        }
-    });
 }
 export async function setupChat() {
     var _a;
@@ -145,7 +96,15 @@ export async function setupChat() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " messenger-bubble-mention" : "";
-        if (!self && mentionMatch) {
+        // --- PATCH: invitation Pong envoyée par soi ---
+        const pongInviteRegex = /@([\w-]+) Clique ici pour rejoindre ma partie Pong/;
+        if (self && pongInviteRegex.test(content)) {
+            // Extraire le username cible
+            const match = content.match(pongInviteRegex);
+            const dest = match ? match[1] : "?";
+            messageContent.textContent = `invitation Pong envoyée à : ${dest}`;
+        }
+        else if (!self && mentionMatch) {
             messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="chat-mention">@$1</span>');
         }
         else if (self && mentionMatch) {
@@ -444,5 +403,6 @@ export async function setupChat() {
     });
     // Vider le cache partagé au début de setupChat
     clearBlockedCache();
-    handleGameInviteLink();
+    // Utilise la gestion centralisée des liens d'invitation Pong
+    document.addEventListener('click', handlePongInviteLinkClick);
 }

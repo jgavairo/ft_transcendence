@@ -1835,39 +1835,67 @@ export class PongMenuManager
             gameSocket.emit('joinPrivateRoom', { roomId, username, userId }, (data: { roomId: string }) => {
                 this.privateRoomId = data.roomId;
                 this.menuLayer.destroyChildren();
-                const waitingText = new Konva.Text({
-                    text: 'Waiting for other players to join...',
-                    fontFamily: 'Press Start 2P',
-                    fontSize: 20,
-                    fill: '#fc4cfc',
-                    x: gameWidth / 2 - 250,
-                    y: 470,
-                    width: 500,
-                    align: 'center',
-                });
-                this.menuLayer.add(waitingText);
-                
-                // Animation du texte
-                let dotCount = 0;
-                const animateText = () => {
-                    dotCount = (dotCount + 1) % 4;
-                    waitingText.text('waiting for opponent(s)' + '.'.repeat(dotCount));
-                    this.menuLayer.batchDraw();
-                    setTimeout(animateText, 500);
+                // Ajout du handler pour le match privé trouvé (affichage joueurs + décompte)
+                const onPrivateMatchFound = (matchData: any) => {
+                    // Nettoyage des éléments existants
+                    this.buttons.forEach(button => button.group.destroy());
+                    this.buttons = [];
+                    this.menuLayer.destroyChildren();
+                    // Affichage des joueurs (comme matchFound2Players)
+                    const player1Text = new Konva.Text({
+                        text: `${matchData.you}`,
+                        fontFamily: 'Press Start 2P',
+                        fontSize: 20,
+                        fill: '#00e7fe',
+                        x: (gameWidth / 6),
+                        y: 450,
+                        width: 400,
+                        align: 'center'
+                    });
+                    const player2Text = new Konva.Text({
+                        text: `${matchData.opponent}`,
+                        fontFamily: 'Press Start 2P',
+                        fontSize: 20,
+                        fill: '#00e7fe',
+                        x: gameWidth / 2,
+                        y: 450,
+                        width: 400,
+                        align: 'center'
+                    });
+                    const countdownText = new Konva.Text({
+                        x: gameWidth / 2 - 200,
+                        y: 520,
+                        text: 'Game starting in 5',
+                        fontFamily: 'Press Start 2P',
+                        fontSize: 24,
+                        fill: '#fc4cfc',
+                        width: 400,
+                        align: 'center'
+                    });
+                    this.menuLayer.add(player1Text);
+                    this.menuLayer.add(player2Text);
+                    this.menuLayer.add(countdownText);
+                    // Décompte
+                    let count = 5;
+                    const countdown = setInterval(() => {
+                        count--;
+                        if (count > 0) {
+                            countdownText.text(`Game starting in ${count}`);
+                            this.menuLayer.batchDraw();
+                        } else {
+                            clearInterval(countdown);
+                            onMatchFound(matchData);
+                        }
+                    }, 1000);
+                    // Fermer l'overlay d'invitation si présent
+                    const inviteOverlay = document.getElementById("inviteOverlay");
+                    if (inviteOverlay) inviteOverlay.remove();
                 };
-                animateText();
-
-                // Nettoyage des boutons existants
-                this.buttons.forEach(button => button.group.destroy());
-                this.buttons = [];
-
-                this.createButton('CANCEL', gameWidth / 2 - 100, 670, () => {
-                    // Nettoyage du texte d'attente
-                    waitingText.destroy();
-                    gameSocket.disconnect()
-                    this.changeMenu('multi');
-                });
+                // On écoute l'event une seule fois pour éviter les doublons
+                gameSocket.once('privateMatchFound', onPrivateMatchFound);
             });
+            
+            
         } else {
             // Création d'une nouvelle room
             const userId = currentUser?.id;
@@ -2013,7 +2041,7 @@ export class PongMenuManager
                 } catch (e) {
                     console.error("Erreur lors de l'envoi de l'invitation privée :", e);
                 }
-                showNotification(`Invitation envoyée à ${person.username} dans le chat !`);
+                showNotification(`Invitation Pong envoyée à ${person.username} dans le chat !`);
             };
             item.appendChild(inviteBtn);
             container.appendChild(item);
@@ -2038,6 +2066,6 @@ export async function displayMenu() : Promise<void>
 }
 
 export async function displayMenuFromLink(roomId: string): Promise<void> {
-    const menu = new PongMenuManager(false, false); // pas de titre, pas de menu principal
+    const menu = new PongMenuManager(true, false); // pas de titre, pas de menu principal
     menu.startFromLink(roomId);
 }
