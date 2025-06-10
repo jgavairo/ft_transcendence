@@ -202,6 +202,21 @@ export function setupGameMatchmaking(gameNs: Namespace) {
               playerInfo.set(F2.id, { side: 1, mode: 'multi', roomId: finalId });
               s1.emit('tournamentMatchFound', { matchId: finalId, side: 0, opponent: F2.username });
               s2.emit('tournamentMatchFound', { matchId: finalId, side: 1, opponent: F1.username });
+
+              // Emit to eliminated players so they can spectate the final
+              tour.allPlayers.forEach(p => {
+                if (p.id !== F1.id && p.id !== F2.id) {
+                  const sock = gameNs.sockets.get(p.id);
+                  if (sock) {
+                    sock.join(finalId); // join the final room for spectating
+                    sock.emit('tournamentFinalSpectate', {
+                      matchId: finalId,
+                      finalists: [F1.username, F2.username]
+                    });
+                  }
+                }
+              });
+
               const state = startMatch([s1, s2], gameNs, false, finalId);
               matchStates.set(finalId, state);
               const iv = setInterval(() => {
@@ -543,6 +558,82 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       }
       socket.leave(roomId);
     });
+
+    // --- Quit tournament at READY step ---
+    socket.on('quitTournament', ({ tournamentId }: { tournamentId: string }) => {
+      // Remove from queue if not started
+      let found = false;
+      for (const size of [4, 8] as const) {
+        const idx = tournamentQueues[size].findIndex(p => p.id === socket.id);
+        if (idx !== -1) {
+          tournamentQueues[size].splice(idx, 1);
+          // Update bracket for remaining players
+          tournamentQueues[size].forEach(p =>
+            gameNs.sockets.get(p.id)?.emit('tournamentBracket', {
+              size,
+              joined: tournamentQueues[size].map(p2 => p2.username),
+              status: tournamentQueues[size].map(p2 => ({
+                id: p2.id,
+                username: p2.username,
+                ready: false,
+                eliminated: false,
+                isInGame: false
+              }))
+            })
+          );
+          found = true;
+        }
+      }
+      if (found) return;
+      // If tournament already started (exists in tournaments map)
+      const tour = tournaments.get(tournamentId) as BasicTournament;
+      if (!tour) return;
+      // Remove from allPlayers and players
+      tour.allPlayers = tour.allPlayers.filter(p => p.id !== socket.id);
+      tour.players = tour.players.filter(p => p.id !== socket.id);
+      tour.ready.delete(socket.id);
+      if (tour.finalReady) tour.finalReady.delete(socket.id);
+      // Mark as eliminated in matches
+      Object.values(tour.matches).forEach(m => {
+        if (m.players[0].id === socket.id || m.players[1].id === socket.id) {
+          // If match not finished, mark the other as winner
+          if (!m.winner) {
+            m.winner = m.players[0].id === socket.id ? m.players[1] : m.players[0];
+          }
+        }
+      });
+      // If only one player remains, declare winner
+      if (tour.allPlayers.length === 1) {
+        const winner = tour.allPlayers[0];
+        gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: winner.username });
+        tournaments.delete(tour.id);
+        return;
+      }
+      // Broadcast updated bracket
+      const allMatchesLocal = Object.values(tour.matches) as { players: [Player, Player], winner?: Player }[];
+      const status = tour.allPlayers.map((p: Player) => {
+        const m = allMatchesLocal.find(m2 => m2.players.some(pl => pl.id === p.id));
+        const eliminated = m?.winner ? (m.winner.id !== p.id) : false;
+        let ready = false;
+        if (tour.round === 0) ready = tour.ready.get(p.id) || false;
+        else if (tour.round === 1 && tour.finalReady) ready = tour.finalReady.get(p.id) || false;
+        let isInGame = false;
+        if (m && !m.winner && !eliminated) isInGame = true;
+        return {
+          id: p.id,
+          username: p.username,
+          ready: ready,
+          eliminated: eliminated,
+          isInGame: isInGame
+        };
+      });
+      gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
+        tournamentId: tour.id,
+        size: 4,
+        joined: tour.allPlayers.map((p: Player) => p.username),
+        status: status
+      });
+    });
   });
 
   function launchMatches(ns: Namespace, tour: Tournament) {
@@ -697,6 +788,21 @@ export function setupGameMatchmaking(gameNs: Namespace) {
   playerInfo.set(G2.id, { side: 1, mode: 'multi', roomId: matchId });
   s1.emit('tournamentMatchFound', { matchId, side: 0, opponent: G2.username });
   s2.emit('tournamentMatchFound', { matchId, side: 1, opponent: G1.username });
+
+  // Emit to eliminated players so they can spectate the final
+  tour.allPlayers.forEach(p => {
+    if (p.id !== G1.id && p.id !== G2.id) {
+      const sock = ns.sockets.get(p.id);
+      if (sock) {
+        sock.join(matchId); // join the final room for spectating
+        sock.emit('tournamentFinalSpectate', {
+          matchId,
+          finalists: [G1.username, G2.username]
+        });
+      }
+    }
+  });
+
   const state = startMatch([s1, s2], ns, false, matchId);
   matchStates.set(matchId, state);
 
