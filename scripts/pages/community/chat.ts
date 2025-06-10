@@ -71,6 +71,9 @@ export async function setupChat() {
         return;
     }
 
+    // Vider le conteneur avant d'afficher l'historique
+    chatContainer.innerHTML = "";
+
     // Récupérer les informations des utilisateurs
     const users = await fetchUsernames();
     const userMap = new Map(users.map(user => [user.id, user]));
@@ -79,15 +82,25 @@ export async function setupChat() {
     // Grouper les messages par auteur pour un affichage Messenger-like
     let lastAuthor: number | null = null;
     const addMessage = (content: string, authorIdRaw: number|string, self = true) => {
-        const authorId = Number(authorIdRaw);
+        let authorId = Number(authorIdRaw);
+        let isSystem = false;
+        let displayName = '';
+        let profilePic = '';
+        if (authorIdRaw === 'system' || isNaN(authorId)) {
+            isSystem = true;
+            displayName = 'Team42';
+            profilePic = '/assets/games/pong/pong.png';
+        } else {
+            const user = userMap.get(authorId);
+            displayName = user?.username || `User#${authorId}`;
+            profilePic = user?.profile_picture || 'default-profile.png';
+        }
         const isGrouped = lastAuthor === authorId;
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
-        // Affiche le nom uniquement pour les messages reçus et seulement pour le premier message du groupe
         if (!self && !isGrouped) {
-            const user = userMap.get(authorId);
             const usernameSpan = document.createElement("span");
-            usernameSpan.textContent = user?.username || `User#${authorId}`;
+            usernameSpan.textContent = displayName;
             usernameSpan.className = `messenger-username`;
             msgWrapper.appendChild(usernameSpan);
         }
@@ -96,10 +109,8 @@ export async function setupChat() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " messenger-bubble-mention" : "";
-        // --- PATCH: invitation Pong envoyée par soi ---
         const pongInviteRegex = /@([\w-]+) Clique ici pour rejoindre ma partie Pong/;
         if (self && pongInviteRegex.test(content)) {
-            // Extraire le username cible
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
             messageContent.textContent = `invitation Pong envoyée à : ${dest}`;
@@ -118,29 +129,27 @@ export async function setupChat() {
         }
         messageContent.className = `messenger-bubble${self ? " self" : ""}${mentionClass}`;
         if (!self && !isGrouped) {
-            // Avatar à gauche, bulle à droite
-            const user = userMap.get(authorId);
             const profileImg = document.createElement("img");
-            profileImg.src = user?.profile_picture || "default-profile.png";
-            profileImg.alt = `${user?.username || authorId}'s profile picture`;
+            profileImg.src = profilePic;
+            profileImg.alt = `${displayName}'s profile picture`;
             profileImg.className = "messenger-avatar";
-            profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+            if (!isSystem) {
+                const user = userMap.get(authorId);
+                profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+            }
             row.appendChild(profileImg);
             row.appendChild(messageContent);
         } else if (!self && isGrouped) {
-            // Spacer à gauche, bulle à droite
             const spacer = document.createElement("div");
             spacer.className = "messenger-avatar-spacer";
             row.appendChild(spacer);
             row.appendChild(messageContent);
         } else if (self && !isGrouped) {
-            // Bulle à gauche, spacer à droite (row-reverse via CSS)
             row.appendChild(messageContent);
             const spacer = document.createElement("div");
             spacer.className = "messenger-avatar-spacer";
             row.appendChild(spacer);
         } else if (self && isGrouped) {
-            // Bulle à gauche, spacer à droite (row-reverse via CSS)
             row.appendChild(messageContent);
             const spacer = document.createElement("div");
             spacer.className = "messenger-avatar-spacer";

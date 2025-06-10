@@ -6,6 +6,7 @@ import { HOSTNAME } from "../../main.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
 import { handlePongInviteLinkClick } from "../../helpers/pongInviteHandler.js";
+let chatWidgetSocket = null;
 async function fetchCurrentUser() {
     try {
         const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, { credentials: "include" });
@@ -127,26 +128,41 @@ export async function setupChatWidget() {
     let lastAuthor = null;
     let lastMsgWrapper = null;
     const addMessage = (content, authorIdRaw, self = true) => {
-        const authorId = Number(authorIdRaw);
+        // Patch: gestion Team42 pour messages système
+        let authorId = Number(authorIdRaw);
+        let isSystem = false;
+        let displayName = '';
+        let profilePic = '';
+        if (authorIdRaw === 'system' || isNaN(authorId)) {
+            isSystem = true;
+            displayName = 'Team42';
+            profilePic = '/assets/games/pong/pong.png';
+        }
+        else {
+            const user = userMap.get(authorId);
+            displayName = (user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`;
+            profilePic = (user === null || user === void 0 ? void 0 : user.profile_picture) || 'default-profile.png';
+        }
         const isGrouped = lastAuthor === authorId;
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `chat-widget-messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
         if (!self && !isGrouped) {
-            const user = userMap.get(authorId);
             const usernameSpan = document.createElement("span");
-            usernameSpan.textContent = (user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`;
+            usernameSpan.textContent = displayName;
             usernameSpan.className = `chat-widget-messenger-username`;
             msgWrapper.appendChild(usernameSpan);
         }
         const row = document.createElement("div");
         row.className = "chat-widget-messenger-message-row";
         if (!self && !isGrouped) {
-            const user = userMap.get(authorId);
             const profileImg = document.createElement("img");
-            profileImg.src = (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png";
-            profileImg.alt = `${(user === null || user === void 0 ? void 0 : user.username) || authorId}'s profile picture`;
+            profileImg.src = profilePic;
+            profileImg.alt = `${displayName}'s profile picture`;
             profileImg.className = "chat-widget-messenger-avatar";
-            profileImg.onclick = () => showProfileCard((user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.email) || "Email not available", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
+            if (!isSystem) {
+                const user = userMap.get(authorId);
+                profileImg.onclick = () => showProfileCard((user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.email) || "Email not available", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
+            }
             row.appendChild(profileImg);
         }
         else {
@@ -157,16 +173,13 @@ export async function setupChatWidget() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
-        // --- PATCH: invitation Pong envoyée par soi ---
         const pongInviteRegex = /@([\w-]+) Clique ici pour rejoindre ma partie Pong/;
         if (self && pongInviteRegex.test(content)) {
-            // Extraire le username cible
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
             messageContent.textContent = `invitation envoyée à : ${dest}`;
         }
         else if (mentionMatch) {
-            // Cherche l'utilisateur mentionné pour afficher son nom et sa photo
             const mentionedUser = users.find(u => u.username === mentionMatch[1]);
             if (mentionedUser) {
                 messageContent.innerHTML = content.replace(/^@(\w+)/, `<span class="chat-widget-mention">@${mentionedUser.username}</span>`);
@@ -206,6 +219,7 @@ export async function setupChatWidget() {
         reconnectionAttempts: 5,
         reconnectionDelay: 1000
     });
+    chatWidgetSocket = socket;
     socket.on("connect", () => {
         console.log("Connected to Socket.IO server");
         socket.emit("register", { userId: currentUser.id, username: currentUser.username });
@@ -452,6 +466,10 @@ export function handleGameInviteLinkForWidget() {
     });
 }
 export function removeChatWidget() {
+    if (chatWidgetSocket) {
+        chatWidgetSocket.disconnect();
+        chatWidgetSocket = null;
+    }
     const widget = document.getElementById("chat-widget");
     if (widget) {
         widget.remove();

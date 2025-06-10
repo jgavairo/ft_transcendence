@@ -1,11 +1,14 @@
 // Widget de chat flottant accessible partout
 import { io } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
 import { handlePongInviteLinkClick } from "../../helpers/pongInviteHandler.js";
+
+let chatWidgetSocket: Socket | null = null;
 
 async function fetchCurrentUser(): Promise<{ id: number, username: string } | null> {
     try {
@@ -131,26 +134,40 @@ export async function setupChatWidget() {
     let lastMsgWrapper: HTMLDivElement | null = null;
 
     const addMessage = (content: string, authorIdRaw: number|string, self = true) => {
-        const authorId = Number(authorIdRaw);
+        // Patch: gestion Team42 pour messages système
+        let authorId = Number(authorIdRaw);
+        let isSystem = false;
+        let displayName = '';
+        let profilePic = '';
+        if (authorIdRaw === 'system' || isNaN(authorId)) {
+            isSystem = true;
+            displayName = 'Team42';
+            profilePic = '/assets/games/pong/pong.png';
+        } else {
+            const user = userMap.get(authorId);
+            displayName = user?.username || `User#${authorId}`;
+            profilePic = user?.profile_picture || 'default-profile.png';
+        }
         const isGrouped = lastAuthor === authorId;
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `chat-widget-messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
         if (!self && !isGrouped) {
-            const user = userMap.get(authorId);
             const usernameSpan = document.createElement("span");
-            usernameSpan.textContent = user?.username || `User#${authorId}`;
+            usernameSpan.textContent = displayName;
             usernameSpan.className = `chat-widget-messenger-username`;
             msgWrapper.appendChild(usernameSpan);
         }
         const row = document.createElement("div");
         row.className = "chat-widget-messenger-message-row";
         if (!self && !isGrouped) {
-            const user = userMap.get(authorId);
             const profileImg = document.createElement("img");
-            profileImg.src = user?.profile_picture || "default-profile.png";
-            profileImg.alt = `${user?.username || authorId}'s profile picture`;
+            profileImg.src = profilePic;
+            profileImg.alt = `${displayName}'s profile picture`;
             profileImg.className = "chat-widget-messenger-avatar";
-            profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+            if (!isSystem) {
+                const user = userMap.get(authorId);
+                profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+            }
             row.appendChild(profileImg);
         } else {
             const spacer = document.createElement("div");
@@ -160,15 +177,12 @@ export async function setupChatWidget() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
-        // --- PATCH: invitation Pong envoyée par soi ---
         const pongInviteRegex = /@([\w-]+) Clique ici pour rejoindre ma partie Pong/;
         if (self && pongInviteRegex.test(content)) {
-            // Extraire le username cible
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
             messageContent.textContent = `invitation envoyée à : ${dest}`;
         } else if (mentionMatch) {
-            // Cherche l'utilisateur mentionné pour afficher son nom et sa photo
             const mentionedUser = users.find(u => u.username === mentionMatch[1]);
             if (mentionedUser) {
                 messageContent.innerHTML = content.replace(
@@ -211,6 +225,7 @@ export async function setupChatWidget() {
         reconnectionAttempts: 5,
         reconnectionDelay: 1000
     });
+    chatWidgetSocket = socket;
     socket.on("connect", () => {
         console.log("Connected to Socket.IO server");
         socket.emit("register", { userId: currentUser.id, username: currentUser.username });
@@ -447,6 +462,10 @@ export function handleGameInviteLinkForWidget() {
 }
 
 export function removeChatWidget() {
+    if (chatWidgetSocket) {
+        chatWidgetSocket.disconnect();
+        chatWidgetSocket = null;
+    }
     const widget = document.getElementById("chat-widget");
     if (widget) {
         widget.remove();
