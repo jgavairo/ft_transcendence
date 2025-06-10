@@ -1,5 +1,7 @@
 // @ts-ignore
 import Konva from "https://cdn.skypack.dev/konva";
+import { MainApp } from "../../main.js";
+import { showErrorNotification } from "../../helpers/notifications.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 export class TowerMenuManager {
@@ -209,12 +211,22 @@ export class TowerMenuManager {
         });
         this.stage.batchDraw();
     }
-    launchSoloGame() {
+    async launchSoloGame() {
+        const isLogged = await MainApp.checkAuth();
+        if (!isLogged.success) {
+            showErrorNotification("You are disconnected, please login and try again");
+            return;
+        }
         this.stage.destroy();
         if (this.startGameCallback)
             this.startGameCallback(false);
     }
-    launchMultiGame() {
+    async launchMultiGame() {
+        const isLogged = await MainApp.checkAuth();
+        if (!isLogged.success) {
+            showErrorNotification("You are disconnected, please login and try again");
+            return;
+        }
         this.stage.destroy();
         if (this.startGameCallback)
             this.startGameCallback(true);
