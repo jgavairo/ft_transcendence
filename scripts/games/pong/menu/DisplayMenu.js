@@ -6,7 +6,8 @@ import { connectPong, onMatchFound, onTriMatchFound, stopGame, initTournamentPon
 import { socket as gameSocket } from "../network.js";
 import { launchSoloPongVsBot, launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
 import { renderPong } from "../renderPong.js";
-import { showNotification } from "../../../helpers/notifications.js";
+import { showErrorNotification, showNotification } from "../../../helpers/notifications.js";
+import { MainApp } from "../../../main.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 export class PongMenuManager {
@@ -490,6 +491,11 @@ export class PongMenuManager {
         }
     }
     async onlineTournament(size) {
+        const isLogged = await MainApp.checkAuth();
+        if (!isLogged.success) {
+            showErrorNotification("You are disconnected, please login and try again");
+            return;
+        }
         const current = await GameManager.getCurrentUser();
         const username = (current === null || current === void 0 ? void 0 : current.username) || 'Player';
         this.myUsername = username;
@@ -1107,6 +1113,11 @@ export class PongMenuManager {
     }
     //fonctions tournoi fini ici
     async onlineLobby(nbPlayers) {
+        const isLogged = await MainApp.checkAuth();
+        if (!isLogged.success) {
+            showErrorNotification("You are disconnected, please login and try again");
+            return;
+        }
         const currentUser = await GameManager.getCurrentUser();
         const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
         connectPong(true);
@@ -1155,6 +1166,11 @@ export class PongMenuManager {
     }
     async offlineLobby(nbPlayers) {
         try {
+            const isLogged = await MainApp.checkAuth();
+            if (!isLogged.success) {
+                showErrorNotification("You are disconnected, please login and try again");
+                return;
+            }
             const menu = PongMenuManager.instance;
             const currentUser = await GameManager.getCurrentUser();
             const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
@@ -1599,6 +1615,11 @@ export class PongMenuManager {
     // Crée une room privée non listée, met l'utilisateur en attente dans la room (sans afficher l'ID)
     // Si roomId est fourni, on rejoint la room existante et on affiche l'écran du salon
     async privateLobby(nbPlayers, roomId) {
+        const isLogged = await MainApp.checkAuth();
+        if (!isLogged.success) {
+            showErrorNotification("You are disconnected, please login and try again");
+            return;
+        }
         setPrivateLobbyTrue();
         if (nbPlayers !== 2) {
             // Ne rien faire si ce n'est pas 2 joueurs
