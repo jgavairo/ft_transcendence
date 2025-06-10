@@ -59,14 +59,12 @@ export class MainApp {
             console.error('Main element not found');
             return;
         }
-        // Si forceStore est true, on force l'affichage de la page store
         if (forceStore) {
             mainElement.innerHTML = storePage;
             setupStore();
             window.history.replaceState({}, '', '/store');
             return;
         }
-        // Sinon on suit le comportement normal basé sur l'URL
         const path = window.location.pathname.slice(1) || 'store';
         const storeButton = document.getElementById('storebutton');
         const libraryButton = document.getElementById('librarybutton');
