@@ -425,7 +425,7 @@ app.get('/api/games/:gameId/rankings', async (request: FastifyRequest, reply: Fa
 ////////////////////////////////////////////////
 
 const gameNs = app.io.of('/game');
-setupGameMatchmaking(gameNs);
+setupGameMatchmaking(gameNs, app.io); // <-- passe app.io ici
 
 // Route pour récupérer le nom d'hôte
 app.get('/api/hostname', async (request: FastifyRequest, reply: FastifyReply) => {

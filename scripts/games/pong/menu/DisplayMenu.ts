@@ -1578,7 +1578,7 @@ export class PongMenuManager
             text: `Returning to menu in ${secondsLeft.toFixed(1)}s...`,
             fontFamily: 'Press Start 2P',
             fontSize: 14,
-            fill: '#ffe156',
+            fill: '#007bff',
             x: gameWidth / 2 - 200,
             y: 550,
             width: 450,
