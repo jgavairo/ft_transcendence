@@ -4,7 +4,7 @@ import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong} from "../SocketEmit.js";
 import { connectPong, onMatchFound, onTriMatchFound, stopGame, MatchState, initTournamentPong, hideGameCanvasAndShowMenu, setPrivateLobbyTrue } from "../pongGame.js";
 import { socket as gameSocket } from "../network.js";
-import { launchSoloPongWithTutorial, launchSoloTriWithTutorial} from "../tutorialLauncher.js";
+import { launchSoloPongVsBot, launchSoloPongWithTutorial, launchSoloTriWithTutorial} from "../tutorialLauncher.js";
 import { renderPong } from "../renderPong.js";
 import { showNotification } from "../../../helpers/notifications.js";
 import { connect } from "socket.io-client";
@@ -1532,7 +1532,7 @@ export class PongMenuManager
                 switch (nbPlayers)
                 {
                     case 1:
-                        await launchSoloPongWithTutorial(modal, username);
+                        await launchSoloPongVsBot(modal, username);
                         break;
                     case 2:
                           await launchSoloPongWithTutorial(modal, username);
