@@ -32,6 +32,21 @@ export async function startSoloPong(username) {
         socket.emit('startSolo', { username });
     }
 }
+export async function startSoloPongVsBot(username) {
+    // Récupérer l'utilisateur actuel et son ID si disponible
+    try {
+        const currentUser = await GameManager.getCurrentUser();
+        const userId = currentUser === null || currentUser === void 0 ? void 0 : currentUser.id;
+        // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
+        console.log("startSoloPongVsBot");
+        socket.emit('startSoloVsBot', { username, userId });
+    }
+    catch (error) {
+        console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+        // En cas d'erreur, envoyer seulement le nom d'utilisateur
+        socket.emit('startSoloVsBot', { username });
+    }
+}
 // Ajout d'une fonction pour le mode Tri-Pong
 export async function joinTriQueue(username) {
     // Récupérer l'utilisateur actuel et son ID si disponible

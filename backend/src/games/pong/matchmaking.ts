@@ -329,6 +329,104 @@ export function setupGameMatchmaking(gameNs: Namespace) {
       }, 1000 / 60);
     });
 
+    socket.on('startSoloVsBot', ({ username, userId }: { username: string, userId?: string }) => {
+      if (userId) {
+        socketToUserId.set(socket.id, userId);
+      }
+      
+      const m = startMatch([socket], gameNs, true);
+      matchStates.set(m.roomId, m);
+      playerInfo.set(socket.id, { side: 0, mode: 'solo' });
+      socket.join(m.roomId);
+      socket.emit('matchFound', { roomId: m.roomId, side: 0, mode: 'solo', you: username, opponent: 'Bot' });
+      
+      // Ajout de la logique du bot
+      const botInterval = setInterval(() => {
+        if (m.gameOver) {
+          clearInterval(botInterval);
+          return;
+        }
+
+        const ball = m.ball;
+        const botPaddle = m.paddles[1];
+        const playerPaddle = m.paddles[0];
+        
+        const RADIUS = 340;
+        const dx = ball.vx;
+        const dy = ball.vy;
+        
+        const b = ball.y - (dy/dx) * ball.x;
+        
+        const a = 1 + (dy/dx) * (dy/dx);
+        const c = 2 * b * (dy/dx);
+        const d = b * b - RADIUS * RADIUS;
+        
+        const discriminant = c * c - 4 * a * d;
+        if (discriminant >= 0) {
+          const x1 = (-c + Math.sqrt(discriminant)) / (2 * a);
+          const x2 = (-c - Math.sqrt(discriminant)) / (2 * a);
+          
+          const x = (dx > 0) ? Math.max(x1, x2) : Math.min(x1, x2);
+          const y = (dy/dx) * x + b;
+          
+          const targetAngle = Math.atan2(y, x);
+          
+          const error = (Math.random() - 0.5) * 0.2;
+          const finalAngle = targetAngle + error;
+          
+          let botAngleDiff = finalAngle - botPaddle.phi;
+          if (botAngleDiff > Math.PI) botAngleDiff -= 2 * Math.PI;
+          if (botAngleDiff < -Math.PI) botAngleDiff += 2 * Math.PI;
+          const botDistance = Math.abs(botAngleDiff);
+
+          let playerAngleDiff = finalAngle - playerPaddle.phi;
+          if (playerAngleDiff > Math.PI) playerAngleDiff -= 2 * Math.PI;
+          if (playerAngleDiff < -Math.PI) playerAngleDiff += 2 * Math.PI;
+          const playerDistance = Math.abs(playerAngleDiff);
+
+          const PADDLE_WIDTH = 0.3;
+          
+          if (botDistance < playerDistance) {
+            if (botDistance > PADDLE_WIDTH / 2) {
+              botPaddle.direction = botAngleDiff > 0 ? 'down' : 'up';
+            } else {
+              botPaddle.direction = null;
+            }
+          } else {
+            const oppositeAngle = finalAngle + Math.PI;
+            let escapeAngleDiff = oppositeAngle - botPaddle.phi;
+            if (escapeAngleDiff > Math.PI) escapeAngleDiff -= 2 * Math.PI;
+            if (escapeAngleDiff < -Math.PI) escapeAngleDiff += 2 * Math.PI;
+            
+            if (Math.abs(escapeAngleDiff) > PADDLE_WIDTH) {
+              botPaddle.direction = escapeAngleDiff > 0 ? 'down' : 'up';
+            } else {
+              botPaddle.direction = null;
+            }
+          }
+        } else {
+          let angleDiff = -Math.PI/2 - botPaddle.phi;
+          if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+          if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+          
+          if (Math.abs(angleDiff) > 0.1) {
+            botPaddle.direction = angleDiff > 0 ? 'down' : 'up';
+          } else {
+            botPaddle.direction = null;
+          }
+        }
+      }, 1000 / 60);
+
+      const iv = setInterval(() => {
+        updateMatch(m, gameNs);
+        gameNs.to(m.roomId).emit('gameState', m);
+        if (m.gameOver) {
+          clearInterval(iv);
+          clearInterval(botInterval);
+        }
+      }, 1000 / 60);
+    });
+
     // 2) SOLO TRI-PONG
     socket.on('startSoloTri', ({ username, userId }: { username: string, userId?: string }) => {
       // Stocker l'association socket_id -> user_id si disponible

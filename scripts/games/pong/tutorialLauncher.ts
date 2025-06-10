@@ -1,5 +1,5 @@
 import { drawTutorialSolo1, drawTutorialSolo2 } from './showTutorial.js';
-import { startSoloPong, startSoloTri } from './SocketEmit.js';
+import { startSoloPong, startSoloPongVsBot, startSoloTri } from './SocketEmit.js';
 import api from '../../helpers/api.js';
 import { HOSTNAME } from '../../main.js';
 
@@ -9,6 +9,36 @@ export async function getFirstPlay() {
       );
       const { hasPlayed } = await response.json();
       return hasPlayed;
+}
+
+export async function launchSoloPongVsBot(
+  modal: HTMLElement,
+  username: string
+) {
+  modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
+  const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+  const ctx    = canvas.getContext('2d')!;
+  // const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`, {
+  //   gameId: 1,
+  //   mode:   1
+  // });
+  // const { firstGame } = await response.json();
+  console.log("launchSoloPongVsBot after MENU");
+  // if (firstGame) {
+  //   drawTutorialSolo1(canvas, ctx);
+  //   const onEnter = (e: KeyboardEvent) => {
+  //     if (e.key === 'Enter') {
+  //       window.removeEventListener('keydown', onEnter);
+  //       console.log("startSoloPongVsBot");
+  //       startSoloPongVsBot(username);
+  //     }
+  //   };
+  //   window.addEventListener('keydown', onEnter);
+
+  // } else {
+    console.log("startSoloPongVsBot");
+    startSoloPongVsBot(username);
+  // }
 }
 
 export async function launchSoloPongWithTutorial(
