@@ -329,8 +329,7 @@ export class PongMenuManager {
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('multi'));
                 break;
             case 'tournament':
-                this.createButton('4 PLAYERS', gameWidth / 2 - 100, 450, () => this.onlineTournament(4));
-                this.createButton('8 PLAYERS', gameWidth / 2 - 100, 520, () => this.onlineTournament(8));
+                this.createButton('4 PLAYERS', gameWidth / 2 - 100, 520, () => this.onlineTournament(4));
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('multi'));
                 break;
         }
