@@ -30,7 +30,7 @@ export class MainApp
         console.log("init");
         document.addEventListener('DOMContentLoaded', async () => {
             await this.setupHeader();
-            this.setupCurrentPage();
+            this.setupCurrentPage(false);
             updateChatWidgetVisibility();
         });
     }
@@ -87,13 +87,20 @@ export class MainApp
         }
     }
 
-    static setupCurrentPage()
+    static setupCurrentPage(forceStore: boolean = false)
     {
         console.log("setupCurrentPage");
         const mainElement = document.getElementById('main');
         if (!mainElement)
         {
             console.error('Main element not found');
+            return;
+        }
+        
+        if (forceStore) {
+            mainElement.innerHTML = storePage;
+            setupStore();
+            window.history.replaceState({}, '', '/store');
             return;
         }
         

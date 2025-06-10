@@ -97,7 +97,7 @@ export class LoginManager {
                                     console.log('Login successful, user data:', data);
                                     this.removeLoginModal();
                                     MainApp.setupHeader();
-                                    MainApp.setupCurrentPage();
+                                    MainApp.setupCurrentPage(true);
                                     setupProfileButton();
                                     updateChatWidgetVisibility();
                                 }
@@ -110,7 +110,7 @@ export class LoginManager {
                     console.log('Login successful, user data:', data);
                     this.removeLoginModal();
                     MainApp.setupHeader();
-                    MainApp.setupCurrentPage();
+                    MainApp.setupCurrentPage(true);
                     setupProfileButton();
                     updateChatWidgetVisibility();
                 }
