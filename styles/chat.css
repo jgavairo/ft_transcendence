@@ -243,3 +243,52 @@
     margin-right: 35px;
     text-align: right;
 }
+
+/* === Tournament message style for chat section === */
+.chat-section .tournament-message-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #232f3e 60%, #2a475e 100%);
+  border-radius: 10px;
+  margin: 8px 0;
+  padding: 10px 18px;
+  font-size: 1.08em;
+  color: #ffe156;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  box-shadow: 0 2px 10px #0002;
+  border-left: 4px solid #ffe156;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.18s;
+}
+.chat-section .tournament-message-row .tournament-match-players {
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+.chat-section .tournament-message-row .tournament-match-score {
+  font-size: 1.05em;
+  color: #66c0f4;
+  margin: 0 18px;
+  font-weight: 600;
+}
+.chat-section .tournament-message-row .tournament-match-status {
+  font-size: 0.98em;
+  color: #ffe156;
+  font-style: italic;
+  margin-left: 10px;
+}
+.chat-section .tournament-message-row.tournament-finished {
+  background: linear-gradient(90deg, #2a475e 60%, #232f3e 100%);
+  opacity: 0.85;
+  border-left: 4px solid #4caf50;
+}
+.chat-section .tournament-message-row.tournament-inprogress {
+  background: linear-gradient(90deg, #195887 60%, #3895eb 100%);
+  color: #fff;
+  border-left: 4px solid #3895eb;
+}
+.chat-section .tournament-message-row.tournament-upcoming {
+  background: linear-gradient(90deg, #232f3e 60%, #888 100%);
+  color: #b0b3b8;
+  border-left: 4px solid #888;
+}
