@@ -423,6 +423,40 @@ export class PongMenuManager {
                 console.log('[DEBUG] MENU button clicked, tournamentEnded:', PongMenuManager.tournamentEnded);
                 this.activeTournamentMatchId = null;
                 this.stage.destroy();
+                displayMenu();
+            });
+            this.menuLayer.batchDraw();
+        });
+        gameSocket.on('tournamentFinalSpectate', (data) => {
+            this.menuLayer.removeChildren();
+            this.buttons.forEach(btn => btn.group.destroy());
+            this.buttons = [];
+            this.menuLayer.add(new Konva.Text({
+                x: gameWidth / 2 - 200,
+                y: 350,
+                text: 'La finale va commencer !',
+                fontFamily: 'Press Start 2P',
+                fontSize: 20,
+                fill: '#ffe156',
+                width: 400,
+                align: 'center'
+            }));
+            this.createButton('SPECTATE', gameWidth / 2 - 100, 450, () => {
+                // Launch spectator mode for the final
+                initTournamentPong(undefined, data.finalists[0], data.finalists[1]);
+                // Subscribe to gameState updates for the final
+                const handler = (state) => {
+                    if (!state || !state.paddles)
+                        return;
+                    // Render as spectator
+                    import('../renderPong.js').then(mod => mod.renderPong(state, true));
+                };
+                gameSocket.on('gameState', handler);
+                // Hide buttons after click
+                this.buttons.forEach(btn => btn.group.hide());
+            });
+            this.createButton('QUIT', gameWidth / 2 - 100, 530, () => {
+                this.stage.destroy();
                 stopGame();
                 displayMenu();
             });
@@ -600,6 +634,8 @@ export class PongMenuManager {
                         }));
                         this.menuLayer.batchDraw();
                     });
+                    // SUPPRIME: Quit button at READY step
+                    // (rien ici)
                 }
                 else if (me && (this.myUsername === finalist1 || this.myUsername === finalist2) && me.ready) {
                     this.menuLayer.add(new Konva.Text({
@@ -648,6 +684,8 @@ export class PongMenuManager {
                     }));
                     this.menuLayer.batchDraw();
                 });
+                // SUPPRIME: Quit button at READY step (semi-final)
+                // (rien ici)
             }
             else if (me && !me.eliminated && me.ready) {
                 this.menuLayer.add(new Konva.Text({
@@ -721,6 +759,8 @@ export class PongMenuManager {
                         }));
                         this.menuLayer.batchDraw();
                     });
+                    // SUPPRIME: Quit button at READY step (final)
+                    // (rien ici)
                 }
                 else if (me && (this.myUsername === p1 || this.myUsername === p2) && me.ready) {
                     this.menuLayer.add(new Konva.Text({
@@ -757,6 +797,13 @@ export class PongMenuManager {
         }
     }
     async startMatchTournament({ matchId, side, opponent }) {
+        console.log('[DEBUG] startMatchTournament called', {
+            matchId,
+            side,
+            opponent,
+            lastBracketView: this.lastBracketView,
+            myUsername: this.myUsername
+        });
         // Prevent double launch for the same matchId
         if (this.activeTournamentMatchId === matchId)
             return;
@@ -800,60 +847,56 @@ export class PongMenuManager {
             if (isFinale && nonEliminated.length === 2) {
                 const allReady = status.filter(s => !s.eliminated).every(s => s.ready);
                 const finalistUsernames = nonEliminated.map(s => s.username);
+                let you;
+                try {
+                    const current = await GameManager.getCurrentUser();
+                    you = (current === null || current === void 0 ? void 0 : current.username) || 'You';
+                }
+                catch (err) {
+                    you = 'You';
+                }
+                const isSpectator = !finalistUsernames.includes(this.myUsername);
                 if (allReady) {
-                    let you;
-                    try {
-                        const current = await GameManager.getCurrentUser();
-                        you = (current === null || current === void 0 ? void 0 : current.username) || 'You';
-                    }
-                    catch (err) {
-                        you = 'You';
-                    }
-                    const isSpectator = !finalistUsernames.includes(this.myUsername);
-                    const p1 = new Konva.Text({
-                        x: gameWidth / 6,
-                        y: 450,
-                        text: finalistUsernames[0],
-                        fontFamily: 'Press Start 2P',
-                        fontSize: 20,
-                        fill: '#00e7fe',
-                        width: 400,
-                        align: 'center'
-                    });
-                    const p2 = new Konva.Text({
-                        x: gameWidth / 2,
-                        y: 450,
-                        text: finalistUsernames[1],
-                        fontFamily: 'Press Start 2P',
-                        fontSize: 20,
-                        fill: '#00e7fe',
-                        width: 400,
-                        align: 'center'
-                    });
-                    const countdownText = new Konva.Text({
+                    // Always use usernames for both sides
+                    const [finalist1, finalist2] = finalistUsernames;
+                    this.menuLayer.add(new Konva.Text({
                         x: gameWidth / 2 - 200,
-                        y: 520,
+                        y: 350,
+                        text: `🏆 Final: ${finalist1} vs ${finalist2}`,
+                        fontFamily: 'Press Start 2P',
+                        fontSize: 22,
+                        fill: '#ffe156',
+                        width: 400,
+                        align: 'center'
+                    }));
+                    const countdownText = this.menuLayer.add(new Konva.Text({
+                        x: gameWidth / 2 - 200,
+                        y: 400,
                         text: 'Game starting in 5',
                         fontFamily: 'Press Start 2P',
                         fontSize: 24,
                         fill: '#fc4cfc',
                         width: 400,
                         align: 'center'
-                    });
-                    this.menuLayer.add(p1, p2, countdownText);
-                    this.menuLayer.batchDraw();
+                    }));
+                    // --- FIX: clear any previous interval and store timer as class property ---
+                    if (this.finalCountdownTimer) {
+                        clearInterval(this.finalCountdownTimer);
+                        this.finalCountdownTimer = undefined;
+                    }
                     let count = 5;
-                    const timer = setInterval(() => {
+                    this.finalCountdownTimer = setInterval(() => {
                         count--;
                         if (count > 0) {
                             countdownText.text(`Game starting in ${count}`);
                             this.menuLayer.batchDraw();
                         }
                         else {
-                            clearInterval(timer);
+                            clearInterval(this.finalCountdownTimer);
+                            this.finalCountdownTimer = undefined;
                             if (isSpectator) {
                                 // Spectateur : lance le rendu sans contrôle
-                                initTournamentPong(undefined, finalistUsernames[0], finalistUsernames[1]);
+                                initTournamentPong(undefined, finalist1, finalist2);
                             }
                             else {
                                 // Finaliste : logique normale
@@ -908,23 +951,46 @@ export class PongMenuManager {
                         }
                     }, 1000);
                 }
-                else {
-                    // Show bracket and Ready button for finalists, waiting message for others
-                    this.renderSimpleBracket(size, joined, status);
+                else if (isSpectator) {
+                    // DEBUG: Show visible debug text and log values
                     this.menuLayer.add(new Konva.Text({
                         x: gameWidth / 2 - 200,
-                        y: 350,
-                        text: 'Waiting for both finalists to be ready...',
+                        y: 320,
+                        text: '[DEBUG] ELIMINATED VIEW\nisSpectator: ' + isSpectator + '\nfinalistUsernames: ' + JSON.stringify(finalistUsernames) + '\nmyUsername: ' + this.myUsername,
                         fontFamily: 'Press Start 2P',
-                        fontSize: 18,
-                        fill: '#00e7fe',
+                        fontSize: 14,
+                        fill: '#ff0000',
                         width: 400,
                         align: 'center'
                     }));
-                    this.menuLayer.show();
-                    this.menuLayer.moveToTop();
+                    console.log('[DEBUG] ELIMINATED VIEW', { isSpectator, finalistUsernames, myUsername: this.myUsername });
+                    // Les deux éliminés voient les boutons SPECTATE et QUIT
+                    this.menuLayer.add(new Konva.Text({
+                        x: gameWidth / 2 - 200,
+                        y: 350,
+                        text: 'La finale va commencer !',
+                        fontFamily: 'Press Start 2P',
+                        fontSize: 20,
+                        fill: '#ffe156',
+                        width: 400,
+                        align: 'center'
+                    }));
+                    this.createButton('SPECTATE', gameWidth / 2 - 100, 450, () => {
+                        // Lance le rendu du match final en mode spectateur
+                        initTournamentPong(undefined, finalistUsernames[0], finalistUsernames[1]);
+                        // Optionnel : masquer les boutons après clic
+                        this.buttons.forEach(btn => btn.group.hide());
+                    });
+                    this.createButton('QUIT', gameWidth / 2 - 100, 530, () => {
+                        // Retour menu principal
+                        this.stage.destroy();
+                        stopGame();
+                        displayMenu();
+                    });
                     this.menuLayer.batchDraw();
+                    return;
                 }
+                this.menuLayer.batchDraw();
                 return;
             }
             // --- END FINAL ROUND LOGIC ---
@@ -1710,7 +1776,7 @@ export class PongMenuManager {
                 const currentUser = await GameManager.getCurrentUser();
                 // Utiliser l'id utilisateur pour le champ author
                 const fromId = currentUser === null || currentUser === void 0 ? void 0 : currentUser.id;
-                let link = roomId ? `${window.location.origin}/pong/join?room=${roomId}` : window.location.origin;
+                let link = roomId ? `${window.location.origin}/pong/join?room=${roomId}` : window.origin;
                 const message = `@${person.username} Clique ici pour rejoindre ma partie Pong : <a href='${link}' target='_blank'>Rejoindre la partie</a>`;
                 try {
                     const { HOSTNAME } = await import("../../../main.js");
