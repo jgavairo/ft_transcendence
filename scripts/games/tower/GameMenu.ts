@@ -1,6 +1,8 @@
 // @ts-ignore
 import Konva from "https://cdn.skypack.dev/konva";
 import { GameClient } from "./GameClient.js";
+import { MainApp } from "../../main.js";
+import { showErrorNotification } from "../../helpers/notifications.js";
 
 const gameWidth = 1200;
 const gameHeight = 800;
@@ -268,15 +270,25 @@ export class TowerMenuManager {
         this.stage.batchDraw();
     }
 
-    private launchSoloGame()
+    private async launchSoloGame()
     {
+        const isLogged = await MainApp.checkAuth();
+        if (!isLogged.success) {
+            showErrorNotification("You are disconnected, please login and try again");
+            return;
+        }
         this.stage.destroy();
         if (this.startGameCallback)
             this.startGameCallback(false);
     }
 
-    private launchMultiGame() 
+    private async launchMultiGame() 
     {
+        const isLogged = await MainApp.checkAuth();
+        if (!isLogged.success) {
+            showErrorNotification("You are disconnected, please login and try again");
+            return;
+        }
         this.stage.destroy();
         if (this.startGameCallback)
             this.startGameCallback(true);
@@ -305,6 +317,7 @@ export class TowerMenuManager {
     }
 
     async changeMenu(menuType: 'main' | 'play' | 'solo' | 'multi' | 'endMatch' | 'units', winner?: string) {
+
         // Annuler les animations existantes avant de changer de menu
         this.cancelAllAnimations();
 

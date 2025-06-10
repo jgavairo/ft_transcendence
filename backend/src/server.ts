@@ -887,12 +887,10 @@ const start = async () => {
                     }
                 }
 
-                // Nettoyer la partie solo si elle existe
                 if (towerGames.has(socket.id)) {
                     towerGames.delete(socket.id);
                 }
 
-                // Nettoyer la map des sockets
                 userSocketMapTower.delete(socket.id);
                 
                 console.log('Client déconnecté du namespace /tower:', socket.id);
