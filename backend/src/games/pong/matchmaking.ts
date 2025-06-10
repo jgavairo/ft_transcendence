@@ -347,6 +347,8 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
             loser: winSide === 0 ? P2.username : P1.username
           });
           gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: winner.username });
+          // Ajout : message chat global avec médaille d'or
+          sendTournamentChatMessage(`🥇 ${winner.username} remporte le tournoi Pong !`);
           tournaments.delete(tour.id);
         }
       });
@@ -1029,6 +1031,8 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 
       // Puis annoncer la fin du tournoi
       ns.to(`tour-${tour.id}`).emit('tournamentOver', { winner: winner.username });
+      // Ajout : message chat global avec médaille d'or
+      sendTournamentChatMessage(`🥇 ${winner.username} remporte le tournoi Pong !`);
       tournaments.delete(tour.id);
     }
   }, 1000 / 60);
