@@ -471,6 +471,12 @@ export class PongMenuManager
             }[];
           }) => {
           this.currentTourSize = view.size;
+          // Si le joueur n'est plus dans la liste, on sort du lobby
+          if (view.joined && view.joined.indexOf(this.myUsername) === -1) {
+            this.menuLayer.removeChildren();
+            this.changeMenu('multi');
+            return;
+          }
           if (view.tournamentId && view.status) {
             this.currentTourId = view.tournamentId;
             const fullStatus: PlayerStatus[] = view.status.map(s => ({
@@ -614,12 +620,40 @@ export class PongMenuManager
       }
       
       private showLobbyList(joined: string[]) {
+        // Set a synthetic tournament ID if not set (for queue phase)
+        if (!this.currentTourId) {
+            // Default to 4-player queue, or detect from joined size if needed
+            this.currentTourId = `queue-${joined.length >= 8 ? 8 : 4}`;
+        }
         this.menuLayer.removeChildren();
         this.menuLayer.add(new Konva.Text({
             x: gameWidth/2 - 130, y: 30 + 450,
             text: `Waiting for player…`,
             fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
         }));
+        this.createButton('CANCEL', gameWidth/2 - 100, 200 + 450, () => {
+            console.log('[PONG] CANCEL button clicked, emitting quitTournament', this.currentTourId);
+            if (typeof showErrorNotification === 'function') showErrorNotification('Cancel clicked, quitTournament envoyé');
+            if (this.currentTourId) {
+                gameSocket.emit('quitTournament', { tournamentId: this.currentTourId });
+                // On cache le bouton pour éviter les doubles clics
+                const btn = this.buttons.find(b => b.text === 'CANCEL');
+                if (btn) btn.group.hide();
+            }
+            // Nettoyage complet de l'UI
+            this.buttons.forEach(button => button.group.destroy());
+            this.buttons = [];
+            this.menuLayer.removeChildren();
+            // Retour menu multi
+            this.changeMenu('multi');
+        });
+        // Ajout : quitter le tournoi si la page est quittée (refresh/fermeture)
+        if (this.currentTourId) {
+            const quitHandler = () => {
+                gameSocket.emit('quitTournament', { tournamentId: this.currentTourId });
+            };
+            window.addEventListener('beforeunload', quitHandler, { once: true });
+        }
         joined.forEach((u, i) => {
             this.menuLayer.add(new Konva.Text({
             x: gameWidth/2 - 100, y: 80 + i*24 + 450,
@@ -628,6 +662,11 @@ export class PongMenuManager
             }));
         });
         this.menuLayer.batchDraw();
+        // Si le joueur n'est plus dans la liste reçue, on change de menu automatiquement
+        if (joined.indexOf(this.myUsername) === -1) {
+            this.menuLayer.removeChildren();
+            this.changeMenu('multi');
+        }
     }
 
 
@@ -1964,6 +2003,9 @@ export class PongMenuManager
         // Récupérer tous les utilisateurs
         const people = await fetchUsernames();
         // Récupérer l'utilisateur courant
+
+
+
         let currentUsername = null;
         try {
             const resp = await fetch(`/api/user/infos`, { credentials: "include" });

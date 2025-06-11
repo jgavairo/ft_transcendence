@@ -43,6 +43,10 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
   const playerInfo = new Map<string, PlayerInfo>();
   // Nouvelle Map pour stocker l'ID utilisateur pour retrouver plus tard
   const socketToUserId = new Map<string, string>();
+  // Fonction utilitaire pour obtenir tous les socketId d'un userId
+  function getAllSocketIdsForUser(userId: string): string[] {
+    return [...socketToUserId.entries()].filter(([_, uid]) => uid === userId).map(([sid]) => sid);
+  }
   let classicQueue: Player[] = [];
   let triQueue: Player[] = [];
   const matchStates = new Map<string, MatchState>();
@@ -50,7 +54,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
   // Map des tournois complets ou en attente, groupés par id
   // On stocke des BasicTournament pour le tournoi 4 joueurs
   const tournaments = new Map<string, BasicTournament>();
-  const tournamentQueues: { [k in 4|8]: Player[] } = { 4: [], 8: [] };
+  const tournamentQueues: { [k in 4]: Player[] } = { 4: [] };
 
   // Map pour stocker les intervalles de chaque match de tournoi
   const tournamentMatchIntervals = new Map<string, NodeJS.Timeout>();
@@ -76,83 +80,118 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
     }
   }
 
+  // Vérifie si un userId est dans la file d'attente d'un tournoi (avant lancement)
+  function isUserInTournamentQueue(userId: string, size: 4): boolean {
+    return tournamentQueues[4].some((p: Player) => socketToUserId.get(p.id) === userId);
+  }
+
   gameNs.on('connection', socket => {
     
     // TOURNAMENT
     socket.on( 'joinTournamentQueue', async ({ username, userId }: { username: string, userId?: string }) => {
-        if (userId) socketToUserId.set(socket.id, userId);
-        const q = tournamentQueues[4];
-        // Blocage anti-doublon userId AVANT ajout à la file
-        const userIdsInQueue = q.map(p => (p.id && socketToUserId.get(p.id)) || p.id);
-        if (userId && userIdsInQueue.includes(userId)) {
-          socket.emit('error', { message: 'Tournoi bloqué : multi-fenêtre ou double connexion détectée.' });
-          return;
-        }
-        if (!q.find(p => p.id === socket.id)) {
-          q.push({ id: socket.id, username });
-        }
-
-        q.forEach(p =>
-          gameNs.sockets
-            .get(p.id)
-            ?.emit('tournamentBracket', {
-              size: 4,
-              joined: q.map(p2 => p2.username),
-              status: q.map(p2 => ({
-                id: p2.id,
-                username: p2.username,
-                ready: false,
-                eliminated: false,
-                isInGame: false // Personne n'est in game tant que le tournoi n'a pas commencé
-              }))
-            })
-        );
-  
-        // Dès que la file est pleine, créer et lancer le tournoi
-        if (q.length === 4) {
-          // Vérifie qu'il n'y a pas de doublon userId dans les 4 joueurs
-          const userIds = q.map(p => (p.id && socketToUserId.get(p.id)) || p.id);
-          const uniqueUserIds = new Set(userIds);
-          if (uniqueUserIds.size < 4) {
-            // Trouve l'index du doublon (le 2e, 3e ou 4e)
-            let idxToRemove = 1;
-            if (userIds[1] === userIds[0]) idxToRemove = 1;
-            else if (userIds[2] === userIds[0] || userIds[2] === userIds[1]) idxToRemove = 2;
-            else idxToRemove = 3;
-            const removed = q.splice(idxToRemove, 1)[0];
-            const sock = gameNs.sockets.get(removed.id);
-            if (sock) sock.emit('error', { message: 'Tournoi bloqué : multi-fenêtre ou double connexion détectée.' });
-            // On ne lance pas le tournoi, on attend un vrai 4e joueur
-            return;
-          }
-          const tour: BasicTournament = {
-            id: crypto.randomUUID(),
-            players: q.slice(),
-            ready: new Map(q.map((p: Player) => [p.id, false])),
-            round: 0,
-            matches: {},
-            finalists: [],
-            finalReady: new Map(),
-            champion: undefined,
-            allPlayers: q.slice() // Ajouté ici
-          };
-          tournaments.set(tour.id, tour as any);
-          tournamentQueues[4] = [];
-          tour.players.forEach((p: Player) => gameNs.sockets.get(p.id)?.join(`tour-${tour.id}`));
-          gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
-            tournamentId: tour.id,
-            size: 4,
-            joined: tour.allPlayers.map((p: Player) => p.username),
-            status: tour.allPlayers.map((p: Player) => ({
-              id: p.id,
-              username: p.username,
-              ready: false,
-              eliminated: false,
-              isInGame: false // default at start
-            }))
-          });
-        }
+    // Clean up: remove any queue entries with disconnected sockets only
+    let q = tournamentQueues[4];
+    const beforeCleanup = q.length;
+    // Remove disconnected sockets
+    q = q.filter(p => gameNs.sockets.has(p.id));
+    // Remove ghost userId (same userId, but socket not present)
+    if (userId) {
+      q = q.filter(p => {
+        const pUserId = socketToUserId.get(p.id);
+        // If this is a ghost (same userId, but socket not present), remove
+        if (pUserId === userId && !gameNs.sockets.has(p.id)) return false;
+        return true;
       });
+    }
+    tournamentQueues[4] = q;
+    if (beforeCleanup !== tournamentQueues[4].length) {
+      tournamentQueues[4].forEach(p =>
+        gameNs.sockets.get(p.id)?.emit('tournamentBracket', {
+          size: 4,
+          joined: tournamentQueues[4].map(p2 => p2.username),
+          status: tournamentQueues[4].map(p2 => ({
+            id: p2.id,
+            username: p2.username,
+            ready: false,
+            eliminated: false,
+            isInGame: false
+          }))
+        })
+      );
+    }
+    if (userId) socketToUserId.set(socket.id, userId);
+    // Blocage anti-doublon userId AVANT ajout à la file
+    const userIdsInQueue = tournamentQueues[4].map(p => (p.id && socketToUserId.get(p.id)) || p.id);
+    if (userId && userIdsInQueue.includes(userId)) {
+      socket.emit('error', { message: 'Tournoi bloqué : multi-fenêtre ou double connexion détectée.' });
+      return;
+    }
+    if (!tournamentQueues[4].find(p => p.id === socket.id)) {
+      tournamentQueues[4].push({ id: socket.id, username });
+    }
+
+    q.forEach(p =>
+      gameNs.sockets
+        .get(p.id)
+        ?.emit('tournamentBracket', {
+          size: 4,
+          joined: q.map(p2 => p2.username),
+          status: q.map(p2 => ({
+            id: p2.id,
+            username: p2.username,
+            ready: false,
+            eliminated: false,
+            isInGame: false // Personne n'est in game tant que le tournoi n'a pas commencé
+          }))
+        })
+    );
+  
+    // Dès que la file est pleine, créer et lancer le tournoi
+    if (q.length === 4) {
+      // Vérifie qu'il n'y a pas de doublon userId dans les 4 joueurs
+      const userIds = q.map(p => (p.id && socketToUserId.get(p.id)) || p.id);
+      const uniqueUserIds = new Set(userIds);
+      if (uniqueUserIds.size < 4) {
+        // Trouve l'index du doublon (le 2e, 3e ou 4e)
+        let idxToRemove = 1;
+        if (userIds[1] === userIds[0]) idxToRemove = 1;
+        else if (userIds[2] === userIds[0] || userIds[2] === userIds[1]) idxToRemove = 2;
+        else idxToRemove = 3;
+        const removed = q.splice(idxToRemove, 1)[0];
+        const sock = gameNs.sockets.get(removed.id);
+        if (sock) sock.emit('error', { message: 'Tournoi bloqué : multi-fenêtre ou double connexion détectée.' });
+        // On ne lance pas le tournoi, on attend un vrai 4e joueur
+        return;
+      }
+      const tour: BasicTournament = {
+        id: crypto.randomUUID(),
+        players: q.slice(),
+        ready: new Map(q.map((p: Player) => [p.id, false])),
+        round: 0,
+        matches: {},
+        finalists: [],
+        finalReady: new Map(),
+        champion: undefined,
+        allPlayers: q.slice() // Ajouté ici
+      };
+      tournaments.set(tour.id, tour as any);
+      tournamentQueues[4] = [];
+      tour.players.forEach((p: Player) => gameNs.sockets.get(p.id)?.join(`tour-${tour.id}`));
+      gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
+        tournamentId: tour.id,
+        size: 4,
+        joined: tour.allPlayers.map((p: Player) => p.username),
+        status: tour.allPlayers.map((p: Player) => ({
+          id: p.id,
+          username: p.username,
+          ready: false,
+          eliminated: false,
+          isInGame: false // default at start
+        }))
+      });
+    }
+  });
+  
 
       socket.on('playerReady', ({ tournamentId }: { tournamentId: string }) => {
         const tour = tournaments.get(tournamentId) as BasicTournament;
@@ -220,7 +259,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
               username: p.username,
               ready: tour.finalReady.get(p.id) || false,
               eliminated: false,
-              isInGame: false // Personne n'est in game tant que la finale n'est pas lancée
+              isInGame: false // Personne n'est en game tant que la finale n'est pas lancée
             }))
           });
           if ([...tour.finalReady.values()].every((v: boolean) => v)) {
@@ -499,78 +538,102 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 
     // 3) 2-JOUEURS MATCHMAKING
     socket.on('joinQueue', ({ username, userId }: { username: string, userId?: string }) => {
-      if (userId) {
-        socketToUserId.set(socket.id, userId);
-      }
-      // Blocage anti-doublon userId AVANT ajout à la file
-      const userIdsInQueue = classicQueue.map(p => getUserIdFromSocketId(p.id) || p.id);
-      if (userId && userIdsInQueue.includes(userId)) {
-        socket.emit('error', { message: 'account already connected on a matchmaking' });
-        return;
-      }
-      const currentInfo = playerInfo.get(socket.id);
-      if (currentInfo && currentInfo.mode === 'multi') {
-        socket.emit('error', { message: 'Vous êtes déjà dans une partie en cours' });
-        return;
-      }
-      if (!classicQueue.some(p => p.id === socket.id)) {
-        classicQueue.push({ id: socket.id, username });
-      }
-      // Nouvelle logique : chercher 2 joueurs avec userId différents
-      while (classicQueue.length >= 2) {
-        const p1 = classicQueue[0];
-        const p2 = classicQueue[1];
-        const userId1 = getUserIdFromSocketId(p1.id) || p1.id;
-        const userId2 = getUserIdFromSocketId(p2.id) || p2.id;
-        if (userId1 === userId2) {
-          // Doublon userId, on retire le 2e joueur et on lui envoie une erreur
-          const removed = classicQueue.splice(1, 1)[0];
-          const sock = gameNs.sockets.get(removed.id);
-          if (sock) sock.emit('error', { message: 'Tournoi bloqué : multi-fenêtre ou double connexion détectée.' });
-          continue;
-        }
-        // Sinon, on peut matcher
-        classicQueue.shift();
-        classicQueue.shift();
-        const s1 = gameNs.sockets.get(p1.id)!;
-        const s2 = gameNs.sockets.get(p2.id)!;
-        const m = startMatch([s1, s2], gameNs, false);
+    // 1) On stocke l'association socketId → userId
+    if (userId) {
+      socketToUserId.set(socket.id, userId);
+    }
 
-        matchStates.set(m.roomId, m);
-        playerInfo.set(p1.id, { side: 0, mode: 'multi' });
-        playerInfo.set(p2.id, { side: 1, mode: 'multi' });
-
-        s1.join(m.roomId);
-        s2.join(m.roomId);
-
-        // Inclure les IDs des joueurs dans l'événement `matchFound`
-        s1.emit('matchFound', {
-          roomId: m.roomId,
-          side: 0,
-          mode: 'multi',
-          you: p1.username,
-          opponent: p2.username,
-          user1Id: userId1,
-          user2Id: userId2
-        });
-
-        s2.emit('matchFound', {
-          roomId: m.roomId,
-          side: 1,
-          mode: 'multi',
-          you: p2.username,
-          opponent: p1.username,
-          user1Id: userId1,
-          user2Id: userId2
-        });
-
-        const iv = setInterval(() => {
-          updateMatch(m, gameNs);
-          gameNs.to(m.roomId).emit('gameState', m);
-          if (m.gameOver) clearInterval(iv);
-        }, 1000 / 60);
-      }
+    // 2) CLEANUP : on enlève les sockets déconnectés et les "fantômes" du même userId
+    classicQueue = classicQueue.filter(p => {
+      // a) socket toujours connectée ?
+      if (!gameNs.sockets.has(p.id)) return false;
+      // b) pas un fantôme pour ce même userId ?
+      const pUid = getUserIdFromSocketId(p.id);
+      if (userId && pUid === userId) return false;
+      return true;
     });
+
+    // 3) Blocage anti-doublon userId AVANT ajout à la file
+    const userIdsInQueue = classicQueue.map(p => getUserIdFromSocketId(p.id) || p.id);
+    if (userId && userIdsInQueue.includes(userId)) {
+      socket.emit('error', { message: 'account already connected on a matchmaking' });
+      return;
+    }
+
+    // 4) Vérification qu'on n'est pas déjà en multi-partie
+    const currentInfo = playerInfo.get(socket.id);
+    if (currentInfo && currentInfo.mode === 'multi') {
+      socket.emit('error', { message: 'Vous êtes déjà dans une partie en cours' });
+      return;
+    }
+
+    // 5) On ajoute à la queue si ce socket n'y est pas déjà
+    if (!classicQueue.some(p => p.id === socket.id)) {
+      classicQueue.push({ id: socket.id, username });
+    }
+
+    // 6) Tant qu'on a au moins 2 joueurs valides, on essaye de matcher
+    while (classicQueue.length >= 2) {
+      const p1 = classicQueue[0];
+      const p2 = classicQueue[1];
+      const userId1 = getUserIdFromSocketId(p1.id) || p1.id;
+      const userId2 = getUserIdFromSocketId(p2.id) || p2.id;
+
+      // si doublon userId, on vire le 2e et on continue
+      if (userId1 === userId2) {
+        const removed = classicQueue.splice(1, 1)[0];
+        const sock = gameNs.sockets.get(removed.id);
+        if (sock) {
+          sock.emit('error', {
+            message: 'Matchmaking bloqué : multi-fenêtre ou double connexion détectée.'
+          });
+        }
+        continue;
+      }
+
+      // sinon on peut matcher ces deux-là
+      classicQueue.shift();
+      classicQueue.shift();
+      const s1 = gameNs.sockets.get(p1.id)!;
+      const s2 = gameNs.sockets.get(p2.id)!;
+      const m = startMatch([s1, s2], gameNs, false);
+
+      // on enregistre l'état du match
+      matchStates.set(m.roomId, m);
+      playerInfo.set(p1.id, { side: 0, mode: 'multi' });
+      playerInfo.set(p2.id, { side: 1, mode: 'multi' });
+
+      // on les fait rejoindre la room
+      s1.join(m.roomId);
+      s2.join(m.roomId);
+
+      // on envoie l'événement matchFound avec userIds
+          s1.emit('matchFound', {
+      roomId: m.roomId,
+      side: 0,
+      mode: 'multi',
+      you: p1.username,
+      opponent: p2.username,
+      user1Id: userId1,
+      user2Id: userId2
+    });
+    s2.emit('matchFound', {
+      roomId: m.roomId,
+      side: 1,
+      mode: 'multi',
+      you: p2.username,
+      opponent: p1.username,
+      user1Id: userId1,
+      user2Id: userId2
+    });
+      // boucle d'update
+      const iv = setInterval(() => {
+        updateMatch(m, gameNs);
+        gameNs.to(m.roomId).emit('gameState', m);
+        if (m.gameOver) clearInterval(iv);
+      }, 1000 / 60);
+    }
+});
 
     // 4) GESTION DES DÉPLACEMENTS PADDLE BI-PONG
     socket.on('movePaddle', (data: { side: 0|1, direction: 'up'|'down'|null }) => {
@@ -632,8 +695,16 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 
     // 6) DÉCONNEXION
     socket.on('disconnect', () => {
-      classicQueue = classicQueue.filter(p => p.id !== socket.id);
-      triQueue     = triQueue.filter(p => p.id !== socket.id);
+      const userId = socketToUserId.get(socket.id);
+      let socketIds: string[] = [socket.id];
+      if (userId) {
+        socketIds = getAllSocketIdsForUser(userId);
+      }
+      classicQueue = classicQueue.filter(p => !socketIds.includes(p.id));
+      triQueue     = triQueue.filter(p => !socketIds.includes(p.id));
+      tournamentQueues[4] = tournamentQueues[4].filter(p => !socketIds.includes(p.id));
+      socketIds.forEach((sid: string) => socketToUserId.delete(sid));
+      // Optionnel : suppression dans les tournois en cours (si tu veux vraiment tout nettoyer)
     });
 
     // --- ROOM PRIVÉE ---
@@ -721,65 +792,85 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
     });
 
     // --- Quit tournament at READY step ---
-    socket.on('quitTournament', ({ tournamentId }: { tournamentId: string }) => {
-      // Remove from queue if not started
-      let found = false;
-      for (const size of [4, 8] as const) {
-        const idx = tournamentQueues[size].findIndex(p => p.id === socket.id);
-        if (idx !== -1) {
-          tournamentQueues[size].splice(idx, 1);
-          // Update bracket for remaining players
-          tournamentQueues[size].forEach(p =>
-            gameNs.sockets.get(p.id)?.emit('tournamentBracket', {
-              size,
-              joined: tournamentQueues[size].map(p2 => p2.username),
-              status: tournamentQueues[size].map(p2 => ({
-                id: p2.id,
-                username: p2.username,
-                ready: false,
-                eliminated: false,
-                isInGame: false
-              }))
-            })
-          );
-          found = true;
-        }
+  socket.on('quitTournament', ({ tournamentId }: { tournamentId: string }) => {
+  const userId = socketToUserId.get(socket.id);
+  // on retire d'abord TOUTES les entrées en file pour ce userId (seulement queue 4)
+  tournamentQueues[4] = tournamentQueues[4].filter(p => {
+    const pUserId = socketToUserId.get(p.id);
+    // on garde seulement ceux qui ne sont ni ce socket, ni liés à ce userId
+    return p.id !== socket.id && pUserId !== userId;
+  });
+  // et on notifie les autres joueurs encore en attente
+  const joined = tournamentQueues[4].map(p => p.username);
+  const status = tournamentQueues[4].map(p => ({
+    id: p.id,
+    username: p.username,
+    ready: false,
+    eliminated: false,
+    isInGame: false
+  }));
+  tournamentQueues[4].forEach(p =>
+    gameNs.sockets.get(p.id)?.emit('tournamentBracket', { size: 4, joined, status })
+  );
+
+  // puis on fait pareil dans le tournoi déjà lancé (si l'ID est valide)
+  const tour = tournaments.get(tournamentId) as BasicTournament|undefined;
+  if (tour) {
+    // on enlève tous les p.id ou userId correspondants
+    tour.allPlayers = tour.allPlayers.filter(p => {
+      const pUid = socketToUserId.get(p.id);
+      return p.id !== socket.id && pUid !== userId;
+    });
+    tour.players    = tour.players.filter(p => {
+      const pUid = socketToUserId.get(p.id);
+      return p.id !== socket.id && pUid !== userId;
+    });
+    // on purge ready / finalReady
+    socketToUserId.forEach((uid, sid) => {
+      if (uid === userId || sid === socket.id) {
+        tour.ready.delete(sid);
+        tour.finalReady?.delete(sid);
       }
-      if (found) return;
-      // If tournament already started (exists in tournaments map)
-      const tour = tournaments.get(tournamentId) as BasicTournament;
-      if (!tour) return;
-      // Remove from allPlayers and players
-      tour.allPlayers = tour.allPlayers.filter(p => p.id !== socket.id);
-      tour.players = tour.players.filter(p => p.id !== socket.id);
-      tour.ready.delete(socket.id);
-      if (tour.finalReady) tour.finalReady.delete(socket.id);
-      // Mark as eliminated in matches
-      Object.values(tour.matches).forEach(m => {
-        if (m.players[0].id === socket.id || m.players[1].id === socket.id) {
-          // If match not finished, mark the other as winner
-          if (!m.winner) {
-            m.winner = m.players[0].id === socket.id ? m.players[1] : m.players[0];
-          }
-        }
-      });
-      // If only one player remains, declare winner
-      if (tour.allPlayers.length === 1) {
-        const winner = tour.allPlayers[0];
-        gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: winner.username });
-        tournaments.delete(tour.id);
-        return;
+    });
+    // pour chaque match, si un joueur a quitté, on le marque éliminé
+    Object.values(tour.matches).forEach(m => {
+      // si l'un des deux a quitté et qu'il n'y a pas encore de winner
+      if (!m.winner && m.players.some(p => {
+        const pUid = socketToUserId.get(p.id);
+        return p.id === socket.id || pUid === userId;
+      })) {
+        // l'autre devient gagnant par forfait
+        const survivor = m.players.find(p => {
+          const pUid = socketToUserId.get(p.id);
+          return p.id !== socket.id && pUid !== userId;
+        })!;
+        m.winner = survivor;
       }
-      // Broadcast updated bracket
-      const allMatchesLocal = Object.values(tour.matches) as { players: [Player, Player], winner?: Player }[];
-      const status = tour.allPlayers.map((p: Player) => {
-        const m = allMatchesLocal.find(m2 => m2.players.some(pl => pl.id === p.id));
-        const eliminated = m?.winner ? (m.winner.id !== p.id) : false;
+      // on enlève physiquement le joueur de la liste
+      m.players = m.players.filter(p => {
+        const pUid = socketToUserId.get(p.id);
+        return p.id !== socket.id && pUid !== userId;
+      }) as [Player, Player];
+    });
+
+    // si plus qu'un seul joueur, on termine le tournoi
+    if (tour.allPlayers.length === 1) {
+      const champ = tour.allPlayers[0];
+      gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: champ.username });
+      tournaments.delete(tour.id);
+    } else {
+      // sinon, on recalcule et on renvoie le bracket à tout le monde
+      const joined = tour.allPlayers.map(p => p.username);
+      const status = tour.allPlayers.map(p => {
+        const inMatch = Object.values(tour.matches).find(m2 =>
+          m2.players.some(pl => pl.id === p.id)
+        );
+        const eliminated = inMatch?.winner ? (inMatch.winner.id !== p.id) : false;
         let ready = false;
         if (tour.round === 0) ready = tour.ready.get(p.id) || false;
         else if (tour.round === 1 && tour.finalReady) ready = tour.finalReady.get(p.id) || false;
         let isInGame = false;
-        if (m && !m.winner && !eliminated) isInGame = true;
+        if (inMatch && !inMatch.winner && !eliminated) isInGame = true;
         return {
           id: p.id,
           username: p.username,
@@ -794,8 +885,20 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         joined: tour.allPlayers.map((p: Player) => p.username),
         status: status
       });
-    });
-  });
+    }
+  }
+
+  // enfin, seulement après tout ça, on nettoie la map socket->userId
+  if (userId) {
+    getAllSocketIdsForUser(userId).forEach(sid => socketToUserId.delete(sid));
+  } else {
+    socketToUserId.delete(socket.id);
+  }
+});
+
+
+});
+
 
   function launchMatches(ns: Namespace, tour: Tournament) {
     const players = tour.players;
