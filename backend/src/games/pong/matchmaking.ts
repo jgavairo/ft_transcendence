@@ -80,11 +80,14 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
     
     // TOURNAMENT
     socket.on( 'joinTournamentQueue', async ({ username, userId }: { username: string, userId?: string }) => {
-        // Optionnel : stocker l'ID utilisateur pour retrouver plus tard
         if (userId) socketToUserId.set(socket.id, userId);
-  
-        // Push FIFO si pas déjà présent
         const q = tournamentQueues[4];
+        // Blocage anti-doublon userId AVANT ajout à la file
+        const userIdsInQueue = q.map(p => (p.id && socketToUserId.get(p.id)) || p.id);
+        if (userId && userIdsInQueue.includes(userId)) {
+          socket.emit('error', { message: 'test' });
+          return;
+        }
         if (!q.find(p => p.id === socket.id)) {
           q.push({ id: socket.id, username });
         }
@@ -107,6 +110,21 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
   
         // Dès que la file est pleine, créer et lancer le tournoi
         if (q.length === 4) {
+          // Vérifie qu'il n'y a pas de doublon userId dans les 4 joueurs
+          const userIds = q.map(p => (p.id && socketToUserId.get(p.id)) || p.id);
+          const uniqueUserIds = new Set(userIds);
+          if (uniqueUserIds.size < 4) {
+            // Trouve l'index du doublon (le 2e, 3e ou 4e)
+            let idxToRemove = 1;
+            if (userIds[1] === userIds[0]) idxToRemove = 1;
+            else if (userIds[2] === userIds[0] || userIds[2] === userIds[1]) idxToRemove = 2;
+            else idxToRemove = 3;
+            const removed = q.splice(idxToRemove, 1)[0];
+            const sock = gameNs.sockets.get(removed.id);
+            if (sock) sock.emit('error', { message: 'Tournoi bloqué : multi-fenêtre ou double connexion détectée.' });
+            // On ne lance pas le tournoi, on attend un vrai 4e joueur
+            return;
+          }
           const tour: BasicTournament = {
             id: crypto.randomUUID(),
             players: q.slice(),
@@ -183,7 +201,9 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
               }, 1000 / 60);
             }
             // Annonce dans le chat des demi-finales
-            const msg = `[TOURNOI PONG] Demi-finales :\nMatch 1 : @${A.username} vs @${B.username}\nMatch 2 : @${C.username} vs @${D.username}`;
+            const now = new Date();
+            const heure = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const msg = `[TOURNOI PONG] Demi-finales (${heure}) :\nMatch 1 : @${A.username} vs @${B.username}\nMatch 2 : @${C.username} vs @${D.username}`;
             sendTournamentChatMessage(msg);
           }
         } else if (tour.round === 1) {
@@ -244,7 +264,9 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
                 if (state.gameOver) clearInterval(iv);
               }, 1000 / 60);
               // Annonce dans le chat de la finale
-              const msg = `[TOURNOI PONG] Finale : @${F1.username} vs @${F2.username}`;
+              const now = new Date();
+              const heure = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+              const msg = `[TOURNOI PONG] Finale (${heure}) : @${F1.username} vs @${F2.username}`;
               sendTournamentChatMessage(msg);
             }
           }
@@ -325,6 +347,8 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
             loser: winSide === 0 ? P2.username : P1.username
           });
           gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: winner.username });
+          // Ajout : message chat global avec médaille d'or
+          sendTournamentChatMessage(`🥇 ${winner.username} remporte le tournoi Pong !`);
           tournaments.delete(tour.id);
         }
       });
@@ -475,24 +499,39 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 
     // 3) 2-JOUEURS MATCHMAKING
     socket.on('joinQueue', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l'association socket_id -> user_id si disponible
       if (userId) {
         socketToUserId.set(socket.id, userId);
       }
-      
-      // Vérifier si le joueur est déjà dans une partie en cours
+      // Blocage anti-doublon userId AVANT ajout à la file
+      const userIdsInQueue = classicQueue.map(p => getUserIdFromSocketId(p.id) || p.id);
+      if (userId && userIdsInQueue.includes(userId)) {
+        socket.emit('error', { message: 'test1' });
+        return;
+      }
       const currentInfo = playerInfo.get(socket.id);
       if (currentInfo && currentInfo.mode === 'multi') {
         socket.emit('error', { message: 'Vous êtes déjà dans une partie en cours' });
         return;
       }
-      
       if (!classicQueue.some(p => p.id === socket.id)) {
         classicQueue.push({ id: socket.id, username });
       }
-      if (classicQueue.length >= 2) {
-        const p1 = classicQueue.shift()!;
-        const p2 = classicQueue.shift()!;
+      // Nouvelle logique : chercher 2 joueurs avec userId différents
+      while (classicQueue.length >= 2) {
+        const p1 = classicQueue[0];
+        const p2 = classicQueue[1];
+        const userId1 = getUserIdFromSocketId(p1.id) || p1.id;
+        const userId2 = getUserIdFromSocketId(p2.id) || p2.id;
+        if (userId1 === userId2) {
+          // Doublon userId, on retire le 2e joueur et on lui envoie une erreur
+          const removed = classicQueue.splice(1, 1)[0];
+          const sock = gameNs.sockets.get(removed.id);
+          if (sock) sock.emit('error', { message: 'Matchmaking bloqué : multi-fenêtre ou double connexion détectée.' });
+          continue;
+        }
+        // Sinon, on peut matcher
+        classicQueue.shift();
+        classicQueue.shift();
         const s1 = gameNs.sockets.get(p1.id)!;
         const s2 = gameNs.sockets.get(p2.id)!;
         const m = startMatch([s1, s2], gameNs, false);
@@ -511,8 +550,8 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           mode: 'multi',
           you: p1.username,
           opponent: p2.username,
-          user1Id: getUserIdFromSocketId(p1.id) || p1.id, // ID du joueur 1
-          user2Id: getUserIdFromSocketId(p2.id) || p2.id  // ID du joueur 2
+          user1Id: userId1,
+          user2Id: userId2
         });
 
         s2.emit('matchFound', {
@@ -521,8 +560,8 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           mode: 'multi',
           you: p2.username,
           opponent: p1.username,
-          user1Id: getUserIdFromSocketId(p1.id) || p1.id, // ID du joueur 1
-          user2Id: getUserIdFromSocketId(p2.id) || p2.id  // ID du joueur 2
+          user1Id: userId1,
+          user2Id: userId2
         });
 
         const iv = setInterval(() => {
@@ -554,18 +593,20 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 
     // 5) 3-JOUEURS TRIPONG MATCHMAKING
     socket.on('joinTriQueue', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l'association socket_id -> user_id si disponible
       if (userId) {
         socketToUserId.set(socket.id, userId);
       }
-      
-      // Vérifier si le joueur est déjà dans une partie en cours
+      // Blocage anti-doublon userId AVANT ajout à la file
+      const userIdsInQueue = triQueue.map(p => getUserIdFromSocketId(p.id) || p.id);
+      if (userId && userIdsInQueue.includes(userId)) {
+        socket.emit('error', { message: 'test' });
+        return;
+      }
       const currentInfo = playerInfo.get(socket.id);
       if (currentInfo && (currentInfo.mode === 'multi' || currentInfo.mode === 'tri')) {
         socket.emit('error', { message: 'Vous êtes déjà dans une partie en cours' });
         return;
       }
-      
       if (!triQueue.some(p => p.id === socket.id)) {
         triQueue.push({ id: socket.id, username });
       }
@@ -990,6 +1031,8 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 
       // Puis annoncer la fin du tournoi
       ns.to(`tour-${tour.id}`).emit('tournamentOver', { winner: winner.username });
+      // Ajout : message chat global avec médaille d'or
+      sendTournamentChatMessage(`🥇 ${winner.username} remporte le tournoi Pong !`);
       tournaments.delete(tour.id);
     }
   }, 1000 / 60);
@@ -1078,7 +1121,22 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
   // --- FONCTION D'ASSOCIATION POUR 3-JOUEURS TRI-PONG ---
   function attemptTriMatch() {
     while (triQueue.length >= 3) {
-      const trio = triQueue.splice(0, 3);
+      const trio = triQueue.slice(0, 3);
+      const userIds = trio.map(p => getUserIdFromSocketId(p.id) || p.id);
+      // Vérifie qu'il n'y a pas de doublon userId
+      const uniqueUserIds = new Set(userIds);
+      if (uniqueUserIds.size < 3) {
+        // Trouve l'index du doublon (le 2e ou 3e)
+        let idxToRemove = 1;
+        if (userIds[1] === userIds[0]) idxToRemove = 1;
+        else if (userIds[2] === userIds[0] || userIds[2] === userIds[1]) idxToRemove = 2;
+        const removed = triQueue.splice(idxToRemove, 1)[0];
+        const sock = gameNs.sockets.get(removed.id);
+        if (sock) sock.emit('error', { message: 'Matchmaking bloqué : multi-fenêtre ou double connexion détectée.' });
+        continue;
+      }
+      // Pas de doublon, on lance le match
+      triQueue.splice(0, 3);
       const socks = trio.map(p => gameNs.sockets.get(p.id)!).filter(Boolean);
       const m = startTriMatch(socks, gameNs, false);
       triMatchStates.set(m.roomId, m);
@@ -1096,4 +1154,3 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
     }
   }
 }
-

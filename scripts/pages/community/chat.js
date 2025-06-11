@@ -96,6 +96,65 @@ export async function setupChat() {
             profilePic = (user === null || user === void 0 ? void 0 : user.profile_picture) || 'default-profile.png';
         }
         const isGrouped = lastAuthor === authorId;
+        // --- Affichage spécial pour les messages de tournoi (simple, emoji coupe, un message, un match par ligne, AVEC auteur et photo) ---
+        const bracketRegex = /^\[TOURNOI( PONG)?\] (.+?)(?:\n|: )([\s\S]+)/i;
+        if (bracketRegex.test(content)) {
+            const [, , phase, matchesRaw] = content.match(bracketRegex) || [];
+            let matchLines = matchesRaw.split(/(?:\n|(?=Match \d+ :))/g).map(l => l.trim()).filter(Boolean);
+            // Ajout d'une ligne vide après l'heure
+            let msg = `🏆 ${phase}\n`;
+            matchLines.forEach((line, idx) => {
+                const matchMatch = line.match(/Match (\d+) ?: ?@?(\w+) ?vs ?@?(\w+)/i);
+                if (matchMatch) {
+                    msg += `  • @${matchMatch[2]} vs @${matchMatch[3]}\n`;
+                }
+                else {
+                    msg += `  • ${line}\n`;
+                }
+            });
+            // Affiche dans une seule bulle de chat AVEC auteur et photo
+            const msgWrapper = document.createElement("div");
+            msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
+            if (!self && !isGrouped) {
+                const usernameSpan = document.createElement("span");
+                usernameSpan.textContent = displayName;
+                usernameSpan.className = `messenger-username`;
+                msgWrapper.appendChild(usernameSpan);
+            }
+            const row = document.createElement("div");
+            row.className = "messenger-message-row";
+            if (!self && !isGrouped) {
+                const profileImg = document.createElement("img");
+                profileImg.src = profilePic;
+                profileImg.alt = `${displayName}'s profile picture`;
+                profileImg.className = "messenger-avatar";
+                if (!isSystem) {
+                    const user = userMap.get(authorId);
+                    profileImg.onclick = () => showProfileCard((user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.email) || "Email not available", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
+                }
+                row.appendChild(profileImg);
+            }
+            else if (!self && isGrouped) {
+                const spacer = document.createElement("div");
+                spacer.className = "messenger-avatar-spacer";
+                row.appendChild(spacer);
+            }
+            const messageContent = document.createElement("div");
+            messageContent.className = `messenger-bubble${self ? " self" : ""}`;
+            // Affiche les sauts de ligne avec <br>
+            messageContent.innerHTML = msg.trim().replace(/\n/g, '<br>');
+            row.appendChild(messageContent);
+            if (self && !isGrouped) {
+                const spacer = document.createElement("div");
+                spacer.className = "messenger-avatar-spacer";
+                row.appendChild(spacer);
+            }
+            msgWrapper.appendChild(row);
+            chatContainer.appendChild(msgWrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            lastAuthor = authorId;
+            return;
+        }
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
         if (!self && !isGrouped) {
@@ -168,6 +227,7 @@ export async function setupChat() {
         const isSelf = message.author === currentUser.id;
         if (!isSelf && await isBlocked(((_a = userMap.get(message.author)) === null || _a === void 0 ? void 0 : _a.username) || ""))
             continue;
+        // Correction : applique le même formatage tournoi à l'historique
         addMessage(message.content, message.author, isSelf);
     }
     // Connecter le client au serveur socket.IO

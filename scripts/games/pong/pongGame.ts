@@ -265,8 +265,16 @@ export function connectPong(isOnline: boolean) {
   // Ajouter la gestion des erreurs
   socket.on('error', (data: { message: string }) => {
     showErrorNotification(data.message);
-    // Retourner au menu principal
-    hideGameCanvasAndShowMenu();
+    // Affiche le menu multi-2 (2 joueurs online) en cas d'erreur matchmaking
+    if ((PongMenuManager as any).instance && typeof (PongMenuManager as any).instance.changeMenu === 'function') {
+      (PongMenuManager as any).instance.changeMenu('multi-2');
+    } else if (typeof displayMenu === 'function') {
+      displayMenu().then(() => {
+        if ((PongMenuManager as any).instance && typeof (PongMenuManager as any).instance.changeMenu === 'function') {
+          (PongMenuManager as any).instance.changeMenu('multi-2');
+        }
+      });
+    }
   });
 }
 
