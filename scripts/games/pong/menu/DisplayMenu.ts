@@ -1846,7 +1846,7 @@ export class PongMenuManager
         setPrivateLobbyTrue();
         if (nbPlayers !== 2) {
             // Ne rien faire si ce n'est pas 2 joueurs
-            showNotification('Le mode privé n\'est disponible que pour 2 joueurs.');
+            showNotification('This mode is only available for 2 players.');
             return;
         }
         const currentUser = await GameManager.getCurrentUser();
@@ -2039,7 +2039,7 @@ export class PongMenuManager
                 const now = Date.now();
                 const lastInvite = parseInt(localStorage.getItem('lastPongInviteTs') || '0', 10);
                 if (now - lastInvite < 10000) {
-                    showNotification(`Veuillez attendre ${Math.ceil((10000 - (now - lastInvite)) / 1000)}s avant de renvoyer une invitation.`);
+                    showNotification(`Please wait ${Math.ceil((10000 - (now - lastInvite)) / 1000)}s before sending another invitation.`);
                     return;
                 }
                 localStorage.setItem('lastPongInviteTs', now.toString());
@@ -2062,9 +2062,9 @@ export class PongMenuManager
                     // Envoie l'id utilisateur dans author
                     socket.emit("sendPrivateMessage", { to: person.id, author: fromId, content: message }, () => {});
                 } catch (e) {
-                    console.error("Erreur lors de l'envoi de l'invitation privée :", e);
+                    console.error("Error sending private invitation:", e);
                 }
-                showNotification(`Invitation Pong envoyée à ${person.username} dans le chat !`);
+                showNotification(`Invitation sent to ${person.username} in the chat!`);
             };
             item.appendChild(inviteBtn);
             container.appendChild(item);
@@ -2075,7 +2075,7 @@ export class PongMenuManager
 
     public startFromLink(roomId: string) {
         this.animateParticles();
-        // Lance directement le lobby privé avec le roomId (2 joueurs par défaut)
+        // Start directly the private lobby with the roomId (2 players by default)
         this.privateLobby(2, roomId);
         console.log("Menu displayed from link");
     }
@@ -2089,6 +2089,6 @@ export async function displayMenu() : Promise<void>
 }
 
 export async function displayMenuFromLink(roomId: string): Promise<void> {
-    const menu = new PongMenuManager(true, false); // pas de titre, pas de menu principal
+    const menu = new PongMenuManager(true, false); // no title, no main menu
     menu.startFromLink(roomId);
 }

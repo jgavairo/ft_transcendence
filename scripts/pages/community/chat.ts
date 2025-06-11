@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
-import { showErrorNotification, showNotification } from "../../helpers/notifications.js";
+import { showErrorNotification } from "../../helpers/notifications.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 import { handlePongInviteLinkClick } from "../../helpers/pongInviteHandler.js";
 
@@ -170,7 +170,7 @@ export async function setupChat() {
         if (self && pongInviteRegex.test(content)) {
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
-            messageContent.textContent = `invitation Pong envoyée à : ${dest}`;
+            messageContent.textContent = `Invitation sent to : ${dest}`;
         } else if (!self && mentionMatch) {
             messageContent.innerHTML = content.replace(
                 /^@(\w+)/,
@@ -286,7 +286,7 @@ export async function setupChat() {
         }
         currentUser = await fetchCurrentUser();
         if (!currentUser) {
-            if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>Vous avez été déconnecté. Merci de vous reconnecter pour utiliser le chat.</div>";
+            if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>You have been disconnected. Please reconnect to use the chat.</div>";
             if (input) input.style.display = 'none';
             if (sendBtn) sendBtn.style.display = 'none';
             return;
