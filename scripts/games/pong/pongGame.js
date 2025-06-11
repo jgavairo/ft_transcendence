@@ -213,17 +213,38 @@ export function connectPong(isOnline) {
             }
         }
     });
-    // Ajouter la gestion des erreurs
+    // Gestion centralisée des erreurs pour le matchmaking (1v1, 1v1v1, tournoi)
     socket.on('error', (data) => {
-        showErrorNotification(data.message);
-        // Affiche le menu multi-2 (2 joueurs online) en cas d'erreur matchmaking
+        var _a, _b, _c, _d;
+        // Affiche la notification d'erreur avec un message explicite
+        let msg = data && data.message ? data.message : 'Erreur inconnue.';
+        // Si le message backend est générique, on précise pour le tournoi
+        if (/tournoi|tournament/i.test(msg)) {
+            msg = 'Already registered for the tournament.';
+        }
+        showErrorNotification(msg);
+        // Redirige vers le menu approprié selon le message d'erreur
+        let menuTarget = 'multi';
+        if (/tournoi|tournament/i.test(msg)) {
+            menuTarget = 'tournament';
+        }
+        // Nettoyage complet du menuLayer avant de changer de menu
+        if (PongMenuManager.instance && PongMenuManager.instance.menuLayer) {
+            (_b = (_a = PongMenuManager.instance.menuLayer).removeChildren) === null || _b === void 0 ? void 0 : _b.call(_a);
+            (_d = (_c = PongMenuManager.instance.menuLayer).clear) === null || _d === void 0 ? void 0 : _d.call(_c);
+        }
         if (PongMenuManager.instance && typeof PongMenuManager.instance.changeMenu === 'function') {
-            PongMenuManager.instance.changeMenu('multi-2');
+            PongMenuManager.instance.changeMenu(menuTarget);
         }
         else if (typeof displayMenu === 'function') {
             displayMenu().then(() => {
+                var _a, _b, _c, _d;
+                if (PongMenuManager.instance && PongMenuManager.instance.menuLayer) {
+                    (_b = (_a = PongMenuManager.instance.menuLayer).removeChildren) === null || _b === void 0 ? void 0 : _b.call(_a);
+                    (_d = (_c = PongMenuManager.instance.menuLayer).clear) === null || _d === void 0 ? void 0 : _d.call(_c);
+                }
                 if (PongMenuManager.instance && typeof PongMenuManager.instance.changeMenu === 'function') {
-                    PongMenuManager.instance.changeMenu('multi-2');
+                    PongMenuManager.instance.changeMenu(menuTarget);
                 }
             });
         }
@@ -557,3 +578,25 @@ export function hideGameCanvasAndShowMenu() {
         gamesModal.style.display = '';
     }
 }
+// Handler global pour toutes les erreurs de matchmaking/tournoi
+socket.on('error', (data) => {
+    if (data && data.message) {
+        let msg = data.message;
+        if (/tournoi|tournament/i.test(msg)) {
+            msg = 'Vous êtes déjà inscrit au tournoi.';
+        }
+        showErrorNotification(msg);
+        // Redirige vers le menu approprié
+        if (PongMenuManager.instance && typeof PongMenuManager.instance.changeMenu === 'function') {
+            if (/tournoi|tournament/i.test(msg)) {
+                PongMenuManager.instance.changeMenu('tournament');
+            }
+            else {
+                PongMenuManager.instance.changeMenu('main');
+            }
+        }
+        else {
+            displayMenu();
+        }
+    }
+});
