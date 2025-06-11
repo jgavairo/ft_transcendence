@@ -170,50 +170,55 @@ function attachNavigationListeners()
 	});
 }
 
-window.addEventListener('popstate', (event: PopStateEvent) => {
-	const profilewindow = document.getElementById('profileMenu');
-	const storeButton = document.getElementById('storebutton');
-	const libraryButton = document.getElementById('librarybutton');
-	const communityButton = document.getElementById('communitybutton');
-	const mainElement = document.getElementById('main');
+// window.addEventListener('popstate', (event: PopStateEvent) => {
+// 	const profilewindow = document.getElementById('profileMenu');
+// 	const storeButton = document.getElementById('storebutton');
+// 	const libraryButton = document.getElementById('librarybutton');
+// 	const communityButton = document.getElementById('communitybutton');
+// 	const mainElement = document.getElementById('main');
 
-	if (!storeButton || !libraryButton || !communityButton || !mainElement || !profilewindow)
-		return;
+// 	if (!storeButton || !libraryButton || !communityButton || !mainElement || !profilewindow)
+// 		return;
 
-	const page = event.state?.page || 'store';
-	let currentActiveButton = document.querySelector('.header .activebutton') as HTMLElement;
-	if (!currentActiveButton)
-		currentActiveButton = storeButton;
+// 	const page = event.state?.page || 'store';
+// 	let currentActiveButton = document.querySelector('.header .activebutton') as HTMLElement;
+// 	if (!currentActiveButton)
+// 		currentActiveButton = storeButton;
 
-	if (boolprofileMenu) {
-		profilewindow.innerHTML = "";
-		boolprofileMenu = false;
-	}
+// 	if (boolprofileMenu) {
+// 		profilewindow.innerHTML = "";
+// 		boolprofileMenu = false;
+// 	}
 
-	switch (page) {
-		case 'library':
-			changeActiveButton(currentActiveButton, libraryButton);
-			mainElement.innerHTML = libraryPage;
-			setupLibrary();
-			setupChatWidget();
-			break;
-		case 'store':
-			changeActiveButton(currentActiveButton, storeButton);
-			mainElement.innerHTML = storePage;
-			setupStore();
-			setupChatWidget();
-			break;
-		case 'community':
-			changeActiveButton(currentActiveButton, communityButton);
-			mainElement.innerHTML = communityPage;
-			showCommunityPage();
-			removeChatWidget();
-			break;
-	}
-});
+// 	switch (page) {
+// 		case 'library':
+// 			changeActiveButton(currentActiveButton, libraryButton);
+// 			mainElement.innerHTML = libraryPage;
+// 			setupLibrary();
+// 			setupChatWidget();
+// 			break;
+// 		case 'store':
+// 			changeActiveButton(currentActiveButton, storeButton);
+// 			mainElement.innerHTML = storePage;
+// 			setupStore();
+// 			setupChatWidget();
+// 			break;
+// 		case 'community':
+// 			changeActiveButton(currentActiveButton, communityButton);
+// 			mainElement.innerHTML = communityPage;
+// 			showCommunityPage();
+// 			removeChatWidget();
+// 			break;
+// 	}
+// });
 
 const initialPage = window.location.pathname.slice(1) || 'store';
 window.history.replaceState({ page: initialPage }, '', `/${initialPage}`);
+
+// Ajout : afficher le chat widget au chargement initial si on est sur store ou library
+if (initialPage === 'store' || initialPage === 'library') {
+    setupChatWidget();
+}
 
 
 export function setupProfileButton()
