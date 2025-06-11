@@ -6,6 +6,7 @@ export interface MatchState {
   paddles: { phi: number; lives: number; direction: 'up'|'down'|null }[];
   ball: { x:number; y:number; vx:number; vy:number; r:number };
   gameOver: boolean;
+  userIds?: [number, number]; // Ajout pour gestion backend des stats
 }
 
 
@@ -25,7 +26,13 @@ function resetBall(ball: MatchState['ball']) {
   ball.vy = BALL_SPEED * Math.sin(a);
 }
 
-export function startMatch(socks: Socket[], nsp: Namespace, isSolo: boolean, roomIdOverride?: string ): MatchState {
+export function startMatch(
+  socks: Socket[],
+  nsp: Namespace,
+  isSolo: boolean,
+  roomIdOverride?: string,
+  userIds?: [number, number]
+): MatchState {
   const roomId = roomIdOverride || `${Date.now()}`;
   socks.forEach(s => s.join(roomId));
 
@@ -37,7 +44,8 @@ export function startMatch(socks: Socket[], nsp: Namespace, isSolo: boolean, roo
 
   const ball = { x: 0, y: 0, vx: 0, vy: 0, r: 8 };
   const state: MatchState = { roomId, paddles, ball, gameOver: false };
-  
+  if (userIds) state.userIds = userIds;
+
   const delay = isSolo ? 1_000 : 6_000;
   
   setTimeout(() => {

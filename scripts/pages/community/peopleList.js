@@ -1,8 +1,8 @@
 import { showErrorNotification, showNotification } from "../../helpers/notifications.js";
-import { HOSTNAME } from "../../main.js";
 import { FriendsManager } from "../../managers/friendsManager.js";
 import api from "../../helpers/api.js";
 const STORAGE_KEY = "people";
+const HOSTNAME = window.location.hostname;
 export async function fetchUsernames() {
     try {
         const response = await api.get(`https://${HOSTNAME}:8443/api/users`);
