@@ -122,8 +122,13 @@ export async function setupChatWidget() {
     };
     closeBtn.onclick = () => { chatWindow.style.display = "none"; chatBubble.style.display = "flex"; };
     const users = await fetchUsernames();
-    const userMap = new Map(users.map(user => [user.id, user]));
-    const usernames = users.map(u => u.username);
+    // Correction : recharge les users si la liste est vide (problème de refresh)
+    let userList = users;
+    if (!userList || userList.length === 0) {
+        userList = await fetchUsernames();
+    }
+    const userMap = new Map(userList.map(user => [user.id, user]));
+    const usernames = userList.map(u => u.username);
     let lastAuthor = null;
     let lastMsgWrapper = null;
     const addMessage = (content, authorIdRaw, self = true) => {
@@ -134,7 +139,7 @@ export async function setupChatWidget() {
         let profilePic = '';
         if (authorIdRaw === 'system' || isNaN(authorId) || authorIdRaw == 0) {
             isSystem = true;
-            displayName = 'Team42';
+            displayName = 'BOT';
             profilePic = '/assets/games/pong/pong.png';
         }
         else {
@@ -259,17 +264,20 @@ export async function setupChatWidget() {
         lastAuthor = authorId;
         lastMsgWrapper = msgWrapper;
     };
+    // Correction : lors de l'affichage de l'historique, recharge userMap si l'auteur n'est pas trouvé
     const currentUser = await fetchCurrentUser();
     if (!currentUser)
         return;
-    // Charger l'historique des messages
     const chatHistory = await fetchChatHistory(currentUser.id);
-    // Affichage de l'historique avec groupement
-    let prevAuthor = null;
     for (const message of chatHistory) {
         const isSelf = message.author === currentUser.id;
         if (!isSelf && await isBlocked(((_a = userMap.get(message.author)) === null || _a === void 0 ? void 0 : _a.username) || ""))
             continue;
+        // Recharge userMap si l'auteur n'est pas trouvé (cas de refresh)
+        if (!userMap.has(message.author)) {
+            const newUsers = await fetchUsernames();
+            newUsers.forEach(user => userMap.set(user.id, user));
+        }
         addMessage(message.content, message.author, isSelf);
     }
     const socket = io(`https://${HOSTNAME}:8443/chat`, {
@@ -348,9 +356,9 @@ export async function setupChatWidget() {
             return;
         if (await isBlocked(((_a = userMap.get(authorId)) === null || _a === void 0 ? void 0 : _a.username) || ""))
             return;
+        // Recharge userMap si l'auteur n'est pas trouvé
         if (!userMap.has(authorId)) {
             const newUsers = await fetchUsernames();
-            userMap.clear();
             newUsers.forEach(user => userMap.set(user.id, user));
         }
         addMessage(messageData.content, authorId, false);
@@ -364,9 +372,9 @@ export async function setupChatWidget() {
         const authorId = Number(messageData.author);
         if (await isBlocked(((_a = userMap.get(authorId)) === null || _a === void 0 ? void 0 : _a.username) || ""))
             return;
+        // Recharge userMap si l'auteur n'est pas trouvé
         if (!userMap.has(authorId)) {
             const newUsers = await fetchUsernames();
-            userMap.clear();
             newUsers.forEach(user => userMap.set(user.id, user));
         }
         addMessage(messageData.content, authorId, false);
