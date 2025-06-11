@@ -239,7 +239,7 @@ export async function setupChatWidget() {
         if (self && pongInviteRegex.test(content)) {
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
-            messageContent.textContent = `invitation envoyée à : ${dest}`;
+            messageContent.textContent = `invitation sent to : ${dest}`;
         } else if (mentionMatch) {
             const mentionedUser = users.find(u => u.username === mentionMatch[1]);
             if (mentionedUser) {
@@ -303,7 +303,7 @@ export async function setupChatWidget() {
         if (!canSend) return;
         const currentUser = await fetchCurrentUser();
         if (!currentUser) {
-            if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>Vous avez été déconnecté. Merci de vous reconnecter pour utiliser le chat.</div>";
+            if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>You have been disconnected. Please reconnect to use the chat.</div>";
             if (input) input.style.display = 'none';
             if (sendBtn) sendBtn.style.display = 'none';
             return;

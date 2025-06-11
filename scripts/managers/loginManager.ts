@@ -3,7 +3,6 @@ import { HOSTNAME, MainApp, updateChatWidgetVisibility } from "../main.js";
 import { showNotification, showErrorNotification } from "../helpers/notifications.js";
 import api from "../helpers/api.js";
 import { setupProfileButton } from "../header/navigation.js";
-import { googleSignInHandler } from "../modals/login/googleSignIn.js";
 import { disconnectNotificationSocket } from "../header/navigation.js";
 export class LoginManager
 {
