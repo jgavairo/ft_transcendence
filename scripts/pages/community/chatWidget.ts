@@ -239,7 +239,8 @@ export async function setupChatWidget() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
-        const pongInviteRegex = /@([\w-]+) Clique ici pour rejoindre ma partie Pong/;
+        // Update regex to match the new English invite message
+        const pongInviteRegex = /@([\w-]+) Click here to join my Pong game/;
         if (self && pongInviteRegex.test(content)) {
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
