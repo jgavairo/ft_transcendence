@@ -19,6 +19,22 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
                 message: "Username and password are required"
             });
         }
+
+        const usernameRegex = /^[a-zA-Z0-9_-]{5,20}$/;
+        if (!usernameRegex.test(username)) {
+            return res.status(400).send({
+                success: false,
+                message: "Username must be between 5 and 20 characters and can only contain letters, numbers, underscores and hyphens"
+            });
+        }
+
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%#*?&])[A-Za-z\d@$!%#*?&]{8,25}$/;
+        if (!passwordRegex.test(password)) {
+            return res.status(400).send({
+                success: false,
+                message: "Password must be between 8 and 25 characters and contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%#*?&)"
+            });
+        }
         
         const user = await dbManager.getUserByUsername(username);
         
@@ -78,7 +94,7 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
             (
                 { userId: user.id },
                 JWT_SECRET,
-                { expiresIn: '1h' }
+                { expiresIn: '24h' }
             );
     
             res.setCookie
@@ -123,7 +139,38 @@ const registerHandler = async (req: FastifyRequest, res: FastifyReply) =>
 
     try 
     {
-        // Hashage du mot de passe avec bcrypt
+        if (!username || !password || !email)
+        {
+            return res.status(400).send({
+                success: false,
+                message: "Username, password and email are required"
+            });
+        }
+
+        const usernameRegex = /^[a-zA-Z0-9_-]{5,20}$/;
+        if (!usernameRegex.test(username)) {
+            return res.status(400).send({
+                success: false,
+                message: "Username must be between 5 and 20 characters and can only contain letters, numbers, underscores and hyphens"
+            });
+        }
+
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%#*?&])[A-Za-z\d@$!%#*?&]{8,25}$/;
+        if (!passwordRegex.test(password)) {
+            return res.status(400).send({
+                success: false,
+                message: "Password must be between 8 and 25 characters and contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%#*?&)"
+            });
+        }
+
+        const emailRegex = /^[a-zA-Z0-9._%+-]{1,30}@[a-zA-Z0-9.-]{1,30}\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).send({
+                success: false,
+                message: "Please enter a valid email address (max 65 characters)"
+            });
+        }
+
         const password_hash = await bcrypt.hash(password, 10);
 
         const userID = await dbManager.registerUser
@@ -287,7 +334,13 @@ export const googleAuthHandler = async (userInfo: { email?: string; name?: strin
 const confirm2FAHandler = async (req: FastifyRequest, res: FastifyReply) => 
 {
     const { username, code } = req.body as { username: string; code: string };
-    console.log("Confirming 2FA with code:", code);
+
+    const codeRegex = /^[0-9]{6}$/;
+    if (!codeRegex.test(code))
+    {
+        return res.status(401).send({ success: false, message: "Invalid code" });
+    }
+
     const user = await dbManager.getUserByUsername(username);
     if (!user)
     {
@@ -301,14 +354,14 @@ const confirm2FAHandler = async (req: FastifyRequest, res: FastifyReply) =>
     {
         return res.status(401).send({ success: false, message: "Code expired" });
     }
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '24h' });
     
     res.setCookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 24 * 60 * 60 * 1000 // 24 heures
+        maxAge: 24 * 60 * 60 * 1000
     });
 
     return res.status(200).send({ 

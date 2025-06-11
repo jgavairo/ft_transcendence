@@ -137,6 +137,12 @@ function changePassword()
             showErrorNotification('New password and old password cannot be the same');
             return;
         }
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%#*?&])[A-Za-z\d@$!%#*?&]{8,25}$/;
+        if (!passwordRegex.test(newPassword.value) || !passwordRegex.test(oldPassword.value))
+        {
+            showErrorNotification('Password must be between 8 and 25 characters and contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%#*?&)');
+            return;
+        }
         const response = await api.post(`https://${HOSTNAME}:8443/api/user/changePassword`, 
         {
             oldPassword: oldPassword.value,
@@ -219,17 +225,7 @@ function setupChangeProfilePictureModal()
     });
 }
 
-function isValidUsername(username: string)
-{
-    const usernameRegex = /^(?=.{3,20}$)(?!.*[_.-]{2})[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/;
-    return usernameRegex.test(username);
-}
 
-function isValidEmail(email: string)
-{
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
 
 function changeUsername()
 {
@@ -262,9 +258,10 @@ function changeUsername()
             showErrorNotification('New username cannot be empty');
             return;
         }
-        if (!isValidUsername(newUsername.value))
+        const usernameRegex = /^[a-zA-Z0-9_-]{5,20}$/;
+        if (!usernameRegex.test(newUsername.value))
         {
-            showErrorNotification('Invalid username');
+            showErrorNotification('Username must be between 5 and 20 characters and can only contain letters, numbers, underscores and hyphens');
             return;
         }
         const response = await api.post(`https://${HOSTNAME}:8443/api/user/changeUsername`, 
@@ -320,9 +317,10 @@ function changeEmail()
             showErrorNotification('New email cannot be empty');
             return;
         }
-        if (!isValidEmail(newEmail.value))
+        const emailRegex = /^[a-zA-Z0-9._%+-]{1,30}@[a-zA-Z0-9.-]{1,30}\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(newEmail.value))
         {
-            showErrorNotification('Invalid email');
+            showErrorNotification('Please enter a valid email address');
             return;
         }
         const response = await api.post(`https://${HOSTNAME}:8443/api/user/changeEmail`, 
@@ -373,6 +371,12 @@ async function disable2FA()
             showErrorNotification('Password cannot be empty');
             return;
         }
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%#*?&])[A-Za-z\d@$!%#*?&]{8,25}$/;
+        if (!passwordRegex.test(password.value))
+        {
+            showErrorNotification('Invalid password');
+            return;
+        }
         const response = await api.post(`https://${HOSTNAME}:8443/api/user/disable2FA`, 
         {
             password: password.value
@@ -418,6 +422,12 @@ async function changeDoubleAuthentification()
             const code = document.getElementById('code') as HTMLInputElement;
             if (!code)
                 return;
+            const codeRegex = /^[0-9]{6}$/;
+            if (!codeRegex.test(code.value))
+            {
+                showErrorNotification('Invalid code');
+                return;
+            }
             const response = await api.post(`https://${HOSTNAME}:8443/api/user/enable2FA`, 
             {
                 code: code.value

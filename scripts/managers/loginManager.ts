@@ -73,6 +73,21 @@ export class LoginManager
                 showErrorNotification("Please enter a username and password");
                 return;
             }
+
+            const usernameRegex = /^[a-zA-Z0-9_-]{5,20}$/;
+            if (!usernameRegex.test(username))
+            {
+                showErrorNotification("Your username is not valid");
+                return;
+            }
+
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%#*?&])[A-Za-z\d@$!%#*?&]{8,25}$/;
+            if (!passwordRegex.test(password))
+            {
+                showErrorNotification("Your password is not valid");
+                return;
+            }
+
             api.post(`https://${HOSTNAME}:8443/api/auth/login`, { username, password })
             .then(response => response.json())
             .then(data => {
@@ -109,6 +124,12 @@ export class LoginManager
                                 showErrorNotification("Please enter a code");
                                 return;
                             }
+                            const codeRegex = /^[0-9]{6}$/;
+                            if (!codeRegex.test(code))
+                            {
+                                showErrorNotification('Invalid code');
+                                return;
+                            }
                             api.post(`https://${HOSTNAME}:8443/api/auth/confirm2FA`, { username, code })
                             .then(response => response.json())
                             .then(data => 
@@ -121,7 +142,6 @@ export class LoginManager
                                     MainApp.setupHeader();
                                     MainApp.setupCurrentPage(true);
                                     setupProfileButton();
-                                    updateChatWidgetVisibility();
                                 }
                                 else
                                     showErrorNotification(data.message);
@@ -191,6 +211,25 @@ export class LoginManager
                     showErrorNotification("Passwords do not match");
                     return;
                 }
+
+                const usernameRegex = /^[a-zA-Z0-9_-]{5,20}$/;
+                if (!usernameRegex.test(username)) {
+                    showErrorNotification("Username must be between 5 and 20 characters and can only contain letters, numbers, underscores and hyphens");
+                    return;
+                }
+
+                const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%#*?&])[A-Za-z\d@$!%#*?&]{8,25}$/;
+                if (!passwordRegex.test(password)) {
+                    showErrorNotification("Password must be between 8 and 25 characters and contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%#*?&)");
+                    return;
+                }
+
+                const emailRegex = /^[a-zA-Z0-9._%+-]{1,30}@[a-zA-Z0-9.-]{1,30}\.[a-zA-Z]{2,}$/;
+                if (!emailRegex.test(email)) {
+                    showErrorNotification("Please enter a valid email address (max 65 characters)");
+                    return;
+                }
+
                 api.post(`https://${HOSTNAME}:8443/api/auth/register`, { username, password, email })
                 .then(response => response.json())
                 .then(data => {
