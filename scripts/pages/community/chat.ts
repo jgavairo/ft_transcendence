@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-import { fetchUsernames } from "./peopleList.js";
+import { fetchUsernames, renderPeopleList } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
@@ -88,7 +88,7 @@ export async function setupChat() {
         let profilePic = '';
         if (authorIdRaw === 'system' || isNaN(authorId) || authorIdRaw == 0) {
             isSystem = true;
-            displayName = 'Team42';
+            displayName = 'BOT';
             profilePic = '/assets/games/pong/pong.png';
         } else {
             const user = userMap.get(authorId);
@@ -340,11 +340,8 @@ export async function setupChat() {
             const newUsers = await fetchUsernames();
             userMap.clear();
             newUsers.forEach(user => userMap.set(user.id, user));
-            if (document.getElementById('friendList')) {
-                const { renderPeopleList } = await import('./peopleList.js');
-                renderPeopleList();
-            }
         }
+        if (!userMap.has(authorId)) return;
         addMessage(messageData.content, authorId, false);
     });
 

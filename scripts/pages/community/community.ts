@@ -15,6 +15,7 @@ export async function showCommunityPage() {
     const main = document.getElementById("main");
     if (!main) return;
 
+    main.innerHTML = ""; // Vide le conteneur avant d'injecter la page community
     main.innerHTML = communityPage;
 
     // Supprimer le widget de chat si présent
