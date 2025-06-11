@@ -8,7 +8,8 @@ import { renderPeopleList, setupSearchInput } from "./pages/community/peopleList
 import { showCommunityPage } from "./pages/community/community.js";
 import { setupLibrary } from "./games/library.js"; // Ajoute cette ligne si tu as une fonction d'init pour la library
 
-export const HOSTNAME = window.location.hostname;
+const HOSTNAME = window.location.hostname;
+export { HOSTNAME };
 
 export async function updateChatWidgetVisibility() {
     // Ne recharge pas le widget chat si on est sur la page community

@@ -1,9 +1,9 @@
 import { showErrorNotification, showNotification } from "../../helpers/notifications.js";
-import { HOSTNAME } from "../../main.js";
 import { FriendsManager } from "../../managers/friendsManager.js";
 import api from "../../helpers/api.js";
 
 const STORAGE_KEY = "people";
+const HOSTNAME = window.location.hostname;
 
 export async function fetchUsernames(): Promise<{ id: number, username: string, profile_picture: string, email: string, bio: string, isOnline: boolean }[]> {
     try {
@@ -34,7 +34,7 @@ export async function renderPeopleList(filter: string = "") {
 
     const container = document.getElementById("friendList");
     if (!container) {
-        console.error("❌ #friendList introuvable");
+        console.error("❌ #friendList not found");
         return;
     }
 
@@ -51,10 +51,10 @@ export async function renderPeopleList(filter: string = "") {
             person.username !== currentUsername
         );
 
-        // Nettoyer le conteneur (supprime tous les event listeners)
+        // Clean the container (removes all event listeners)
         container.innerHTML = "";
 
-        // Rendre tous les éléments en une seule fois
+        // Render all items at once
         await Promise.all(filtered.map(async (person) => {
             const isFriend = await FriendsManager.isFriend(person.username);
             let isRequesting = false;
@@ -68,23 +68,23 @@ export async function renderPeopleList(filter: string = "") {
             const div = document.createElement("div");
             div.className = "friend-item";
 
-            // Rendre tout l'item cliquable
+            // Make the whole item clickable
             div.addEventListener("click", () => {
                 showProfileCard(person.username, person.profile_picture, person.email, person.bio, person.id);
             });
 
-            // Conteneur pour l'image de profil
+            // Container for profile image
             const profileContainer = document.createElement("div");
             profileContainer.className = "profile-picture-container";
 
-            // Ajouter l'image de profil
+            // Add profile image
             const img = document.createElement("img");
             const isOnline = await FriendsManager.isOnline(person.username);
             img.className = "profile-picture";
             img.src = person.profile_picture || "default-profile.png";
             img.alt = `${person.username}'s profile picture`;
 
-            // Ajout du cercle vert si en ligne
+            // Add green circle if online
             if (isOnline) {
                 const indicator = document.createElement("span");
                 indicator.className = "online-indicator";
@@ -93,7 +93,7 @@ export async function renderPeopleList(filter: string = "") {
             }
             profileContainer.appendChild(img);
 
-            // Supprimer l'overlay "view"
+            // Remove the "view" overlay
 
             div.appendChild(profileContainer);
 
@@ -101,7 +101,7 @@ export async function renderPeopleList(filter: string = "") {
             label.className = "friend-name";
             label.textContent = person.username;
 
-            // Grouper la photo et le nom dans un conteneur .friend-info
+            // Group the photo and name in a .friend-info container
             const friendInfo = document.createElement("div");
             friendInfo.className = "friend-info";
             friendInfo.appendChild(profileContainer);
@@ -257,7 +257,7 @@ export function setupSearchInput() {
 }
 
 export async function showProfileCard(username: string, profilePicture: string, email: string, bio: string, userId: number) {
-    // À chaque ouverture, on va chercher les infos utilisateur à jour
+    // Each time it opens, fetch up-to-date user info
     let userInfo = null;
     try {
         const resp = await fetch(`https://${HOSTNAME}:8443/api/users?username=${encodeURIComponent(username)}`, { credentials: 'include' });
@@ -273,13 +273,13 @@ export async function showProfileCard(username: string, profilePicture: string, 
         userId = userInfo.id || userId;
     }
 
-    // Vérifiez si une carte existe déjà et la supprimez
+    // Check if a card already exists and remove it
     let existingCard = document.getElementById("profileOverlay");
     if (existingCard) {
         existingCard.remove();
     }
 
-    // Récupérer le username courant
+    // Get the current username
     let currentUsername: string | null = null;
     try {
         const resp = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, { credentials: "include" });
@@ -289,24 +289,24 @@ export async function showProfileCard(username: string, profilePicture: string, 
         }
     } catch {}
 
-    // Créez un overlay
+    // Create an overlay
     const overlay = document.createElement("div");
     overlay.id = "profileOverlay";
     overlay.className = "profile-overlay";
 
-    // Ajoutez un événement pour fermer la carte lorsqu'on clique en dehors
+    // Add an event to close the card when clicking outside
     overlay.addEventListener("click", (event) => {
         if (event.target === overlay) {
             overlay.remove();
         }
     });
 
-    // Créez une nouvelle carte
+    // Create a new card
     const card = document.createElement("div");
     card.id = "profileCard";
     card.className = "profile-card";
 
-    // Ajoutez un conteneur pour le bouton block/unblock en haut à gauche
+    // Add a container for the block/unblock button at the top left
     const topLeftContainer = document.createElement("div");
     topLeftContainer.style.position = "absolute";
     topLeftContainer.style.top = "10px";
@@ -315,9 +315,9 @@ export async function showProfileCard(username: string, profilePicture: string, 
     topLeftContainer.style.display = "flex";
     topLeftContainer.style.alignItems = "center";
 
-    // N'affiche pas le bouton block/unblock si c'est le profil de l'utilisateur courant
+    // Do not show the block/unblock button if it's the current user's profile
     if (currentUsername !== username) {
-        // Ajoutez un bouton Block/Unblock avec une icône
+        // Add a Block/Unblock button with an icon
         const blockButton = document.createElement("button");
         blockButton.className = "profile-card-block";
         blockButton.style.display = "flex";
@@ -325,12 +325,12 @@ export async function showProfileCard(username: string, profilePicture: string, 
         blockButton.style.gap = "4px";
         blockButton.textContent = "Loading...";
 
-        // Icône
+        // Icon
         const iconSpan = document.createElement("span");
         iconSpan.className = "block-icon";
-        iconSpan.textContent = "🔒"; // Valeur par défaut, changée plus bas
+        iconSpan.textContent = "🔒"; // Default value, changed below
 
-        // Vérifier si l'utilisateur est bloqué
+        // Check if the user is blocked
         let isBlocked = false;
         try {
             const resp = await fetch(`https://${HOSTNAME}:8443/api/user/isBlocked`, {
@@ -347,7 +347,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
             blockButton.textContent = "Block";
             iconSpan.textContent = "🔒";
         }
-        // Ajoute l'icône au bouton (avant le texte)
+        // Add the icon to the button (before the text)
         blockButton.prepend(iconSpan);
 
         blockButton.addEventListener("click", async () => {
@@ -378,13 +378,13 @@ export async function showProfileCard(username: string, profilePicture: string, 
             blockButton.disabled = false;
             try {
                 if (document.getElementById("communitybutton")?.classList.contains("activebutton")) {
-                    // On est sur la page communauté : vider le chat puis relancer setupChat
+                    // On the community page: clear the chat then restart setupChat
                     const chatContainer = document.getElementById("chatContainer");
                     if (chatContainer) chatContainer.innerHTML = "";
                     const { setupChat } = await import("./chat.js");
                     setupChat();
                 } else {
-                    // Autre page, widget chat
+                    // Other page, chat widget
                     const { removeChatWidget, setupChatWidget } = await import("./chatWidget.js");
                     removeChatWidget();
                     setupChatWidget();
@@ -396,7 +396,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
         topLeftContainer.appendChild(blockButton);
     }
 
-    // Ajoutez l'image de profil
+    // Add the profile image
     const img = document.createElement("img");
     const isOnline = await FriendsManager.isOnline(username);
     if (isOnline)
@@ -406,22 +406,22 @@ export async function showProfileCard(username: string, profilePicture: string, 
     img.src = profilePicture;
     img.alt = `${username}'s profile picture`;
 
-    // Ajoutez le nom d'utilisateur
+    // Add the username
     const name = document.createElement("h3");
     name.className = "profile-card-name";
     name.textContent = username;
 
-    // Ajoutez l'email
+    // Add the email
     const emailElement = document.createElement("p");
     emailElement.className = "profile-card-email";
     emailElement.textContent = `Email: ${email}`;
 
-    // Ajoutez la bio
+    // Add the bio
     const bioElement = document.createElement("p");
     bioElement.className = "profile-card-bio";
     bioElement.textContent = bio || 'No bio available';
 
-    // Ajoutez un bouton pour fermer la carte
+    // Add a button to close the card
     const closeButton = document.createElement("button");
     closeButton.className = "profile-card-close";
     closeButton.textContent = "✖";
@@ -429,12 +429,12 @@ export async function showProfileCard(username: string, profilePicture: string, 
         overlay.remove();
     });
 
-    // Section fusionnée stats + historique
+    // Section merged stats + history
     let statsAndHistorySection = document.createElement("div");
     statsAndHistorySection.className = "profile-card-stats";
     statsAndHistorySection.style.position = "relative";
 
-    // Conteneur pour stats (pour mise en page plus jolie)
+    // Container for stats (for nicer layout)
     let statsContainer = document.createElement("div");
     statsContainer.className = "profile-card-stats-block";
     statsContainer.style.display = "flex";
@@ -443,7 +443,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
     statsContainer.style.gap = "2.5rem";
     statsContainer.style.margin = "10px 0 18px 0";
 
-    // Récupérez les statistiques de l'utilisateur pour tous les jeux
+    // Get user statistics for all games
     let allStats = { win: 0, loss: 0 };
     let perGameStats: { [gameId: number]: { win: number, loss: number } } = {};
     try {
@@ -451,7 +451,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
         const gamesData = await response.json();
         const rankingsResponse = await fetch(`https://${HOSTNAME}:8443/api/games/1/rankings`, { credentials: 'include' });
         const pongRankings = await rankingsResponse.json();
-        // On va chercher les stats pour tous les jeux
+        // Fetch stats for all games
         let allRankings: any[] = [];
         if (gamesData.success && Array.isArray(gamesData.games)) {
             for (const game of gamesData.games) {
@@ -475,7 +475,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
         perGameStats = {};
     }
 
-    // Fonction pour mettre à jour l'affichage des stats selon le jeu sélectionné
+    // Function to update the stats display according to the selected game
     function updateStatsDisplay(gameId: string | null) {
         let win, loss;
         const key = gameId && gameId !== "" ? Number(gameId) : null;
@@ -499,26 +499,26 @@ export async function showProfileCard(username: string, profilePicture: string, 
         `;
     }
 
-    // Ajout du conteneur stats (le dropdown sera ajouté au-dessus par displayMatchHistory)
+    // Add the stats container (the dropdown will be added above by displayMatchHistory)
     statsAndHistorySection.appendChild(statsContainer);
 
-    // Ajoutez la carte à l'overlay
+    // Add the card to the overlay
     card.appendChild(topLeftContainer);
     card.appendChild(closeButton);
     card.appendChild(img);
     card.appendChild(name);
     card.appendChild(emailElement);
     card.appendChild(bioElement);
-    card.appendChild(statsAndHistorySection); // Encadré fusionné
+    card.appendChild(statsAndHistorySection); // Merged frame
     overlay.appendChild(card);
     document.body.appendChild(overlay);
 
-    // Récupérez et affichez l'historique des matchs dans le même encadré fusionné
+    // Fetch and display the match history in the same merged frame
     const matchHistory = await fetchMatchHistory(userId);
     displayMatchHistory(matchHistory, userId, statsAndHistorySection, statsContainer, updateStatsDisplay);
 }
 
-// Fonction pour récupérer l'historique des matchs d'un utilisateur
+// Function to fetch a user's match history
 async function fetchMatchHistory(userId: number, gameId?: number): Promise<any[]> {
     try {
         let url = `https://${HOSTNAME}:8443/api/match/history/${userId}`;
@@ -555,7 +555,7 @@ async function getTowerGameId(): Promise<number> {
             }
         }
     } catch (e) {
-        console.error("Erreur lors de la récupération de l'id Tower:", e);
+        console.error("Error fetching Tower id:", e);
     }
     return 3; // fallback
 }
@@ -574,18 +574,18 @@ async function getPongGameId(): Promise<number> {
             }
         }
     } catch (e) {
-        console.error("Erreur lors de la récupération de l'id Pong:", e);
+        console.error("Error fetching Pong id:", e);
     }
     return 1; // fallback
 }
 
-// Fonction pour afficher l'historique des matchs dans la carte de profil
-// displayMatchHistory: ajoute le dropdown en haut de statsAndHistorySection, puis stats, puis le tableau
+// Function to display the match history in the profile card
+// displayMatchHistory: adds the dropdown above statsAndHistorySection, then stats, then the table
 async function displayMatchHistory(matches: any[], userId: number, container: HTMLElement, statsContainer?: HTMLElement, updateStatsDisplay?: (gameId: string | null) => void) {
     if (!container) return;
     container.innerHTML = "";
 
-    // Récupérer la liste des jeux depuis l'API pour avoir les noms corrects
+    // Retrieve the list of games from the API to get the correct names
     let gamesList: { [id: number]: string } = {};
     try {
         const res = await api.get('/api/games/getAll');
@@ -597,7 +597,7 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
         }
     } catch (e) {}
 
-    // Récupérer la liste des jeux présents dans tous les matchs (pas seulement filtrés)
+    // Retrieve the list of games present in all matches (not just filtered)
     const uniqueGames: { [id: number]: string } = {};
     for (const match of matches) {
         if (gamesList[match.game_id]) {
@@ -617,7 +617,7 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
     }
     const gameOptions = Object.entries(uniqueGames);
 
-    // Créer le dropdown une seule fois
+    // Create the dropdown only once
     let select = document.createElement("select");
     select.className = "match-history-game-filter";
     select.style.marginBottom = "10px";
@@ -634,15 +634,15 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
         select.appendChild(option);
     }
     container.appendChild(select);
-    // Ajoute le bloc stats juste sous le dropdown
+    // Add the stats block just below the dropdown
     if (statsContainer) container.appendChild(statsContainer);
-    if (updateStatsDisplay) updateStatsDisplay(""); // Affiche les stats "all games" par défaut
+    if (updateStatsDisplay) updateStatsDisplay(""); // Show "all games" stats by default
 
-    // Fonction pour afficher le tableau filtré
+    // Function to display the filtered table
     async function renderTable(gameId: number | null) {
         if (!container) return;
-        // Ne pas effacer le dropdown ni le bloc stats
-        // Supprime tout sauf le dropdown et le bloc stats
+        // Do not erase the dropdown or the stats block
+        // Remove everything except the dropdown and the stats block
         while (container.children.length > 2) {
             container.removeChild(container.lastChild!);
         }
@@ -656,12 +656,12 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
             container.appendChild(noMatches);
             return;
         }
-        // --- Ajout d'un conteneur scrollable autour du tableau ---
+        // --- Add a scrollable container around the table ---
         const tableWrapper = document.createElement("div");
         tableWrapper.style.maxHeight = "320px";
         tableWrapper.style.overflowY = "auto";
         tableWrapper.style.width = "100%";
-        // --------------------------------------------------------
+        // --------------------------------------------------
         const matchTable = document.createElement("table");
         matchTable.className = "match-history-table";
         const tableHeader = document.createElement("tr");
@@ -673,7 +673,7 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
             <th>Date</th>
         `;
         matchTable.appendChild(tableHeader);
-        // Correction : utiliser filteredMatches.slice(0, 10) au lieu de recentMatches
+        // Correction: use filteredMatches.slice(0, 10) instead of recentMatches
         const recentMatches = filteredMatches.slice(0, 10);
         for (const match of recentMatches) {
             try {
@@ -713,9 +713,9 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
         }
         tableWrapper.appendChild(matchTable);
         container.appendChild(tableWrapper);
-        // Plus de bouton "show all matches"
+        // No more "show all matches" button
     }
-    // Affichage du tableau complet
+    // Display the full table
     async function renderFullTable(filteredMatches: any[]) {
         if (!container) return;
         container.innerHTML = "";
@@ -779,7 +779,7 @@ async function displayMatchHistory(matches: any[], userId: number, container: HT
         container.appendChild(showLessLink);
     }
 
-    // Listener du dropdown : filtre local, pas de reload
+    // Dropdown listener: local filter, no reload
     select.addEventListener("change", () => {
         const selectedGameId = select.value ? select.value : null;
         if (updateStatsDisplay) updateStatsDisplay(selectedGameId);

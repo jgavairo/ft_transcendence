@@ -238,11 +238,12 @@ export async function setupChatWidget() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
-        const pongInviteRegex = /@([\w-]+) Clique ici pour rejoindre ma partie Pong/;
+        // Update regex to match the new English invite message
+        const pongInviteRegex = /@([\w-]+) Click here to join my Pong game/;
         if (self && pongInviteRegex.test(content)) {
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
-            messageContent.textContent = `invitation envoyée à : ${dest}`;
+            messageContent.textContent = `invitation sent to : ${dest}`;
         }
         else if (mentionMatch) {
             const mentionedUser = users.find(u => u.username === mentionMatch[1]);
@@ -306,7 +307,7 @@ export async function setupChatWidget() {
         const currentUser = await fetchCurrentUser();
         if (!currentUser) {
             if (chatContainer)
-                chatContainer.innerHTML = "<div class='chat-error'>Vous avez été déconnecté. Merci de vous reconnecter pour utiliser le chat.</div>";
+                chatContainer.innerHTML = "<div class='chat-error'>You have been disconnected. Please reconnect to use the chat.</div>";
             if (input)
                 input.style.display = 'none';
             if (sendBtn)

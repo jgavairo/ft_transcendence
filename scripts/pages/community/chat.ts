@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 import { fetchUsernames, renderPeopleList } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
 import { HOSTNAME } from "../../main.js";
-import { showErrorNotification, showNotification } from "../../helpers/notifications.js";
+import { showErrorNotification } from "../../helpers/notifications.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 import { handlePongInviteLinkClick } from "../../helpers/pongInviteHandler.js";
 
@@ -47,20 +47,20 @@ export async function setupChat() {
     const sendBtn = document.getElementById("sendMessage") as HTMLButtonElement;
     const chatContainer = document.getElementById("chatContainer");
 
-    // Ajout du conteneur pour la suggestion d'utilisateurs
+    // Add container for user mention suggestions
     let mentionBox = document.getElementById("mention-suggestions");
     if (!mentionBox) {
         mentionBox = document.createElement("div");
         mentionBox.id = "mention-suggestions";
         mentionBox.className = "mention-suggestions-box";
-        // Ajoute la box à body pour overlay flottant
+        // Add the box to body for floating overlay
         document.body.appendChild(mentionBox);
     }
 
-    // Vérification auth avant d'afficher le chat
+    // Check auth before displaying chat
     let currentUser = await fetchCurrentUser();
     if (!currentUser) {
-        if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>Vous devez être connecté pour utiliser le chat.</div>";
+        if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>You must be logged in to use the chat.</div>";
         if (input) input.style.display = 'none';
         if (sendBtn) sendBtn.style.display = 'none';
         return;
@@ -71,15 +71,15 @@ export async function setupChat() {
         return;
     }
 
-    // Vider le conteneur avant d'afficher l'historique
+    // Clear the container before displaying history
     chatContainer.innerHTML = "";
 
-    // Récupérer les informations des utilisateurs
+    // Fetch user information
     const users = await fetchUsernames();
     const userMap = new Map(users.map(user => [user.id, user]));
     const usernames = users.map(u => u.username);
 
-    // Grouper les messages par auteur pour un affichage Messenger-like
+    // Group messages by author for Messenger-like display
     let lastAuthor: number | null = null;
     const addMessage = (content: string, authorIdRaw: number|string, self = true) => {
         let authorId = Number(authorIdRaw);
@@ -96,12 +96,12 @@ export async function setupChat() {
             profilePic = user?.profile_picture || 'default-profile.png';
         }
         const isGrouped = lastAuthor === authorId;
-        // --- Affichage spécial pour les messages de tournoi (simple, emoji coupe, un message, un match par ligne, AVEC auteur et photo) ---
+        // --- Special display for tournament messages (simple, trophy emoji, one message, one match per line, WITH author and photo) ---
         const bracketRegex = /^\[TOURNOI( PONG)?\] (.+?)(?:\n|: )([\s\S]+)/i;
         if (bracketRegex.test(content)) {
             const [, , phase, matchesRaw] = content.match(bracketRegex) || [];
             let matchLines = matchesRaw.split(/(?:\n|(?=Match \d+ :))/g).map(l => l.trim()).filter(Boolean);
-            // Ajout d'une ligne vide après l'heure
+            // Add an empty line after the time
             let msg = `🏆 ${phase}\n`;
             matchLines.forEach((line, idx) => {
                 const matchMatch = line.match(/Match (\d+) ?: ?@?(\w+) ?vs ?@?(\w+)/i);
@@ -111,7 +111,7 @@ export async function setupChat() {
                     msg += `  • ${line}\n`;
                 }
             });
-            // Affiche dans une seule bulle de chat AVEC auteur et photo
+            // Display in a single chat bubble WITH author and photo
             const msgWrapper = document.createElement("div");
             msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
             if (!self && !isGrouped) {
@@ -139,7 +139,7 @@ export async function setupChat() {
             }
             const messageContent = document.createElement("div");
             messageContent.className = `messenger-bubble${self ? " self" : ""}`;
-            // Affiche les sauts de ligne avec <br>
+            // Display line breaks with <br>
             messageContent.innerHTML = msg.trim().replace(/\n/g, '<br>');
             row.appendChild(messageContent);
             if (self && !isGrouped) {
@@ -166,11 +166,12 @@ export async function setupChat() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " messenger-bubble-mention" : "";
-        const pongInviteRegex = /@([\w-]+) Clique ici pour rejoindre ma partie Pong/;
+        // Update regex to match the new English invite message
+        const pongInviteRegex = /@([\w-]+) Click here to join my Pong game/;
         if (self && pongInviteRegex.test(content)) {
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
-            messageContent.textContent = `invitation Pong envoyée à : ${dest}`;
+            messageContent.textContent = `Invitation sent to : ${dest}`;
         } else if (!self && mentionMatch) {
             messageContent.innerHTML = content.replace(
                 /^@(\w+)/,
@@ -218,18 +219,18 @@ export async function setupChat() {
         lastAuthor = authorId;
     };
 
-    // Charger l'historique des messages
+    // Load message history
     const chatHistory = await fetchChatHistory(currentUser.id);
-    // Affichage de l'historique avec groupement
+    // Display history with grouping
     let prevAuthor: number | null = null;
     for (const message of chatHistory) {
         const isSelf = message.author === currentUser.id;
         if (!isSelf && await isBlocked(userMap.get(message.author)?.username || "")) continue;
-        // Correction : applique le même formatage tournoi à l'historique
+        // Fix: apply the same tournament formatting to history
         addMessage(message.content, message.author, isSelf);
     }
 
-    // Connecter le client au serveur socket.IO
+    // Connect client to Socket.IO server
     const socket = io(`https://${HOSTNAME}:8443/chat`, {
         transports: ['websocket', 'polling'],
         withCredentials: true,
@@ -241,7 +242,7 @@ export async function setupChat() {
     socket.on("connect", () => {
         console.log("Connected to Socket.IO server");
         if (!currentUser) {
-            // Impossible d'émettre le register sans utilisateur courant
+            // Cannot emit register without current user
             return;
         }
         socket.emit("register", { userId: currentUser.id, username: currentUser.username });
@@ -257,10 +258,10 @@ export async function setupChat() {
 
     let canSend = true;
     const COOLDOWN_MS = 1000;
-    // Variable pour suivre les messages non lus
+    // Variable to track unread messages
     let unreadCount = 0;
     
-    // Fonction pour afficher le badge de notification
+    // Function to show notification badge
     function showBadge() {
         const badge = document.getElementById('chatBadge');
         if (badge) {
@@ -269,7 +270,7 @@ export async function setupChat() {
         }
     }
     
-    // Fonction pour réinitialiser le compteur de messages non lus
+    // Function to reset unread messages counter
     function resetBadge() {
         unreadCount = 0;
         const badge = document.getElementById('chatBadge');
@@ -278,15 +279,15 @@ export async function setupChat() {
         }
     }
     
-    // Envoyer un message au serveur
+    // Send a message to the server
     sendBtn.addEventListener("click", async () => {
-        // Revérifie l'authentification à chaque envoi
+        // Re-check authentication on each send
         if (!canSend) {
             return;
         }
         currentUser = await fetchCurrentUser();
         if (!currentUser) {
-            if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>Vous avez été déconnecté. Merci de vous reconnecter pour utiliser le chat.</div>";
+            if (chatContainer) chatContainer.innerHTML = "<div class='chat-error'>You have been disconnected. Please reconnect to use the chat.</div>";
             if (input) input.style.display = 'none';
             if (sendBtn) sendBtn.style.display = 'none';
             return;
@@ -330,7 +331,7 @@ export async function setupChat() {
         }
     });
 
-    // Recevoir un message du serveur
+    // Receive a message from the server
     socket.on("receiveMessage", async (messageData: { author: number|string, content: string }) => {
         const authorId = Number(messageData.author);
         if (!currentUser) return;
@@ -347,7 +348,7 @@ export async function setupChat() {
 
     socket.on("receivePrivateMessage", async (messageData: { author: number|string, content: string, authorInfo?: any }) => {
         const authorId = Number(messageData.author);
-        // Toujours mettre à jour le userMap avec les infos reçues
+        // Always update userMap with received info
         if (messageData.authorInfo) {
             userMap.set(authorId, {
                 id: messageData.authorInfo.id,
@@ -366,7 +367,7 @@ export async function setupChat() {
         addMessage(messageData.content, authorId, false);
     });
 
-    // Suggestion de mention @
+    // Mention @ suggestion
     let mentionActive = false;
     let mentionStart = -1;
     let filteredSuggestions: string[] = [];
@@ -385,7 +386,7 @@ export async function setupChat() {
             item.onmouseenter = () => item.style.background = "#2a475e";
             item.onmouseleave = () => item.style.background = "";
             item.onclick = () => {
-                // Remplace le @... par @username
+                // Replace @... with @username
                 const val = input.value;
                 const before = val.slice(0, mentionStart);
                 const after = val.slice(input.selectionStart!);
@@ -393,13 +394,13 @@ export async function setupChat() {
                 mentionBox!.style.display = "none";
                 mentionActive = false;
                 input.focus();
-                // Place le curseur après la mention
+                // Place the cursor after the mention
                 const pos = (before + "@" + username + " ").length;
                 input.setSelectionRange(pos, pos);
             };
             mentionBox!.appendChild(item);
         });
-        // Positionne la box juste sous l'input, overlay flottant
+        // Position the box just below the input, floating overlay
         const rect = input.getBoundingClientRect();
         mentionBox!.style.left = rect.left + "px";
         mentionBox!.style.top = (rect.bottom + 2) + "px";
@@ -407,7 +408,7 @@ export async function setupChat() {
         mentionBox!.style.display = "block";
     }
 
-    // Ajout : repositionne la mentionBox lors du resize
+    // Add: repositions the mentionBox on resize
     window.addEventListener("resize", () => {
         if (mentionActive && mentionBox!.style.display === "block") {
             updateMentionBox();
@@ -417,7 +418,7 @@ export async function setupChat() {
     input.addEventListener("input", (e) => {
         const val = input.value;
         const pos = input.selectionStart || 0;
-        // Recherche le dernier @ avant le curseur
+        // Search for the last @ before the cursor
         const before = val.slice(0, pos);
         const match = before.match(/@([\w]*)$/);
         if (match) {
@@ -435,14 +436,14 @@ export async function setupChat() {
             mentionBox!.style.display = "none";
         }
     });
-    // Ferme la box si on clique ailleurs
+    // Closes the box if clicking elsewhere
     document.addEventListener("click", (e) => {
         if (e.target !== input && e.target !== mentionBox) {
             mentionBox!.style.display = "none";
             mentionActive = false;
         }
     });
-    // Navigation clavier (flèches + entrée)
+    // Keyboard navigation (arrows + enter)
     input.addEventListener("keydown", (e) => {
         if (!mentionActive || mentionBox!.style.display === "none") return;
         const items = Array.from(mentionBox!.children) as HTMLDivElement[];
@@ -463,8 +464,8 @@ export async function setupChat() {
         }
     });
 
-    // Vider le cache partagé au début de setupChat
+    // Clear shared cache at the start of setupChat
     clearBlockedCache();
-    // Utilise la gestion centralisée des liens d'invitation Pong
+    // Uses centralized handling of Pong invite links
     document.addEventListener('click', handlePongInviteLinkClick);
 }
