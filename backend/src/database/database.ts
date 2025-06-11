@@ -349,7 +349,11 @@ export class DatabaseManager
 
     public async updateUserBio(userId: number, bio: string): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
-        if (bio.length > 150) throw new Error('Bio exceeds 150 characters');
+        const bioRegex = /^[a-zA-Z0-9\s]{1,150}$/;
+        if (!bioRegex.test(bio))
+        {
+            throw new Error('Bio must contain only letters, numbers and spaces, and be less than 150 characters');
+        }
         await this.db.run(
             'UPDATE users SET bio = ? WHERE id = ?',
             [bio, userId]

@@ -23,7 +23,7 @@ const changePictureHandler = async (request: MultipartRequest, reply: FastifyRep
         if (!data) {
             return reply.status(400).send({ 
                 success: false, 
-                message: 'Aucun fichier envoyé' 
+                message: 'No file sent' 
             });
         }
 
@@ -31,7 +31,7 @@ const changePictureHandler = async (request: MultipartRequest, reply: FastifyRep
         if (!data.mimetype.startsWith('image/')) {
             return reply.status(400).send({ 
                 success: false, 
-                message: 'Le fichier doit être une image' 
+                message: 'The file must be an image' 
             });
         }
 
@@ -58,7 +58,7 @@ const changePictureHandler = async (request: MultipartRequest, reply: FastifyRep
                 }
             }
         } catch (error) {
-            console.error('Erreur lors de la suppression de l\'ancienne photo:', error);
+            console.error('Error while deleting old profile picture:', error);
         }
 
         // Sauvegarder le nouveau fichier
@@ -71,14 +71,14 @@ const changePictureHandler = async (request: MultipartRequest, reply: FastifyRep
 
         return reply.send({
             success: true,
-            message: 'Photo de profil mise à jour',
+            message: 'Profile picture updated',
             path: relativePath
         });
     } catch (error) {
-        console.error('Erreur lors du changement de photo:', error);
+        console.error('Error while changing profile picture:', error);
         return reply.status(500).send({
             success: false,
-            message: 'Erreur serveur lors du changement de photo'
+            message: 'Server error while changing profile picture'
         });
     }  
 };
@@ -88,19 +88,35 @@ const updateBioHandler = async (request: FastifyRequest, reply: FastifyReply) =>
     try 
     {
         await authMiddleware(request as AuthenticatedRequest, reply);
+        const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);
+        if (!user || !user.id)
+        {
+            return reply.status(404).send({
+                success: false,
+                message: "User not found"
+            });
+        }
+        const bioRegex = /^[a-zA-Z0-9\s]{1,150}$/;
+        if (!bioRegex.test((request.body as { bio: string }).bio))
+        {
+            return reply.status(400).send({
+                success: false,
+                message: "Bio must contain only letters, numbers and spaces, and be less than 150 characters"
+            });
+        }
         await dbManager.updateUserBio((request as AuthenticatedRequest).user.id, (request.body as { bio: string }).bio);
         return reply.send
         ({
             success: true,
-            message: "Bio mise à jour"
+            message: "Bio updated"
         });
     } 
     catch (error) 
     {
-        console.error("Erreur détaillée:", error);
+        console.error("Detailed error:", error);
         return reply.status(500).send({
             success: false,
-            message: "Erreur serveur"
+            message: "Server error"
         });
     }
 };

@@ -155,6 +155,15 @@ const changePasswordHandler = async (request: FastifyRequest<{ Body: ChangePassw
                 message: "Google account cannot change password"
             });
         }
+        
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%#*?&])[A-Za-z\d@$!%#*?&]{8,25}$/;
+        if (!passwordRegex.test(request.body.newPassword))
+        {
+            return reply.status(400).send({
+                success: false,
+                message: "Password must be between 8 and 25 characters and contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%#*?&)"
+            });
+        }
         const realPasswordHash = await dbManager.getUserPassword(user.id);
         const isValid = await bcrypt.compare(request.body.oldPassword, realPasswordHash);
         if (!isValid)
@@ -246,6 +255,11 @@ const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyRepl
         {
             return reply.status(400).send({ success: false, message: "New username required" });
         }
+        const usernameRegex = /^[a-zA-Z0-9_-]{5,20}$/;
+        if (!usernameRegex.test(newUsername))
+        {
+            return reply.status(400).send({ success: false, message: "Username must be between 5 and 20 characters and can only contain letters, numbers, underscores and hyphens" });
+        }
         if (newUsername === user.username)
         {
             return reply.status(400).send({ success: false, message: "New username cannot be the same as the current username" });
@@ -276,12 +290,6 @@ const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyRepl
     }
 }
 
-function isValidEmail(email: string)
-{
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
 const changeEmailHandler = async (request: FastifyRequest, reply: FastifyReply) =>
 {
     try
@@ -309,6 +317,11 @@ const changeEmailHandler = async (request: FastifyRequest, reply: FastifyReply) 
         {
             return reply.status(400).send({ success: false, message: "New email required" });
         }
+        const emailRegex = /^[a-zA-Z0-9._%+-]{1,30}@[a-zA-Z0-9.-]{1,30}\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(newEmail))
+        {
+            return reply.status(400).send({ success: false, message: "Please enter a valid email address" });
+        }
         if (newEmail === user.email)
         {
             return reply.status(400).send({ success: false, message: "New email cannot be the same as the current email" });
@@ -317,10 +330,6 @@ const changeEmailHandler = async (request: FastifyRequest, reply: FastifyReply) 
         if (userWithNewEmail)
         {
             return reply.status(400).send({ success: false, message: "Email already exists" });
-        }
-        if (!isValidEmail(newEmail))
-        {
-            return reply.status(400).send({ success: false, message: "Invalid email" });
         }
         await dbManager.updateEmail(user.id, newEmail);
         return reply.send
