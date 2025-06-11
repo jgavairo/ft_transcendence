@@ -1,113 +1,113 @@
-# Guide des Balises HTML
+# HTML Tag Guide
 
-## 1. Structure de base 🏗️
-| Balise | Utilité |
-|--------|---------|
-| `<!DOCTYPE html>` | Définit le type de document HTML |
-| `<html>` | Élément racine |
-| `<head>` | En-tête du document (métadonnées) |
-| `<body>` | Corps du document |
-| `<main>` | Contenu principal |
-| `<header>` | En-tête de page ou de section |
-| `<footer>` | Pied de page ou de section |
+## 1. Basic Structure 🏗️
+| Tag | Purpose |
+|-----|---------|
+| `<!DOCTYPE html>` | Defines the HTML document type |
+| `<html>` | Root element |
+| `<head>` | Document head (metadata) |
+| `<body>` | Document body |
+| `<main>` | Main content |
+| `<header>` | Page or section header |
+| `<footer>` | Page or section footer |
 | `<nav>` | Navigation |
-| `<aside>` | Contenu annexe |
-| `<section>` | Section thématique |
-| `<article>` | Contenu autonome |
+| `<aside>` | Sidebar content |
+| `<section>` | Thematic section |
+| `<article>` | Standalone content |
 
-## 2. Texte 📝
-| Balise | Utilité |
-|--------|---------|
-| `<h1>` à `<h6>` | Titres (hiérarchie) |
-| `<p>` | Paragraphe |
-| `<span>` | Conteneur en ligne |
-| `<br>` | Saut de ligne |
-| `<hr>` | Ligne horizontale |
-| `<strong>` | Texte important |
-| `<em>` | Texte emphase |
-| `<mark>` | Texte surligné |
-| `<sub>` | Texte en indice |
-| `<sup>` | Texte en exposant |
+## 2. Text 📝
+| Tag | Purpose |
+|-----|---------|
+| `<h1>` to `<h6>` | Headings (hierarchy) |
+| `<p>` | Paragraph |
+| `<span>` | Inline container |
+| `<br>` | Line break |
+| `<hr>` | Horizontal rule |
+| `<strong>` | Important text |
+| `<em>` | Emphasized text |
+| `<mark>` | Highlighted text |
+| `<sub>` | Subscript text |
+| `<sup>` | Superscript text |
 
-## 3. Listes 📋
-| Balise | Utilité |
-|--------|---------|
-| `<ul>` | Liste non ordonnée |
-| `<ol>` | Liste ordonnée |
-| `<li>` | Élément de liste |
-| `<dl>` | Liste de définitions |
-| `<dt>` | Terme à définir |
-| `<dd>` | Définition |
+## 3. Lists 📋
+| Tag | Purpose |
+|-----|---------|
+| `<ul>` | Unordered list |
+| `<ol>` | Ordered list |
+| `<li>` | List item |
+| `<dl>` | Definition list |
+| `<dt>` | Term to define |
+| `<dd>` | Definition |
 
-## 4. Liens et médias 🔗
-| Balise | Utilité |
-|--------|---------|
-| `<a>` | Lien hypertexte |
+## 4. Links and Media 🔗
+| Tag | Purpose |
+|-----|---------|
+| `<a>` | Hyperlink |
 | `<img>` | Image |
-| `<video>` | Vidéo |
+| `<video>` | Video |
 | `<audio>` | Audio |
-| `<source>` | Source média |
-| `<figure>` | Figure (image, diagramme...) |
-| `<figcaption>` | Légende de figure |
+| `<source>` | Media source |
+| `<figure>` | Figure (image, diagram, etc.) |
+| `<figcaption>` | Figure caption |
 
-## 5. Formulaires 📝
-| Balise | Utilité |
-|--------|---------|
-| `<form>` | Formulaire |
-| `<input>` | Champ de saisie |
-| `<textarea>` | Zone de texte |
-| `<button>` | Bouton |
-| `<select>` | Liste déroulante |
-| `<option>` | Option de liste |
-| `<label>` | Étiquette |
-| `<fieldset>` | Groupe de champs |
-| `<legend>` | Titre de fieldset |
+## 5. Forms 📝
+| Tag | Purpose |
+|-----|---------|
+| `<form>` | Form |
+| `<input>` | Input field |
+| `<textarea>` | Text area |
+| `<button>` | Button |
+| `<select>` | Dropdown list |
+| `<option>` | List option |
+| `<label>` | Label |
+| `<fieldset>` | Fieldset group |
+| `<legend>` | Fieldset title |
 
-## 6. Tableaux 📊
-| Balise | Utilité |
-|--------|---------|
-| `<table>` | Tableau |
-| `<tr>` | Ligne |
-| `<td>` | Cellule |
-| `<th>` | En-tête de cellule |
-| `<thead>` | En-tête de tableau |
-| `<tbody>` | Corps du tableau |
-| `<tfoot>` | Pied de tableau |
+## 6. Tables 📊
+| Tag | Purpose |
+|-----|---------|
+| `<table>` | Table |
+| `<tr>` | Table row |
+| `<td>` | Table cell |
+| `<th>` | Header cell |
+| `<thead>` | Table head |
+| `<tbody>` | Table body |
+| `<tfoot>` | Table footer |
 
-## 7. Sémantique et métadonnées 🏷️
-| Balise | Utilité |
-|--------|---------|
-| `<meta>` | Métadonnées |
-| `<title>` | Titre de la page |
-| `<link>` | Ressource externe |
-| `<style>` | Styles CSS |
-| `<script>` | Code JavaScript |
-| `<div>` | Conteneur générique |
-| `<time>` | Date/heure |
-| `<address>` | Coordonnées |
+## 7. Semantics and Metadata 🏷️
+| Tag | Purpose |
+|-----|---------|
+| `<meta>` | Metadata |
+| `<title>` | Page title |
+| `<link>` | External resource |
+| `<style>` | CSS styles |
+| `<script>` | JavaScript code |
+| `<div>` | Generic container |
+| `<time>` | Date/time |
+| `<address>` | Contact info |
 
-## 8. Multimédia et intégration 🎮
-| Balise | Utilité |
-|--------|---------|
-| `<iframe>` | Cadre intégré |
-| `<canvas>` | Zone de dessin |
-| `<svg>` | Image vectorielle |
-| `<map>` | Carte image |
-| `<area>` | Zone cliquable |
+## 8. Multimedia and Embedding 🎮
+| Tag | Purpose |
+|-----|---------|
+| `<iframe>` | Embedded frame |
+| `<canvas>` | Drawing area |
+| `<svg>` | Vector image |
+| `<map>` | Image map |
+| `<area>` | Clickable area |
 
-## Bonnes pratiques ✨
-- Utiliser les balises sémantiques appropriées
-- Respecter la hiérarchie des titres
-- Assurer l'accessibilité avec des attributs appropriés (alt, aria-*)
-- Valider le code HTML
-- Maintenir une structure claire et logique
+## Best Practices ✨
+- Use appropriate semantic tags
+- Respect heading hierarchy
+- Ensure accessibility with proper attributes (alt, aria-*)
+- Validate HTML code
+- Maintain a clear and logical structure
 
-## Attributs courants 🔧
-| Attribut | Utilité |
-|----------|---------|
-| `class` | Pour le style CSS |
-| `id` | Identifiant unique |
-| `style` | Styles en ligne |
-| `title` | Info-bulle |
-| `lang` | Langue du contenu |
-| `data-*` | Données personnalisées | 
+## Common Attributes 🔧
+| Attribute | Purpose |
+|-----------|---------|
+| `class` | For CSS styling |
+| `id` | Unique identifier |
+| `style` | Inline styles |
+| `title` | Tooltip |
+| `lang` | Content language |
+| `data-*` | Custom data attributes |

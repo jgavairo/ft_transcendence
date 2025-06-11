@@ -1,23 +1,24 @@
 import type { Socket, Namespace } from 'socket.io';
 
-// État d’un match Bi-Pong circulaire
+// State of a Bi-Pong circular match
 export interface MatchState {
   roomId: string;
   paddles: { phi: number; lives: number; direction: 'up'|'down'|null }[];
   ball: { x:number; y:number; vx:number; vy:number; r:number };
   gameOver: boolean;
+  userIds?: [number, number]; // Ajout pour gestion backend des stats
 }
 
 
-// Constantes (à synchroniser rigoureusement côté client)
+// Constants (to synchronize strictly on the client side)
 const BALL_SPEED        = 4;
-const RADIUS            = 340;              // même rayon que le client
+const RADIUS            = 340;              // same radius as the client
 const ARC_HALF          = Math.PI / 18;     // 20° d’arc
 const PADDLE_SPEED      = Math.PI / 180 * 2;
 const MAX_DEFLECTION    = Math.PI / 6;
 const SPEED_MULTIPLIER  = 1.05;
 
-// Replace la balle au centre avec la vitesse de base
+// Replace the ball at the center with the base speed
 function resetBall(ball: MatchState['ball']) {
   ball.x = 0; ball.y = 0;
   const a = Math.random() * 2 * Math.PI;
@@ -25,11 +26,17 @@ function resetBall(ball: MatchState['ball']) {
   ball.vy = BALL_SPEED * Math.sin(a);
 }
 
-export function startMatch(socks: Socket[], nsp: Namespace, isSolo: boolean, roomIdOverride?: string ): MatchState {
+export function startMatch(
+  socks: Socket[],
+  nsp: Namespace,
+  isSolo: boolean,
+  roomIdOverride?: string,
+  userIds?: [number, number]
+): MatchState {
   const roomId = roomIdOverride || `${Date.now()}`;
   socks.forEach(s => s.join(roomId));
 
-  // Deux paddles à 90° et 270°
+  // Two paddles at 90° and 270°
   const paddles = [
     { phi:  Math.PI/2, lives: 3, direction: null },
     { phi: -Math.PI/2, lives: 3, direction: null }
@@ -37,7 +44,8 @@ export function startMatch(socks: Socket[], nsp: Namespace, isSolo: boolean, roo
 
   const ball = { x: 0, y: 0, vx: 0, vy: 0, r: 8 };
   const state: MatchState = { roomId, paddles, ball, gameOver: false };
-  
+  if (userIds) state.userIds = userIds;
+
   const delay = isSolo ? 1_000 : 6_000;
   
   setTimeout(() => {
@@ -64,12 +72,12 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
 
   aliveIndices.forEach(i => {
     const paddle = match.paddles[i];
-    // déplacement
+    // movement
     if (paddle.direction === 'up')   paddle.phi -= PADDLE_SPEED;
     if (paddle.direction === 'down') paddle.phi += PADDLE_SPEED;
     paddle.phi = normalizeAngle360(paddle.phi);
 
-    // clamp vis-à-vis des voisins vivants
+    // clamp vis-à-vis des voisins vivants (alive neighbors)
     const sorted = aliveIndices.slice().sort((a, b) =>
       normalizeAngle360(match.paddles[a].phi) - normalizeAngle360(match.paddles[b].phi)
     );
@@ -110,28 +118,28 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
     const velDot = b.vx * nx + b.vy * ny;
     if (velDot > 0) {
       const hitAngle = Math.atan2(dy, dx);
-      // cherche paddle touché
+      // search for the touched paddle
       const hit = match.paddles.find(paddle =>
         paddle.lives > 0
         && Math.abs(signedAngleDiff(hitAngle, paddle.phi)) <= ARC_HALF
       );
 
       if (hit) {
-        // 3a) réflexion vectorielle : v' = v - 2 (v·n) n
+        // 3a) vector reflection: v' = v - 2 (v·n) n
         const vDotN = b.vx * nx + b.vy * ny;
         let rvx = b.vx - 2 * vDotN * nx;
         let rvy = b.vy - 2 * vDotN * ny;
 
-        // 3b) petite déviation aléatoire
+        // 3b) small random deviation
         const deflect = (Math.random() * 2 - 1) * MAX_DEFLECTION;
         const newAngle = Math.atan2(rvy, rvx) + deflect;
 
-        // 3c) léger gain de vitesse
+        // 3c) slight speed gain
         const newSpeed = Math.hypot(rvx, rvy) * SPEED_MULTIPLIER;
         b.vx = newSpeed * Math.cos(newAngle);
         b.vy = newSpeed * Math.sin(newAngle);
       } else {
-        // raté → perte d’une vie
+        // missed → loss of a life
         let loser = -1, bestDiff = Infinity;
         match.paddles.forEach((paddle, i) => {
           if (paddle.lives > 0) {
@@ -141,10 +149,10 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
         });
         if (loser >= 0) match.paddles[loser].lives--;
 
-        // explosion côté client
+        // explosion on the client side
         nsp.to(match.roomId).emit('ballExplode', { x: b.x, y: b.y });
 
-        // reset à la vitesse initiale
+        // reset to the initial speed
         resetBall(b);
       }
     }
@@ -153,7 +161,7 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
   // --- 4) FIN DE PARTIE ---
   if (match.paddles.filter(p => p.lives > 0).length <= 1) {
     match.gameOver = true;
-    // Émettre l'événement de fin de partie pour rafraîchir le classement côté client
-    nsp.to(match.roomId).emit('pongGameEnded', { gameId: 1 }); // 1 = id du jeu Pong
+    // Emit the end of game event to refresh the ranking on the client side
+    nsp.to(match.roomId).emit('pongGameEnded', { gameId: 1 }); // 1 = id of the Pong game
   }
 }

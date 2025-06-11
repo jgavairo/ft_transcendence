@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Obtenir l'équivalent de __dirname pour les modules ES
+// Get the equivalent of __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -14,13 +14,13 @@ export interface User {
     email: string;
     password_hash: string;
     profile_picture: string;
-    bio?: string; // Nouvelle propriété pour la bio
+    bio?: string; // New property for the bio
     created_at?: number;
     library?: number[];
     attempting_friend_ids?: number[];
     friends: number [];
     friend_requests: number[];
-    blocked_users?: string[]; // Ajouté pour le blocage
+    blocked_users?: string[]; // Added for blocking
     two_factor_enabled?: boolean;
     two_factor_code?: string;
     two_factor_code_expiration?: number;
@@ -76,10 +76,10 @@ export class DatabaseManager
             await this.db.exec(schema);
             console.log('database initialized successfully');
 
-            // Vérifier si la table games est vide
+            // Check if the games table is empty
             const count = await this.db.get('SELECT COUNT(*) as count FROM games');
             if (count.count === 0) {
-                // Insérer les jeux par défaut
+                // Insert the default games
                 const defaultGames = [
                     {
                         id: 1,
@@ -150,7 +150,7 @@ export class DatabaseManager
             }
             const newsCount = await this.db.get('SELECT COUNT(*) as count FROM news');
             if (newsCount.count === 0) {
-            // Insérer les news par défaut
+            // Insert the default news
             const defaultNews = [
                 {
                     title: "Launch of ft_transcendence",
@@ -169,10 +169,16 @@ export class DatabaseManager
                     content: "The new GTA 6 is coming and he will be on our favorite platform ft_transcendence !",
                     image_url: "../../assets/news/gta6.jpg",
                     priority: 0
+                },
+                {
+                    title: "Tower is now available",
+                    content: "Tower is now available! Discover the new playing mode and the new features!",
+                    image_url: "../../assets/games/Tower/TowerBackground.png",
+                    priority: 0
                 }
             ];
 
-            // Insérer chaque news dans la base de données
+            // Insert each news in the database
             for (const news of defaultNews) {
                 await this.db.run(
                     'INSERT INTO news (title, content, image_url, priority) VALUES (?, ?, ?, ?)',
@@ -184,7 +190,7 @@ export class DatabaseManager
         }
         catch (error)
         {
-            console.error('Erreur lors de l\'initialisation de la base de données:', error);
+            console.error('Error initializing the database:', error);
             throw error;
         }
     }
@@ -272,9 +278,9 @@ export class DatabaseManager
             const libraryStr = result.library.startsWith('"') ? 
             result.library.slice(1, -1) : result.library;
             console.log("Library string to parse:", libraryStr);
-            return JSON.parse(libraryStr);  // Reconvertir en tableau
+            return JSON.parse(libraryStr);  // Reconvert to array
         } catch (error) {
-            console.error('Erreur lors de la conversion:', error);
+            console.error('Error converting to array:', error);
             return [];
         }
     }
@@ -283,9 +289,9 @@ export class DatabaseManager
         if (!this.db)
             throw new Error('Database not initialized');
         
-        // Ajouter le jeu à la bibliothèque de l'utilisateur
+        // Add the game to the user's library
         const library = await this.getUserLibrary(userId);
-        if (!library.includes(gameId)) { // Éviter les doublons
+        if (!library.includes(gameId)) { // Avoid duplicates
             library.push(gameId);
             await this.db.run(
                 'UPDATE users SET library = ? WHERE id = ?',
@@ -293,7 +299,7 @@ export class DatabaseManager
             );
         }
 
-        // Ajouter l'utilisateur à la liste des IDs dans la table games
+        // Add the user to the list of IDs in the games table
         const game = await this.db.get('SELECT user_ids FROM games WHERE id = ?', [gameId]);
         if (!game)
             throw new Error('Game not found');
@@ -315,7 +321,7 @@ export class DatabaseManager
             );
         }
 
-        // Initialiser les statistiques de classement (wins et losses) à zéro
+        // Initialize the ranking statistics (wins and losses) to zero
         const existingRanking = await this.db.get(
             'SELECT * FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
             [gameId, userId]
@@ -416,7 +422,7 @@ export class DatabaseManager
     {
         if (!this.db) throw new Error('Database not initialized');
 
-        // Récupérer les données actuelles
+        // Get the current data
         const userData = await this.db.get('SELECT friends, friend_requests FROM users WHERE id = ?', [userId]);
         const targetData = await this.db.get('SELECT friends, attempting_friend_ids FROM users WHERE id = ?', [targetId]);
 
@@ -570,7 +576,7 @@ export class DatabaseManager
             'SELECT author, content, timestamp FROM messages ORDER BY timestamp DESC LIMIT ?',
             [limit]
         );
-        return result.reverse(); // Inverser pour afficher les messages dans l'ordre chronologique
+        return result.reverse(); // Reverse to display messages in chronological order
     }
     //********************GAMES-PART*******************************
 
@@ -584,7 +590,7 @@ export class DatabaseManager
     public async incrementPlayerWins(gameId: number, userId: number): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
-        // Vérifier que les paramètres sont des nombres valides
+        // Check that the parameters are valid numbers
         const numericGameId = Number(gameId);
         const numericUserId = Number(userId);
         
@@ -593,14 +599,14 @@ export class DatabaseManager
         }
 
         try {
-            // Vérifier si une entrée existe déjà pour ce joueur et ce jeu
+            // Check if an entry already exists for this player and this game
             const existingRanking = await this.db.get(
                 'SELECT id, win FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
                 [numericGameId, numericUserId]
             );
 
             if (existingRanking) {
-                // Si une entrée existe, incrémenter le classement
+                // If an entry exists, increment the ranking
                 await this.db.run(
                     'UPDATE game_user_rankings SET win = win + 1 WHERE id = ?',
                     [existingRanking.id]
@@ -610,7 +616,7 @@ export class DatabaseManager
                     newRanking: existingRanking.win + 1,
                 });
             } else {
-                // Si aucune entrée n'existe, en créer une avec un classement initial de 1
+                // If no entry exists, create one with an initial ranking of 1
                 const result = await this.db.run(
                     'INSERT INTO game_user_rankings (game_id, user_id, win, loss) VALUES (?, ?, ?, ?)',
                     [numericGameId, numericUserId, 1, 0]
@@ -632,7 +638,7 @@ export class DatabaseManager
     public async incrementPlayerLosses(gameId: number, userId: number): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
-        // Vérifier que les paramètres sont des nombres valides
+        // Check that the parameters are valid numbers
         const numericGameId = Number(gameId);
         const numericUserId = Number(userId);
         
@@ -641,14 +647,14 @@ export class DatabaseManager
         }
 
         try {
-            // Vérifier si une entrée existe déjà pour ce joueur et ce jeu
+            // Check if an entry already exists for this player and this game
             const existingRanking = await this.db.get(
                 'SELECT id, loss FROM game_user_rankings WHERE game_id = ? AND user_id = ?',
                 [numericGameId, numericUserId]
             );
 
             if (existingRanking) {
-                // Si une entrée existe, incrémenter les défaites
+                // If an entry exists, increment the losses
                 await this.db.run(
                     'UPDATE game_user_rankings SET loss = loss + 1 WHERE id = ?',
                     [existingRanking.id]
@@ -658,7 +664,7 @@ export class DatabaseManager
                     newLosses: existingRanking.loss + 1,
                 });
             } else {
-                // Si aucune entrée n'existe, en créer une avec un nombre initial de défaites de 1
+            // If no entry exists, create one with an initial number of losses of 1
                 const result = await this.db.run(
                     'INSERT INTO game_user_rankings (game_id, user_id, win, loss) VALUES (?, ?, ?, ?)',
                     [numericGameId, numericUserId, 0, 1]
@@ -692,26 +698,26 @@ export class DatabaseManager
         if (!this.db) throw new Error('Database not initialized');
 
         try {
-            // Récupérer les données actuelles des deux utilisateurs
+            // Get the current data of the two users
             const userData = await this.db.get('SELECT friend_requests FROM users WHERE id = ?', [userId]);
             const targetData = await this.db.get('SELECT attempting_friend_ids FROM users WHERE id = ?', [targetId]);
 
             if (!userData || !targetData) throw new Error('User not found');
 
-            // S'assurer que les listes sont des tableaux
+            // Ensure that the lists are arrays
             const userRequests = Array.isArray(userData.friend_requests) ? userData.friend_requests : JSON.parse(userData.friend_requests || '[]');
             const targetAttempting = Array.isArray(targetData.attempting_friend_ids) ? targetData.attempting_friend_ids : JSON.parse(targetData.attempting_friend_ids || '[]');
 
-            // Vérifier que la demande existe
+            // Check that the request exists
             if (!userRequests.includes(targetId) || !targetAttempting.includes(userId)) {
                 throw new Error('Friend request does not exist');
             }
 
-            // Mettre à jour les listes
+            // Update the lists
             const updatedUserRequests = userRequests.filter((id: number) => id !== targetId);
             const updatedTargetAttempting = targetAttempting.filter((id: number) => id !== userId);
 
-            // Sauvegarder les modifications
+            // Save the modifications
             await this.db.run('UPDATE users SET friend_requests = ? WHERE id = ?', [JSON.stringify(updatedUserRequests), userId]);
             await this.db.run('UPDATE users SET attempting_friend_ids = ? WHERE id = ?', [JSON.stringify(updatedTargetAttempting), targetId]);
 
@@ -732,7 +738,7 @@ export class DatabaseManager
         if (!this.db) throw new Error('Database not initialized');
 
         try {
-            // Vérifier si un match similaire a été ajouté dans les dernières secondes
+            // Check if a similar match has been added in the last seconds
             const recentMatch = await this.db.get(
                 `SELECT * FROM match_history 
                  WHERE user1_id = ? AND user2_id = ? AND game_id = ?
@@ -742,7 +748,7 @@ export class DatabaseManager
                 [user1Id, user2Id, gameId, user1Lives, user2Lives]
             );
 
-            // Si un match similaire existe déjà, ne pas l'ajouter
+            // If a similar match already exists, don't add it
             if (recentMatch) {
                 console.log(`Match similar to User1 (${user1Id}) vs User2 (${user2Id}) already exists, skipping`);
                 return;
@@ -1029,7 +1035,3 @@ export class DatabaseManager
 }
 
 export const dbManager = DatabaseManager.getInstance();
-
-
-//call api depuis le front (token = currentUserID)
-// reception de la route dans le back

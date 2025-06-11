@@ -5,7 +5,7 @@ import { startTriMatch, TriMatchState } from './TripongSimulation.js';
 import { dbManager } from '../../database/database.js';
 
 interface PlayerInfo {
-  side: number;               // 0|1 pour bi-pong, 0|1|2 pour tri-pong, -1 pour solo modes
+  side: number;               // 0|1 for bi-pong, 0|1|2 for tri-pong, -1 for solo modes
   mode: 'solo' | 'multi' | 'tri' | 'solo-tri';
   roomId?: string;
 }
@@ -15,33 +15,33 @@ interface Player { id: string; username: string; }
 interface Tournament {
   id: string;
   size: 4|8;
-  players: Player[];     // liste des joueurs du round en cours
+  players: Player[];     // list of players in the current round
   allPlayers: Player[];
-  round: number;         // 0 = 1er tour, 1 = finale
-  winners: Player[];     // joueurs qualifiés pour le round suivant
+  round: number;         // 0 = 1st round, 1 = final
+  winners: Player[];     // players qualified for the next round
   ready: Map<string, boolean>;
-  playRound?: (pairs: Array<[Player, Player]>, round: number) => void; // pour 8 joueurs
+  playRound?: (pairs: Array<[Player, Player]>, round: number) => void; // for 8 players
 }
 
 interface BasicTournament {
   id: string;
   players: Player[];
   ready: Map<string, boolean>;
-  round: number; // 0 = demi-finales, 1 = finale
+  round: number; // 0 = semi-finals, 1 = final
   matches: { [k: string]: { players: [Player, Player], winner?: Player } };
   finalists: Player[];
   finalReady: Map<string, boolean>;
   champion?: Player;
-  allPlayers: Player[]; // Ajouté pour le status complet
+  allPlayers: Player[]; // Added for the complete status
   finalLaunched?: boolean; // NEW: guard to prevent double-launch
 }
 
-// Gestion des rooms privées
+// Private rooms management
 export const privateRooms = new Map<string, { sockets: Socket[]; usernames: string[]; maxPlayers: number }>();
 
 export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').Server) {
   const playerInfo = new Map<string, PlayerInfo>();
-  // Nouvelle Map pour stocker l'ID utilisateur pour retrouver plus tard
+  // New Map to store the user ID to find later
   const socketToUserId = new Map<string, string>();
   // Fonction utilitaire pour obtenir tous les socketId d'un userId
   function getAllSocketIdsForUser(userId: string): string[] {
@@ -51,29 +51,29 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
   let triQueue: Player[] = [];
   const matchStates = new Map<string, MatchState>();
   const triMatchStates = new Map<string, TriMatchState>();
-  // Map des tournois complets ou en attente, groupés par id
-  // On stocke des BasicTournament pour le tournoi 4 joueurs
+  // Map of complete or pending tournaments, grouped by id
+  // Store BasicTournament for the 4-player tournament
   const tournaments = new Map<string, BasicTournament>();
   const tournamentQueues: { [k in 4]: Player[] } = { 4: [] };
 
-  // Map pour stocker les intervalles de chaque match de tournoi
+  // Map to store the intervals of each tournament match
   const tournamentMatchIntervals = new Map<string, NodeJS.Timeout>();
 
-  // Fonction utilitaire pour récupérer l'ID utilisateur à partir d'un socket_id
+  // Utility function to get the user ID from a socket_id
   function getUserIdFromSocketId(socketId: string): string | undefined {
     return socketToUserId.get(socketId);
   }
 
-  // Fonction utilitaire pour envoyer un message système dans le chat global
+  // Utility function to send a system message in the global chat
   async function sendTournamentChatMessage(content: string) {
     try {
       const chatNs = io.of('/chat');
       chatNs.emit('receiveMessage', {
-        author: 'system', // 0 ou "System" pour indiquer un message système
+        author: 'system', // 0 or "System" to indicate a system message
         content,
         timestamp: new Date().toISOString()
       });
-      // Ajout : sauvegarder le message dans l'historique
+      // Add: save the message in the history
       await dbManager.saveMessage(0, content);
     } catch (e) {
       console.error('[TOURNOI] Impossible d\'envoyer le message chat tournoi:', e);
@@ -207,11 +207,11 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
               username: p.username,
               ready: tour.ready.get(p.id) || false,
               eliminated: false,
-              isInGame: false // Personne n'est in game tant que le match n'est pas lancé
+              isInGame: false // No one is in game until the match has started
             }))
           });
           if ([...tour.ready.values()].every((v: boolean) => v)) {
-            // Lancer les deux demi-finales
+            // Launch the two semi-finals
             tour.round = 0;
             const [A, B, C, D] = tour.players;
             const match1Id = `${tour.id}-demi1`;
@@ -239,7 +239,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
                 if (state.gameOver) clearInterval(iv);
               }, 1000 / 60);
             }
-            // Annonce dans le chat des demi-finales
+            // Announce the semi-finals in the chat
             const now = new Date();
             const heure = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
             const msg = `[TOURNOI PONG] Demi-finales (${heure}) :\nMatch 1 : @${A.username} vs @${B.username}\nMatch 2 : @${C.username} vs @${D.username}`;
@@ -263,19 +263,19 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
             }))
           });
           if ([...tour.finalReady.values()].every((v: boolean) => v)) {
-            // Lancer la finale (guarded)
+            // Launch the final (guarded)
             if (!tour.finalLaunched) {
               tour.finalLaunched = true;
               const [F1, F2] = tour.finalists;
               const finalId = `${tour.id}-final`;
               const s1 = gameNs.sockets.get(F1.id)!;
               const s2 = gameNs.sockets.get(F2.id)!;
-              // --- AJOUT : tous les joueurs rejoignent la room de la finale (spectateurs inclus) ---
+              // --- ADD: all players join the final room (spectators included) ---
               tour.allPlayers.forEach(p => {
                 const sock = gameNs.sockets.get(p.id);
                 if (sock) sock.join(finalId);
               });
-              // --- Seuls les deux finalistes sont contrôleurs ---
+              // --- Only the two finalists are controllers ---
               playerInfo.set(F1.id, { side: 0, mode: 'multi', roomId: finalId });
               playerInfo.set(F2.id, { side: 1, mode: 'multi', roomId: finalId });
               s1.emit('tournamentMatchFound', { matchId: finalId, side: 0, opponent: F2.username });
@@ -302,7 +302,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
                 gameNs.to(finalId).emit('gameState', state);
                 if (state.gameOver) clearInterval(iv);
               }, 1000 / 60);
-              // Annonce dans le chat de la finale
+              // Announce the final in the chat
               const now = new Date();
               const heure = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
               const msg = `[TOURNOI PONG] Finale (${heure}) : @${F1.username} vs @${F2.username}`;
@@ -323,17 +323,17 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         const [P1, P2] = matchObj.players;
         const winner = winSide === 0 ? P1 : P2;
         matchObj.winner = winner;
-        // PATCH: status complet avec tous les joueurs et eliminated
+        // PATCH: complete status with all players and eliminated
         const allMatchesLocal = Object.values(tour.matches) as { players: [Player, Player], winner?: Player }[];
         const status = tour.allPlayers.map((p: Player) => {
-          // Trouver le match du joueur
+          // Find the player's match
           const m = allMatchesLocal.find(m2 => m2.players.some(pl => pl.id === p.id));
           const eliminated = m?.winner ? (m.winner.id !== p.id) : false;
-          // On considère ready uniquement si la map ready/finalReady le dit
+          // We consider ready only if the ready/finalReady map says so
           let ready = false;
           if (tour.round === 0) ready = tour.ready.get(p.id) || false;
           else if (tour.round === 1 && tour.finalReady) ready = tour.finalReady.get(p.id) || false;
-          // isInGame: le joueur est dans un match non terminé et pas éliminé
+          // isInGame: the player is in a match not finished and not eliminated
           let isInGame = false;
           if (m && !m.winner && !eliminated) isInGame = true;
           return {
@@ -350,7 +350,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           joined: tour.allPlayers.map((p: Player) => p.username),
           status: status
         });
-        // --- Si les 2 demi-finales sont terminées, on prépare la finale ---
+        // --- If the two semi-finals are finished, prepare the final ---
         const allMatches = Object.values(tour.matches) as { players: [Player, Player], winner?: Player }[];
         if (tour.round === 0 && allMatches.filter(m => m.winner).length === 2) {
           // Only set finalists if not already set
@@ -358,7 +358,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
             tour.finalists = allMatches.map(m => m.winner!) as Player[];
             tour.finalReady = new Map(tour.finalists.map(p => [p.id, false]));
             tour.finalLaunched = false;
-            // PATCH: Crée toujours la finale dans tour.matches avec le bon matchId
+            // PATCH: Create the final in tour.matches with the good matchId
             const finalMatchId = `${tour.id}-final`;
             tour.matches[finalMatchId] = { players: [tour.finalists[0], tour.finalists[1]] };
           }
@@ -386,7 +386,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
             loser: winSide === 0 ? P2.username : P1.username
           });
           gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: winner.username });
-          // Ajout : message chat global avec médaille d'or
+          // Add: global chat message with gold medal
           sendTournamentChatMessage(`🥇 ${winner.username} remporte le tournoi Pong !`);
           tournaments.delete(tour.id);
         }
@@ -395,7 +395,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 
     // 1) SOLO CLASSIC
     socket.on('startSolo', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l'association socket_id -> user_id si disponible
+      // Store the association socket_id -> user_id if available
       if (userId) {
         socketToUserId.set(socket.id, userId);
       }
@@ -425,7 +425,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       socket.join(m.roomId);
       socket.emit('matchFound', { roomId: m.roomId, side: 0, mode: 'solo', you: username, opponent: 'Bot' });
       
-      // Ajout de la logique du bot
+      // Add the bot logic
       const botInterval = setInterval(() => {
         if (m.gameOver) {
           clearInterval(botInterval);
@@ -514,7 +514,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 
     // 2) SOLO TRI-PONG
     socket.on('startSoloTri', ({ username, userId }: { username: string, userId?: string }) => {
-      // Stocker l'association socket_id -> user_id si disponible
+      // Store the association socket_id -> user_id if available
       if (userId) {
         socketToUserId.set(socket.id, userId);
       }
@@ -536,7 +536,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       }, 1000 / 60);
     });
 
-    // 3) 2-JOUEURS MATCHMAKING
+    // 3) 2-PLAYERS MATCHMAKING
     socket.on('joinQueue', ({ username, userId }: { username: string, userId?: string }) => {
     // 1) On stocke l'association socketId → userId
     if (userId) {
@@ -635,12 +635,12 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
     }
 });
 
-    // 4) GESTION DES DÉPLACEMENTS PADDLE BI-PONG
+    // 4) MANAGEMENT OF THE BI-PONG PADDLE MOVEMENTS
     socket.on('movePaddle', (data: { side: 0|1, direction: 'up'|'down'|null }) => {
       const info = playerInfo.get(socket.id);
       if (!info) return;
 
-      // on accepte le move en solo **et** en multi, tant que c'est notre socket
+      // we accept the move in solo **and** in multi, as long as it's our socket
       if ((info.mode === 'multi' && info.side !== data.side) || (info.mode !== 'multi' && info.mode !== 'solo')) {
         return;
       }
@@ -650,16 +650,16 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       if (!roomId) return;
       const m = matchStates.get(roomId);
       if (!m) return;
-      // on bouge seulement *celui* qu'on nous a demandé
+      // we move only *this one* that we asked for
       m.paddles[data.side].direction = data.direction;
     });
 
-    // 5) 3-JOUEURS TRIPONG MATCHMAKING
+    // 5) 3-PLAYERS TRIPONG MATCHMAKING
     socket.on('joinTriQueue', ({ username, userId }: { username: string, userId?: string }) => {
       if (userId) {
         socketToUserId.set(socket.id, userId);
       }
-      // Blocage anti-doublon userId AVANT ajout à la file
+      // Blocking anti-duplicate userId BEFORE adding to the queue
       const userIdsInQueue = triQueue.map(p => getUserIdFromSocketId(p.id) || p.id);
       if (userId && userIdsInQueue.includes(userId)) {
         socket.emit('error', { message: 'account already connected on a matchmaking' });
@@ -687,13 +687,13 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       m.paddles[data.side].direction = data.direction;
     });
 
-    // Nouvel événement pour récupérer l'ID utilisateur à partir d'un socket_id
+    // New event to get the user ID from a socket_id
     socket.on('getUserIdFromSocketId', (data: { socketId: string }, callback: (userId: string | null) => void) => {
       const userId = getUserIdFromSocketId(data.socketId);
       callback(userId || null);
     });
 
-    // 6) DÉCONNEXION
+    // 6) DISCONNECTION
     socket.on('disconnect', () => {
       const userId = socketToUserId.get(socket.id);
       let socketIds: string[] = [socket.id];
@@ -707,7 +707,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       // Optionnel : suppression dans les tournois en cours (si tu veux vraiment tout nettoyer)
     });
 
-    // --- ROOM PRIVÉE ---
+    // --- PRIVATE ROOM ---
     socket.on('createPrivateRoom', ({ username, nbPlayers }, callback) => {
       const roomId = crypto.randomUUID();
       privateRooms.set(roomId, { sockets: [socket], usernames: [username], maxPlayers: nbPlayers });
@@ -729,7 +729,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       room.usernames.push(username);
       socket.join(roomId);
       callback({ roomId });
-      // Si la room est pleine, on lance la partie
+      // If the room is full, we launch the game
       if (room.sockets.length === room.maxPlayers) {
         if (room.maxPlayers === 2) {
           const m = startMatch(room.sockets, gameNs, false);

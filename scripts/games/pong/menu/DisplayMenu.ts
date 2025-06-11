@@ -119,7 +119,7 @@ export class PongMenuManager
         this.setupSocketListeners();
         
 
-        // Ajout du fond noir
+        // Add the black background
         const background = new Konva.Rect({
             x: 0,
             y: 0,
@@ -361,21 +361,21 @@ export class PongMenuManager
             }
         });
 
-        // 5% de chance de créer une nouvelle particule à chaque frame
+        // 5% chance to create a new particle each frame
         if (Math.random() < 0.15) {
             this.createParticle();
         }
 
-        // Rafraîchits l'affichage de la couche d'arrière-plan
+        // Refresh the background layer display
         this.backgroundLayer.batchDraw();
 
-        // Continue l'animation à la prochaine frame
+        // Continue the animation on the next frame
         requestAnimationFrame(() => this.animateParticles());
     }
 
     private updateLayout()
     {
-        // Mise à jour du fond noir
+        // Update the black background
         const background = this.backgroundLayer.findOne('Rect');
         if (background) {
             background.width(this.stage.width());
@@ -727,7 +727,7 @@ export class PongMenuManager
         this.stage.add(this.backgroundLayer);
         this.stage.add(this.titleLayer);
         this.stage.add(this.menuLayer);
-        // Ajout du fond noir
+        // Add the black background
         const background = new Konva.Rect({
             x: 0,
             y: 0,
@@ -782,14 +782,14 @@ export class PongMenuManager
           // --- NO MORE HIDE BRACKET ---
           // Always show bracket and statuses, even if both are ready and match is in progress
           // ...existing code continues with bracket rendering and READY/status logic...
-          // Trouver la demi-finale du joueur
+          // Find the player's semi-final
           const myDemiFinale = isInDemi1 ? demi1 : isInDemi2 ? demi2 : null;
-          // Vérifier si la demi-finale du joueur est terminée
+          // Check if the player's semi-final is finished
           let myDemiDone = false;
           if (myDemiFinale && myDemiFinale[0] && myDemiFinale[1] && statusMap[myDemiFinale[0]] && statusMap[myDemiFinale[1]]) {
             myDemiDone = statusMap[myDemiFinale[0]].eliminated !== statusMap[myDemiFinale[1]].eliminated;
           }
-          // Calculer les deux demi-finales finies une seule fois
+          // Calculate both semi-finals finished only once
           let demi1Done = false, demi2Done = false;
           if (demi1[0] && demi1[1] && statusMap[demi1[0]] && statusMap[demi1[1]]) {
             demi1Done = statusMap[demi1[0]].eliminated !== statusMap[demi1[1]].eliminated;
@@ -798,7 +798,7 @@ export class PongMenuManager
             demi2Done = statusMap[demi2[0]].eliminated !== statusMap[demi2[1]].eliminated;
           }
           const bothSemisDone = demi1Done && demi2Done;
-          // Affichage du bracket TOUJOURS
+          // Always display the bracket
           [demi1, demi2].forEach((pair, j) => {
             pair.forEach((p, i) => {
               if (p && statusMap[p]) {
@@ -1029,7 +1029,7 @@ export class PongMenuManager
         if (!canvas || !konvaDiv) {
           this.initStageAndLayers();
         }
-        // 1) Nettoyage de l'UI
+        // 1) Clean up the UI
         this.menuLayer.removeChildren();
         this.menuLayer.batchDraw();
 
@@ -1884,26 +1884,26 @@ export class PongMenuManager
         }
         setPrivateLobbyTrue();
         if (nbPlayers !== 2) {
-            // Ne rien faire si ce n'est pas 2 joueurs
-            showNotification('Le mode privé n\'est disponible que pour 2 joueurs.');
+            // Do nothing if not 2 players
+            showNotification('This mode is only available for 2 players.');
             return;
         }
         const currentUser = await GameManager.getCurrentUser();
         const username = currentUser?.username || "Player";
         connectPong(true);
         if (roomId) {
-            // Rejoindre une room existante (invitation)
+            // Join an existing room (invitation)
             const userId = currentUser?.id;
             gameSocket.emit('joinPrivateRoom', { roomId, username, userId }, (data: { roomId: string }) => {
                 this.privateRoomId = data.roomId;
                 this.menuLayer.destroyChildren();
-                // Ajout du handler pour le match privé trouvé (affichage joueurs + décompte)
+                // Add the handler for private match found (display players + countdown)
                 const onPrivateMatchFound = (matchData: any) => {
-                    // Nettoyage des éléments existants
+                    // Clean up existing elements
                     this.buttons.forEach(button => button.group.destroy());
                     this.buttons = [];
                     this.menuLayer.destroyChildren();
-                    // Affichage des joueurs (comme matchFound2Players)
+                    // Display players (like matchFound2Players)
                     const player1Text = new Konva.Text({
                         text: `${matchData.you}`,
                         fontFamily: 'Press Start 2P',
@@ -1992,20 +1992,17 @@ export class PongMenuManager
     }
 
     /**
-     * Affiche un overlay styled comme peopleList, listant tous les possesseurs du jeu avec un bouton INVITER
-     * @param gameId L'identifiant du jeu (ex: 1 pour Pong)
-     * @param roomId L'identifiant de la room privée à partager
+     * Displays an overlay styled like peopleList, listing all game owners with an INVITE button
+     * @param gameId The game ID (e.g. 1 for Pong)
+     * @param roomId The private room ID to share
      */
     public async showInvitingList(gameId: number, roomId?: string) {
-        // Import dynamique pour éviter les cycles
+        // Dynamically import to avoid cycles
         const { fetchUsernames } = await import("../../../pages/community/peopleList.js");
         const { GameManager } = await import("../../../managers/gameManager.js");
-        // Récupérer tous les utilisateurs
+        // Get all users
         const people = await fetchUsernames();
-        // Récupérer l'utilisateur courant
-
-
-
+        // Get the current user
         let currentUsername = null;
         try {
             const resp = await fetch(`/api/user/infos`, { credentials: "include" });
@@ -2014,7 +2011,7 @@ export class PongMenuManager
                 currentUsername = data.user.username;
             }
         } catch {}
-        // Récupérer la liste des jeux (pour avoir user_ids)
+        // Get the list of games (to get user_ids)
         const allGames = await GameManager.getGameList();
         const game = allGames.find((g: any) => g.id === gameId);
         let userIds: number[] = [];
@@ -2023,12 +2020,12 @@ export class PongMenuManager
         } catch {
             userIds = [];
         }
-        // Filtrer les utilisateurs possédant le jeu et qui ne sont pas le joueur lui-même
+        // Filter users who own the game and are not the player himself
         const owners = people.filter((p: any) => userIds.includes(p.id) && p.username !== currentUsername);
-        // Supprimer overlay existant
+        // Remove existing overlay
         let existingOverlay = document.getElementById("inviteOverlay");
         if (existingOverlay) existingOverlay.remove();
-        // Injecte le CSS si pas déjà présent
+        // Inject CSS if not already present
         if (!document.getElementById("invite-overlay-css")) {
             const link = document.createElement("link");
             link.id = "invite-overlay-css";
@@ -2036,29 +2033,30 @@ export class PongMenuManager
             link.href = "/styles/inviteOverlay.css";
             document.head.appendChild(link);
         }
-        // Overlay principal
+        // Main overlay
         const overlay = document.createElement("div");
         overlay.id = "inviteOverlay";
         overlay.className = "invite-overlay";
-        // Fermer l'overlay si on clique à l'extérieur du container
+        // Close the overlay if clicking outside the container
         overlay.addEventListener("click", (event) => {
             if (event.target === overlay) {
                 overlay.remove();
             }
         });
-        // Container styled comme inviteOverlay
+        // Container styled like inviteOverlay
         const container = document.createElement("div");
         container.className = "invite-container";
-        // Titre
+        // Title
         const title = document.createElement("h2");
         title.className = "invite-title";
-        title.textContent = "Inviter un joueur";
+        title.textContent = "Invite a player";
         container.appendChild(title);
-        // Liste des possesseurs
+        // List of owners
         owners.forEach((person: any) => {
             const item = document.createElement("div");
             item.className = "invite-list-item";
-            // Info à gauche
+            // Info on the left
+
             const info = document.createElement("div");
             info.className = "invite-info";
             // Photo
@@ -2066,31 +2064,31 @@ export class PongMenuManager
             img.className = "invite-profile-pic";
             img.src = person.profile_picture || "default-profile.png";
             img.alt = person.username;
-            // Nom
+            // Name
             const name = document.createElement("span");
             name.className = "invite-username";
             name.textContent = person.username;
             info.appendChild(img);
             info.appendChild(name);
             item.appendChild(info);
-            // Bouton INVITER à droite
+            // INVITE button on the right
             const inviteBtn = document.createElement("button");
             inviteBtn.className = "invite-btn";
-            inviteBtn.textContent = "INVITER";
+            inviteBtn.textContent = "INVITE";
             inviteBtn.onclick = async () => {
                 const now = Date.now();
                 const lastInvite = parseInt(localStorage.getItem('lastPongInviteTs') || '0', 10);
                 if (now - lastInvite < 10000) {
-                    showNotification(`Veuillez attendre ${Math.ceil((10000 - (now - lastInvite)) / 1000)}s avant de renvoyer une invitation.`);
+                    showNotification(`Please wait ${Math.ceil((10000 - (now - lastInvite)) / 1000)}s before sending another invitation.`);
                     return;
                 }
                 localStorage.setItem('lastPongInviteTs', now.toString());
-                // Envoie un message privé dans le chat avec un lien cliquable
+                // Send a private message in the chat with a clickable link
                 const currentUser = await GameManager.getCurrentUser();
-                // Utiliser l'id utilisateur pour le champ author
+                // Use the user id for the author field
                 const fromId = currentUser?.id;
                 let link = roomId ? `${window.location.origin}/pong/join?room=${roomId}` : window.origin;
-                const message = `@${person.username} Clique ici pour rejoindre ma partie Pong : <a href='${link}' target='_blank'>Rejoindre la partie</a>`;
+                const message = `@${person.username} Click here to join my Pong game: <a href='${link}' target='_blank'>Join the game</a>`;
                 try {
                     const { HOSTNAME } = await import("../../../main.js");
                     const ioClient = (await import("socket.io-client")).io;
@@ -2101,12 +2099,12 @@ export class PongMenuManager
                         reconnectionAttempts: 5,
                         reconnectionDelay: 1000
                     });
-                    // Envoie l'id utilisateur dans author
+                    // Send the user id in author
                     socket.emit("sendPrivateMessage", { to: person.id, author: fromId, content: message }, () => {});
                 } catch (e) {
-                    console.error("Erreur lors de l'envoi de l'invitation privée :", e);
+                    console.error("Error sending private invitation:", e);
                 }
-                showNotification(`Invitation Pong envoyée à ${person.username} dans le chat !`);
+                showNotification(`Invitation sent to ${person.username} in the chat!`);
             };
             item.appendChild(inviteBtn);
             container.appendChild(item);
@@ -2117,7 +2115,7 @@ export class PongMenuManager
 
     public startFromLink(roomId: string) {
         this.animateParticles();
-        // Lance directement le lobby privé avec le roomId (2 joueurs par défaut)
+        // Start directly the private lobby with the roomId (2 players by default)
         this.privateLobby(2, roomId);
         console.log("Menu displayed from link");
     }
@@ -2131,6 +2129,6 @@ export async function displayMenu() : Promise<void>
 }
 
 export async function displayMenuFromLink(roomId: string): Promise<void> {
-    const menu = new PongMenuManager(true, false); // pas de titre, pas de menu principal
+    const menu = new PongMenuManager(true, false); // no title, no main menu
     menu.startFromLink(roomId);
 }
