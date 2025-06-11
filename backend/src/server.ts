@@ -366,38 +366,6 @@ app.post<{
 // STATS ROUTES //
 //////////////////
 
-app.post('/api/games/incrementWins', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-        const { gameId, userId } = request.body as { gameId: number; userId: number };
-
-        if (!gameId || !userId) {
-            return reply.status(400).send({ error: 'gameId and userId are required' });
-        }
-        console.log("IN INCREMENT WINS");
-        await dbManager.incrementPlayerWins(gameId, userId);
-        return reply.status(200).send({ success: true, message: `Player ${userId}'s wins incremented for game ${gameId}` });
-    } catch (error) {
-        console.error('Error incrementing player wins:', error);
-        return reply.status(500).send({ error: 'Failed to increment player wins' });
-    }
-});
-
-app.post('/api/games/incrementLosses', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-        const { gameId, userId } = request.body as { gameId: number; userId: number };
-
-        if (!gameId || !userId) {
-            return reply.status(400).send({ error: 'gameId and userId are required' });
-        }
-
-        await dbManager.incrementPlayerLosses(gameId, userId);
-        return reply.status(200).send({ success: true, message: `Player ${userId}'s losses incremented for game ${gameId}` });
-    } catch (error) {
-        console.error('Error incrementing player losses:', error);
-        return reply.status(500).send({ error: 'Failed to increment player losses' });
-    }
-});
-
 app.get('/api/games/:gameId/rankings', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
         const { gameId } = request.params as { gameId: string };
