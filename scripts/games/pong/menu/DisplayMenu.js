@@ -1843,7 +1843,7 @@ export class PongMenuManager {
                     socket.emit("sendPrivateMessage", { to: person.id, author: fromId, content: message }, () => { });
                 }
                 catch (e) {
-                    console.error("Erreur lors de l'envoi de l'invitation privée :", e);
+                    console.error("Error sending private invitation:", e);
                 }
                 showNotification(`Invitation sent to ${person.username} in the chat!`);
             };
@@ -1855,7 +1855,7 @@ export class PongMenuManager {
     }
     startFromLink(roomId) {
         this.animateParticles();
-        // Lance directement le lobby privé avec le roomId (2 joueurs par défaut)
+        // Start directly the private lobby with the roomId (2 players by default)
         this.privateLobby(2, roomId);
         console.log("Menu displayed from link");
     }
@@ -1867,6 +1867,6 @@ export async function displayMenu() {
     menu.start();
 }
 export async function displayMenuFromLink(roomId) {
-    const menu = new PongMenuManager(true, false); // pas de titre, pas de menu principal
+    const menu = new PongMenuManager(true, false); // no title, no main menu
     menu.startFromLink(roomId);
 }

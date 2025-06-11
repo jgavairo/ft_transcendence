@@ -169,6 +169,12 @@ export class DatabaseManager
                     content: "The new GTA 6 is coming and he will be on our favorite platform ft_transcendence !",
                     image_url: "../../assets/news/gta6.jpg",
                     priority: 0
+                },
+                {
+                    title: "Tower is now available",
+                    content: "Tower is now available! Discover the new playing mode and the new features!",
+                    image_url: "../../assets/games/Tower/TowerBackground.png",
+                    priority: 0
                 }
             ];
 

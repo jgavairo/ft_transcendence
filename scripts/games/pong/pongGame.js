@@ -8,17 +8,17 @@ import { sendMove, sendMoveTri } from './SocketEmit.js';
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
 import { initPauseMenu, showPauseMenu, drawPauseMenu, onEscapeKey } from './pauseMenu.js';
 import { showErrorNotification } from '../../helpers/notifications.js';
-// Variables réseau
+// Network variables
 export let mySide;
 let roomId;
 let soloMode = false;
 let modePong = false;
 let soloTri = false;
 let running = false;
-// Canvas et contexte
+// Canvas and context
 export let canvas = document.getElementById('gameCanvas');
 export let ctx;
-// Constantes de rendu (synchronisées avec le serveur)
+// Rendering constants (synchronized with server)
 const CW = 1200;
 const CH = 800;
 let ready = false; // on ne dessine qu'une fois le countdown fini
@@ -43,7 +43,7 @@ export function setPrivateLobbyTrue() {
 }
 window.addEventListener('keydown', onKeyDown);
 window.addEventListener('keyup', onKeyUp);
-// Fonction pour récupérer l'ID utilisateur à partir d'un socket_id
+// Function to get user ID from socket_id
 export function getUserIdFromSocketId(socketId) {
     return new Promise((resolve) => {
         socket.emit('getUserIdFromSocketId', { socketId }, (userId) => {
@@ -51,11 +51,11 @@ export function getUserIdFromSocketId(socketId) {
         });
     });
 }
-// Fonction pour récupérer le user1Id
+// Function to get user1Id
 export function getUser1Id() {
     return user1Id;
 }
-// Fonction pour récupérer le user2Id
+// Function to get user2Id
 export function getUser2Id() {
     return user2Id;
 }
@@ -121,24 +121,24 @@ function onGameState(state) {
 }
 let loopId = null;
 export function stopGame() {
-    // 1) Arrêter la boucle requestAnimationFrame
+    // 1) Stop the requestAnimationFrame loop
     console.log('stopGame called');
     isPrivateLobby = false;
-    running = false; // ← désactive le rendu
+    running = false; // ← disables rendering
     if (loopId !== null) {
         cancelAnimationFrame(loopId);
         loopId = null;
     }
     socket.disconnect();
     window.removeEventListener('keydown', onEscapeKey);
-    // 2) Débrancher les écouteurs clavier
+    // 2) Unbind keyboard listeners
     // window.removeEventListener('keydown', onKeyDown);
     // window.removeEventListener('keyup',   onKeyUp);
-    // 4) Mettre à l'arrêt le module de particules/explosions
+    // 4) Stop the particles/explosions module
     explosion.length = 0;
-    // 5) Nettoyer le canvas
+    // 5) Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // 6) Autres nettoyages
+    // 6) Other cleanup
     resetGame();
 }
 export function connectPong(isOnline) {
@@ -147,7 +147,7 @@ export function connectPong(isOnline) {
     if (isOnline) {
         socket.off('matchFound').on('matchFound', PongMenuManager.matchFound2Players);
         socket.off('gameState').on('gameState', onGameState);
-        // Tri-Pong → on branche exactement les mêmes handlers
+        // Tri-Pong → we connect exactly the same handlers
         socket.off('matchFoundTri').on('matchFoundTri', PongMenuManager.matchFound3Players);
         socket.off('stateUpdateTri').on('stateUpdateTri', onGameState);
     }
@@ -161,18 +161,18 @@ export function connectPong(isOnline) {
     socket.off('ballExplode').on('ballExplode', ({ x, y }) => {
         createExplosion(x, y);
     });
-    // Rafraîchir le classement et la friend list à la fin d'une partie de Pong
+    // Refresh rankings and friend list at the end of a Pong game
     socket.on('pongGameEnded', async ({ gameId }) => {
         const rankingsContainer = document.querySelector('#rankings-container');
         if (rankingsContainer && rankingsContainer.offsetParent !== null) {
             const currentUser = await GameManager.getCurrentUser();
             await renderRankings(gameId, rankingsContainer, currentUser);
         }
-        // Actualiser la friend list si elle est présente
+        // Update friend list if present
         const details = document.querySelector('.library-details');
         if (details) {
             const people = await fetchUsernames();
-            // --- Filtrage comme dans showGameDetails.ts ---
+            // --- Filtering as in showGameDetails.ts ---
             let friendIds = [];
             try {
                 const res = await fetch('/api/friends/allFriendIds');
@@ -185,12 +185,12 @@ export function connectPong(isOnline) {
                 friendIds = [];
             }
             let currentUserObj = await GameManager.getCurrentUser();
-            // Pour Pong, on ne connaît pas les userIds des possesseurs du jeu ici, donc on affiche tous les amis sauf soi-même
+            // For Pong, we don't know the userIds of game owners here, so we show all friends except self
             const filteredPeople = people.filter(person => person.id !== currentUserObj.id && friendIds.includes(person.id));
             const friendsSection = details.querySelector('.friendsSection');
             if (friendsSection) {
                 friendsSection.outerHTML = renderFriendList(filteredPeople);
-                // Réattacher les listeners sur les nouveaux éléments friendName
+                // Reattach listeners on new friendName elements
                 const newFriendsSection = details.querySelector('.friendsSection');
                 if (newFriendsSection) {
                     const friendNames = newFriendsSection.querySelectorAll('.friendName');
@@ -201,9 +201,9 @@ export function connectPong(isOnline) {
                             const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
                             const email = friendName.getAttribute('data-email');
                             const bio = friendName.getAttribute('data-bio') || 'No bio available';
-                            // On ne peut pas récupérer userId ici sans accès à people, donc on le cherche à nouveau
+                            // We can't get userId here without access to people, so we search for it again
                             const userId = ((_a = people.find((person) => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
-                            // showProfileCard est importé indirectement via showGameDetails
+                            // showProfileCard is indirectly imported via showGameDetails
                             import('../../pages/community/peopleList.js').then(mod => {
                                 mod.showProfileCard(username, profilePicture, email, bio, userId);
                             });
@@ -213,22 +213,22 @@ export function connectPong(isOnline) {
             }
         }
     });
-    // Gestion centralisée des erreurs pour le matchmaking (1v1, 1v1v1, tournoi)
+    // Centralized error handling for matchmaking (1v1, 1v1v1, tournament)
     socket.on('error', (data) => {
         var _a, _b, _c, _d;
-        // Affiche la notification d'erreur avec un message explicite
-        let msg = data && data.message ? data.message : 'Erreur inconnue.';
-        // Si le message backend est générique, on précise pour le tournoi
+        // Display error notification with explicit message
+        let msg = data && data.message ? data.message : 'Unknown error.';
+        // If backend message is generic, we specify for tournament
         if (/tournoi|tournament/i.test(msg)) {
             msg = 'Already registered for the tournament.';
         }
         showErrorNotification(msg);
-        // Redirige vers le menu approprié selon le message d'erreur
+        // Redirect to appropriate menu based on error message
         let menuTarget = 'multi';
         if (/tournoi|tournament/i.test(msg)) {
             menuTarget = 'tournament';
         }
-        // Nettoyage complet du menuLayer avant de changer de menu
+        // Complete cleanup of menuLayer before changing menu
         if (PongMenuManager.instance && PongMenuManager.instance.menuLayer) {
             (_b = (_a = PongMenuManager.instance.menuLayer).removeChildren) === null || _b === void 0 ? void 0 : _b.call(_a);
             (_d = (_c = PongMenuManager.instance.menuLayer).clear) === null || _d === void 0 ? void 0 : _d.call(_c);
@@ -254,13 +254,13 @@ export function connectPong(isOnline) {
 function onKeyDown(e) {
     if (!ready || gameover)
         return;
-    // --- PONG CLASSIQUE ---
+    // --- CLASSIC PONG ---
     if (modePong) {
-        // Empêcher les spectateurs de contrôler si mySide est undefined/null
+        // Prevent spectators from controlling if mySide is undefined/null
         if (typeof mySide !== 'number' || mySide < 0)
             return;
         if (soloMode) {
-            // 2 paddles joués localement : 0→A/D, 1→←/→
+            // 2 paddles played locally: 0→A/D, 1→←/→
             if (e.code === 'KeyD')
                 sendMove(0, 'up');
             else if (e.code === 'KeyA')
@@ -271,7 +271,7 @@ function onKeyDown(e) {
                 sendMove(1, 'down');
         }
         else {
-            // multi : chacun pilote SON side
+            // multi: each player controls THEIR side
             if (mySide === 0) {
                 if (e.code === 'KeyD')
                     sendMove(0, 'up');
@@ -289,14 +289,14 @@ function onKeyDown(e) {
     }
     // --- TRI-PONG ---
     if (!soloTri) {
-        // multi-Tri : chaque client ne pilote que SON side EN A/D
+        // multi-Tri: each client only controls THEIR side with A/D
         if (e.code === 'KeyD')
             sendMoveTri(mySide, 'up');
         else if (e.code === 'KeyA')
             sendMoveTri(mySide, 'down');
         return;
     }
-    // solo-Tri : pilotage de 3 pads avec A/D, J/L, Fleches
+    // solo-Tri: control 3 pads with A/D, J/L, Arrows
     const codes = ['KeyA', 'KeyD', 'KeyJ', 'KeyL', 'ArrowLeft', 'ArrowRight'];
     if (!codes.includes(e.code))
         return;
@@ -309,9 +309,9 @@ function onKeyDown(e) {
 function onKeyUp(e) {
     if (!ready || gameover)
         return;
-    // --- PONG CLASSIQUE ---
+    // --- CLASSIC PONG ---
     if (modePong) {
-        // Empêcher les spectateurs de contrôler si mySide est undefined/null
+        // Prevent spectators from controlling if mySide is undefined/null
         if (typeof mySide !== 'number' || mySide < 0)
             return;
         if (soloMode) {
@@ -326,14 +326,14 @@ function onKeyUp(e) {
         }
         return;
     }
-    // ── TRI-PONG ──
+    // --- TRI-PONG ---
     if (!soloTri) {
-        // multi-Tri : arrête SON side en A/D
+        // multi-Tri: stop THEIR side with A/D
         if (e.code === 'KeyD' || e.code === 'KeyA')
             sendMoveTri(mySide, null);
         return;
     }
-    // solo-Tri : arrêts avec les mêmes touches
+    // solo-Tri: stops with same keys
     const codes = ['KeyA', 'KeyD', 'KeyJ', 'KeyL', 'ArrowLeft', 'ArrowRight'];
     if (!codes.includes(e.code))
         return;
@@ -356,17 +356,17 @@ export function startPong() {
     initPauseMenu(canvas, ctx, displayMenu);
 }
 export function initTournamentPong(side, you, opponent) {
-    // 1) Réplication de ce que faisait onMatchFound + startPong, mais en mode tournoi
+    // 1) Replicate what onMatchFound + startPong did, but in tournament mode
     modePong = true;
     soloTri = false;
-    soloMode = false; // tournoi = match 1v1, donc jamais solo
-    mySide = typeof side === 'number' ? side : -1; // -1 pour spectateur
+    soloMode = false; // tournament = 1v1 match, so never solo
+    mySide = typeof side === 'number' ? side : -1; // -1 for spectator
     playerName = you;
     opponentName = opponent;
     lastState = null;
     ready = true;
     firstFrame = false;
-    // 2) Création du <canvas> (idem startPong)
+    // 2) Create <canvas> (same as startPong)
     const modal = document.getElementById('games-modal');
     if (modal) {
         modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
@@ -382,7 +382,7 @@ export function initTournamentPong(side, you, opponent) {
     socket.off('matchFound');
     socket.off('matchFoundTri');
     socket.off('stateUpdateTri');
-    // 3) Initialiser le menu pause (idem startPong)
+    // 3) Initialize pause menu (same as startPong)
     initPauseMenu(canvas, ctx, displayMenu);
 }
 // Ajout de la gestion du message de fin de partie
@@ -407,73 +407,73 @@ async function getPongGameId() {
     return 1; // fallback
 }
 export async function renderGameOverMessage(state) {
-    // Affiche le message uniquement en mode multi
+    // Only show message in multi mode
     if (soloMode)
         return;
     const player = state.paddles[mySide];
     const opponent = state.paddles.find((_, index) => index !== mySide);
     if (!opponent) {
-        console.error('Impossible de récupérer les informations de l\'adversaire.');
+        console.error('Unable to retrieve opponent information.');
         return;
     }
     try {
-        // Récupérer l'utilisateur actuel via GameManager
+        // Get current user via GameManager
         const currentUser = await GameManager.getCurrentUser();
         if (!currentUser || !currentUser.id) {
-            console.error('Impossible de récupérer l\'utilisateur actuel.');
+            console.error('Unable to retrieve current user.');
             return;
         }
-        // Appeler l'API en fonction du résultat
+        // Call API based on result
         if (!isPrivateLobby && player.lives > 0 && modePong && !soloMode && !soloTri) {
-            // Victoire : appeler incrementWins
+            // Victory: call incrementWins
             const response = await fetch('/api/games/incrementWins', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include', // Utilise les cookies pour l'authentification
+                credentials: 'include',
                 body: JSON.stringify({
-                    gameId: 1, // ID du jeu (Pong)
-                    userId: currentUser.id, // Utiliser l'ID utilisateur actuel
+                    gameId: 1, // Game ID (Pong)
+                    userId: currentUser.id, // Use current user ID
                 }),
             });
             if (response.ok) {
-                console.log('Victoire enregistrée avec succès.');
+                console.log('Victory recorded successfully.');
             }
             else {
-                console.error('Erreur lors de l\'enregistrement de la victoire:', await response.json());
+                console.error('Error recording victory:', await response.json());
             }
         }
         else if (!isPrivateLobby && player.lives <= 0 && modePong && !soloMode && !soloTri) {
-            // Défaite : appeler incrementLosses
+            // Defeat: call incrementLosses
             const response = await fetch('/api/games/incrementLosses', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include', // Utilise les cookies pour l'authentification
+                credentials: 'include',
                 body: JSON.stringify({
-                    gameId: 1, // ID du jeu (Pong)
-                    userId: currentUser.id, // Utiliser l'ID utilisateur actuel
+                    gameId: 1, // Game ID (Pong)
+                    userId: currentUser.id, // Use current user ID
                 }),
             });
             if (response.ok) {
-                console.log('Défaite enregistrée avec succès.');
+                console.log('Defeat recorded successfully.');
             }
             else {
-                console.error('Erreur lors de l\'enregistrement de la défaite:', await response.json());
+                console.error('Error recording defeat:', await response.json());
             }
         }
-        // Ajouter le match à l'historique (seulement en mode multijoueur)
+        // Add match to history (only in multiplayer mode)
         if (!soloMode) {
             try {
-                // Récupérer les IDs d'utilisateur à partir des joueurs connectés
-                // Cette partie est critique pour résoudre le problème des socket_id vs user_id
-                // 1. Utiliser l'ID de l'utilisateur courant (qui est toujours fiable)
+                // Get user IDs from connected players
+                // This part is critical to solve the socket_id vs user_id problem
+                // 1. Use current user ID (which is always reliable)
                 const myUserId = currentUser.id;
-                // 2. Essayer de récupérer l'ID du deuxième joueur
+                // 2. Try to get second player's ID
                 let opponentUserId = null;
-                // Fonction utilitaire pour vérifier si un ID ressemble à un socket_id
+                // Utility function to check if an ID looks like a socket_id
                 const isSocketId = (id) => {
                     if (!id)
                         return true;
@@ -482,30 +482,30 @@ export async function renderGameOverMessage(state) {
                         id.length > 10 ||
                         isNaN(Number(id)));
                 };
-                // Chercher l'ID stocké dans les variables user1Id/user2Id selon qui est l'adversaire
+                // Look for ID stored in user1Id/user2Id variables based on who is the opponent
                 if (mySide === 0 && user2Id && !isSocketId(user2Id)) {
                     opponentUserId = user2Id;
                 }
                 else if (mySide === 1 && user1Id && !isSocketId(user1Id)) {
                     opponentUserId = user1Id;
                 }
-                // Si aucun ID valide trouvé, essayer de récupérer via le socket_id
+                // If no valid ID found, try to get via socket_id
                 if (!opponentUserId || isSocketId(opponentUserId)) {
                     const opponentSocketId = state.paddles[mySide === 0 ? 1 : 0].id;
                     try {
                         opponentUserId = await getUserIdFromSocketId(opponentSocketId);
-                        console.log('ID récupéré pour l\'adversaire via socket:', opponentUserId);
+                        console.log('ID retrieved for opponent via socket:', opponentUserId);
                     }
                     catch (error) {
-                        console.error('Erreur lors de la récupération de l\'ID via socket:', error);
+                        console.error('Error retrieving ID via socket:', error);
                     }
                 }
-                // Si toujours aucun ID valide, ne pas envoyer l'historique
+                // If still no valid ID, don't send history
                 if (!opponentUserId || isSocketId(opponentUserId)) {
-                    console.error('Impossible d\'obtenir un ID utilisateur valide pour l\'adversaire');
+                    console.error('Unable to get valid user ID for opponent');
                     return;
                 }
-                // Déterminer qui est user1 et user2 selon le côté du joueur
+                // Determine who is user1 and user2 based on player side
                 let finalUser1Id, finalUser2Id, user1Lives, user2Lives;
                 if (mySide === 0) {
                     finalUser1Id = myUserId;
@@ -519,7 +519,7 @@ export async function renderGameOverMessage(state) {
                     user1Lives = opponent.lives;
                     user2Lives = player.lives;
                 }
-                console.log('Ajout du match à l\'historique:', {
+                console.log('Adding match to history:', {
                     user1Id: finalUser1Id,
                     user2Id: finalUser2Id,
                     user1Lives,
@@ -541,20 +541,20 @@ export async function renderGameOverMessage(state) {
                     }),
                 });
                 if (historyResponse.ok) {
-                    console.log('Match ajouté à l\'historique avec succès.');
+                    console.log('Match added to history successfully.');
                 }
                 else {
                     const errorData = await historyResponse.json();
-                    console.error('Erreur lors de l\'ajout du match à l\'historique:', errorData);
+                    console.error('Error adding match to history:', errorData);
                 }
             }
             catch (error) {
-                console.error('Erreur lors de l\'ajout du match à l\'historique:', error);
+                console.error('Error adding match to history:', error);
             }
         }
     }
     catch (error) {
-        console.error('Erreur réseau lors de l\'enregistrement du résultat:', error);
+        console.error('Network error while recording result:', error);
     }
 }
 export function resetGame() {
@@ -578,15 +578,15 @@ export function hideGameCanvasAndShowMenu() {
         gamesModal.style.display = '';
     }
 }
-// Handler global pour toutes les erreurs de matchmaking/tournoi
+// Global handler for all matchmaking/tournament errors
 socket.on('error', (data) => {
     if (data && data.message) {
         let msg = data.message;
         if (/tournoi|tournament/i.test(msg)) {
-            msg = 'Vous êtes déjà inscrit au tournoi.';
+            msg = 'You are already registered for the tournament.';
         }
         showErrorNotification(msg);
-        // Redirige vers le menu approprié
+        // Redirect to appropriate menu
         if (PongMenuManager.instance && typeof PongMenuManager.instance.changeMenu === 'function') {
             if (/tournoi|tournament/i.test(msg)) {
                 PongMenuManager.instance.changeMenu('tournament');
