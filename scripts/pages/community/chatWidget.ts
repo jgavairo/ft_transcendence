@@ -37,7 +37,6 @@ function injectSteamFont() {
         const link = document.createElement("link");
         link.id = "steam-font";
         link.rel = "stylesheet";
-        link.href = "https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap";
         document.head.appendChild(link);
     }
 }

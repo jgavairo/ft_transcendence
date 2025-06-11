@@ -28,8 +28,16 @@
 		<link rel="stylesheet" href="/styles/chatWidget.css">
 		<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" defer></script>
+		<style>
+			.font-preload {
+				position: absolute;
+				visibility: hidden;
+				font-family: 'Press Start 2P', cursive;
+			}
+		</style>
 	</head>
 	<body class="body" id="body">
+		<div class="font-preload">.</div>
 		<header class="header" id="header">
 		</header>
 		<main class="main" id="main">
