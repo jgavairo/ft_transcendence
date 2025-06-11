@@ -534,12 +534,13 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         classicQueue.shift();
         const s1 = gameNs.sockets.get(p1.id)!;
         const s2 = gameNs.sockets.get(p2.id)!;
-        const m = startMatch([s1, s2], gameNs, false);
-
+        // Conversion userIds en number si possible
+        const userIdNum1 = Number(userId1);
+        const userIdNum2 = Number(userId2);
+        const m = startMatch([s1, s2], gameNs, false, undefined, [userIdNum1, userIdNum2]);
         matchStates.set(m.roomId, m);
         playerInfo.set(p1.id, { side: 0, mode: 'multi' });
         playerInfo.set(p2.id, { side: 1, mode: 'multi' });
-
         s1.join(m.roomId);
         s2.join(m.roomId);
 
@@ -553,7 +554,6 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           user1Id: userId1,
           user2Id: userId2
         });
-
         s2.emit('matchFound', {
           roomId: m.roomId,
           side: 1,
@@ -563,11 +563,34 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           user1Id: userId1,
           user2Id: userId2
         });
-
-        const iv = setInterval(() => {
-          updateMatch(m, gameNs);
+        const iv = setInterval(async () => {
+          await updateMatch(m, gameNs);
           gameNs.to(m.roomId).emit('gameState', m);
-          if (m.gameOver) clearInterval(iv);
+          if (m.gameOver) {
+            clearInterval(iv);
+            // --- Ajout gestion stats backend ---
+            if (m.userIds && m.userIds.length === 2) {
+              const [id1, id2] = m.userIds;
+              const winSide = m.paddles.findIndex(pl => pl.lives > 0);
+              const pongGameId = 1;
+              const user1Lives = m.paddles[0].lives;
+              const user2Lives = m.paddles[1].lives;
+              try {
+                // Ajout historique du match
+                await dbManager.addMatchToHistory(id1, id2, pongGameId, user1Lives, user2Lives);
+                // Victoires/défaites
+                if (winSide === 0) {
+                  await dbManager.incrementPlayerWins(pongGameId, id1);
+                  await dbManager.incrementPlayerLosses(pongGameId, id2);
+                } else if (winSide === 1) {
+                  await dbManager.incrementPlayerWins(pongGameId, id2);
+                  await dbManager.incrementPlayerLosses(pongGameId, id1);
+                }
+              } catch (e) {
+                console.error('[PONG] Erreur update stats/historique:', e);
+              }
+            }
+          }
         }, 1000 / 60);
       }
     });
