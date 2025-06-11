@@ -85,7 +85,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         // Blocage anti-doublon userId AVANT ajout à la file
         const userIdsInQueue = q.map(p => (p.id && socketToUserId.get(p.id)) || p.id);
         if (userId && userIdsInQueue.includes(userId)) {
-          socket.emit('error', { message: 'test' });
+          socket.emit('error', { message: 'Tournoi bloqué : multi-fenêtre ou double connexion détectée.' });
           return;
         }
         if (!q.find(p => p.id === socket.id)) {
@@ -505,7 +505,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       // Blocage anti-doublon userId AVANT ajout à la file
       const userIdsInQueue = classicQueue.map(p => getUserIdFromSocketId(p.id) || p.id);
       if (userId && userIdsInQueue.includes(userId)) {
-        socket.emit('error', { message: 'test1' });
+        socket.emit('error', { message: 'account already connected on a matchmaking' });
         return;
       }
       const currentInfo = playerInfo.get(socket.id);
@@ -526,7 +526,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           // Doublon userId, on retire le 2e joueur et on lui envoie une erreur
           const removed = classicQueue.splice(1, 1)[0];
           const sock = gameNs.sockets.get(removed.id);
-          if (sock) sock.emit('error', { message: 'Matchmaking bloqué : multi-fenêtre ou double connexion détectée.' });
+          if (sock) sock.emit('error', { message: 'Tournoi bloqué : multi-fenêtre ou double connexion détectée.' });
           continue;
         }
         // Sinon, on peut matcher
@@ -599,7 +599,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       // Blocage anti-doublon userId AVANT ajout à la file
       const userIdsInQueue = triQueue.map(p => getUserIdFromSocketId(p.id) || p.id);
       if (userId && userIdsInQueue.includes(userId)) {
-        socket.emit('error', { message: 'test' });
+        socket.emit('error', { message: 'account already connected on a matchmaking' });
         return;
       }
       const currentInfo = playerInfo.get(socket.id);
@@ -1132,7 +1132,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         else if (userIds[2] === userIds[0] || userIds[2] === userIds[1]) idxToRemove = 2;
         const removed = triQueue.splice(idxToRemove, 1)[0];
         const sock = gameNs.sockets.get(removed.id);
-        if (sock) sock.emit('error', { message: 'Matchmaking bloqué : multi-fenêtre ou double connexion détectée.' });
+        if (sock) sock.emit('error', { message: 'Tournoi bloqué : multi-fenêtre ou double connexion détectée.' });
         continue;
       }
       // Pas de doublon, on lance le match
