@@ -611,10 +611,8 @@ const start = async () => {
             socket.on('sendMessage', async (data, callback) => {
                 try 
                 {
-                    // author est maintenant un id utilisateur (number)
                     await dbManager.saveMessage(data.author, data.content);
 
-                    // Diffuser le message à tous les clients connectés
                     socket.broadcast.emit('receiveMessage', {
                         author: data.author,
                         content: data.content,
@@ -688,7 +686,6 @@ const start = async () => {
             
             socket.on('joinQueue', (username: string) =>
             {
-                // Vérifier si le joueur est déjà dans la queue avec un socket actif
                 const alreadyInQueue = towerQueue.some(player => 
                     player.username === username && 
                     towerNs.sockets.has(player.id)
@@ -698,7 +695,6 @@ const start = async () => {
                     return;
                 }
 
-                // Nettoyer les entrées de queue invalides pour ce joueur
                 const index = towerQueue.findIndex(player => 
                     player.username === username && 
                     !towerNs.sockets.has(player.id)
@@ -707,7 +703,6 @@ const start = async () => {
                     towerQueue.splice(index, 1);
                 }
 
-                // Vérifier si le joueur est déjà dans une partie en cours
                 const existingGame = Array.from(towerGames.entries()).find(([_, game]) => {
                     const state = game.getState();
                     return state.player.username === username || state.enemy.username === username;
@@ -758,7 +753,6 @@ const start = async () => {
 
             const gameLoop = setInterval(() => 
             {
-                // Vérifier d'abord le jeu solo
                 const soloGame = towerGames.get(socket.id);
                 if (soloGame)
                 {
@@ -766,15 +760,13 @@ const start = async () => {
                     socket.emit('gameState', soloGame.getState());
                 }
 
-                // Vérifier les jeux multijoueur
                 for (const [roomId, game] of towerGames.entries()) {
                     if (roomId.startsWith('tower_')) {
                         game.update();
                         towerNs.to(roomId).emit('gameState', game.getState());
                         
-                        // Si la partie est terminée, nettoyer après un délai
                         if (game.getState().finish && !game.historySaved) {
-                            game.historySaved = true; // <-- Déplacer ici pour éviter les doublons
+                            game.historySaved = true;
                             (async () => {
                                 try {
                                     const playerUsername = game.getState().player.username;
@@ -782,18 +774,13 @@ const start = async () => {
                                     const player = await dbManager.getUserByUsername(playerUsername);
                                     const enemy = await dbManager.getUserByUsername(enemyUsername);
                                     if (player && player.id !== undefined && enemy && enemy.id !== undefined) {
-                                        // Récupérer l'id du jeu Tower (par défaut 3, à adapter si besoin)
-                                        const towerGame = await dbManager.getAllGames();
-                                        const tower = towerGame.find(g => g.name.toLowerCase() === 'tower');
-                                        const towerGameId = tower ? tower.id : 3;
-                                        // HP restants = score sur 100 pour Tower, borné à [0,100] et arrondi à l'entier le plus proche
+                                        const towerGameId = 3;
                                         const playerRaw = game.getState().player.tower;
                                         const enemyRaw = game.getState().enemy.tower;
                                         const playerScore = Math.max(0, Math.min(100, Math.round((playerRaw / 500) * 100)));
                                         const enemyScore = Math.max(0, Math.min(100, Math.round((enemyRaw / 500) * 100)));
                                         await dbManager.addMatchToHistory(player.id, enemy.id, towerGameId, playerScore, enemyScore);
                                         console.log(`[Tower] Match history saved for ${player.username} vs ${enemy.username} (score: ${playerScore}-${enemyScore}, game_id: ${towerGameId})`);
-                                        // Ajout victoires/défaites Tower multi
                                         if (game.getState().winner === playerUsername) {
                                             await dbManager.incrementPlayerWins(towerGameId, player.id);
                                             await dbManager.incrementPlayerLosses(towerGameId, enemy.id);
@@ -818,7 +805,6 @@ const start = async () => {
 
             socket.on('command', (command: spawnCommand) =>
             {
-                // Vérifier d'abord le jeu solo
                 const soloGame = towerGames.get(socket.id);
                 if (soloGame && command.type === 'spawn')
                 {
@@ -826,7 +812,6 @@ const start = async () => {
                     return;
                 }
 
-                // Chercher le jeu multijoueur du joueur
                 for (const [roomId, game] of towerGames.entries())
                 {
                     if (roomId.startsWith('tower_')) 

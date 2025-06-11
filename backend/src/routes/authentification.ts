@@ -278,7 +278,7 @@ export const googleAuthHandler = async (userInfo: { email?: string; name?: strin
     }
 
     console.log("Generating JWT token for user:", user.id);
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '24h' });
     console.log("Token generated successfully");
     
     return { success: true, token };
