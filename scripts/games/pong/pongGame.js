@@ -8,6 +8,7 @@ import { sendMove, sendMoveTri } from './SocketEmit.js';
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
 import { initPauseMenu, showPauseMenu, drawPauseMenu, onEscapeKey } from './pauseMenu.js';
 import { showErrorNotification } from '../../helpers/notifications.js';
+import { MainApp } from '../../main.js'; // Import de MainApp pour getCurrentUser
 // Network variables
 export let mySide;
 let roomId;
@@ -163,6 +164,12 @@ export function connectPong(isOnline) {
     });
     // Refresh rankings and friend list at the end of a Pong game
     socket.on('pongGameEnded', async ({ gameId }) => {
+        const isLogged = await MainApp.checkAuth();
+        console.log('is logged:', isLogged);
+        if (!isLogged.success) {
+            console.warn('User is not logged in, skipping rankings refresh.');
+            return;
+        }
         const rankingsContainer = document.querySelector('#rankings-container');
         if (rankingsContainer && rankingsContainer.offsetParent !== null) {
             const currentUser = await GameManager.getCurrentUser();

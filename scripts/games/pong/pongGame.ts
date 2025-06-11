@@ -11,6 +11,7 @@ import api from '../../helpers/api.js';
 import { HOSTNAME } from '../../main.js';
 import { drawTutorialSolo1, drawTutorialSolo2 } from './showTutorial.js';
 import { showErrorNotification } from '../../helpers/notifications.js';
+import { MainApp } from '../../main.js'; // Import de MainApp pour getCurrentUser
 
 
 // Interface for game state received from server
@@ -213,6 +214,13 @@ export function connectPong(isOnline: boolean) {
 
   // Refresh rankings and friend list at the end of a Pong game
   socket.on('pongGameEnded', async ({ gameId }) => {
+    const isLogged = await MainApp.checkAuth()
+    console.log('is logged:', isLogged);
+    if (!isLogged.success) 
+      {
+        console.warn('User is not logged in, skipping rankings refresh.');
+        return;
+      }
     const rankingsContainer = document.querySelector('#rankings-container') as HTMLElement;
     if (rankingsContainer && rankingsContainer.offsetParent !== null) {
       const currentUser = await GameManager.getCurrentUser();

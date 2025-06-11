@@ -14,9 +14,9 @@ export async function showCommunityPage() {
     const main = document.getElementById("main");
     if (!main)
         return;
-    main.innerHTML = ""; // Vide le conteneur avant d'injecter la page community
+    main.innerHTML = ""; // Empty the container before injecting the community page
     main.innerHTML = communityPage;
-    // Supprimer le widget de chat si présent
+    // Remove the chat widget if present
     import('./chatWidget.js').then(mod => mod.removeChatWidget());
     renderPeopleList();
     setupSearchInput();
