@@ -256,6 +256,16 @@ export async function setupChatWidget() {
         }
         else {
             messageContent.textContent = content;
+            // Ajout : rendre le lien "join the game" bleu avec hover
+            // Cherche un lien qui contient "join the game" et ajoute la classe CSS
+            setTimeout(() => {
+                const links = messageContent.querySelectorAll('a');
+                links.forEach(link => {
+                    if (link.textContent && link.textContent.toLowerCase().includes('join the game')) {
+                        link.classList.add('chat-widget-join-link');
+                    }
+                });
+            }, 0);
         }
         messageContent.className = `chat-widget-messenger-bubble${self ? " self" : ""}${mentionClass}`;
         row.appendChild(messageContent);

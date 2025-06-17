@@ -292,3 +292,13 @@
   color: #b0b3b8;
   border-left: 4px solid #888;
 }
+
+/* Style for Pong invite link in chat */
+.chat-section a[href*="/pong/join?room="] {
+    color: #3895eb;
+    text-decoration: underline;
+    font-weight: 600;
+    background: none;
+    border-radius: 0;
+    padding: 0;
+}
