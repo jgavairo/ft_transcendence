@@ -627,10 +627,33 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       user2Id: userId2
     });
       // boucle d'update
-      const iv = setInterval(() => {
+      const iv = setInterval(async () => {
         updateMatch(m, gameNs);
         gameNs.to(m.roomId).emit('gameState', m);
-        if (m.gameOver) clearInterval(iv);
+        if (m.gameOver) {
+          clearInterval(iv);
+          // Ajout stats/historique PONG
+          try {
+            // On suppose que le gameId de Pong est 1 (à adapter si besoin)
+            const pongGameId = 1;
+            // Les vies sont dans m.paddles[0].lives et m.paddles[1].lives
+            const user1IdNum = Number(userId1);
+            const user2IdNum = Number(userId2);
+            if (!isNaN(user1IdNum) && !isNaN(user2IdNum)) {
+              await dbManager.addMatchToHistory(user1IdNum, user2IdNum, pongGameId, m.paddles[0].lives, m.paddles[1].lives);
+              // Détermination du gagnant
+              if (m.paddles[0].lives > m.paddles[1].lives) {
+                await dbManager.incrementPlayerWins(pongGameId, user1IdNum);
+                await dbManager.incrementPlayerLosses(pongGameId, user2IdNum);
+              } else if (m.paddles[1].lives > m.paddles[0].lives) {
+                await dbManager.incrementPlayerWins(pongGameId, user2IdNum);
+                await dbManager.incrementPlayerLosses(pongGameId, user1IdNum);
+              }
+            }
+          } catch (err) {
+            console.error('[PONG] Erreur ajout stats/historique:', err);
+          }
+        }
       }, 1000 / 60);
     }
 });
