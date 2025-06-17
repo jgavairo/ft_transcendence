@@ -327,11 +327,11 @@ app.get('/api/news/getAll', async (request: FastifyRequest, reply: FastifyReply)
 // GAME ROUTES //
 /////////////////
 
-app.get('/api/games/getAll', async (request: FastifyRequest, reply: FastifyReply) => {
+app.get('/api/games/getAll', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return gameRoutes.getAllGames(request, reply);
 });
 
-app.get('/api/pong/room-exists', async (request: FastifyRequest, reply: FastifyReply) => {
+app.get('/api/pong/room-exists', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return gameRoutes.roomExists(request, reply);
 });
 
@@ -366,7 +366,7 @@ app.post<{
 // STATS ROUTES //
 //////////////////
 
-app.get('/api/games/:gameId/rankings', async (request: FastifyRequest, reply: FastifyReply) => {
+app.get('/api/games/:gameId/rankings', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
         const { gameId } = request.params as { gameId: string };
 
@@ -482,7 +482,7 @@ app.post('/api/match/addToHistory', { preHandler: authMiddleware }, async (reque
 });
 
 // Nouvel endpoint pour récupérer l'historique des matchs d'un utilisateur
-app.get('/api/match/history/:userId', async (request: FastifyRequest, reply: FastifyReply) => {
+app.get('/api/match/history/:userId', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
         const { userId } = request.params as { userId: string };
         const gameId = request.query && (request.query as any).gameId ? Number((request.query as any).gameId) : undefined;
