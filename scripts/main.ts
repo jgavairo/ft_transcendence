@@ -12,8 +12,8 @@ const HOSTNAME = window.location.hostname;
 export { HOSTNAME };
 
 export async function updateChatWidgetVisibility() {
-    // Ne recharge pas le widget chat si on est sur la page community
-    const currentPage = localStorage.getItem('currentPage') || 'store';
+    // Utilise l'état de l'historique pour déterminer la page courante
+    const currentPage = (window.history.state && window.history.state.page) || 'store';
     if (currentPage === 'community') {
         return;
     }
