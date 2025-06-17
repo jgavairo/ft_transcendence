@@ -901,19 +901,19 @@ export class DatabaseManager
         const blocker = await this.getUserById(blockerId);
         if (!blocker) throw new Error('Blocker not found');
         const blockedUser = await this.getUserByUsername(blockedUsername);
-        if (!blockedUser) throw new Error('User to block not found');
-        let blockedUsers: string[] = [];
+        if (!blockedUser || !blockedUser.id) throw new Error('User to block not found');
+        let blockedUsers: number[] = [];
         if (blocker.blocked_users) {
             blockedUsers = Array.isArray(blocker.blocked_users)
-                ? blocker.blocked_users
+                ? blocker.blocked_users.map(Number)
                 : JSON.parse(blocker.blocked_users as any);
         } else if ((blocker as any).blocked_users) {
             try {
                 blockedUsers = JSON.parse((blocker as any).blocked_users);
             } catch { blockedUsers = []; }
         }
-        if (!blockedUsers.includes(blockedUsername)) {
-            blockedUsers.push(blockedUsername);
+        if (!blockedUsers.includes(blockedUser.id)) {
+            blockedUsers.push(blockedUser.id);
             await this.db.run(
                 'UPDATE users SET blocked_users = ? WHERE id = ?',
                 [JSON.stringify(blockedUsers), blockerId]
@@ -925,18 +925,20 @@ export class DatabaseManager
         if (!this.db) throw new Error('Database not initialized');
         const blocker = await this.getUserById(blockerId);
         if (!blocker) throw new Error('Blocker not found');
-        let blockedUsers: string[] = [];
+        const blockedUser = await this.getUserByUsername(blockedUsername);
+        if (!blockedUser || !blockedUser.id) throw new Error('User to unblock not found');
+        let blockedUsers: number[] = [];
         if (blocker.blocked_users) {
             blockedUsers = Array.isArray(blocker.blocked_users)
-                ? blocker.blocked_users
+                ? blocker.blocked_users.map(Number)
                 : JSON.parse(blocker.blocked_users as any);
         } else if ((blocker as any).blocked_users) {
             try {
                 blockedUsers = JSON.parse((blocker as any).blocked_users);
             } catch { blockedUsers = []; }
         }
-        if (blockedUsers.includes(blockedUsername)) {
-            blockedUsers = blockedUsers.filter(u => u !== blockedUsername);
+        if (blockedUsers.includes(blockedUser.id)) {
+            blockedUsers = blockedUsers.filter(u => u !== blockedUser.id);
             await this.db.run(
                 'UPDATE users SET blocked_users = ? WHERE id = ?',
                 [JSON.stringify(blockedUsers), blockerId]
@@ -948,17 +950,19 @@ export class DatabaseManager
         if (!this.db) throw new Error('Database not initialized');
         const blocker = await this.getUserById(blockerId);
         if (!blocker) throw new Error('Blocker not found');
-        let blockedUsers: string[] = [];
+        const blockedUser = await this.getUserByUsername(blockedUsername);
+        if (!blockedUser || !blockedUser.id) throw new Error('User to check not found');
+        let blockedUsers: number[] = [];
         if (blocker.blocked_users) {
             blockedUsers = Array.isArray(blocker.blocked_users)
-                ? blocker.blocked_users
+                ? blocker.blocked_users.map(Number)
                 : JSON.parse(blocker.blocked_users as any);
         } else if ((blocker as any).blocked_users) {
             try {
                 blockedUsers = JSON.parse((blocker as any).blocked_users);
             } catch { blockedUsers = []; }
         }
-        return blockedUsers.includes(blockedUsername);
+        return blockedUsers.includes(blockedUser.id);
     }
 
     public async getBlockedUsers(blockerId: number): Promise<string[]> {
