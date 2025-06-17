@@ -441,7 +441,8 @@ export async function setupChatWidget() {
          const pos = input.selectionStart || 0;
          // Recherche le dernier @ avant le curseur
          const before = val.slice(0, pos);
-         const match = before.match(/@([\w]*)$/);
+         // N'affiche la mention box que si le @ est le premier caractere
+         const match = before.match(/^@(\w*)$/);
          if (match) {
              mentionActive = true;
              mentionStart = before.lastIndexOf("@");
