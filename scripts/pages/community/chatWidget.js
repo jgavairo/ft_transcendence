@@ -230,21 +230,6 @@ export async function setupChatWidget() {
             }
             row.appendChild(profileImg);
         }
-        else if (self && !isGrouped) {
-            // Afficher la photo de profil à droite pour le premier message envoyé par soi-même
-            const spacer = document.createElement("div");
-            spacer.className = "chat-widget-messenger-avatar-spacer";
-            row.appendChild(spacer);
-            const profileImg = document.createElement("img");
-            profileImg.src = profilePic;
-            profileImg.alt = `${displayName}'s profile picture`;
-            profileImg.className = "chat-widget-messenger-avatar";
-            if (!isSystem) {
-                const user = userMap.get(authorId);
-                profileImg.onclick = () => showProfileCard((user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.email) || "Email not available", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
-            }
-            row.appendChild(profileImg);
-        }
         else {
             const spacer = document.createElement("div");
             spacer.className = "chat-widget-messenger-avatar-spacer";
@@ -447,12 +432,15 @@ export async function setupChatWidget() {
             };
             mentionBox.appendChild(item);
         });
-        // Positionne la box juste sous l'input, overlay flottant
+        // Positionne la box juste au-dessus de l'input, overlay flottant
         const rect = input.getBoundingClientRect();
-        mentionBox.style.left = rect.left + "px";
-        mentionBox.style.top = (rect.bottom + 2) + "px";
-        mentionBox.style.width = rect.width + "px";
+        // Pour obtenir la hauteur même si display:none, on force temporairement l'affichage
         mentionBox.style.display = "block";
+        mentionBox.style.left = rect.left + "px";
+        // On estime la hauteur si la box est vide (ex: 40px par défaut)
+        const boxHeight = mentionBox.offsetHeight > 0 ? mentionBox.offsetHeight : 40;
+        mentionBox.style.top = (rect.top - boxHeight - 4) + "px";
+        mentionBox.style.width = rect.width + "px";
     }
     input.addEventListener("input", (e) => {
         const val = input.value;
@@ -464,7 +452,7 @@ export async function setupChatWidget() {
             mentionActive = true;
             mentionStart = before.lastIndexOf("@");
             const search = match[1].toLowerCase();
-            filteredSuggestions = usernames.filter(u => u.toLowerCase().startsWith(search) && u !== currentUser.username).slice(0, 8);
+            filteredSuggestions = usernames.filter(u => u.toLowerCase().startsWith(search) && u !== currentUser.username).slice(0, 6);
             updateMentionBox();
         }
         else {

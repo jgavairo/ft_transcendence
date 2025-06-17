@@ -48,14 +48,19 @@ export async function setupChat() {
     const input = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendMessage");
     const chatContainer = document.getElementById("chatContainer");
-    // Add container for user mention suggestions
-    let mentionBox = document.getElementById("mention-suggestions");
+    // Ajout de la box de suggestions de mention @
+    let mentionBox = document.getElementById("chat-mention-suggestions");
     if (!mentionBox) {
         mentionBox = document.createElement("div");
-        mentionBox.id = "mention-suggestions";
-        mentionBox.className = "mention-suggestions-box";
-        // Add the box to body for floating overlay
-        document.body.appendChild(mentionBox);
+        mentionBox.id = "chat-mention-suggestions";
+        mentionBox.className = "chat-mention-suggestions-box";
+        // Ajoute la box juste après l'input dans le DOM
+        if (input && input.parentElement) {
+            input.parentElement.appendChild(mentionBox);
+        }
+        else {
+            document.body.appendChild(mentionBox);
+        }
     }
     // Check auth before displaying chat
     let currentUser = await fetchCurrentUser();
@@ -368,7 +373,11 @@ export async function setupChat() {
         }
         addMessage(messageData.content, authorId, false);
     });
-    // Mention @ suggestion
+    // Clear shared cache at the start of setupChat
+    clearBlockedCache();
+    // Uses centralized handling of Pong invite links
+    document.addEventListener('click', handlePongInviteLinkClick);
+    // === Suggestion de mention @ (copié/adapté du chatWidget) ===
     let mentionActive = false;
     let mentionStart = -1;
     let filteredSuggestions = [];
@@ -381,13 +390,14 @@ export async function setupChat() {
         filteredSuggestions.forEach(username => {
             const item = document.createElement("div");
             item.textContent = "@" + username;
+            item.className = "chat-mention-suggestion-item";
             item.style.padding = "6px 16px";
             item.style.cursor = "pointer";
             item.style.color = "#66c0f4";
             item.onmouseenter = () => item.style.background = "#2a475e";
             item.onmouseleave = () => item.style.background = "";
             item.onclick = () => {
-                // Replace @... with @username
+                // Remplace le @... par @username
                 const val = input.value;
                 const before = val.slice(0, mentionStart);
                 const after = val.slice(input.selectionStart);
@@ -395,41 +405,33 @@ export async function setupChat() {
                 mentionBox.style.display = "none";
                 mentionActive = false;
                 input.focus();
-                // Place the cursor after the mention
+                // Place le curseur après la mention
                 const pos = (before + "@" + username + " ").length;
                 input.setSelectionRange(pos, pos);
             };
             mentionBox.appendChild(item);
         });
-        // Position the box just below the input, floating overlay
+        // Positionne la box juste au-dessus de l'input, overlay flottant
         const rect = input.getBoundingClientRect();
-        mentionBox.style.left = rect.left + "px";
-        mentionBox.style.top = (rect.bottom + 2) + "px";
-        mentionBox.style.width = rect.width + "px";
         mentionBox.style.display = "block";
+        mentionBox.style.left = rect.left + "px";
+        const boxHeight = mentionBox.offsetHeight > 0 ? mentionBox.offsetHeight : 40;
+        mentionBox.style.top = (rect.top - boxHeight - 4) + "px";
+        mentionBox.style.width = rect.width + "px";
+        mentionBox.style.position = "fixed";
+        mentionBox.style.zIndex = "10001";
     }
-    // Add: repositions the mentionBox on resize
-    window.addEventListener("resize", () => {
-        if (mentionActive && mentionBox.style.display === "block") {
-            updateMentionBox();
-        }
-    });
     input.addEventListener("input", (e) => {
         const val = input.value;
         const pos = input.selectionStart || 0;
-        // Search for the last @ before the cursor
+        // Recherche le dernier @ avant le curseur
         const before = val.slice(0, pos);
         const match = before.match(/@([\w]*)$/);
         if (match) {
             mentionActive = true;
             mentionStart = before.lastIndexOf("@");
             const search = match[1].toLowerCase();
-            if (!currentUser) {
-                filteredSuggestions = [];
-            }
-            else {
-                filteredSuggestions = usernames.filter(u => u.toLowerCase().startsWith(search) && u !== (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username)).slice(0, 8);
-            }
+            filteredSuggestions = usernames.filter(u => u.toLowerCase().startsWith(search) && u !== ((currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "")).slice(0, 6);
             updateMentionBox();
         }
         else {
@@ -437,14 +439,14 @@ export async function setupChat() {
             mentionBox.style.display = "none";
         }
     });
-    // Closes the box if clicking elsewhere
+    // Ferme la box si on clique ailleurs
     document.addEventListener("click", (e) => {
         if (e.target !== input && e.target !== mentionBox) {
             mentionBox.style.display = "none";
             mentionActive = false;
         }
     });
-    // Keyboard navigation (arrows + enter)
+    // Navigation clavier (flèches + entrée)
     input.addEventListener("keydown", (e) => {
         if (!mentionActive || mentionBox.style.display === "none")
             return;
@@ -469,8 +471,10 @@ export async function setupChat() {
             items[idx].click();
         }
     });
-    // Clear shared cache at the start of setupChat
-    clearBlockedCache();
-    // Uses centralized handling of Pong invite links
-    document.addEventListener('click', handlePongInviteLinkClick);
+    // Repositionne la mentionBox lors du resize
+    window.addEventListener("resize", () => {
+        if (mentionActive && mentionBox.style.display === "block") {
+            updateMentionBox();
+        }
+    });
 }
