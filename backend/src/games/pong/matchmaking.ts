@@ -34,6 +34,8 @@ interface BasicTournament {
   champion?: Player;
   allPlayers: Player[]; // Added for the complete status
   finalLaunched?: boolean; // NEW: guard to prevent double-launch
+  semiLaunched?: boolean; // NEW: guard to prevent double-launch of semis
+  semiWinners?: Player[]; // NEW: for 4-player tournaments, track semi-final winners
 }
 
 // Private rooms management
@@ -58,6 +60,9 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 
   // Map to store the intervals of each tournament match
   const tournamentMatchIntervals = new Map<string, NodeJS.Timeout>();
+
+  // Ajout: Map pour stocker les timers d'auto-ready
+  const tournamentAutoReadyTimers = new Map<string, NodeJS.Timeout>();
 
   // Utility function to get the user ID from a socket_id
   function getUserIdFromSocketId(socketId: string): string | undefined {
@@ -189,6 +194,32 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           isInGame: false // default at start
         }))
       });
+
+      // --- AUTO-READY TIMER ---
+      if (tournamentAutoReadyTimers.has(tour.id)) {
+        clearTimeout(tournamentAutoReadyTimers.get(tour.id)!);
+      }
+      tournamentAutoReadyTimers.set(tour.id, setTimeout(() => {
+        const t = tournaments.get(tour.id) as BasicTournament;
+        if (!t) return;
+        // Met tous les joueurs ready
+        t.ready = new Map(t.players.map(p => [p.id, true]));
+        gameNs.to(`tour-${t.id}`).emit('tournamentReadyUpdate', {
+          tournamentId: t.id,
+          size: 4,
+          joined: t.allPlayers.map((p: Player) => p.username),
+          status: t.allPlayers.map((p: Player) => ({
+            id: p.id,
+            username: p.username,
+            ready: true,
+            eliminated: false,
+            isInGame: false
+          }))
+        });
+        // Launch semi-finals only if not already launched
+        launchTournament4(gameNs, t);
+        tournamentAutoReadyTimers.delete(t.id);
+      }, 60000)); // 10 secondes pour test, mets 60000 pour 1min
     }
   });
   
@@ -211,39 +242,8 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
             }))
           });
           if ([...tour.ready.values()].every((v: boolean) => v)) {
-            // Launch the two semi-finals
-            tour.round = 0;
-            const [A, B, C, D] = tour.players;
-            const match1Id = `${tour.id}-demi1`;
-            const match2Id = `${tour.id}-demi2`;
-            tour.matches[match1Id] = { players: [A, B] };
-            tour.matches[match2Id] = { players: [C, D] };
-            const demiFinales: [Player, Player, string][] = [
-              [A, B, match1Id],
-              [C, D, match2Id]
-            ];
-            for (const [p1, p2, matchId] of demiFinales) {
-              const s1 = gameNs.sockets.get(p1.id)!;
-              const s2 = gameNs.sockets.get(p2.id)!;
-              s1.join(matchId);
-              s2.join(matchId);
-              playerInfo.set(p1.id, { side: 0, mode: 'multi', roomId: matchId });
-              playerInfo.set(p2.id, { side: 1, mode: 'multi', roomId: matchId });
-              s1.emit('tournamentMatchFound', { matchId, side: 0, opponent: p2.username });
-              s2.emit('tournamentMatchFound', { matchId, side: 1, opponent: p1.username });
-              const state = startMatch([s1, s2], gameNs, false, matchId);
-              matchStates.set(matchId, state);
-              const iv = setInterval(() => {
-                updateMatch(state, gameNs);
-                gameNs.to(matchId).emit('gameState', state);
-                if (state.gameOver) clearInterval(iv);
-              }, 1000 / 60);
-            }
-            // Announce the semi-finals in the chat
-            const now = new Date();
-            const heure = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-            const msg = `[TOURNOI PONG] Demi-finales (${heure}) :\nMatch 1 : @${A.username} vs @${B.username}\nMatch 2 : @${C.username} vs @${D.username}`;
-            sendTournamentChatMessage(msg);
+            // Launch the two semi-finals only if not already launched
+            launchTournament4(gameNs, tour);
           }
         } else if (tour.round === 1) {
           // Only allow 'Ready' for the final if both semi-finals are finished and both finalists are known
@@ -262,52 +262,13 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
               isInGame: false // Personne n'est en game tant que la finale n'est pas lancée
             }))
           });
-          if ([...tour.finalReady.values()].every((v: boolean) => v)) {
-            // Launch the final (guarded)
-            if (!tour.finalLaunched) {
-              tour.finalLaunched = true;
-              const [F1, F2] = tour.finalists;
-              const finalId = `${tour.id}-final`;
-              const s1 = gameNs.sockets.get(F1.id)!;
-              const s2 = gameNs.sockets.get(F2.id)!;
-              // --- ADD: all players join the final room (spectators included) ---
-              tour.allPlayers.forEach(p => {
-                const sock = gameNs.sockets.get(p.id);
-                if (sock) sock.join(finalId);
-              });
-              // --- Only the two finalists are controllers ---
-              playerInfo.set(F1.id, { side: 0, mode: 'multi', roomId: finalId });
-              playerInfo.set(F2.id, { side: 1, mode: 'multi', roomId: finalId });
-              s1.emit('tournamentMatchFound', { matchId: finalId, side: 0, opponent: F2.username });
-              s2.emit('tournamentMatchFound', { matchId: finalId, side: 1, opponent: F1.username });
-
-              // Emit to eliminated players so they can spectate the final
-              tour.allPlayers.forEach(p => {
-                if (p.id !== F1.id && p.id !== F2.id) {
-                  const sock = gameNs.sockets.get(p.id);
-                  if (sock) {
-                    sock.join(finalId); // join the final room for spectating
-                    sock.emit('tournamentFinalSpectate', {
-                      matchId: finalId,
-                      finalists: [F1.username, F2.username]
-                    });
-                  }
-                }
-              });
-
-              const state = startMatch([s1, s2], gameNs, false, finalId);
-              matchStates.set(finalId, state);
-              const iv = setInterval(() => {
-                updateMatch(state, gameNs);
-                gameNs.to(finalId).emit('gameState', state);
-                if (state.gameOver) clearInterval(iv);
-              }, 1000 / 60);
-              // Announce the final in the chat
-              const now = new Date();
-              const heure = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-              const msg = `[TOURNOI PONG] Finale (${heure}) : @${F1.username} vs @${F2.username}`;
-              sendTournamentChatMessage(msg);
+          // Si les deux sont prêts, clear le timer et lance la finale
+          if ([...tour.finalReady.values()].every((v: boolean) => v) && !tour.finalLaunched) {
+            if (tournamentAutoReadyTimers.has(tour.id + '-final')) {
+              clearTimeout(tournamentAutoReadyTimers.get(tour.id + '-final'));
+              tournamentAutoReadyTimers.delete(tour.id + '-final');
             }
+            launchFinal4(gameNs, tour);
           }
         }
       });
@@ -361,6 +322,33 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
             // PATCH: Create the final in tour.matches with the good matchId
             const finalMatchId = `${tour.id}-final`;
             tour.matches[finalMatchId] = { players: [tour.finalists[0], tour.finalists[1]] };
+            // --- AUTO-READY TIMER POUR LA FINALE ---
+            if (tournamentAutoReadyTimers.has(tour.id + '-final')) {
+              clearTimeout(tournamentAutoReadyTimers.get(tour.id + '-final'));
+            }
+            tournamentAutoReadyTimers.set(tour.id + '-final', setTimeout(() => {
+              const t = tournaments.get(tour.id) as BasicTournament;
+              if (!t || t.finalLaunched) return;
+              // Met les deux finalistes ready
+              t.finalReady = new Map(t.finalists.map(p => [p.id, true]));
+              gameNs.to(`tour-${t.id}`).emit('tournamentReadyUpdate', {
+                tournamentId: t.id,
+                size: 4,
+                joined: t.finalists.map((p: Player) => p.username),
+                status: t.finalists.map((p: Player) => ({
+                  id: p.id,
+                  username: p.username,
+                  ready: true,
+                  eliminated: false,
+                  isInGame: false
+                }))
+              });
+              // Lance la finale si pas déjà fait
+              if ([...t.finalReady.values()].every((v: boolean) => v) && !t.finalLaunched) {
+                launchFinal4(gameNs, t);
+              }
+              tournamentAutoReadyTimers.delete(t.id + '-final');
+            }, 60000));
           }
           tour.round = 1;
           gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
@@ -1005,18 +993,21 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
   }
   
   // Nouvelle logique de tournoi simple à 4 joueurs
-  function launchTournament4(ns: Namespace, tour: Tournament) {
-    // 1er tour : 2 matchs séparés
+  function launchTournament4(ns: Namespace, tour: BasicTournament) {
+    if (tour.semiLaunched) return;
+    tour.semiLaunched = true;
+    tour.round = 0;
+    tour.semiWinners = [];
     const [A, B, C, D] = tour.players;
-    const matchIds = [
-      `${tour.id}-demi1`, // A vs B
-      `${tour.id}-demi2`  // C vs D
+    const match1Id = `${tour.id}-demi1`;
+    const match2Id = `${tour.id}-demi2`;
+    tour.matches[match1Id] = { players: [A, B] };
+    tour.matches[match2Id] = { players: [C, D] };
+    const demiFinales: [Player, Player, string][] = [
+      [A, B, match1Id],
+      [C, D, match2Id]
     ];
-    const pairs = [ [A, B], [C, D] ];
-    tour.winners = [];
-
-    pairs.forEach(([p1, p2], idx) => {
-      const matchId = matchIds[idx];
+    for (const [p1, p2, matchId] of demiFinales) {
       const s1 = ns.sockets.get(p1.id)!;
       const s2 = ns.sockets.get(p2.id)!;
       s1.join(matchId);
@@ -1025,7 +1016,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       playerInfo.set(p2.id, { side: 1, mode: 'multi', roomId: matchId });
       s1.emit('tournamentMatchFound', { matchId, side: 0, opponent: p2.username });
       s2.emit('tournamentMatchFound', { matchId, side: 1, opponent: p1.username });
-      const state = startMatch([s1, s2], ns, false, matchId); // <-- PATCH: matchId comme roomId
+      const state = startMatch([s1, s2], ns, false, matchId);
       matchStates.set(matchId, state);
       const iv = setInterval(() => {
         updateMatch(state, ns);
@@ -1034,30 +1025,27 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           clearInterval(iv);
           const winSide = state.paddles.findIndex(pl => pl.lives > 0);
           const winner = winSide === 0 ? p1 : p2;
-          tour.winners.push(winner);
           ns.to(matchId).emit('tournamentMatchOver', {
             tournamentId: tour.id,
             matchId,
             winner: winner.username,
             loser: winSide === 0 ? p2.username : p1.username
           });
-          // Quand les deux gagnants sont connus, lancer la finale
-          if (tour.winners.length === 2) {
-            launchFinal4(ns, {
-              id: tour.id,
-              players: tour.winners,
-              ready: new Map(tour.winners.map(p => [p.id, false])),
-              round: 1,
-              matches: {},
-              finalists: tour.winners,
-              finalReady: new Map(tour.winners.map(p => [p.id, false])),
-              champion: undefined,
-              allPlayers: tour.allPlayers // Ajouté pour respecter l'interface
-            });
+          // Track semi-final winners and launch final if both are known
+          if (!tour.semiWinners) tour.semiWinners = [];
+          tour.semiWinners.push(winner);
+          if (tour.semiWinners.length === 2) {
+            tour.finalists = tour.semiWinners.slice();
+            launchFinal4(ns, tour);
           }
         }
       }, 1000 / 60);
-    });
+    }
+    // Announce the semi-finals in the chat
+    const now = new Date();
+    const heure = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const msg = `[TOURNOI PONG] Demi-finales (${heure}) :\nMatch 1 : @${A.username} vs @${B.username}\nMatch 2 : @${C.username} vs @${D.username}`;
+    sendTournamentChatMessage(msg);
   }
 
   function launchFinal4(ns: Namespace, tour: BasicTournament) {
@@ -1089,6 +1077,12 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       }
     }
   });
+
+  // Announce the final in the chat
+  const now = new Date();
+  const heure = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const msg = `[TOURNOI PONG] Finale (${heure}) : @${G1.username} vs @${G2.username}`;
+  sendTournamentChatMessage(msg);
 
   const state = startMatch([s1, s2], ns, false, matchId);
   matchStates.set(matchId, state);
