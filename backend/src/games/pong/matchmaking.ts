@@ -219,7 +219,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         // Launch semi-finals only if not already launched
         launchTournament4(gameNs, t);
         tournamentAutoReadyTimers.delete(t.id);
-      }, 60000)); // 10 secondes pour test, mets 60000 pour 1min
+      }, 60000));
     }
   });
   
@@ -1035,8 +1035,39 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           if (!tour.semiWinners) tour.semiWinners = [];
           tour.semiWinners.push(winner);
           if (tour.semiWinners.length === 2) {
+            // Préparer la finale mais NE PAS la lancer ici !
             tour.finalists = tour.semiWinners.slice();
-            launchFinal4(ns, tour);
+            tour.finalReady = new Map(tour.finalists.map(p => [p.id, false]));
+            tour.finalLaunched = false;
+            const finalMatchId = `${tour.id}-final`;
+            tour.matches[finalMatchId] = { players: [tour.finalists[0], tour.finalists[1]] };
+            // --- AUTO-READY TIMER POUR LA FINALE ---
+            if (tournamentAutoReadyTimers.has(tour.id + '-final')) {
+              clearTimeout(tournamentAutoReadyTimers.get(tour.id + '-final'));
+            }
+            tournamentAutoReadyTimers.set(tour.id + '-final', setTimeout(() => {
+              const t = tournaments.get(tour.id) as BasicTournament;
+              if (!t || t.finalLaunched) return;
+              // Met les deux finalistes ready
+              t.finalReady = new Map(t.finalists.map(p => [p.id, true]));
+              gameNs.to(`tour-${t.id}`).emit('tournamentReadyUpdate', {
+                tournamentId: t.id,
+                size: 4,
+                joined: t.finalists.map((p: Player) => p.username),
+                status: t.finalists.map((p: Player) => ({
+                  id: p.id,
+                  username: p.username,
+                  ready: true,
+                  eliminated: false,
+                  isInGame: false
+                }))
+              });
+              // Lance la finale si pas déjà fait
+              if ([...t.finalReady.values()].every((v: boolean) => v) && !t.finalLaunched) {
+                launchFinal4(gameNs, t);
+              }
+              tournamentAutoReadyTimers.delete(t.id + '-final');
+            }, 60000));
           }
         }
       }, 1000 / 60);

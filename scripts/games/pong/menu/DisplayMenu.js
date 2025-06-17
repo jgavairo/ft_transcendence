@@ -303,12 +303,7 @@ export class PongMenuManager {
                 break;
             case 'play':
                 this.createButton('SOLO', gameWidth / 2 - 100, 450, () => this.changeMenu('solo'));
-                //NE PAS SUPPRIMER CES COMMENTAIRES SVP LES GARS
-                // const first = await getFirstPlay();
-                // if (first)
                 this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
-                // else
-                // this.createButton2('MULTI', gameWidth / 2 - 100, 520, () => showNotification('1 game in solo remaining'));
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('main'));
                 break;
             case 'solo':
@@ -1034,9 +1029,6 @@ export class PongMenuManager {
                     });
                     this.createButton('QUIT', gameWidth / 2 - 100, 530, () => {
                         // Retour menu principal
-                        gameSocket.emit('quitTournament', { tournamentId: this.currentTourId });
-                        // Nettoyage complet de l'UI
-                        this.menuLayer.removeChildren();
                         this.stage.destroy();
                         stopGame();
                         displayMenu();

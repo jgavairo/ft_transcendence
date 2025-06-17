@@ -467,3 +467,23 @@ socket.on('error', (data) => {
         }
     }
 });
+// Nouvelle fonction pour réinitialiser l'état du tournoi
+export function resetPongTournamentState() {
+    mySide = -1;
+    roomId = '';
+    soloMode = false;
+    modePong = false;
+    soloTri = false;
+    running = false;
+    ready = false;
+    lastState = null;
+    firstFrame = false;
+    gameover = false;
+    user1Id = null;
+    user2Id = null;
+    showTutorial = false;
+    playerName = '';
+    opponentName = '';
+    playerNames = [];
+    isPrivateLobby = false;
+}
