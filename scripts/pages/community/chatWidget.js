@@ -230,6 +230,21 @@ export async function setupChatWidget() {
             }
             row.appendChild(profileImg);
         }
+        else if (self && !isGrouped) {
+            // Afficher la photo de profil à droite pour le premier message envoyé par soi-même
+            const spacer = document.createElement("div");
+            spacer.className = "chat-widget-messenger-avatar-spacer";
+            row.appendChild(spacer);
+            const profileImg = document.createElement("img");
+            profileImg.src = profilePic;
+            profileImg.alt = `${displayName}'s profile picture`;
+            profileImg.className = "chat-widget-messenger-avatar";
+            if (!isSystem) {
+                const user = userMap.get(authorId);
+                profileImg.onclick = () => showProfileCard((user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.email) || "Email not available", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
+            }
+            row.appendChild(profileImg);
+        }
         else {
             const spacer = document.createElement("div");
             spacer.className = "chat-widget-messenger-avatar-spacer";
@@ -238,34 +253,38 @@ export async function setupChatWidget() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
-        // Update regex to match the new English invite message
-        const pongInviteRegex = /@([\w-]+) Click here to join my Pong game/;
-        if (self && pongInviteRegex.test(content)) {
+        // Harmonisation de l'affichage du message d'invitation Pong
+        const pongInviteRegex = /@([\w-]+) Click here to join my Pong game:? ?(.*)/;
+        if (pongInviteRegex.test(content)) {
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
-            messageContent.textContent = `invitation sent to : ${dest}`;
+            // Si l'utilisateur est l'auteur du message, afficher le texte simple
+            if (self) {
+                messageContent.textContent = `Invitation sent to : ${dest}`;
+            }
+            else {
+                // Recherche l'URL d'invitation dans le message (si présente)
+                let roomId = null;
+                const roomMatch = content.match(/\/pong\/join\?room=([\w-]+)/);
+                if (roomMatch)
+                    roomId = roomMatch[1];
+                let inviteLink = roomId ? `/pong/join?room=${roomId}` : '#';
+                messageContent.innerHTML =
+                    `<span class=\"chat-widget-mention\">@${dest}</span> Click here to join my Pong game: ` +
+                        `<a href=\"${inviteLink}\" class=\"join-the-game-link\">Join the game</a>`;
+            }
         }
         else if (mentionMatch) {
             const mentionedUser = users.find(u => u.username === mentionMatch[1]);
             if (mentionedUser) {
-                messageContent.innerHTML = content.replace(/^@(\w+)/, `<span class="chat-widget-mention">@${mentionedUser.username}</span>`);
+                messageContent.innerHTML = content.replace(/^@(\w+)/, `<span class=\"chat-widget-mention\">@${mentionedUser.username}</span>`);
             }
             else {
-                messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class="chat-widget-mention">@$1</span>');
+                messageContent.innerHTML = content.replace(/^@(\w+)/, '<span class=\"chat-widget-mention\">@$1</span>');
             }
         }
         else {
-            messageContent.textContent = content;
-            // Ajout : rendre le lien "join the game" bleu avec hover
-            // Cherche un lien qui contient "join the game" et ajoute la classe CSS
-            setTimeout(() => {
-                const links = messageContent.querySelectorAll('a');
-                links.forEach(link => {
-                    if (link.textContent && link.textContent.toLowerCase().includes('join the game')) {
-                        link.classList.add('chat-widget-join-link');
-                    }
-                });
-            }, 0);
+            messageContent.innerHTML = content.replace(/(Join The Game)/g, '<span class=\"join-the-game-link\">$1</span>');
         }
         messageContent.className = `chat-widget-messenger-bubble${self ? " self" : ""}${mentionClass}`;
         row.appendChild(messageContent);

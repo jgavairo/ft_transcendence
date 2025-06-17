@@ -239,27 +239,39 @@ export async function setupChatWidget() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
-        // Update regex to match the new English invite message
-        const pongInviteRegex = /@([\w-]+) Click here to join my Pong game/;
-        if (self && pongInviteRegex.test(content)) {
+        // Harmonisation de l'affichage du message d'invitation Pong
+        const pongInviteRegex = /@([\w-]+) Click here to join my Pong game:? ?(.*)/;
+        if (pongInviteRegex.test(content)) {
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
-            messageContent.textContent = `invitation sent to : ${dest}`;
+            // Si l'utilisateur est l'auteur du message, afficher le texte simple
+            if (self) {
+                messageContent.textContent = `Invitation sent to : ${dest}`;
+            } else {
+                // Recherche l'URL d'invitation dans le message (si présente)
+                let roomId = null;
+                const roomMatch = content.match(/\/pong\/join\?room=([\w-]+)/);
+                if (roomMatch) roomId = roomMatch[1];
+                let inviteLink = roomId ? `/pong/join?room=${roomId}` : '#';
+                messageContent.innerHTML =
+                    `<span class=\"chat-widget-mention\">@${dest}</span> Click here to join my Pong game: ` +
+                    `<a href=\"${inviteLink}\" class=\"join-the-game-link\">Join the game</a>`;
+            }
         } else if (mentionMatch) {
             const mentionedUser = users.find(u => u.username === mentionMatch[1]);
             if (mentionedUser) {
                 messageContent.innerHTML = content.replace(
                     /^@(\w+)/,
-                    `<span class="chat-widget-mention">@${mentionedUser.username}</span>`
+                    `<span class=\"chat-widget-mention\">@${mentionedUser.username}</span>`
                 );
             } else {
                 messageContent.innerHTML = content.replace(
                     /^@(\w+)/,
-                    '<span class="chat-widget-mention">@$1</span>'
+                    '<span class=\"chat-widget-mention\">@$1</span>'
                 );
             }
         } else {
-            messageContent.textContent = content;
+            messageContent.innerHTML = content.replace(/(Join The Game)/g, '<span class=\"join-the-game-link\">$1</span>');
         }
         messageContent.className = `chat-widget-messenger-bubble${self ? " self" : ""}${mentionClass}`;
         row.appendChild(messageContent);

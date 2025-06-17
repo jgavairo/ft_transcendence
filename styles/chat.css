@@ -302,3 +302,16 @@
     border-radius: 0;
     padding: 0;
 }
+
+/* Style bleu souligné pour "Join The Game" dans le chat principal et le widget */
+.join-the-game-link {
+    color: #3895eb;
+    text-decoration: underline;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.18s;
+}
+.join-the-game-link:hover {
+    color: #66c0f4;
+    text-decoration-thickness: 2px;
+}
