@@ -62,6 +62,13 @@ export async function setupProfileModal() {
     const saveBioButton = document.getElementById('saveBioButton');
     const bioInput = document.getElementById('bioInput');
     if (saveBioButton && bioInput) {
+        bioInput.addEventListener('keypress', async (e) => {
+            const keyEvent = e;
+            if (keyEvent.key === 'Enter' && !keyEvent.shiftKey) {
+                e.preventDefault();
+                saveBioButton.click();
+            }
+        });
         saveBioButton.addEventListener('click', async () => {
             const newBio = bioInput.value.trim();
             if (newBio.length > 150) {
@@ -99,8 +106,16 @@ function changePassword() {
         setupProfileModal();
     });
     const sendNewPasswordButton = document.getElementById('changePasswordButton');
-    if (!sendNewPasswordButton)
+    const passwordForm = document.querySelector('.changePassword-modal-content');
+    if (!sendNewPasswordButton || !passwordForm)
         return;
+    passwordForm.addEventListener('keypress', async (e) => {
+        const keyEvent = e;
+        if (keyEvent.key === 'Enter') {
+            e.preventDefault();
+            sendNewPasswordButton.click();
+        }
+    });
     sendNewPasswordButton.addEventListener('click', async () => {
         console.log('sendNewPasswordButton clicked');
         const oldPassword = document.getElementById('oldPassword');
@@ -200,8 +215,16 @@ function changeUsername() {
         setupProfileModal();
     });
     const sendNewUsernameButton = document.getElementById('changeUsernameButton');
-    if (!sendNewUsernameButton)
+    const usernameForm = document.querySelector('.changePassword-modal-content');
+    if (!sendNewUsernameButton || !usernameForm)
         return;
+    usernameForm.addEventListener('keypress', async (e) => {
+        const keyEvent = e;
+        if (keyEvent.key === 'Enter') {
+            e.preventDefault();
+            sendNewUsernameButton.click();
+        }
+    });
     sendNewUsernameButton.addEventListener('click', async () => {
         console.log('sendNewUsernameButton clicked');
         const newUsername = document.getElementById('newUsername');
@@ -248,8 +271,16 @@ function changeEmail() {
         setupProfileModal();
     });
     const sendNewEmailButton = document.getElementById('changeEmailButton');
-    if (!sendNewEmailButton)
+    const emailForm = document.querySelector('.changePassword-modal-content');
+    if (!sendNewEmailButton || !emailForm)
         return;
+    emailForm.addEventListener('keypress', async (e) => {
+        const keyEvent = e;
+        if (keyEvent.key === 'Enter') {
+            e.preventDefault();
+            sendNewEmailButton.click();
+        }
+    });
     sendNewEmailButton.addEventListener('click', async () => {
         console.log('sendNewEmailButton clicked');
         const newEmail = document.getElementById('newEmail');
@@ -292,8 +323,16 @@ async function disable2FA() {
         setupProfileModal();
     });
     const disable2FAButton = document.getElementById('disable2FAButton');
-    if (!disable2FAButton)
+    const disable2FAForm = document.querySelector('.changePassword-modal-content');
+    if (!disable2FAButton || !disable2FAForm)
         return;
+    disable2FAForm.addEventListener('keypress', async (e) => {
+        const keyEvent = e;
+        if (keyEvent.key === 'Enter') {
+            e.preventDefault();
+            disable2FAButton.click();
+        }
+    });
     disable2FAButton.addEventListener('click', async () => {
         console.log('disable2FAButton clicked');
         const password = document.getElementById('password');
@@ -340,8 +379,16 @@ async function changeDoubleAuthentification() {
     if (data.success) {
         showNotification('2FA code sent successfully, check your mailbox.');
         const enableDoubleAuthentificationButton = document.getElementById('changeDoubleAuthentificationButton');
-        if (!enableDoubleAuthentificationButton)
+        const doubleAuthForm = document.querySelector('.changeDoubleAuthentification-modal-content');
+        if (!enableDoubleAuthentificationButton || !doubleAuthForm)
             return;
+        doubleAuthForm.addEventListener('keypress', async (e) => {
+            const keyEvent = e;
+            if (keyEvent.key === 'Enter') {
+                e.preventDefault();
+                enableDoubleAuthentificationButton.click();
+            }
+        });
         enableDoubleAuthentificationButton.addEventListener('click', async () => {
             console.log('enableDoubleAuthentificationButton clicked');
             const code = document.getElementById('code');

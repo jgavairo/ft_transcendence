@@ -59,8 +59,18 @@ export class LoginManager
     {
         console.log("Setting up login modal");
         const loginbutton = document.getElementById('loginButton');
-        if (!loginbutton)
+        const loginForm = document.getElementById('loginForm');
+        if (!loginbutton || !loginForm)
             return;
+
+        // Ajout de l'écouteur pour la touche Entrée sur le formulaire de connexion
+        loginForm.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                loginbutton.click();
+            }
+        });
+
         loginbutton.addEventListener('click', async (e) => {
             e.preventDefault();
 
@@ -192,8 +202,18 @@ export class LoginManager
                 this.setupLoginModal();
             });
             const registerRequestButton = document.getElementById('registerRequestButton');
-            if (!registerRequestButton)
+            const registerForm = document.getElementById('registerForm');
+            if (!registerRequestButton || !registerForm)
                 return;
+
+            // Ajout de l'écouteur pour la touche Entrée sur le formulaire d'inscription
+            registerForm.addEventListener('keypress', async (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    registerRequestButton.click();
+                }
+            });
+
             registerRequestButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 const username = (document.getElementById('Rusername') as HTMLInputElement).value;
