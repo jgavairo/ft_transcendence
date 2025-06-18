@@ -2,7 +2,6 @@ services:
   nginx:
     build: docker/nginx
     ports:
-      - "8080:80"
       - "8443:8443"
     volumes:
       - ./public:/usr/share/nginx/html
@@ -11,6 +10,7 @@ services:
       - ./assets:/usr/share/nginx/html/assets
       - ./games:/usr/share/nginx/html/games
       - uploads_data:/usr/share/nginx/html/uploads
+      - ./docker/nginx/ssl:/etc/nginx/ssl
     restart: unless-stopped
     depends_on:
       - backend
@@ -29,8 +29,7 @@ services:
     volumes:
       - sqlite_data:/app/data
       - uploads_data:/app/uploads
-    ports:
-      - "3000:3000"
+      - ./docker/nginx/ssl:/app/ssl
     env_file:
       - .env
     restart: unless-stopped

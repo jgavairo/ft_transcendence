@@ -100,14 +100,12 @@ export async function setupChat() {
             profilePic = user?.profile_picture || 'default-profile.png';
         }
         const isGrouped = lastAuthor === authorId;
-        // --- Special display for tournament messages (simple, trophy emoji, one message, one match per line, WITH author and photo) ---
         const bracketRegex = /^\[TOURNOI( PONG)?\] (.+?)(?:\n|: )([\s\S]+)/i;
         if (bracketRegex.test(content)) {
             const [, , phase, matchesRaw] = content.match(bracketRegex) || [];
             let matchLines = matchesRaw.split(/(?:\n|(?=Match \d+ :))/g).map(l => l.trim()).filter(Boolean);
-            // Add an empty line after the time
             let msg = `🏆 ${phase}\n`;
-            matchLines.forEach((line, idx) => {
+            matchLines.forEach((line) => {
                 const matchMatch = line.match(/Match (\d+) ?: ?@?(\w+) ?vs ?@?(\w+)/i);
                 if (matchMatch) {
                     msg += `  • @${matchMatch[2]} vs @${matchMatch[3]}\n`;
@@ -115,7 +113,6 @@ export async function setupChat() {
                     msg += `  • ${line}\n`;
                 }
             });
-            // Display in a single chat bubble WITH author and photo
             const msgWrapper = document.createElement("div");
             msgWrapper.className = `messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
             if (!self && !isGrouped) {
@@ -133,7 +130,7 @@ export async function setupChat() {
                 profileImg.className = "messenger-avatar";
                 if (!isSystem) {
                     const user = userMap.get(authorId);
-                    profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+                    profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.bio || "No bio available", user?.id || 0);
                 }
                 row.appendChild(profileImg);
             } else if (!self && isGrouped) {
@@ -143,8 +140,11 @@ export async function setupChat() {
             }
             const messageContent = document.createElement("div");
             messageContent.className = `messenger-bubble${self ? " self" : ""}`;
-            // Display line breaks with <br>
-            messageContent.innerHTML = msg.trim().replace(/\n/g, '<br>');
+            // Affiche les sauts de ligne avec <br> mais sans innerHTML dangereux
+            msg.trim().split('\n').forEach((line, idx) => {
+                if (idx > 0) messageContent.appendChild(document.createElement('br'));
+                messageContent.appendChild(document.createTextNode(line));
+            });
             row.appendChild(messageContent);
             if (self && !isGrouped) {
                 const spacer = document.createElement("div");
@@ -170,23 +170,40 @@ export async function setupChat() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " messenger-bubble-mention" : "";
-        // Update regex to match the new English invite message
-        const pongInviteRegex = /@([\w-]+) Click here to join my Pong game/;
-        if (self && pongInviteRegex.test(content)) {
+        const pongInviteRegex = /@([\w-]+) Click here to join my Pong game:? ?(.*)/;
+        if (pongInviteRegex.test(content)) {
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
-            messageContent.textContent = `Invitation sent to : ${dest}`;
-        } else if (!self && mentionMatch) {
-            messageContent.innerHTML = content.replace(
-                /^@(\w+)/,
-                '<span class="chat-mention">@$1</span>'
-            );
-        } else if (self && mentionMatch) {
-            messageContent.innerHTML = content.replace(
-                /^@(\w+)/,
-                '<span class="chat-mention self">@$1</span>'
-            );
+            if (self) {
+                messageContent.textContent = `Invitation sent to : ${dest}`;
+            } else {
+                let roomId = null;
+                const roomMatch = content.match(/\/pong\/join\?room=([\w-]+)/);
+                if (roomMatch) roomId = roomMatch[1];
+                let inviteLink = roomId ? `/pong/join?room=${roomId}` : '#';
+                // Construction sécurisée du contenu
+                const mentionSpan = document.createElement('span');
+                mentionSpan.className = 'chat-mention';
+                mentionSpan.textContent = `@${dest}`;
+                messageContent.appendChild(mentionSpan);
+                messageContent.appendChild(document.createTextNode(' Click here to join my Pong game: '));
+                const link = document.createElement('a');
+                link.href = inviteLink;
+                link.className = 'join-the-game-link';
+                link.textContent = 'Join the game';
+                messageContent.appendChild(link);
+            }
+        } else if (mentionMatch) {
+            // Affichage sécurisé de la mention
+            const before = content.slice(0, mentionMatch[0].length);
+            const after = content.slice(mentionMatch[0].length);
+            const mentionSpan = document.createElement('span');
+            mentionSpan.className = 'chat-mention';
+            mentionSpan.textContent = before;
+            messageContent.appendChild(mentionSpan);
+            messageContent.appendChild(document.createTextNode(after));
         } else {
+            // Tout le reste : texte brut
             messageContent.textContent = content;
         }
         messageContent.className = `messenger-bubble${self ? " self" : ""}${mentionClass}`;
@@ -197,7 +214,7 @@ export async function setupChat() {
             profileImg.className = "messenger-avatar";
             if (!isSystem) {
                 const user = userMap.get(authorId);
-                profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+                profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.bio || "No bio available", user?.id || 0);
             }
             row.appendChild(profileImg);
             row.appendChild(messageContent);

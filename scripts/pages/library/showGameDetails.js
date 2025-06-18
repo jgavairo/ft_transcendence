@@ -53,10 +53,9 @@ export async function renderRankings(gameId, container, currentUser) {
             var _a;
             const username = playerName.getAttribute('data-username');
             const profilePicture = playerName.getAttribute('data-profile-picture') || 'default-profile.png';
-            const email = playerName.getAttribute('data-email');
             const bio = playerName.getAttribute('data-bio') || 'No bio available';
             const userId = ((_a = people.find(person => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
-            showProfileCard(username, profilePicture, email, bio, userId);
+            showProfileCard(username, profilePicture, bio, userId);
         });
     });
     // Bouton Go to My Rank
@@ -176,10 +175,9 @@ export async function showGameDetails(gameIdOrObj) {
             var _a;
             const username = friendName.getAttribute('data-username');
             const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
-            const email = friendName.getAttribute('data-email');
             const bio = friendName.getAttribute('data-bio') || 'No bio available';
             const userId = ((_a = people.find(person => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
-            showProfileCard(username, profilePicture, email, bio, userId);
+            showProfileCard(username, profilePicture, bio, userId);
         });
     });
     // Bouton de fermeture

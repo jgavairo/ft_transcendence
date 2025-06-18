@@ -206,13 +206,12 @@ export function connectPong(isOnline) {
                             var _a;
                             const username = friendName.getAttribute('data-username');
                             const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
-                            const email = friendName.getAttribute('data-email');
                             const bio = friendName.getAttribute('data-bio') || 'No bio available';
                             // We can't get userId here without access to people, so we search for it again
                             const userId = ((_a = people.find((person) => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
                             // showProfileCard is indirectly imported via showGameDetails
                             import('../../pages/community/peopleList.js').then(mod => {
-                                mod.showProfileCard(username, profilePicture, email, bio, userId);
+                                mod.showProfileCard(username, profilePicture, bio, userId);
                             });
                         });
                     });

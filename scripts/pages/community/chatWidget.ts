@@ -137,7 +137,6 @@ export async function setupChatWidget() {
     let lastMsgWrapper: HTMLDivElement | null = null;
 
     const addMessage = (content: string, authorIdRaw: number|string, self = true) => {
-        // Patch: gestion Team42 pour messages système
         let authorId = Number(authorIdRaw);
         let isSystem = false;
         let displayName = '';
@@ -152,14 +151,12 @@ export async function setupChatWidget() {
             profilePic = user?.profile_picture || 'default-profile.png';
         }
         const isGrouped = lastAuthor === authorId;
-        // --- Affichage spécial pour les messages de tournoi (simple, emoji coupe, un message, un match par ligne, AVEC auteur et photo) ---
         const bracketRegex = /^\[TOURNOI( PONG)?\] (.+?)(?:\n|: )([\s\S]+)/i;
         if (bracketRegex.test(content)) {
             const [, , phase, matchesRaw] = content.match(bracketRegex) || [];
             let matchLines = matchesRaw.split(/(?:\n|(?=Match \d+ :))/g).map(l => l.trim()).filter(Boolean);
-            // Ajout d'une ligne vide après l'heure
             let msg = `🏆 ${phase}\n`;
-            matchLines.forEach((line, idx) => {
+            matchLines.forEach((line) => {
                 const matchMatch = line.match(/Match (\d+) ?: ?@?(\w+) ?vs ?@?(\w+)/i);
                 if (matchMatch) {
                     msg += `  • @${matchMatch[2]} vs @${matchMatch[3]}\n`;
@@ -167,7 +164,6 @@ export async function setupChatWidget() {
                     msg += `  • ${line}\n`;
                 }
             });
-            // Affiche dans une seule bulle de chat AVEC auteur et photo
             const msgWrapper = document.createElement("div");
             msgWrapper.className = `chat-widget-messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
             if (!self && !isGrouped) {
@@ -185,7 +181,7 @@ export async function setupChatWidget() {
                 profileImg.className = "chat-widget-messenger-avatar";
                 if (!isSystem) {
                     const user = userMap.get(authorId);
-                    profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+                    profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.bio || "No bio available", user?.id || 0);
                 }
                 row.appendChild(profileImg);
             } else {
@@ -195,8 +191,11 @@ export async function setupChatWidget() {
             }
             const messageContent = document.createElement("div");
             messageContent.className = `chat-widget-messenger-bubble${self ? " self" : ""}`;
-            // Affiche les sauts de ligne avec <br>
-            messageContent.innerHTML = msg.trim().replace(/\n/g, '<br>');
+            // Affiche les sauts de ligne avec <br> mais sans innerHTML dangereux
+            msg.trim().split('\n').forEach((line, idx, arr) => {
+                if (idx > 0) messageContent.appendChild(document.createElement('br'));
+                messageContent.appendChild(document.createTextNode(line));
+            });
             row.appendChild(messageContent);
             if (self && !isGrouped) {
                 const spacer = document.createElement("div");
@@ -228,7 +227,7 @@ export async function setupChatWidget() {
             profileImg.className = "chat-widget-messenger-avatar";
             if (!isSystem) {
                 const user = userMap.get(authorId);
-                profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+                profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.bio || "No bio available", user?.id || 0);
             }
             row.appendChild(profileImg);
         } else {
@@ -239,39 +238,41 @@ export async function setupChatWidget() {
         const messageContent = document.createElement("div");
         let mentionMatch = content.match(/^@(\w+)/);
         let mentionClass = (!self && mentionMatch) ? " chat-widget-messenger-bubble-mention" : "";
-        // Harmonisation de l'affichage du message d'invitation Pong
         const pongInviteRegex = /@([\w-]+) Click here to join my Pong game:? ?(.*)/;
         if (pongInviteRegex.test(content)) {
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
-            // Si l'utilisateur est l'auteur du message, afficher le texte simple
             if (self) {
                 messageContent.textContent = `Invitation sent to : ${dest}`;
             } else {
-                // Recherche l'URL d'invitation dans le message (si présente)
                 let roomId = null;
                 const roomMatch = content.match(/\/pong\/join\?room=([\w-]+)/);
                 if (roomMatch) roomId = roomMatch[1];
                 let inviteLink = roomId ? `/pong/join?room=${roomId}` : '#';
-                messageContent.innerHTML =
-                    `<span class=\"chat-widget-mention\">@${dest}</span> Click here to join my Pong game: ` +
-                    `<a href=\"${inviteLink}\" class=\"join-the-game-link\">Join the game</a>`;
+                // Construction sécurisée du contenu
+                const mentionSpan = document.createElement('span');
+                mentionSpan.className = 'chat-widget-mention';
+                mentionSpan.textContent = `@${dest}`;
+                messageContent.appendChild(mentionSpan);
+                messageContent.appendChild(document.createTextNode(' Click here to join my Pong game: '));
+                const link = document.createElement('a');
+                link.href = inviteLink;
+                link.className = 'join-the-game-link';
+                link.textContent = 'Join the game';
+                messageContent.appendChild(link);
             }
         } else if (mentionMatch) {
-            const mentionedUser = users.find(u => u.username === mentionMatch[1]);
-            if (mentionedUser) {
-                messageContent.innerHTML = content.replace(
-                    /^@(\w+)/,
-                    `<span class=\"chat-widget-mention\">@${mentionedUser.username}</span>`
-                );
-            } else {
-                messageContent.innerHTML = content.replace(
-                    /^@(\w+)/,
-                    '<span class=\"chat-widget-mention\">@$1</span>'
-                );
-            }
+            // Affichage sécurisé de la mention
+            const before = content.slice(0, mentionMatch[0].length);
+            const after = content.slice(mentionMatch[0].length);
+            const mentionSpan = document.createElement('span');
+            mentionSpan.className = 'chat-widget-mention';
+            mentionSpan.textContent = before;
+            messageContent.appendChild(mentionSpan);
+            messageContent.appendChild(document.createTextNode(after));
         } else {
-            messageContent.innerHTML = content.replace(/(Join The Game)/g, '<span class=\"join-the-game-link\">$1</span>');
+            // Tout le reste : texte brut
+            messageContent.textContent = content;
         }
         messageContent.className = `chat-widget-messenger-bubble${self ? " self" : ""}${mentionClass}`;
         row.appendChild(messageContent);

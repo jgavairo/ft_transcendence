@@ -29,7 +29,7 @@ export interface ChangePasswordRequest
 
 const getInfosHandler = async (request: FastifyRequest, reply: FastifyReply) => 
 {
-    try 
+    try
     {
         await authMiddleware(request as AuthenticatedRequest, reply);
         const user = await dbManager.getUserById((request as AuthenticatedRequest).user.id);

@@ -1,8 +1,11 @@
-.PHONY: up stop down clean
+.PHONY: up stop down clean certs
 
 all: up
 
-up:
+certs:
+	bash scripts/generate-certs.sh
+
+up: certs
 	docker compose up --build -d
 
 stop:

@@ -29,7 +29,11 @@ import { GAME_CONFIG } from './games/tower/config.js';
 // Créer l'application Fastify
 export const app = fastify({
     logger: true,
-    bodyLimit: 10 * 1024 * 1024 // 10MB
+    bodyLimit: 10 * 1024 * 1024, // 10MB
+    https: {
+        key: fs.readFileSync('/app/ssl/privkey.pem'),
+        cert: fs.readFileSync('/app/ssl/fullchain.pem')
+    }
 });
 
 // Fonction d'initialisation des plugins

@@ -59,7 +59,7 @@ export async function renderPeopleList(filter = "") {
             div.className = "friend-item";
             // Make the whole item clickable
             div.addEventListener("click", () => {
-                showProfileCard(person.username, person.profile_picture, person.email, person.bio, person.id);
+                showProfileCard(person.username, person.profile_picture, person.bio, person.id);
             });
             // Container for profile image
             const profileContainer = document.createElement("div");
@@ -224,7 +224,7 @@ export function setupSearchInput() {
         renderPeopleList(input.value);
     });
 }
-export async function showProfileCard(username, profilePicture, email, bio, userId) {
+export async function showProfileCard(username, profilePicture, bio, userId) {
     // Each time it opens, fetch up-to-date user info
     let userInfo = null;
     try {
@@ -239,7 +239,6 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     }
     if (userInfo) {
         profilePicture = userInfo.profile_picture || 'default-profile.png';
-        email = userInfo.email || 'Email not available';
         bio = userInfo.bio || 'No bio available';
         userId = userInfo.id || userId;
     }
@@ -376,10 +375,6 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     const name = document.createElement("h3");
     name.className = "profile-card-name";
     name.textContent = username;
-    // Add the email
-    const emailElement = document.createElement("p");
-    emailElement.className = "profile-card-email";
-    emailElement.textContent = `Email: ${email}`;
     // Add the bio
     const bioElement = document.createElement("p");
     bioElement.className = "profile-card-bio";
@@ -467,7 +462,6 @@ export async function showProfileCard(username, profilePicture, email, bio, user
     card.appendChild(closeButton);
     card.appendChild(img);
     card.appendChild(name);
-    card.appendChild(emailElement);
     card.appendChild(bioElement);
     card.appendChild(statsAndHistorySection); // Merged frame
     overlay.appendChild(card);
