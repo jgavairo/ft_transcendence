@@ -1420,6 +1420,18 @@ export class PongMenuManager {
         this.buttons.forEach(button => button.group.destroy());
         this.buttons = [];
         this.menuLayer.destroyChildren();
+        // Ajout du texte du timer
+        let secondsLeft = 1.5;
+        const timerText = new Konva.Text({
+            text: `Returning to menu in ${secondsLeft.toFixed(1)}s...`,
+            fontFamily: 'Press Start 2P',
+            fontSize: 14,
+            fill: '#007bff',
+            x: gameWidth / 2 - 200,
+            y: 550,
+            width: 450,
+            align: 'center',
+        });
         // Création du texte du gagnant
         const winnerText = new Konva.Text({
             text: `${winnerName} WIN`,
@@ -1434,20 +1446,7 @@ export class PongMenuManager {
             shadowBlur: 20,
             shadowOpacity: 0.8
         });
-        // Ajout du texte du timer
-        let secondsLeft = 2.5;
-        const timerText = new Konva.Text({
-            text: `Returning to menu in ${secondsLeft.toFixed(1)}s...`,
-            fontFamily: 'Press Start 2P',
-            fontSize: 14,
-            fill: '#007bff',
-            x: gameWidth / 2 - 200,
-            y: 550,
-            width: 450,
-            align: 'center',
-        });
         this.menuLayer.add(winnerText);
-        this.menuLayer.add(timerText);
         // Animation d'entrée du texte
         const finalY = 300;
         const speed = 5;
@@ -1458,6 +1457,7 @@ export class PongMenuManager {
                 requestAnimationFrame(animate);
             }
             else {
+                this.menuLayer.add(timerText);
                 // Timer de redirection
                 let interval = setInterval(() => {
                     secondsLeft -= 0.1;
