@@ -30,6 +30,6 @@ RUN tsc
 # Copie du schéma SQL
 COPY src/database/schema.sql dist/database/schema.sql
 
-EXPOSE 3000
+# EXPOSE 3000
 
 CMD ["node", "dist/server.js"]
