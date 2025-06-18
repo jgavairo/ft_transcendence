@@ -1,7 +1,6 @@
 import { FastifyRequest, FastifyReply, FastifyPluginAsync } from 'fastify';
 import { dbManager } from "../database/database.js";
-import { authMiddleware } from '../middleware/auth.js';
-import { AuthenticatedRequest } from './user.js';
+import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 
 interface FirstGameBody {
   gameId: number;
@@ -27,8 +26,8 @@ const getAllGamesHandler = async (request: FastifyRequest, reply: FastifyReply) 
 
 const isFirstGameHandler = async ( request: FastifyRequest, reply:   FastifyReply): Promise<void> => {
   try {
-    // run your auth middleware first
-    await authMiddleware(request as AuthenticatedRequest, reply);
+    // // run your auth middleware first
+    // await authMiddleware(request as AuthenticatedRequest, reply);
 
     // now cast body
     const { gameId, mode } = request.body as { gameId: number; mode: number };

@@ -3,7 +3,7 @@ import { startSoloPong, startSoloPongVsBot, startSoloTri } from './SocketEmit.js
 import api from '../../helpers/api.js';
 import { HOSTNAME } from '../../main.js';
 export async function getFirstPlay() {
-    const response = await api.get(`http://${HOSTNAME}:3000/api/games/1/1/hasPlayed`);
+    const response = await api.get(`https://${HOSTNAME}:8443/api/games/1/1/hasPlayed`);
     const { hasPlayed } = await response.json();
     return hasPlayed;
 }
@@ -11,7 +11,7 @@ export async function launchSoloPongVsBot(modal, username) {
     modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    // const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`, {
+    // const response = await api.post(`https://${HOSTNAME}:8443/api/games/isFirstGame`, {
     //   gameId: 1,
     //   mode:   1
     // });
@@ -36,7 +36,7 @@ export async function launchSoloPongWithTutorial(modal, username) {
     modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`, {
+    const response = await api.post(`https://${HOSTNAME}:8443/api/games/isFirstGame`, {
         gameId: 1,
         mode: 1
     });
@@ -59,7 +59,7 @@ export async function launchSoloTriWithTutorial(modal, username) {
     modal.innerHTML = '<canvas id="gameCanvas" width="1200" height="800"></canvas>';
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const response = await api.post(`http://${HOSTNAME}:3000/api/games/isFirstGame`, {
+    const response = await api.post(`https://${HOSTNAME}:8443/api/games/isFirstGame`, {
         gameId: 1,
         mode: 3
     });

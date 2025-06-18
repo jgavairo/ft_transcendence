@@ -4,7 +4,7 @@ export function showNotification(message: string)
     notification.className = 'notification';
     notification.textContent = message;
     document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
+    setTimeout(() => notification.remove(), 8443);
 }
 
 export function showErrorNotification(message: string) 
@@ -13,5 +13,5 @@ export function showErrorNotification(message: string)
     notification.className = 'notification-error';
     notification.textContent = message;
     document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
+    setTimeout(() => notification.remove(), 8443);
 }
