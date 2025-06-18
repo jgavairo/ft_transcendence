@@ -2,6 +2,9 @@
 import Konva from "https://cdn.skypack.dev/konva";
 import { MainApp } from "../../main.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
+import { renderRankings } from "../../pages/library/showGameDetails.js";
+import { GameManager } from "../../managers/gameManager.js";
+import api from "../../helpers/api.js";
 const gameWidth = 1200;
 const gameHeight = 800;
 export class TowerMenuManager {
@@ -321,7 +324,17 @@ export class TowerMenuManager {
             case 'main':
                 this.createButton('PLAY', gameWidth / 2 - 125, 350, () => this.changeMenu('play'));
                 this.createButton('UNITS', gameWidth / 2 - 125, 440, () => this.changeMenu('units'));
-                this.createButton('QUIT', gameWidth / 2 - 125, 530, () => {
+                this.createButton('QUIT', gameWidth / 2 - 125, 530, async () => {
+                    var _a;
+                    const res = await api.get('/api/games/getAll');
+                    const data = await res.json();
+                    const gameId = (_a = data.games.find((g) => g.name.toLowerCase() === 'tower')) === null || _a === void 0 ? void 0 : _a.id;
+                    const rankingsContainer = document.querySelector('#rankings-container');
+                    if (rankingsContainer && rankingsContainer.offsetParent !== null) {
+                        console.log("Rankings container found");
+                        const currentUser = await GameManager.getCurrentUser();
+                        await renderRankings(gameId, rankingsContainer, currentUser);
+                    }
                     const modal = document.getElementById('optionnalModal');
                     this.stage.destroy();
                     if (modal)

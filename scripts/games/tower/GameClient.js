@@ -35,7 +35,7 @@ export class GameClient {
         }
         this.menu.changeMenu('main');
     }
-    endMatch(winner) {
+    async endMatch(winner) {
         this.cleanup();
         const container = document.getElementById("games-modal");
         if (!container) {

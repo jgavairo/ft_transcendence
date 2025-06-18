@@ -4,6 +4,8 @@ import { InputHandler } from './InputHandler.js';
 import { HOSTNAME, MainApp } from '../../main.js';
 import { TowerMenuManager } from './GameMenu.js';
 import { showErrorNotification, showNotification } from '../../helpers/notifications.js';
+import { renderRankings } from '../../pages/library/showGameDetails.js';
+import { GameManager } from '../../managers/gameManager.js';
 
 
 export class GameClient
@@ -52,7 +54,7 @@ export class GameClient
         this.menu.changeMenu('main');
     }
 
-    public endMatch(winner: string)
+    public async endMatch(winner: string)
     {
         this.cleanup();
         const container = document.getElementById("games-modal");
