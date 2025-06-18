@@ -94,6 +94,25 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
     
     // TOURNAMENT
     socket.on( 'joinTournamentQueue', async ({ username, userId }: { username: string, userId?: string }) => {
+    
+    // Toujours supprimer l'ancien mapping pour ce socket.id
+    socketToUserId.delete(socket.id);
+    
+    // NOUVEAU: Nettoyage préventif des anciens sockets de cet userId
+    if (userId) {
+      const oldSocketIds = getAllSocketIdsForUser(userId);
+      // Supprimer les anciens sockets déconnectés de cet userId
+      oldSocketIds.forEach(oldSid => {
+        if (!gameNs.sockets.has(oldSid)) {
+          socketToUserId.delete(oldSid);
+          // Aussi nettoyer les queues
+          tournamentQueues[4] = tournamentQueues[4].filter(p => p.id !== oldSid);
+        } else if (oldSid !== socket.id) {
+          // Socket encore connecté mais différent du socket actuel
+        }
+      });
+    }
+    
     // Clean up: remove any queue entries with disconnected sockets only
     let q = tournamentQueues[4];
     const beforeCleanup = q.length;
@@ -124,16 +143,24 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         })
       );
     }
-    if (userId) socketToUserId.set(socket.id, userId);
+    
     // Blocage anti-doublon userId AVANT ajout à la file
-    const userIdsInQueue = tournamentQueues[4].map(p => (p.id && socketToUserId.get(p.id)) || p.id);
+    const userIdsInQueue = tournamentQueues[4]
+    .map(p => socketToUserId.get(p.id))
+    .filter(uid => uid !== undefined);
+
+    // // 🛑 Vérification stricte : userId déjà en attente ?
     if (userId && userIdsInQueue.includes(userId)) {
       socket.emit('error', { message: 'Tournoi bloqué : multi-fenêtre ou double connexion détectée.' });
       return;
     }
+    
+    // ✅ Pas de doublon détecté, on peut ajouter l'utilisateur
+    if (userId) socketToUserId.set(socket.id, userId);
     if (!tournamentQueues[4].find(p => p.id === socket.id)) {
       tournamentQueues[4].push({ id: socket.id, username });
     }
+    
 
     q.forEach(p =>
       gameNs.sockets
@@ -711,11 +738,14 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       if (userId) {
         socketIds = getAllSocketIdsForUser(userId);
       }
+
       classicQueue = classicQueue.filter(p => !socketIds.includes(p.id));
       triQueue     = triQueue.filter(p => !socketIds.includes(p.id));
       tournamentQueues[4] = tournamentQueues[4].filter(p => !socketIds.includes(p.id));
-      socketIds.forEach((sid: string) => socketToUserId.delete(sid));
-      // Optionnel : suppression dans les tournois en cours (si tu veux vraiment tout nettoyer)
+      socketIds.forEach((sid: string) => {
+        socketToUserId.delete(sid);
+      });
+
     });
 
     // --- PRIVATE ROOM ---
@@ -803,109 +833,133 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
     });
 
     // --- Quit tournament at READY step ---
-  socket.on('quitTournament', ({ tournamentId }: { tournamentId: string }) => {
-  const userId = socketToUserId.get(socket.id);
-  // on retire d'abord TOUTES les entrées en file pour ce userId (seulement queue 4)
-  tournamentQueues[4] = tournamentQueues[4].filter(p => {
-    const pUserId = socketToUserId.get(p.id);
-    // on garde seulement ceux qui ne sont ni ce socket, ni liés à ce userId
-    return p.id !== socket.id && pUserId !== userId;
-  });
-  // et on notifie les autres joueurs encore en attente
-  const joined = tournamentQueues[4].map(p => p.username);
-  const status = tournamentQueues[4].map(p => ({
-    id: p.id,
-    username: p.username,
-    ready: false,
-    eliminated: false,
-    isInGame: false
-  }));
-  tournamentQueues[4].forEach(p =>
-    gameNs.sockets.get(p.id)?.emit('tournamentBracket', { size: 4, joined, status })
-  );
+    socket.on('quitTournament', ({ tournamentId }: { tournamentId: string }) => {
+      const userId = socketToUserId.get(socket.id);
 
-  // puis on fait pareil dans le tournoi déjà lancé (si l'ID est valide)
-  const tour = tournaments.get(tournamentId) as BasicTournament|undefined;
-  if (tour) {
-    // on enlève tous les p.id ou userId correspondants
-    tour.allPlayers = tour.allPlayers.filter(p => {
-      const pUid = socketToUserId.get(p.id);
-      return p.id !== socket.id && pUid !== userId;
-    });
-    tour.players    = tour.players.filter(p => {
-      const pUid = socketToUserId.get(p.id);
-      return p.id !== socket.id && pUid !== userId;
-    });
-    // on purge ready / finalReady
-    socketToUserId.forEach((uid, sid) => {
-      if (uid === userId || sid === socket.id) {
-        tour.ready.delete(sid);
-        tour.finalReady?.delete(sid);
+
+      // 🔹 Supprimer de la file d'attente du tournoi (queue 4)
+      // Nettoyage plus agressif : supprimer TOUS les sockets liés à cet userId
+      if (userId) {
+        const allSocketsForUser = getAllSocketIdsForUser(userId);
+        tournamentQueues[4] = tournamentQueues[4].filter(p => {
+          const pUserId = socketToUserId.get(p.id);
+          return !allSocketsForUser.includes(p.id) && pUserId !== userId;
+        });
+      } else {
+        // Fallback si pas d'userId
+        tournamentQueues[4] = tournamentQueues[4].filter(p => p.id !== socket.id);
       }
-    });
-    // pour chaque match, si un joueur a quitté, on le marque éliminé
-    Object.values(tour.matches).forEach(m => {
-      // si l'un des deux a quitté et qu'il n'y a pas encore de winner
-      if (!m.winner && m.players.some(p => {
-        const pUid = socketToUserId.get(p.id);
-        return p.id === socket.id || pUid === userId;
-      })) {
-        // l'autre devient gagnant par forfait
-        const survivor = m.players.find(p => {
+
+      // 🔹 Mise à jour de l'affichage des brackets pour les autres en attente
+      const joined = tournamentQueues[4].map(p => p.username);
+      const status = tournamentQueues[4].map(p => ({
+        id: p.id,
+        username: p.username,
+        ready: false,
+        eliminated: false,
+        isInGame: false
+      }));
+      tournamentQueues[4].forEach(p =>
+        gameNs.sockets.get(p.id)?.emit('tournamentBracket', { size: 4, joined, status })
+      );
+
+      // 🔹 On récupère le tournoi en cours (si encore en mémoire)
+      const tour = tournaments.get(tournamentId) as BasicTournament | undefined;
+
+      if (tour) {
+        // 🔸 Nettoyage des joueurs
+        tour.allPlayers = tour.allPlayers.filter(p => {
           const pUid = socketToUserId.get(p.id);
           return p.id !== socket.id && pUid !== userId;
-        })!;
-        m.winner = survivor;
+        });
+        tour.players = tour.players.filter(p => {
+          const pUid = socketToUserId.get(p.id);
+          return p.id !== socket.id && pUid !== userId;
+        });
+
+        // 🔸 Nettoyage des états de readiness
+        socketToUserId.forEach((uid, sid) => {
+          if (uid === userId || sid === socket.id) {
+            tour.ready.delete(sid);
+            tour.finalReady?.delete(sid);
+          }
+        });
+
+        // 🔸 Mise à jour des matchs (victoires par forfait)
+        Object.values(tour.matches).forEach(m => {
+          if (!m.winner && m.players.some(p => {
+            const pUid = socketToUserId.get(p.id);
+            return p.id === socket.id || pUid === userId;
+          })) {
+            const survivor = m.players.find(p => {
+              const pUid = socketToUserId.get(p.id);
+              return p.id !== socket.id && pUid !== userId;
+            })!;
+            m.winner = survivor;
+          }
+          m.players = m.players.filter(p => {
+            const pUid = socketToUserId.get(p.id);
+            return p.id !== socket.id && pUid !== userId;
+          }) as [Player, Player];
+        });
+
+        // 🔸 Fin du tournoi si un seul joueur reste
+        if (tour.allPlayers.length === 1) {
+          const champ = tour.allPlayers[0];
+          gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: champ.username });
+          tournaments.delete(tour.id);
+        } else {
+          // Sinon : mise à jour du bracket
+          const joined = tour.allPlayers.map(p => p.username);
+          const status = tour.allPlayers.map(p => {
+            const inMatch = Object.values(tour.matches).find(m2 =>
+              m2.players.some(pl => pl.id === p.id)
+            );
+            const eliminated = inMatch?.winner ? (inMatch.winner.id !== p.id) : false;
+            let ready = false;
+            if (tour.round === 0) ready = tour.ready.get(p.id) || false;
+            else if (tour.round === 1 && tour.finalReady) ready = tour.finalReady.get(p.id) || false;
+            let isInGame = false;
+            if (inMatch && !inMatch.winner && !eliminated) isInGame = true;
+            return {
+              id: p.id,
+              username: p.username,
+              ready,
+              eliminated,
+              isInGame
+            };
+          });
+          gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
+            tournamentId: tour.id,
+            size: 4,
+            joined,
+            status
+          });
+        }
+      } else {
+        // 🔹 Si le tournoi est déjà supprimé : nettoyage minimal
+        if (userId) {
+          getAllSocketIdsForUser(userId).forEach(sid => socketToUserId.delete(sid));
+        } else {
+          socketToUserId.delete(socket.id);
+        }
       }
-      // on enlève physiquement le joueur de la liste
-      m.players = m.players.filter(p => {
-        const pUid = socketToUserId.get(p.id);
-        return p.id !== socket.id && pUid !== userId;
-      }) as [Player, Player];
+
+      // 🔹 Nettoyage final - PLUS AGRESSIF
+      // Supprimer TOUTES les entrées socketToUserId pour cet userId + ce socket spécifiquement
+      if (userId) {
+        const allSocketsForUser = getAllSocketIdsForUser(userId);
+        allSocketsForUser.forEach(sid => {
+          socketToUserId.delete(sid);
+        });
+      }
+      
+      // 🔹 IMPORTANT: Supprimer aussi ce socket spécifiquement de socketToUserId
+      // même s'il reste connecté, car il a quitté le tournoi
+      socketToUserId.delete(socket.id);
+
     });
 
-    // si plus qu'un seul joueur, on termine le tournoi
-    if (tour.allPlayers.length === 1) {
-      const champ = tour.allPlayers[0];
-      gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: champ.username });
-      tournaments.delete(tour.id);
-    } else {
-      // sinon, on recalcule et on renvoie le bracket à tout le monde
-      const joined = tour.allPlayers.map(p => p.username);
-      const status = tour.allPlayers.map(p => {
-        const inMatch = Object.values(tour.matches).find(m2 =>
-          m2.players.some(pl => pl.id === p.id)
-        );
-        const eliminated = inMatch?.winner ? (inMatch.winner.id !== p.id) : false;
-        let ready = false;
-        if (tour.round === 0) ready = tour.ready.get(p.id) || false;
-        else if (tour.round === 1 && tour.finalReady) ready = tour.finalReady.get(p.id) || false;
-        let isInGame = false;
-        if (inMatch && !inMatch.winner && !eliminated) isInGame = true;
-        return {
-          id: p.id,
-          username: p.username,
-          ready: ready,
-          eliminated: eliminated,
-          isInGame: isInGame
-        };
-      });
-      gameNs.to(`tour-${tour.id}`).emit('tournamentBracket', {
-        tournamentId: tour.id,
-        size: 4,
-        joined: tour.allPlayers.map((p: Player) => p.username),
-        status: status
-      });
-    }
-  }
-
-  // enfin, seulement après tout ça, on nettoie la map socket->userId
-  if (userId) {
-    getAllSocketIdsForUser(userId).forEach(sid => socketToUserId.delete(sid));
-  } else {
-    socketToUserId.delete(socket.id);
-  }
-});
 
 
 });

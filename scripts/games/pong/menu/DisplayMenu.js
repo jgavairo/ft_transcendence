@@ -3,7 +3,7 @@ import Konva from "https://cdn.skypack.dev/konva";
 import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong } from "../SocketEmit.js";
 import { connectPong, onMatchFound, onTriMatchFound, stopGame, initTournamentPong, hideGameCanvasAndShowMenu, setPrivateLobbyTrue } from "../pongGame.js";
-import { socket as gameSocket } from "../network.js";
+import { socket as gameSocket, socket } from "../network.js";
 import { launchSoloPongVsBot, launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
 import { renderPong } from "../renderPong.js";
 import { showErrorNotification, showNotification } from "../../../helpers/notifications.js";
@@ -425,8 +425,10 @@ export class PongMenuManager {
                 align: 'center'
             }));
             this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
-                PongMenuManager.tournamentEnded = false;
                 console.log('[DEBUG] MENU button clicked, tournamentEnded:', PongMenuManager.tournamentEnded);
+                socket.emit('quitTournament', { tournamentId: this.currentTourId });
+                socket.disconnect();
+                PongMenuManager.tournamentEnded = false;
                 this.activeTournamentMatchId = null;
                 this.stage.destroy();
                 displayMenu();
@@ -471,6 +473,10 @@ export class PongMenuManager {
     }
     showLobbyList(joined) {
         // Set a synthetic tournament ID if not set (for queue phase)
+        console.log('[PONG] showLobbyList called with joined:', joined);
+        if (!this.menuLayer || !this.menuLayer.getStage()) {
+            return;
+        }
         if (!this.currentTourId) {
             // Default to 4-player queue, or detect from joined size if needed
             this.currentTourId = `queue-${joined.length >= 8 ? 8 : 4}`;
@@ -482,7 +488,6 @@ export class PongMenuManager {
             fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
         }));
         this.createButton('CANCEL', gameWidth / 2 - 100, 200 + 450, () => {
-            console.log('[PONG] CANCEL button clicked, emitting quitTournament', this.currentTourId);
             if (typeof showErrorNotification === 'function')
                 showErrorNotification('Cancel clicked, quitTournament envoyé');
             if (this.currentTourId) {
@@ -506,6 +511,9 @@ export class PongMenuManager {
             };
             window.addEventListener('beforeunload', quitHandler, { once: true });
         }
+        if (!this.menuLayer || !this.menuLayer.getStage()) {
+            return;
+        }
         joined.forEach((u, i) => {
             this.menuLayer.add(new Konva.Text({
                 x: gameWidth / 2 - 100, y: 80 + i * 24 + 450,
@@ -513,7 +521,11 @@ export class PongMenuManager {
                 fontFamily: 'Press Start 2P', fontSize: 16, fill: '#fff'
             }));
         });
-        this.menuLayer.batchDraw();
+        if (this.menuLayer.getStage()) {
+            this.menuLayer.batchDraw();
+        }
+        else {
+        }
         // Si le joueur n'est plus dans la liste reçue, on change de menu automatiquement
         if (joined.indexOf(this.myUsername) === -1) {
             this.menuLayer.removeChildren();
@@ -521,6 +533,9 @@ export class PongMenuManager {
         }
     }
     async joinTournamentQueue(size, username) {
+        if (gameSocket.disconnected) {
+            gameSocket.connect();
+        }
         try {
             const current = await GameManager.getCurrentUser();
             const userId = current === null || current === void 0 ? void 0 : current.id;
@@ -595,7 +610,6 @@ export class PongMenuManager {
         const statusMap = Object.fromEntries(status.map(s => [s.username, s]));
         const me = statusMap[this.myUsername];
         if (me && me.isInGame) {
-            console.log('[DEBUG] Player is in a match, showing overlay');
             this.menuLayer.hide();
             return;
         }
@@ -843,13 +857,6 @@ export class PongMenuManager {
         }
     }
     async startMatchTournament({ matchId, side, opponent }) {
-        console.log('[DEBUG] startMatchTournament called', {
-            matchId,
-            side,
-            opponent,
-            lastBracketView: this.lastBracketView,
-            myUsername: this.myUsername
-        });
         // Prevent double launch for the same matchId
         if (this.activeTournamentMatchId === matchId)
             return;
@@ -1009,7 +1016,6 @@ export class PongMenuManager {
                         width: 400,
                         align: 'center'
                     }));
-                    console.log('[DEBUG] ELIMINATED VIEW', { isSpectator, finalistUsernames, myUsername: this.myUsername });
                     // Les deux éliminés voient les boutons SPECTATE et QUIT
                     this.menuLayer.add(new Konva.Text({
                         x: gameWidth / 2 - 200,
@@ -1439,7 +1445,7 @@ export class PongMenuManager {
             fontSize: 24,
             fill: padColor,
             x: gameWidth / 2 - 200,
-            y: -100, // Commence hors écran
+            y: -100,
             width: 400,
             align: 'center',
             shadowColor: padColor,
@@ -1488,7 +1494,7 @@ export class PongMenuManager {
             });
             this.particles.push({
                 shape: particle,
-                speed: -1 - Math.random() * 2, // Vitesse négative pour monter
+                speed: -1 - Math.random() * 2,
                 glowDirection: 1
             });
             this.backgroundLayer.add(particle);
