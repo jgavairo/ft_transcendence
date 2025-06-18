@@ -236,7 +236,7 @@ export class PongMenuManager
             this.menuLayer.batchDraw();
         });
 
-        buttonGroup.on('click', action);
+        buttonGroup.on('click touchstart', action);
 
         this.buttons.push
         ({
@@ -294,7 +294,7 @@ export class PongMenuManager
             this.menuLayer.batchDraw();
         });
 
-        buttonGroup.on('click', action);
+        buttonGroup.on('click touchstart', action);
 
         this.buttons.push
         ({
@@ -2006,6 +2006,7 @@ export class PongMenuManager
         try {
             const resp = await fetch(`/api/user/infos`, { credentials: "include" });
             const data = await resp.json();
+           
             if (data.success && data.user && data.user.username) {
                 currentUsername = data.user.username;
             }

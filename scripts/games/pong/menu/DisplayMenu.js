@@ -165,7 +165,7 @@ export class PongMenuManager {
             button.stroke('#00e7fe');
             this.menuLayer.batchDraw();
         });
-        buttonGroup.on('click', action);
+        buttonGroup.on('click touchstart', action);
         this.buttons.push({
             group: buttonGroup,
             text: text,
@@ -208,7 +208,7 @@ export class PongMenuManager {
             button.stroke('#555555');
             this.menuLayer.batchDraw();
         });
-        buttonGroup.on('click', action);
+        buttonGroup.on('click touchstart', action);
         this.buttons.push({
             group: buttonGroup,
             text: text,
