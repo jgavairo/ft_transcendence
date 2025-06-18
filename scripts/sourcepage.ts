@@ -69,7 +69,7 @@ const communityPage = `
         <!-- Messages will be displayed here -->
       </div>
       <div class="chat-input-wrapper">
-        <input type="text" id="chatInput" placeholder="Type your message here..." maxlength="280" />
+        <input type="text" id="chatInput" placeholder="Type your message here..." maxlength="250" />
         <button id="sendMessage">Send</button>
       </div>
     </section>

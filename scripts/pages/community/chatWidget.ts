@@ -95,7 +95,7 @@ export async function setupChatWidget() {
     const chatWindow = document.getElementById("chat-window");
     const closeBtn = document.getElementById("close-chat-window");
     const input = document.getElementById("chatInput") as HTMLInputElement;
-    input.maxLength = 300; // Limite de caractères côté HTML
+    input.maxLength = 250; // Limite de caractères côté HTML
     const sendBtn = document.getElementById("sendMessage") as HTMLButtonElement;
     const chatContainer = document.getElementById("chatContainer");
     const chatBubbleBadge = document.getElementById("chat-bubble-badge") as HTMLSpanElement;
@@ -328,9 +328,12 @@ export async function setupChatWidget() {
             if (sendBtn) sendBtn.style.display = 'none';
             return;
         }
-        const text = input.value.trim();
-        if (!text || text.length === 0 || text.length > 300) {
-            input.value = text.slice(0, 300); // Tronque si besoin
+        let text = input.value.trim();
+        if (text.length > 250) {
+            showErrorNotification("Message trop long (max 250 caractères)");
+            return;
+        }
+        if (!text || text.length === 0) {
             return;
         }
         canSend = false;
@@ -356,12 +359,17 @@ export async function setupChatWidget() {
             sendBtn.disabled = false;
         }, COOLDOWN_MS);
     });
-    input.addEventListener("input", () => {
-        if (input.value.length > 300) {
-            input.value = input.value.slice(0, 300);
+    input.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+            let text = input.value.trim();
+            if (text.length > 250) {
+                showErrorNotification("Message trop long (max 250 caractères)");
+                e.preventDefault();
+                return;
+            }
+            sendBtn.click();
         }
     });
-    input.addEventListener("keydown", e => { if (e.key === "Enter") sendBtn.click(); });
     socket.on("receiveMessage", async (messageData: { author: number|string, content: string }) => {
         const authorId = Number(messageData.author);
         if (authorId === currentUser.id) return;

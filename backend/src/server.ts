@@ -552,6 +552,10 @@ const start = async () => {
             socket.on('sendPrivateMessage', async (data, callback) => {
                 try {
                     const {to, author, content } = data;
+                    if (typeof content !== 'string' || content.length > 250) {
+                        if (callback) callback({ success: false, error: 'Message trop long (max 250 caractères)' });
+                        return;
+                    }
                     // author est maintenant un id utilisateur (number)
                     await dbManager.saveMessage(author, content);
                     const targetSocketid = userSocketMapChat.get(String(to));
@@ -584,6 +588,10 @@ const start = async () => {
             socket.on('sendMessage', async (data, callback) => {
                 try 
                 {
+                    if (typeof data.content !== 'string' || data.content.length > 250) {
+                        if (callback) callback({ success: false, error: 'Message trop long (max 250 caractères)' });
+                        return;
+                    }
                     await dbManager.saveMessage(data.author, data.content);
 
                     socket.broadcast.emit('receiveMessage', {

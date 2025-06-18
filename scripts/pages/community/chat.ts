@@ -313,7 +313,11 @@ export async function setupChat() {
             if (sendBtn) sendBtn.style.display = 'none';
             return;
         }
-        const text = input.value.trim();
+        let text = input.value.trim();
+        if (text.length > 250) {
+            showErrorNotification("Message trop long (max 250 caractères)");
+            return;
+        }
         if (text) {
             const mentionMatch = text.match(/^@(\w+)/);
             canSend = false;
@@ -345,9 +349,14 @@ export async function setupChat() {
             }, COOLDOWN_MS);
         }
     });
-
     input.addEventListener("keydown", e => {
         if (e.key === "Enter") {
+            let text = input.value.trim();
+            if (text.length > 250) {
+                showErrorNotification("Message trop long (max 250 caractères)");
+                e.preventDefault();
+                return;
+            }
             sendBtn.click();
         }
     });
