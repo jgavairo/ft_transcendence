@@ -6,7 +6,7 @@ import { LoginManager } from "./managers/loginManager.js";
 import { setupChatWidget, removeChatWidget } from "./pages/community/chatWidget.js";
 import { renderPeopleList, setupSearchInput } from "./pages/community/peopleList.js";
 import { showCommunityPage } from "./pages/community/community.js";
-import { setupLibrary } from "./games/library.js"; // Ajoute cette ligne si tu as une fonction d'init pour la library
+import { setupLibrary } from "./pages/library/library.js";
 
 const HOSTNAME = window.location.hostname;
 export { HOSTNAME };

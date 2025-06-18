@@ -8,7 +8,31 @@ export async function setupLibrary() {
     }
     console.log("Logged in, rendering library");
     const searchBar = document.getElementById("searchBar");
-    searchBar.addEventListener("input", () => renderLibrary(searchBar.value.toLowerCase()));
+    if (searchBar) {
+        // Limite HTML
+        searchBar.maxLength = 15;
+        // Validation JavaScript
+        searchBar.addEventListener("input", () => {
+            // Limite la longueur à 15 caractères
+            if (searchBar.value.length > 15) {
+                searchBar.value = searchBar.value.slice(0, 15);
+            }
+            renderLibrary(searchBar.value.toLowerCase());
+        });
+        // Empêcher le copier-coller de texte trop long
+        searchBar.addEventListener("paste", (e) => {
+            var _a;
+            e.preventDefault();
+            const pastedText = ((_a = e.clipboardData) === null || _a === void 0 ? void 0 : _a.getData('text')) || '';
+            if (pastedText.length > 15) {
+                searchBar.value = pastedText.slice(0, 15);
+            }
+            else {
+                searchBar.value = pastedText;
+            }
+            renderLibrary(searchBar.value.toLowerCase());
+        });
+    }
     // Initial render
     renderLibrary("");
 }

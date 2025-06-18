@@ -380,7 +380,7 @@ const send2FACodeHandler = async (request: FastifyRequest, reply: FastifyReply) 
             `
         };
         await transporter.sendMail(mailOptions);
-        return reply.send({ success: true, code });
+        return reply.send({ success: true });
     }
     catch (error)
     {
