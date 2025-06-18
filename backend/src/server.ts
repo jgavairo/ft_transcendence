@@ -743,7 +743,9 @@ const start = async () => {
                                     const player = await dbManager.getUserByUsername(playerUsername);
                                     const enemy = await dbManager.getUserByUsername(enemyUsername);
                                     if (player && player.id !== undefined && enemy && enemy.id !== undefined) {
-                                        const towerGameId = 3;
+                                        const towerGame = await dbManager.getAllGames();
+                                        const tower = towerGame.find(g => g.name.toLowerCase() === 'tower');
+                                        const towerGameId = tower ? tower.id : 3;
                                         const playerRaw = game.getState().player.tower;
                                         const enemyRaw = game.getState().enemy.tower;
                                         const playerScore = Math.max(0, Math.min(100, Math.round((playerRaw / 500) * 100)));
