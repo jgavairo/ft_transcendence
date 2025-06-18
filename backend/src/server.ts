@@ -319,7 +319,7 @@ app.get('/api/chat/history', { preHandler: authMiddleware }, async (request: Fas
 // NEWS ROUTES //
 ////////////////
 
-app.get('/api/news/getAll', async (request: FastifyRequest, reply: FastifyReply) => {
+app.get('/api/news/getAll', { preHandler: authMiddleware }, async (request: FastifyRequest, reply: FastifyReply) => {
     return newsRoutes.getAllNews(request, reply);
 });
 
@@ -348,6 +348,7 @@ app.post<{
   }>(
     '/api/games/isFirstGame',
     {
+      preHandler: authMiddleware,
       schema: {
         body: {
           type: 'object',
@@ -357,7 +358,7 @@ app.post<{
             mode:   { type: 'integer', minimum: 0, maximum: 3 }
           }
         }
-      }
+      },
     },
     gameRoutes.isFirstGame   // ← pas de wrapper, Fastify voit direct le bon type
   );
