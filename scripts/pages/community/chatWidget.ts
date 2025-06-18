@@ -185,7 +185,7 @@ export async function setupChatWidget() {
                 profileImg.className = "chat-widget-messenger-avatar";
                 if (!isSystem) {
                     const user = userMap.get(authorId);
-                    profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+                    profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.bio || "No bio available", user?.id || 0);
                 }
                 row.appendChild(profileImg);
             } else {
@@ -228,7 +228,7 @@ export async function setupChatWidget() {
             profileImg.className = "chat-widget-messenger-avatar";
             if (!isSystem) {
                 const user = userMap.get(authorId);
-                profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.email || "Email not available", user?.bio || "No bio available", user?.id || 0);
+                profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.bio || "No bio available", user?.id || 0);
             }
             row.appendChild(profileImg);
         } else {

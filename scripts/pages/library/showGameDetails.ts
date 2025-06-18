@@ -80,10 +80,9 @@ export async function renderRankings(gameId: number, container: HTMLElement, cur
         playerName.addEventListener('click', () => {
             const username = playerName.getAttribute('data-username')!;
             const profilePicture = playerName.getAttribute('data-profile-picture') || 'default-profile.png';
-            const email = playerName.getAttribute('data-email')!;
             const bio = playerName.getAttribute('data-bio') || 'No bio available';
             const userId = people.find(person => person.username === username)?.id || 0;
-            showProfileCard(username, profilePicture, email, bio, userId);
+            showProfileCard(username, profilePicture, bio, userId);
         });
     });
 
@@ -210,10 +209,9 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
         friendName.addEventListener('click', () => {
             const username = friendName.getAttribute('data-username')!;
             const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
-            const email = friendName.getAttribute('data-email')!;
             const bio = friendName.getAttribute('data-bio') || 'No bio available';
             const userId = people.find(person => person.username === username)?.id || 0;
-            showProfileCard(username, profilePicture, email, bio, userId);
+            showProfileCard(username, profilePicture, bio, userId);
         });
     });
 

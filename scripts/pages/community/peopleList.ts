@@ -70,7 +70,7 @@ export async function renderPeopleList(filter: string = "") {
 
             // Make the whole item clickable
             div.addEventListener("click", () => {
-                showProfileCard(person.username, person.profile_picture, person.email, person.bio, person.id);
+                showProfileCard(person.username, person.profile_picture, person.bio, person.id);
             });
 
             // Container for profile image
@@ -256,7 +256,7 @@ export function setupSearchInput() {
     });
 }
 
-export async function showProfileCard(username: string, profilePicture: string, email: string, bio: string, userId: number) {
+export async function showProfileCard(username: string, profilePicture: string, bio: string, userId: number) {
     // Each time it opens, fetch up-to-date user info
     let userInfo = null;
     try {
@@ -268,7 +268,6 @@ export async function showProfileCard(username: string, profilePicture: string, 
     } catch (e) { userInfo = null; }
     if (userInfo) {
         profilePicture = userInfo.profile_picture || 'default-profile.png';
-        email = userInfo.email || 'Email not available';
         bio = userInfo.bio || 'No bio available';
         userId = userInfo.id || userId;
     }
@@ -411,11 +410,6 @@ export async function showProfileCard(username: string, profilePicture: string, 
     name.className = "profile-card-name";
     name.textContent = username;
 
-    // Add the email
-    const emailElement = document.createElement("p");
-    emailElement.className = "profile-card-email";
-    emailElement.textContent = `Email: ${email}`;
-
     // Add the bio
     const bioElement = document.createElement("p");
     bioElement.className = "profile-card-bio";
@@ -507,7 +501,6 @@ export async function showProfileCard(username: string, profilePicture: string, 
     card.appendChild(closeButton);
     card.appendChild(img);
     card.appendChild(name);
-    card.appendChild(emailElement);
     card.appendChild(bioElement);
     card.appendChild(statsAndHistorySection); // Merged frame
     overlay.appendChild(card);
