@@ -40,7 +40,6 @@ function onCanvasClick(e: MouseEvent) {
   else if (x >= btnQuitX && x <= btnQuitX + btnWidth &&
            y >= btnY     && y <= btnY     + btnHeight) {
     if (typeof window.close === 'function') window.close();
-    else console.log("Quitter le jeu");
   }
 }
 

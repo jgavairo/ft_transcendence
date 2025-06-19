@@ -116,7 +116,6 @@ export async function onMatchFound(data: any) {
 export async function onTriMatchFound(data: any) {
   modePong  = false;
   soloTri   = data.mode === 'solo-tri';
-  console.log('data mode =', data.mode);
   soloMode  = false;            // pas utilisé ici
   mySide    = soloTri ? 0 : data.side;
   lastState = null;
@@ -161,7 +160,6 @@ let loopId: number | null = null;
 
 export function stopGame() {
   // 1) Stop the requestAnimationFrame loop
-  console.log('stopGame called');
   isPrivateLobby = false;
   running = false;                    // ← disables rendering
   if (loopId !== null) {
@@ -206,7 +204,6 @@ export function connectPong(isOnline: boolean) {
   // Refresh rankings and friend list at the end of a Pong game
   socket.on('pongGameEnded', async ({ gameId }) => {
     const isLogged = await MainApp.checkAuth()
-    console.log('is logged:', isLogged);
     if (!isLogged.success) 
       {
         console.warn('User is not logged in, skipping rankings refresh.');
@@ -269,28 +266,27 @@ export function connectPong(isOnline: boolean) {
       msg = 'Already registered for the tournament.';
     }
     showErrorNotification(msg);
-    // Redirect to appropriate menu based on error message
-    let menuTarget: string = 'multi';
-    if (/tournoi|tournament/i.test(msg)) {
-      menuTarget = 'tournament';
+    // Always clear menuLayer and buttons before changing menu
+    if ((PongMenuManager as any).instance) {
+      const menuMgr = (PongMenuManager as any).instance;
+      if (menuMgr.menuLayer && typeof menuMgr.menuLayer.removeChildren === 'function') {
+        menuMgr.menuLayer.removeChildren();
+        menuMgr.menuLayer.batchDraw?.();
+      }
+      if (Array.isArray(menuMgr.buttons)) {
+        menuMgr.buttons.forEach((btn: any) => btn.group?.destroy?.());
+        menuMgr.buttons = [];
+      }
     }
-    // Complete cleanup of menuLayer before changing menu
-    if ((PongMenuManager as any).instance && (PongMenuManager as any).instance.menuLayer) {
-      (PongMenuManager as any).instance.menuLayer.removeChildren?.();
-      (PongMenuManager as any).instance.menuLayer.clear?.();
-    }
+    // Redirect to appropriate menu
     if ((PongMenuManager as any).instance && typeof (PongMenuManager as any).instance.changeMenu === 'function') {
-      (PongMenuManager as any).instance.changeMenu(menuTarget);
-    } else if (typeof displayMenu === 'function') {
-      displayMenu().then(() => {
-        if ((PongMenuManager as any).instance && (PongMenuManager as any).instance.menuLayer) {
-          (PongMenuManager as any).instance.menuLayer.removeChildren?.();
-          (PongMenuManager as any).instance.menuLayer.clear?.();
-        }
-        if ((PongMenuManager as any).instance && typeof (PongMenuManager as any).instance.changeMenu === 'function') {
-          (PongMenuManager as any).instance.changeMenu(menuTarget);
-        }
-      });
+      if (/tournoi|tournament/i.test(msg)) {
+        (PongMenuManager as any).instance.changeMenu('tournament');
+      } else {
+        (PongMenuManager as any).instance.changeMenu('main');
+      }
+    } else {
+      displayMenu();
     }
   });
 }
@@ -378,7 +374,6 @@ function onKeyUp(e: KeyboardEvent) {
 
 // Initialise le canvas et le contexte
 export function startPong() {
-  console.log('startpong lance');
   const modal = document.getElementById('games-modal');
   if (modal)
     modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
@@ -488,6 +483,18 @@ socket.on('error', (data: { message: string }) => {
       msg = 'You are already registered for the tournament.';
     }
     showErrorNotification(msg);
+    // Always clear menuLayer and buttons before changing menu
+    if ((PongMenuManager as any).instance) {
+      const menuMgr = (PongMenuManager as any).instance;
+      if (menuMgr.menuLayer && typeof menuMgr.menuLayer.removeChildren === 'function') {
+        menuMgr.menuLayer.removeChildren();
+        menuMgr.menuLayer.batchDraw?.();
+      }
+      if (Array.isArray(menuMgr.buttons)) {
+        menuMgr.buttons.forEach((btn: any) => btn.group?.destroy?.());
+        menuMgr.buttons = [];
+      }
+    }
     // Redirect to appropriate menu
     if ((PongMenuManager as any).instance && typeof (PongMenuManager as any).instance.changeMenu === 'function') {
       if (/tournoi|tournament/i.test(msg)) {

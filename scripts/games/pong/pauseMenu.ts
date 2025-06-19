@@ -8,7 +8,6 @@ export let hoverQuit   = false;
 
 export function onEscapeKey(e: KeyboardEvent) {
   if (e.key === 'Escape') {
-    console.log('menu pause');
     showPauseMenu = !showPauseMenu;
   }
 }
