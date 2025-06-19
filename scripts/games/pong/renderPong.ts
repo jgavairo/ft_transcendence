@@ -1,5 +1,6 @@
 import { ctx, MatchState, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames, canvas, startPong } from "./pongGame.js";
 import { animateEnd } from "./menu/DisplayFinishGame.js";
+import { PongMenuManager } from "./menu/DisplayMenu.js";
 //perte de vie
 interface LifeFlash { index: number; frame: number };
 const FLASH_FRAMES   = 20;      // nombre de frames de l’animation
@@ -315,13 +316,15 @@ export async function renderPong(state: MatchState, isTournament = false) {
     });
     // 7) overlay game over
     if (state.gameOver) {
+      console.log("gameOver is tournament:", isTournament);
       if (isTournament) {
         // → Si on est en tournoi, on ne fait PAS l'animation de fin.
         //    On retourne directement, le client tournament prendra le relais
         //    (nettoyera le menu + retour au lobby).
+        console.log("gameOver is tournament: returning");
         return;
       }
-
+      console.log("gameOver is tournament: not returning");
       // -- Sinon, on est en mode solo/2-players classique : on joue l'animation de fin --
       setGameoverTrue();
 
@@ -333,8 +336,8 @@ export async function renderPong(state: MatchState, isTournament = false) {
         : (winnerIndex === mySide ? playerName : opponentName);
 
       // b) on lance l’animation « animateEnd / displayEndMatch »
-      animateEnd(winnerName, padColor);
-      renderGameOverMessage(state);
+      const menu = new PongMenuManager(false);
+      menu.displayEndMatch(winnerName, padColor);
       start = false;  // pour remettre la particule en pause si besoin
 
       // on ne remonte pas plus haut

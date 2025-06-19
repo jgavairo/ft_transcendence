@@ -155,6 +155,7 @@ function startAnimation(drawText: (frame: number) => void) {
 
 
 export function animateEnd(winnerName: string, padColor: string): void {
+  console.log("animateEnd");
   // startAnimation((frame) => {
   //   if (frame >= 60) {
   //     const tText = Math.min(1, (frame - 60) / 40);

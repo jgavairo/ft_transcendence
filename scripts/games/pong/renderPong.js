@@ -1,12 +1,12 @@
-import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames, startPong } from "./pongGame.js";
-import { animateEnd } from "./menu/DisplayFinishGame.js";
+import { ctx, setGameoverTrue, mySide, playerName, opponentName, playerNames, startPong } from "./pongGame.js";
+import { PongMenuManager } from "./menu/DisplayMenu.js";
 ;
-const FLASH_FRAMES = 20; // nombre de frames de l’animation
-const EXPANSION = 30; // de combien l’anneau s’agrandit
+const FLASH_FRAMES = 20; // nombre de frames de l'animation
+const EXPANSION = 30; // de combien l'anneau s'agrandit
 const MAX_ALPHA = 0.6; // opacité initiale
 let prevLives = [];
 let lifeFlashes = [];
-const DEATH_FRAMES = 30; // frames totales de l’animation
+const DEATH_FRAMES = 30; // frames totales de l'animation
 const DEATH_EXP = 60; // expansion max du ring gris
 let deathFlashes = [];
 const CW = 1200;
@@ -216,7 +216,7 @@ export async function renderPong(state, isTournament = false) {
     }
     // Explosion: update & draw
     updateAndDrawExplosions(ctx);
-    // Si la partie est terminée, on vide les particules d'explosion pour éviter qu'elles ne s'affichent au match suivant
+    // Si la partie est terminée, on vide les particules d'explosion pour éviter quelles ne s'affichent au match suivant
     if (state.gameOver) {
         explosionParticles.length = 0;
     }
@@ -268,12 +268,15 @@ export async function renderPong(state, isTournament = false) {
     });
     // 7) overlay game over
     if (state.gameOver) {
+        console.log("gameOver is tournament:", isTournament);
         if (isTournament) {
             // → Si on est en tournoi, on ne fait PAS l'animation de fin.
             //    On retourne directement, le client tournament prendra le relais
             //    (nettoyera le menu + retour au lobby).
+            console.log("gameOver is tournament: returning");
             return;
         }
+        console.log("gameOver is tournament: not returning");
         // -- Sinon, on est en mode solo/2-players classique : on joue l'animation de fin --
         setGameoverTrue();
         // a) trouver l'indice du gagnant (première raquette dont lives > 0)
@@ -282,9 +285,14 @@ export async function renderPong(state, isTournament = false) {
         const winnerName = (Array.isArray(playerNames) && playerNames.length === state.paddles.length)
             ? playerNames[winnerIndex]
             : (winnerIndex === mySide ? playerName : opponentName);
-        // b) on lance l’animation « animateEnd / displayEndMatch »
-        animateEnd(winnerName, padColor);
-        renderGameOverMessage(state);
+        // b) on lance l'animation « animateEnd / displayEndMatch »
+        const menu = PongMenuManager.getInstance();
+        if (menu) {
+            menu.displayEndMatch(winnerName, padColor);
+        }
+        else {
+            console.error('[renderPong] Aucune instance de PongMenuManager trouvée pour displayEndMatch');
+        }
         start = false; // pour remettre la particule en pause si besoin
         // on ne remonte pas plus haut
         return;
@@ -383,7 +391,7 @@ function drawSkull(ctx, x, y, size) {
     ctx.arc(-8, 10, 4, 0, Math.PI * 2);
     ctx.arc(8, 10, 4, 0, Math.PI * 2);
     ctx.fill();
-    // Croix d’os sous le crâne
+    // Croix d'os sous le crâne
     ctx.lineWidth = 4;
     ctx.strokeStyle = 'rgba(180,180,180,0.8)';
     ctx.beginPath();

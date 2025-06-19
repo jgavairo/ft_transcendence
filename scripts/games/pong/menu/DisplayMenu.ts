@@ -1670,9 +1670,8 @@ export class PongMenuManager
                         this.menuLayer.batchDraw();
                     } else {
                         clearInterval(interval);
-                        this.stage.destroy();
                         stopGame();
-                        displayMenu();
+                        this.changeMenu('multi');
                     }
                 }, 100);
             }
