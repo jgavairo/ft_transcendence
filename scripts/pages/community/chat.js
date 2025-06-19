@@ -90,7 +90,7 @@ export async function setupChat() {
         let isSystem = false;
         let displayName = '';
         let profilePic = '';
-        if (authorIdRaw === 'system' || isNaN(authorId) || authorIdRaw == 0) {
+        if (authorIdRaw === 'BOT' || isNaN(authorId) || authorIdRaw == 0) {
             isSystem = true;
             displayName = 'BOT';
             profilePic = '/assets/games/pong/pong.png';

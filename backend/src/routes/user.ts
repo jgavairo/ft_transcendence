@@ -221,7 +221,13 @@ const isBlockedHandler = async (request: FastifyRequest, reply: FastifyReply) =>
     try {
         await authMiddleware(request as AuthenticatedRequest, reply);
         const { username } = request.body as { username: string };
-        if (!username) return reply.status(400).send({ success: false, message: "Username required" });
+        // Si c'est le BOT, ne pas envoyer l'erreur 400
+        if (!username) {
+            if (username === 'BOT' || username === 'bot') {
+                return reply.send({ success: true, isBlocked: false });
+            }
+            return reply.status(400).send({ success: false, message: "Username required" });
+        }
         const isBlocked = await dbManager.isUserBlocked((request as AuthenticatedRequest).user.id, username);
         return reply.send({ success: true, isBlocked });
     } catch (error) {
@@ -232,7 +238,7 @@ const isBlockedHandler = async (request: FastifyRequest, reply: FastifyReply) =>
 
 function isValidUsername(username: string)
 {
-    const usernameRegex = /^(?=.{3,20}$)(?!.*[_.-]{2})[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/;
+    const usernameRegex = /^(?=.{3,20$)(?!.*[_.-]{2})[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/;
     return usernameRegex.test(username);
 }
 

@@ -16,12 +16,12 @@ export function createExplosion(cx, cy) {
         const vx = Math.cos(angle) * speed;
         const vy = Math.sin(angle) * speed;
         explosion.push({
-            x: cx + (Math.random() - 0.5) * 10,
+            x: cx + (Math.random() - 0.5) * 10, // légère dispersion initiale
             y: cy + (Math.random() - 0.5) * 10,
             vx,
             vy,
             alpha: 1,
-            size: 4 + Math.random() * 4,
+            size: 4 + Math.random() * 4, // taille entre 4 et 8 px
             color: "orange"
         });
     }
