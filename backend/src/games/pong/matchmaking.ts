@@ -228,7 +228,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       }
       tournamentAutoReadyTimers.set(tour.id, setTimeout(() => {
         const t = tournaments.get(tour.id) as BasicTournament;
-        if (!t) return;
+        if (!t) return; // <-- Fix: stop if tournament was deleted
         // Met tous les joueurs ready
         t.ready = new Map(t.players.map(p => [p.id, true]));
         gameNs.to(`tour-${t.id}`).emit('tournamentReadyUpdate', {

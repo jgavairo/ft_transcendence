@@ -149,9 +149,6 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
         });
         if (loser >= 0) match.paddles[loser].lives--;
 
-        // explosion on the client side
-        nsp.to(match.roomId).emit('ballExplode', { x: b.x, y: b.y });
-
         // reset to the initial speed
         resetBall(b);
       }

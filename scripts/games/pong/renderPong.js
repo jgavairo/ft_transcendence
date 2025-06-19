@@ -1,5 +1,4 @@
-import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames } from "./pongGame.js";
-import { explosion } from "./ballExplosion.js";
+import { ctx, setGameoverTrue, mySide, renderGameOverMessage, playerName, opponentName, playerNames, startPong } from "./pongGame.js";
 import { animateEnd } from "./menu/DisplayFinishGame.js";
 ;
 const FLASH_FRAMES = 20; // nombre de frames de l’animation
@@ -26,6 +25,69 @@ const PADDLE_COLORS = [
     '#ffe156', // jaune
     '#7cff00', // vert (pour un 4e joueur éventuel)
 ];
+let explosionCooldown = 0; // pour éviter plusieurs explosions par frame
+const explosionParticles = [];
+export function resetExplosionParticles() {
+    explosionParticles.length = 0;
+}
+function createExplosion(cx, cy) {
+    const colors = ["#ffae00", "#ff4c00", "#fff200", "#ff00c8", "#ffffff", "#ffe156", "#ff0000"];
+    const numParticles = 28 + Math.floor(Math.random() * 12);
+    for (let i = 0; i < numParticles; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 3 + Math.random() * 4;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+        explosionParticles.push({
+            x: cx + (Math.random() - 0.5) * 8,
+            y: cy + (Math.random() - 0.5) * 8,
+            vx,
+            vy,
+            alpha: 1,
+            size: 10 + Math.random() * 14,
+            color: colors[Math.floor(Math.random() * colors.length)]
+        });
+    }
+}
+function updateAndDrawExplosions(ctx) {
+    for (let i = explosionParticles.length - 1; i >= 0; i--) {
+        const p = explosionParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.96;
+        p.vy *= 0.96;
+        p.alpha -= 0.018 + Math.random() * 0.012;
+        p.size *= 0.97;
+        if (p.alpha <= 0.01 || p.size < 2) {
+            explosionParticles.splice(i, 1);
+            continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 18;
+        ctx.fill();
+        ctx.restore();
+    }
+}
+let prevBallInside = true;
+let prevBallX = CX;
+let prevBallY = CY;
+// Patch: reset prevBallInside à chaque début de partie
+const _origStartPong = startPong;
+export function startPongPatched() {
+    prevBallInside = true;
+    resetAllPongVisualState(); // <-- Reset all visual state (explosions, flashes, prevLives)
+    _origStartPong();
+}
+// Remplace l'export de startPong par la version patchée
+// (si tu utilises startPong ailleurs, importe depuis renderPong.js)
+// Variables pour mémoriser la dernière position de la balle avant perte de vie
+let lastBallXBeforeLifeLoss = CX;
+let lastBallYBeforeLifeLoss = CY;
 // Dessine l'état de la partie Tri-Pong
 export async function renderPong(state, isTournament = false) {
     //if alreadyPLayed = NOT DISPLAY TUTO
@@ -58,7 +120,6 @@ export async function renderPong(state, isTournament = false) {
         if (p.lives < prevLives[i]) {
             lifeFlashes.push({ index: i, frame: 0 });
         }
-        prevLives[i] = p.lives;
     });
     // 4) paddles avec glow pour le tien - chaque raquette a sa couleur
     state.paddles.forEach((p, i) => {
@@ -128,15 +189,37 @@ export async function renderPong(state, isTournament = false) {
     ctx.arc(bx, by, 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-    explosion.forEach(p => {
-        ctx.save();
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = 'orange';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    });
+    // Mémorise la dernière position de la balle avant perte de vie
+    let lifeLost = false;
+    if (prevLives.length > 0) {
+        for (let i = 0; i < state.paddles.length; i++) {
+            if (prevLives[i] > state.paddles[i].lives) {
+                lifeLost = true;
+            }
+        }
+    }
+    if (!lifeLost) {
+        lastBallXBeforeLifeLoss = bx;
+        lastBallYBeforeLifeLoss = by;
+    }
+    // Explosion de la balle quand un joueur perd une vie, à la dernière position connue avant respawn
+    if (prevLives.length > 0) {
+        for (let i = 0; i < state.paddles.length; i++) {
+            if (prevLives[i] > state.paddles[i].lives) {
+                createExplosion(lastBallXBeforeLifeLoss, lastBallYBeforeLifeLoss);
+            }
+        }
+    }
+    // Met à jour prevLives APRÈS le test
+    for (let i = 0; i < state.paddles.length; i++) {
+        prevLives[i] = state.paddles[i].lives;
+    }
+    // Explosion: update & draw
+    updateAndDrawExplosions(ctx);
+    // Si la partie est terminée, on vide les particules d'explosion pour éviter qu'elles ne s'affichent au match suivant
+    if (state.gameOver) {
+        explosionParticles.length = 0;
+    }
     // 6) vies (cœurs) et noms combinés dans un seul bloc - plus petit et plus sobre
     const marginLeft = 20;
     const marginTop = 18;
@@ -310,4 +393,10 @@ function drawSkull(ctx, x, y, size) {
     ctx.lineTo(0, 45);
     ctx.stroke();
     ctx.restore();
+}
+export function resetAllPongVisualState() {
+    explosionParticles.length = 0;
+    lifeFlashes = [];
+    deathFlashes = [];
+    prevLives = [];
 }

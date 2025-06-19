@@ -2,7 +2,6 @@ import { displayMenu, PongMenuManager } from './menu/DisplayMenu.js';
 import { socket } from './network.js';
 import { renderRankings } from '../../pages/library/showGameDetails.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
-import { createExplosion, explosion } from './ballExplosion.js';
 import { renderPong } from './renderPong.js';
 import { sendMove, sendMoveTri } from './SocketEmit.js';
 import { fetchUsernames, renderFriendList } from '../../pages/library/showGameDetails.js'; // Ajout pour friend list
@@ -135,8 +134,6 @@ export function stopGame() {
     // 2) Unbind keyboard listeners
     // window.removeEventListener('keydown', onKeyDown);
     // window.removeEventListener('keyup',   onKeyUp);
-    // 4) Stop the particles/explosions module
-    explosion.length = 0;
     // 5) Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     // 6) Other cleanup
@@ -158,10 +155,6 @@ export function connectPong(isOnline) {
         socket.off('matchFoundTri').on('matchFoundTri', onTriMatchFound);
         socket.off('stateUpdateTri').on('stateUpdateTri', onGameState);
     }
-    // Explosion de balle
-    socket.off('ballExplode').on('ballExplode', ({ x, y }) => {
-        createExplosion(x, y);
-    });
     // Refresh rankings and friend list at the end of a Pong game
     socket.on('pongGameEnded', async ({ gameId }) => {
         const isLogged = await MainApp.checkAuth();
@@ -360,6 +353,7 @@ export function startPong() {
     canvas.width = CW;
     canvas.height = CH;
     initPauseMenu(canvas, ctx, displayMenu);
+    // --- Plus besoin de startExplosionAnimation ici ---
 }
 export function initTournamentPong(side, you, opponent) {
     // 1) Replicate what onMatchFound + startPong did, but in tournament mode
@@ -382,9 +376,6 @@ export function initTournamentPong(side, you, opponent) {
     ctx = canvas.getContext('2d');
     canvas.width = CW; // 1200
     canvas.height = CH; // 800
-    socket.on('ballExplode', ({ x, y }) => {
-        createExplosion(x, y);
-    });
     socket.off('matchFound');
     socket.off('matchFoundTri');
     socket.off('stateUpdateTri');
@@ -428,7 +419,6 @@ export function resetGame() {
     gameover = false;
     firstFrame = false;
     lastState = null;
-    explosion.length = 0;
 }
 export function hideGameCanvasAndShowMenu() {
     // Hide the game canvas if it exists

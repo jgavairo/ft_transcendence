@@ -4,7 +4,7 @@ import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong } from "../SocketEmit.js";
 import { connectPong, onMatchFound, onTriMatchFound, stopGame, initTournamentPong, hideGameCanvasAndShowMenu, setPrivateLobbyTrue } from "../pongGame.js";
 import { socket as gameSocket, socket } from "../network.js";
-import { launchSoloPongVsBot, launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
+import { launchSoloPongVsBot, launchSoloPongWithTutorial, launchSoloTriWithTutorial, getFirstPlay } from "../tutorialLauncher.js";
 import { renderPong } from "../renderPong.js";
 import { showErrorNotification, showNotification } from "../../../helpers/notifications.js";
 import { MainApp } from "../../../main.js";
@@ -303,7 +303,11 @@ export class PongMenuManager {
                 break;
             case 'play':
                 this.createButton('SOLO', gameWidth / 2 - 100, 450, () => this.changeMenu('solo'));
-                this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
+                const first = await getFirstPlay();
+                if (first)
+                    this.createButton('MULTI', gameWidth / 2 - 100, 520, () => this.changeMenu('multi'));
+                else
+                    this.createButton2('MULTI', gameWidth / 2 - 100, 520, () => showNotification('1 game in solo remaining'));
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('main'));
                 break;
             case 'solo':
@@ -694,7 +698,7 @@ export class PongMenuManager {
                 }));
                 // READY button for eligible finalist
                 if (me && !me.eliminated && !me.ready && (this.myUsername === finalist1 || this.myUsername === finalist2)) {
-                    this.createButton('READY', gameWidth / 2 - 100, gameHeight - 120, () => {
+                    this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, () => {
                         gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
                         this.buttons.forEach(btn => btn.group.hide());
                         this.menuLayer.add(new Konva.Text({
@@ -744,7 +748,7 @@ export class PongMenuManager {
             }
             // READY button pour eligible semi-finalist
             if (me && !me.eliminated && !me.ready) {
-                this.createButton('READY', gameWidth / 2 - 100, gameHeight - 120, () => {
+                this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, () => {
                     gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
                     this.buttons.forEach(btn => btn.group.hide());
                     this.menuLayer.add(new Konva.Text({
@@ -937,7 +941,7 @@ export class PongMenuManager {
                         width: 400,
                         align: 'center'
                     }));
-                    const countdownText = this.menuLayer.add(new Konva.Text({
+                    const countdownText = new Konva.Text({
                         x: gameWidth / 2 - 200,
                         y: 400,
                         text: 'Game starting in 5',
@@ -946,7 +950,8 @@ export class PongMenuManager {
                         fill: '#fc4cfc',
                         width: 400,
                         align: 'center'
-                    }));
+                    });
+                    this.menuLayer.add(countdownText);
                     // --- FIX: clear any previous interval and store timer as class property ---
                     if (this.finalCountdownTimer) {
                         clearInterval(this.finalCountdownTimer);
