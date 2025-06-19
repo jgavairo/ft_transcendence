@@ -28,7 +28,6 @@ export class MainApp
 {
     static async init()
     {
-        console.log("init");
         document.addEventListener('DOMContentLoaded', async () => {
             await this.setupHeader();
             this.setupCurrentPage(false);
@@ -62,7 +61,6 @@ export class MainApp
 
     static async setupHeader()
     {
-        console.log("setupHeader");
         const headerElement = document.getElementById('header');
         if (!headerElement)
         {
@@ -72,7 +70,6 @@ export class MainApp
         if (await LoginManager.isLoggedIn())
         {
             const userInfos = await this.getUserInfo();
-            console.log('User infos:', userInfos);
             if (!userInfos)
             {
                 console.error('User infos not found');
@@ -90,7 +87,6 @@ export class MainApp
 
     static setupCurrentPage(forceStore: boolean = false)
     {
-        console.log("setupCurrentPage");
         const mainElement = document.getElementById('main');
         if (!mainElement)
         {
@@ -135,5 +131,4 @@ export class MainApp
         }
     }
 }
-console.log("MainApp");
 MainApp.init();

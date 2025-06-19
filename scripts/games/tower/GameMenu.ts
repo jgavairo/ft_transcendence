@@ -162,7 +162,6 @@ export class TowerMenuManager {
             this.updateLayout();
         });
 
-        console.log("Menu Tower initialized");
     }
 
     private animateTitle() {
@@ -324,8 +323,7 @@ export class TowerMenuManager {
         // Annuler les animations existantes avant de changer de menu
         this.cancelAllAnimations();
 
-        // Vérifier si le stage existe, sinon le réinitialiser
-        console.log("Changing menu to", menuType);
+
         const container = document.getElementById("games-modal");
         if (!container) {
             console.error("Canvas not found");
@@ -391,11 +389,9 @@ export class TowerMenuManager {
             };
         }
 
-        console.log("Cleaning up old buttons");
         // Nettoie les anciens boutons
         this.buttons.forEach(button => button.group.destroy());
         this.buttons = [];
-        console.log("Buttons cleaned");
 
         switch (menuType) {
             case 'main':
@@ -407,7 +403,6 @@ export class TowerMenuManager {
                     const gameId = data.games.find((g: any) => g.name.toLowerCase() === 'tower')?.id;
                     const rankingsContainer = document.querySelector('#rankings-container') as HTMLElement;
                     if (rankingsContainer && rankingsContainer.offsetParent !== null) {
-                        console.log("Rankings container found");
                         const currentUser = await GameManager.getCurrentUser();
                         await renderRankings(gameId, rankingsContainer, currentUser);
                     }

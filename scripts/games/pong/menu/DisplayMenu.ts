@@ -61,6 +61,9 @@ export class PongMenuManager
 
     private privateRoomId?: string;
 
+    private particleAnimationActive: boolean = false;
+    private victoryParticlesActive: boolean = false;
+
     constructor(title: boolean = true, showMainMenu: boolean = true)
     {
         PongMenuManager.instance = this;
@@ -75,12 +78,9 @@ export class PongMenuManager
             document.body.appendChild(canvas);
         }
         canvas.style.display = '';
-        console.log('[KONVA] games-modal trouvé ou créé');
-        // --- Correction : supprime et recrée le div .konvajs-content à chaque fois ---
         let oldKonvaDiv = canvas.querySelector('.konvajs-content');
         if (oldKonvaDiv) {
             oldKonvaDiv.remove();
-            console.log('[KONVA] Ancien .konvajs-content supprimé');
         }
         const konvaDiv = document.createElement('div');
         konvaDiv.className = 'konvajs-content';
@@ -88,13 +88,11 @@ export class PongMenuManager
         konvaDiv.style.width = '1200px';
         konvaDiv.style.height = '800px';
         canvas.appendChild(konvaDiv);
-        console.log('[KONVA] Nouveau .konvajs-content ajouté dans games-modal');
         this.stage = new Konva.Stage({
             container: canvas,
             width: 1200,
             height: 800
         });
-        console.log('[KONVA] Konva.Stage créé');
         // --- Correction : assure la présence du div Konva et de la classe ---
         let konvaDiv2 = canvas.querySelector('div');
         if (!konvaDiv2) {
@@ -152,6 +150,9 @@ export class PongMenuManager
             this.stage.height(gameHeight);
             this.updateLayout();
         });
+
+        this.particleAnimationActive = true;
+        this.animateParticles();
     }
 
     private animateTitle()
@@ -341,17 +342,17 @@ export class PongMenuManager
 
     public animateParticles(): void
     {
+        if (!this.particleAnimationActive) return;
+        if (!this.stage || !this.stage.content || this.stage._id === undefined) return;
         // Parcourt toutes les particules existantes
         this.particles.forEach((particle, index) => {
             // Déplace la particule vers le bas selon sa vitesse
             particle.shape.y(particle.shape.y() + particle.speed);
-            
             // Animation de la lueur
             const currentBlur = particle.shape.shadowBlur();
             if (currentBlur >= 15) particle.glowDirection = -1;
             if (currentBlur <= 5) particle.glowDirection = 1;
             particle.shape.shadowBlur(currentBlur + particle.glowDirection * 0.2);
-            
             // Si la particule sort de l'écran par le bas
             if (particle.shape.y() > this.stage.height()) {
                 // Supprime la particule du canvas
@@ -360,15 +361,12 @@ export class PongMenuManager
                 this.particles.splice(index, 1);
             }
         });
-
         // 5% chance to create a new particle each frame
         if (Math.random() < 0.15) {
             this.createParticle();
         }
-
         // Refresh the background layer display
         this.backgroundLayer.batchDraw();
-
         // Continue the animation on the next frame
         requestAnimationFrame(() => this.animateParticles());
     }
@@ -396,6 +394,9 @@ export class PongMenuManager
 
     async changeMenu(menuType: 'main' | 'play' | 'solo' | 'multi' | 'multi-2' | 'multi-3' | 'lobby2' | 'lobby3' | 'tournament')
     {
+        // Stop particle animation before changing menu
+        this.particleAnimationActive = false;
+
         this.buttons.forEach(button =>
         {
             button.group.destroy();
@@ -408,6 +409,7 @@ export class PongMenuManager
             case 'main':
                 this.createButton('PLAY', gameWidth / 2 - 100, 450, () => this.changeMenu('play'));
                 this.createButton('QUIT', gameWidth / 2 - 100, 520, () => {
+                    this.particleAnimationActive = false;
                     const modal = document.getElementById('optionnalModal');
                     this.stage.destroy();
                     if (modal) modal.innerHTML = '';
@@ -449,6 +451,10 @@ export class PongMenuManager
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('multi'));
                 break;
         }
+
+        // After all buttons are created and menu is set up:
+        this.particleAnimationActive = true;
+        this.animateParticles();
     }
 
     //fonctions pr tournoi
@@ -474,6 +480,7 @@ export class PongMenuManager
               isInGame?: boolean;
             }[];
           }) => {
+          if (!this.stage || this.stage._id === undefined || !this.menuLayer || this.menuLayer.getStage() == null) return;
           this.currentTourSize = view.size;
           // Si le joueur n'est plus dans la liste, on sort du lobby
           if (view.joined && view.joined.indexOf(this.myUsername) === -1) {
@@ -516,7 +523,7 @@ export class PongMenuManager
               isInGame?: boolean;
             }[];
           }) => {
-            
+          if (!this.stage || this.stage._id === undefined || !this.menuLayer || this.menuLayer.getStage() == null) return;
           this.currentTourSize = view.size;
           this.currentTourId   = view.tournamentId;
       
@@ -543,13 +550,14 @@ export class PongMenuManager
       
         // 2) Match trouvé
         gameSocket.on('tournamentMatchFound', (data: MatchFoundData) => {
+            if (!this.stage || this.stage._id === undefined || !this.menuLayer || this.menuLayer.getStage() == null) return;
             this.startMatchTournament(data); 
         });
       
         // 3) Tournoi terminé
         gameSocket.on('tournamentOver', (data: { winner: string }) => {
+          if (!this.stage || this.stage._id === undefined || !this.menuLayer || this.menuLayer.getStage() == null) return;
           PongMenuManager.tournamentEnded = true;
-          console.log('[DEBUG] tournamentOver event received', data, 'tournamentEnded:', PongMenuManager.tournamentEnded);
           this.activeTournamentMatchId = null;
           this.menuLayer.removeChildren();
           // Do NOT call renderSimpleBracket here! Only show winner message and MENU button.
@@ -557,7 +565,6 @@ export class PongMenuManager
           if (this.lastBracketView) {
             const me = this.lastBracketView.status.find(s => s.username === this.myUsername);
             const finalists = this.lastBracketView.status.filter(s => !s.eliminated);
-            console.log('[DEBUG] tournamentOver: me', me, 'finalists', finalists);
             if (me && !me.eliminated && finalists.length === 2 && finalists.some(f => f.username === data.winner)) {
               winnerText = `🏆 ${data.winner} wins the tournament!`;
             } else {
@@ -566,7 +573,6 @@ export class PongMenuManager
           } else {
             winnerText = `Tournament over! Winner: ${data.winner}`;
           }
-          console.log('[DEBUG] tournamentOver: winnerText', winnerText);
           this.menuLayer.add(new Konva.Text({
             x: gameWidth / 2 - 200,
             y: 350,
@@ -578,11 +584,11 @@ export class PongMenuManager
             align: 'center'
           }));
           this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
-            console.log('[DEBUG] MENU button clicked, tournamentEnded:', PongMenuManager.tournamentEnded);
             socket.emit('quitTournament', { tournamentId: this.currentTourId });
             socket.disconnect();
             PongMenuManager.tournamentEnded = false;
             this.activeTournamentMatchId = null;
+            this.particleAnimationActive = false;
             this.stage.destroy();
             displayMenu();
           });
@@ -590,6 +596,7 @@ export class PongMenuManager
         });
 
         gameSocket.on('tournamentFinalSpectate', (data: { matchId: string, finalists: string[] }) => {
+          if (!this.stage || this.stage._id === undefined || !this.menuLayer || this.menuLayer.getStage() == null) return;
           this.menuLayer.removeChildren();
           this.buttons.forEach(btn => btn.group.destroy());
           this.buttons = [];
@@ -627,7 +634,6 @@ export class PongMenuManager
       
       private showLobbyList(joined: string[]) {
         // Set a synthetic tournament ID if not set (for queue phase)
-        console.log('[PONG] showLobbyList called with joined:', joined);
         if (!this.menuLayer || !this.menuLayer.getStage()) {
           return;
         }
@@ -1381,12 +1387,12 @@ export class PongMenuManager
 
     public start()
     {
+        this.particleAnimationActive = true;
         this.animateParticles();
         setTimeout(() => {
             if (!this.animationSkipped && this.showMainMenu)
                 this.changeMenu('main');
         }, 2000);
-        console.log("Menu displayed");
 
     }
 
@@ -1513,7 +1519,6 @@ export class PongMenuManager
             }
             else if (nbPlayers === 3)
             {
-                console.log("match found 2 players");
                 const menu = PongMenuManager.instance;
                 
                 // Nettoyage des éléments existants
@@ -1603,7 +1608,6 @@ export class PongMenuManager
                 const currentUser = await GameManager.getCurrentUser();
                 const username = currentUser?.username || "Player";
                 // modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
-                console.log('Current user for solo 2 players:', username);
                 switch (nbPlayers)
                 {
                     case 1:
@@ -1682,7 +1686,7 @@ export class PongMenuManager
                         this.menuLayer.batchDraw();
                     } else {
                         clearInterval(interval);
-                        this.stage.destroy();
+                        this.victoryParticlesActive = false;
                         stopGame();
                         displayMenu();
                     }
@@ -1714,7 +1718,10 @@ export class PongMenuManager
 
         // Animation des particules de victoire
         const animateVictoryParticles = () => {
+            if (!this.victoryParticlesActive) return;
+            if (!this.stage || !this.stage.content || this.stage._id === undefined) return;
             this.particles.forEach((particle, index) => {
+                // Déplace la particule vers le bas selon sa vitesse
                 particle.shape.y(particle.shape.y() + particle.speed);
                 
                 const currentBlur = particle.shape.shadowBlur();
@@ -1749,7 +1756,6 @@ export class PongMenuManager
 
     public static matchFound2Players(data: any) : void
     {
-        console.log("match found 2 players");
         const menu = PongMenuManager.instance;
         
         // Nettoyage des éléments existants
@@ -1815,7 +1821,6 @@ export class PongMenuManager
 
     public static matchFound3Players(data: any) : void
     {
-        console.log("match found 2 players");
         const menu = PongMenuManager.instance;
         
         // Nettoyage des éléments existants
@@ -1980,7 +1985,7 @@ export class PongMenuManager
             const userId = currentUser?.id;
             gameSocket.emit('createPrivateRoom', { username, nbPlayers, userId }, (data: { roomId: string }) => {
                 this.privateRoomId = data.roomId;
-                this.menuLayer.destroyChildren();
+                               this.menuLayer.destroyChildren();
                 const waitingText = new Konva.Text({
                     text: 'Waiting for other players to join...',
                     fontFamily: 'Press Start 2P',
@@ -1995,13 +2000,13 @@ export class PongMenuManager
                 this.createButton('INVITE', gameWidth / 2 - 100, 530, () => {
                     this.showInvitingList(1, data.roomId);
                 });
-                this.createButton('BACK', gameWidth / 2 - 100, 600, () => {
+                this.createButton('BACK', gameWidth /  2 - 100, 600, () => {
                     gameSocket.emit('leavePrivateRoom', { roomId: data.roomId });
                     waitingText.destroy();
                     const quitButton = this.buttons.find(button => button.text === 'QUIT');
                     if (quitButton) quitButton.group.destroy();
                     gameSocket.disconnect();
-                    this.changeMenu('multi');
+                                       this.changeMenu('multi');
                 });
                 this.menuLayer.batchDraw();
             });
@@ -2143,17 +2148,15 @@ export class PongMenuManager
     }
 
     public startFromLink(roomId: string) {
+        this.particleAnimationActive = true;
         this.animateParticles();
         // Start directly the private lobby with the roomId (2 players by default)
         this.privateLobby(2, roomId);
-        console.log("Menu displayed from link");
     }
 }
-
 export async function displayMenu() : Promise<void>
 {
     const menu = new PongMenuManager(true);
-    console.log("game started");
     menu.start();
 }
 

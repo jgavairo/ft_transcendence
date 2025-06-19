@@ -319,9 +319,7 @@ export class GameRenderer {
 
             knightButton.on('click', () => {
                 if (!this.buttonCooldowns.get(knightButton)) {
-                    console.log('Spawn knight');
                     const spawnSuccess = this.gameClient.spawnUnit('knight');
-                    console.log('Spawn success:', spawnSuccess);
                     if (spawnSuccess) {
                         this.handleButtonCooldown(knightButton, knightImage);
                     }
@@ -368,9 +366,7 @@ export class GameRenderer {
 
             mageButton.on('click', () => {
                 if (!this.buttonCooldowns.get(mageButton)) {
-                    console.log('Spawn mage');
                     const spawnSuccess = this.gameClient.spawnUnit('mage');
-                    console.log('Spawn success:', spawnSuccess);
                     if (spawnSuccess) {
                         this.handleButtonCooldown(mageButton, mageImage);
                     }
@@ -417,9 +413,7 @@ export class GameRenderer {
 
             minotaurButton.on('click', () => {
                 if (!this.buttonCooldowns.get(minotaurButton)) {
-                    console.log('Spawn minotaur');
                     const spawnSuccess = this.gameClient.spawnUnit('minotaur');
-                    console.log('Spawn success:', spawnSuccess);
                     if (spawnSuccess) {
                         this.handleButtonCooldown(minotaurButton, minotaurImage);
                     }
@@ -466,9 +460,7 @@ export class GameRenderer {
 
             samouraiButton.on('click', () => {
                 if (!this.buttonCooldowns.get(samouraiButton)) {
-                    console.log('Spawn samourai');
                     const spawnSuccess = this.gameClient.spawnUnit('samourai');
-                    console.log('Spawn success:', spawnSuccess);
                     if (spawnSuccess) {
                         this.handleButtonCooldown(samouraiButton, samouraiImage);
                     }
@@ -515,9 +507,7 @@ export class GameRenderer {
 
             samouraiArcherButton.on('click', () => {
                 if (!this.buttonCooldowns.get(samouraiArcherButton)) {
-                    console.log('Spawn samouraiArcher');
                     const spawnSuccess = this.gameClient.spawnUnit('samouraiArcher');
-                    console.log('Spawn success:', spawnSuccess);
                     if (spawnSuccess) {
                         this.handleButtonCooldown(samouraiArcherButton, samouraiArcherImage);
                     }

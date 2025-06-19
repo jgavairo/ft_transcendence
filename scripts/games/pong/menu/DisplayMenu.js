@@ -16,6 +16,8 @@ export class PongMenuManager {
         this.buttons = [];
         this.animationSkipped = false;
         this.myUsername = '';
+        this.particleAnimationActive = false;
+        this.victoryParticlesActive = false;
         // Dans DisplayMenu.ts (ou où vous aviez startMatchTournament)
         this.gameStateHandlers = new Map();
         this.activeTournamentMatchId = null;
@@ -99,6 +101,8 @@ export class PongMenuManager {
             this.stage.height(gameHeight);
             this.updateLayout();
         });
+        this.particleAnimationActive = true;
+        this.animateParticles();
     }
     animateTitle() {
         const finalY = 70;
@@ -243,6 +247,10 @@ export class PongMenuManager {
         this.backgroundLayer.add(particle);
     }
     animateParticles() {
+        if (!this.particleAnimationActive)
+            return;
+        if (!this.stage || !this.stage.content || this.stage._id === undefined)
+            return;
         // Parcourt toutes les particules existantes
         this.particles.forEach((particle, index) => {
             // Déplace la particule vers le bas selon sa vitesse
@@ -287,6 +295,8 @@ export class PongMenuManager {
         this.stage.batchDraw();
     }
     async changeMenu(menuType) {
+        // Stop particle animation before changing menu
+        this.particleAnimationActive = false;
         this.buttons.forEach(button => {
             button.group.destroy();
         });
@@ -295,6 +305,7 @@ export class PongMenuManager {
             case 'main':
                 this.createButton('PLAY', gameWidth / 2 - 100, 450, () => this.changeMenu('play'));
                 this.createButton('QUIT', gameWidth / 2 - 100, 520, () => {
+                    this.particleAnimationActive = false;
                     const modal = document.getElementById('optionnalModal');
                     this.stage.destroy();
                     if (modal)
@@ -337,10 +348,15 @@ export class PongMenuManager {
                 this.createButton('BACK', gameWidth / 2 - 100, 590, () => this.changeMenu('multi'));
                 break;
         }
+        // After all buttons are created and menu is set up:
+        this.particleAnimationActive = true;
+        this.animateParticles();
     }
     setupSocketListeners() {
         // 1) Bracket (liste des inscrits)
         gameSocket.on('tournamentBracket', (view) => {
+            if (!this.stage || this.stage._id === undefined || !this.menuLayer || this.menuLayer.getStage() == null)
+                return;
             this.currentTourSize = view.size;
             // Si le joueur n'est plus dans la liste, on sort du lobby
             if (view.joined && view.joined.indexOf(this.myUsername) === -1) {
@@ -371,6 +387,8 @@ export class PongMenuManager {
         });
         // À chaque update "ready"
         gameSocket.on('tournamentReadyUpdate', (view) => {
+            if (!this.stage || this.stage._id === undefined || !this.menuLayer || this.menuLayer.getStage() == null)
+                return;
             this.currentTourSize = view.size;
             this.currentTourId = view.tournamentId;
             // Convertir en PlayerStatus[]
@@ -393,10 +411,14 @@ export class PongMenuManager {
         });
         // 2) Match trouvé
         gameSocket.on('tournamentMatchFound', (data) => {
+            if (!this.stage || this.stage._id === undefined || !this.menuLayer || this.menuLayer.getStage() == null)
+                return;
             this.startMatchTournament(data);
         });
         // 3) Tournoi terminé
         gameSocket.on('tournamentOver', (data) => {
+            if (!this.stage || this.stage._id === undefined || !this.menuLayer || this.menuLayer.getStage() == null)
+                return;
             PongMenuManager.tournamentEnded = true;
             console.log('[DEBUG] tournamentOver event received', data, 'tournamentEnded:', PongMenuManager.tournamentEnded);
             this.activeTournamentMatchId = null;
@@ -434,12 +456,15 @@ export class PongMenuManager {
                 socket.disconnect();
                 PongMenuManager.tournamentEnded = false;
                 this.activeTournamentMatchId = null;
+                this.particleAnimationActive = false;
                 this.stage.destroy();
                 displayMenu();
             });
             this.menuLayer.batchDraw();
         });
         gameSocket.on('tournamentFinalSpectate', (data) => {
+            if (!this.stage || this.stage._id === undefined || !this.menuLayer || this.menuLayer.getStage() == null)
+                return;
             this.menuLayer.removeChildren();
             this.buttons.forEach(btn => btn.group.destroy());
             this.buttons = [];
@@ -1214,6 +1239,7 @@ export class PongMenuManager {
         });
     }
     start() {
+        this.particleAnimationActive = true;
         this.animateParticles();
         setTimeout(() => {
             if (!this.animationSkipped && this.showMainMenu)
@@ -1484,7 +1510,7 @@ export class PongMenuManager {
                     }
                     else {
                         clearInterval(interval);
-                        this.stage.destroy();
+                        this.victoryParticlesActive = false;
                         stopGame();
                         displayMenu();
                     }
@@ -1512,7 +1538,12 @@ export class PongMenuManager {
         };
         // Animation des particules de victoire
         const animateVictoryParticles = () => {
+            if (!this.victoryParticlesActive)
+                return;
+            if (!this.stage || !this.stage.content || this.stage._id === undefined)
+                return;
             this.particles.forEach((particle, index) => {
+                // Déplace la particule vers le bas selon sa vitesse
                 particle.shape.y(particle.shape.y() + particle.speed);
                 const currentBlur = particle.shape.shadowBlur();
                 if (currentBlur >= 15)
@@ -1912,6 +1943,7 @@ export class PongMenuManager {
         document.body.appendChild(overlay);
     }
     startFromLink(roomId) {
+        this.particleAnimationActive = true;
         this.animateParticles();
         // Start directly the private lobby with the roomId (2 players by default)
         this.privateLobby(2, roomId);
