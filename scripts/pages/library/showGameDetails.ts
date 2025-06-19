@@ -49,6 +49,16 @@ export async function renderRankings(gameId: number, container: HTMLElement, cur
         };
     }));
 
+    // Fonction simple pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath: string | null, username: string) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
+
     // Générer le HTML pour le classement
     container.innerHTML = `
         <div class="rankingSection">
@@ -58,7 +68,7 @@ export async function renderRankings(gameId: number, container: HTMLElement, cur
                     ${rankedPeople.map((person: RankedPerson, index: number) => `
                         <li class="rankingItem" id="user-${person.username}">
                             <span class="numberRank">${index + 1}</span> <!-- Numéro de classement -->
-                            <img src="${person.profile_picture || 'default-profile.png'}" class="profilePic" alt="${person.username}">
+                            <img src="${getImageUrl(person.profile_picture, person.username)}" class="profilePic" alt="${person.username}">
                             <span class="playerName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
                                 ${person.username}
                             </span>
@@ -82,7 +92,7 @@ export async function renderRankings(gameId: number, container: HTMLElement, cur
             const profilePicture = playerName.getAttribute('data-profile-picture') || 'default-profile.png';
             const bio = playerName.getAttribute('data-bio') || 'No bio available';
             const userId = people.find(person => person.username === username)?.id || 0;
-            showProfileCard(username, profilePicture, bio, userId);
+            showProfileCard(username, getImageUrl(profilePicture, username), bio, userId);
         });
     });
 
@@ -111,6 +121,16 @@ export async function renderRankings(gameId: number, container: HTMLElement, cur
  * @returns string - HTML de la friend list
  */
 export function renderFriendList(people: { id: number; username: string; profile_picture: string; email: string; bio: string; isOnline?: boolean }[]): string {
+    // Fonction simple pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath: string | null, username: string) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
+
     if (!people || people.length === 0) {
         return `
             <div class="friendsSection">
@@ -128,7 +148,7 @@ export function renderFriendList(people: { id: number; username: string; profile
                 <ul class="friendsList">
                     ${people.map((person) => `
                         <li class="friendItem">
-                            <img src="${person.profile_picture || 'default-profile.png'}" class="${person.isOnline ? 'profilePicOnline' : 'profilePic'}" alt="${person.username}">
+                            <img src="${getImageUrl(person.profile_picture, person.username)}" class="${person.isOnline ? 'profilePicOnline' : 'profilePic'}" alt="${person.username}">
                             <span class="friendName" data-username="${person.username}" data-profile-picture="${person.profile_picture}" data-email="${person.email}" data-bio="${person.bio}">
                                 ${person.username}
                             </span>
@@ -141,6 +161,16 @@ export function renderFriendList(people: { id: number; username: string; profile
 }
 
 export async function showGameDetails(gameIdOrObj: number | any): Promise<void> {
+    // Fonction pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath: string | null, username: string) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
+    
     // Récupérer l'objet game complet
     let game: Game;
     if (typeof gameIdOrObj === 'number') {
@@ -211,7 +241,7 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
             const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
             const bio = friendName.getAttribute('data-bio') || 'No bio available';
             const userId = people.find(person => person.username === username)?.id || 0;
-            showProfileCard(username, profilePicture, bio, userId);
+            showProfileCard(username, getImageUrl(profilePicture, username), bio, userId);
         });
     });
 

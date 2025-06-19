@@ -26,6 +26,16 @@ export async function fetchUsernames(): Promise<{ id: number, username: string, 
 }
 
 export async function renderPeopleList(filter: string = "") {
+    // Fonction pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath: string | null, username: string) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
+
     const communityButton = document.getElementById('communitybutton');
     if (!communityButton?.classList.contains('activebutton')) {
         console.log('Not in community page, skipping renderPeopleList');
@@ -81,7 +91,7 @@ export async function renderPeopleList(filter: string = "") {
             const img = document.createElement("img");
             const isOnline = await FriendsManager.isOnline(person.username);
             img.className = "profile-picture";
-            img.src = person.profile_picture || "default-profile.png";
+            img.src = getImageUrl(person.profile_picture, person.username);
             img.alt = `${person.username}'s profile picture`;
 
             // Add green circle if online
@@ -257,6 +267,16 @@ export function setupSearchInput() {
 }
 
 export async function showProfileCard(username: string, profilePicture: string, bio: string, userId: number) {
+    // Fonction pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath: string | null, username: string) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
+
     // Each time it opens, fetch up-to-date user info
     let userInfo = null;
     try {
@@ -402,7 +422,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
         img.className = "profile-card-picture-online";
     else
         img.className = "profile-card-picture";
-    img.src = profilePicture;
+    img.src = getImageUrl(profilePicture, username);
     img.alt = `${username}'s profile picture`;
 
     // Add the username

@@ -6,6 +6,15 @@ import { HOSTNAME } from "../../main.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
 import { handlePongInviteLinkClick } from "../../helpers/pongInviteHandler.js";
+// Fonction pour ajouter un timestamp aux URLs d'images
+const getImageUrl = (imagePath, username) => {
+    if (!imagePath || imagePath === 'default-profile.png') {
+        return 'default-profile.png';
+    }
+    // Ajouter un timestamp pour forcer le rechargement
+    const timestamp = Date.now();
+    return `${imagePath}?v=${timestamp}&user=${username}`;
+};
 let chatWidgetSocket = null;
 async function fetchCurrentUser() {
     try {
@@ -173,7 +182,7 @@ export async function setupChatWidget() {
             row.className = "chat-widget-messenger-message-row";
             if (!self && !isGrouped) {
                 const profileImg = document.createElement("img");
-                profileImg.src = profilePic;
+                profileImg.src = getImageUrl(profilePic, displayName);
                 profileImg.alt = `${displayName}'s profile picture`;
                 profileImg.className = "chat-widget-messenger-avatar";
                 if (!isSystem) {
@@ -221,7 +230,7 @@ export async function setupChatWidget() {
         row.className = "chat-widget-messenger-message-row";
         if (!self && !isGrouped) {
             const profileImg = document.createElement("img");
-            profileImg.src = profilePic;
+            profileImg.src = getImageUrl(profilePic, displayName);
             profileImg.alt = `${displayName}'s profile picture`;
             profileImg.className = "chat-widget-messenger-avatar";
             if (!isSystem) {
