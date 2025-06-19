@@ -178,7 +178,8 @@ export class LoginManager
         googleButton.addEventListener('click', async (e) => {
             e.preventDefault();
             console.log("google button clicked");
-            window.location.href = `https://${HOSTNAME}:8443/api/auth/google`;
+            const { googleSignInHandler } = await import('../modals/login/googleSignIn.js');
+            googleSignInHandler();
         });
 
         const registerButton = document.getElementById('registerButton');

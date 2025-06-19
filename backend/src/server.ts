@@ -155,7 +155,26 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
 
         if (userInfo.error) {
             console.error("Google API error:", userInfo.error);
-            return reply.redirect(`https://${HOSTNAME}:8443/login?error=google&message=Erreur API Google`);
+            const errorHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Erreur d'authentification</title>
+                </head>
+                <body>
+                    <script>
+                        if (window.opener) {
+                            window.opener.postMessage({
+                                type: 'GOOGLE_AUTH_ERROR',
+                                message: 'Erreur API Google'
+                            }, 'https://${HOSTNAME}:8443');
+                        }
+                    </script>
+                    <p>Erreur lors de l'authentification Google. Cette fenêtre se fermera automatiquement.</p>
+                </body>
+                </html>
+            `;
+            return reply.type('text/html').send(errorHtml);
         }
 
         const result = await googleAuthHandler(userInfo);
@@ -163,12 +182,50 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
 
         if (!result.success) {
             const errorMessage = result.message || "Erreur lors de l'authentification Google";
-            return reply.redirect(`https://${HOSTNAME}:8443/login?error=google&message=${encodeURIComponent(errorMessage)}`);
+            const errorHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Erreur d'authentification</title>
+                </head>
+                <body>
+                    <script>
+                        if (window.opener) {
+                            window.opener.postMessage({
+                                type: 'GOOGLE_AUTH_ERROR',
+                                message: '${errorMessage}'
+                            }, 'https://${HOSTNAME}:8443');
+                        }
+                    </script>
+                    <p>Erreur: ${errorMessage}. Cette fenêtre se fermera automatiquement.</p>
+                </body>
+                </html>
+            `;
+            return reply.type('text/html').send(errorHtml);
         }
 
         if (!result.token) {
             console.error('No token generated from googleAuthHandler');
-            return reply.redirect(`https://${HOSTNAME}:8443/login?error=google&message=Erreur de génération du token`);
+            const errorHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Erreur d'authentification</title>
+                </head>
+                <body>
+                    <script>
+                        if (window.opener) {
+                            window.opener.postMessage({
+                                type: 'GOOGLE_AUTH_ERROR',
+                                message: 'Erreur de génération du token'
+                            }, 'https://${HOSTNAME}:8443');
+                        }
+                    </script>
+                    <p>Erreur de génération du token. Cette fenêtre se fermera automatiquement.</p>
+                </body>
+                </html>
+            `;
+            return reply.type('text/html').send(errorHtml);
         }
 
         console.log("Setting token cookie:", result.token);
@@ -185,11 +242,76 @@ app.get("/api/auth/google/callback", async (request: FastifyRequest, reply: Fast
             path: '/'
         });
 
-        // Redirige vers le frontend après succès
-        return reply.redirect(`https://${HOSTNAME}:8443/`);
+        // Retourner une page HTML qui communique avec la popup parent
+        const successHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Authentification réussie</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                        padding: 50px;
+                        background-color: #f0f0f0;
+                    }
+                    .success-message {
+                        background-color: #d4edda;
+                        border: 1px solid #c3e6cb;
+                        color: #155724;
+                        padding: 20px;
+                        border-radius: 5px;
+                        margin: 20px 0;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="success-message">
+                    <h2>Authentification réussie !</h2>
+                    <p>Vous allez être redirigé automatiquement...</p>
+                </div>
+                <script>
+                    if (window.opener) {
+                        window.opener.postMessage({
+                            type: 'GOOGLE_AUTH_SUCCESS'
+                        }, 'https://${HOSTNAME}:8443');
+                        
+                        // Fermer la popup après un court délai
+                        setTimeout(() => {
+                            window.close();
+                        }, 1000);
+                    } else {
+                        // Si pas de popup parent, rediriger normalement
+                        window.location.href = 'https://${HOSTNAME}:8443/';
+                    }
+                </script>
+            </body>
+            </html>
+        `;
+        
+        return reply.type('text/html').send(successHtml);
     } catch (error) {
         console.error('Error during Google authentication:', error);
-        return reply.redirect(`https://${HOSTNAME}:8443/login?error=google&message=Erreur lors de l'authentification`);
+        const errorHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Erreur d'authentification</title>
+            </head>
+            <body>
+                <script>
+                    if (window.opener) {
+                        window.opener.postMessage({
+                            type: 'GOOGLE_AUTH_ERROR',
+                            message: 'Erreur lors de l\'authentification'
+                        }, 'https://${HOSTNAME}:8443');
+                    }
+                </script>
+                <p>Erreur lors de l'authentification. Cette fenêtre se fermera automatiquement.</p>
+            </body>
+            </html>
+        `;
+        return reply.type('text/html').send(errorHtml);
     }
 });
 
