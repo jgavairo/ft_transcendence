@@ -707,6 +707,12 @@ export class PongMenuManager
         const username = current?.username || 'Player';
         this.myUsername = username;
       
+        // Nettoyage UI avant de rejoindre la queue tournoi
+        this.menuLayer.removeChildren();
+        this.buttons.forEach(btn => btn.group.destroy());
+        this.buttons = [];
+        // Affichage file d'attente standard
+        this.showLobbyList([username]);
         // 2) join la queue tournoi
         await this.joinTournamentQueue(size, username);
 

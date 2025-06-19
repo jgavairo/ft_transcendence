@@ -554,6 +554,21 @@ export class PongMenuManager {
         const current = await GameManager.getCurrentUser();
         const username = (current === null || current === void 0 ? void 0 : current.username) || 'Player';
         this.myUsername = username;
+        // Nettoyage UI avant de rejoindre la queue tournoi
+        this.menuLayer.removeChildren();
+        this.buttons.forEach(btn => btn.group.destroy());
+        this.buttons = [];
+        this.menuLayer.add(new Konva.Text({
+            x: gameWidth / 2 - 180,
+            y: 420,
+            text: 'En attente de joueurs pour le tournoi...\n(4 joueurs requis)',
+            fontFamily: 'Press Start 2P',
+            fontSize: 18,
+            fill: '#00e7fe',
+            width: 360,
+            align: 'center'
+        }));
+        this.menuLayer.batchDraw();
         // 2) join la queue tournoi
         await this.joinTournamentQueue(size, username);
     }
