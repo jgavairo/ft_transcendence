@@ -3,13 +3,22 @@ import { MainApp, HOSTNAME } from '../../main.js'
 import api from '../../helpers/api.js'
 import { showErrorNotification, showNotification } from '../../helpers/notifications.js';
 
+// Fonction pour ajouter un timestamp aux URLs d'images
+const getImageUrl = (imagePath: string | null, username: string) => {
+    if (!imagePath || imagePath === 'default-profile.png') {
+        return 'default-profile.png';
+    }
+    // Ajouter un timestamp pour forcer le rechargement
+    const timestamp = Date.now();
+    return `${imagePath}?v=${timestamp}&user=${username}`;
+};
 
 export async function setupProfileModal() {
     const modal = document.getElementById('optionnalModal');
     if (!modal) return;
 
     const userInfos = await MainApp.getUserInfo();
-    const profilePictureWithTimestamp = `${userInfos.profile_picture}?t=${Date.now()}`;
+    const profilePictureWithTimestamp = getImageUrl(userInfos.profile_picture, userInfos.username);
     modal.innerHTML = profileModalHTML(userInfos.username, userInfos.email, profilePictureWithTimestamp, userInfos.bio || '', userInfos.two_factor_enabled, userInfos.is_google_account);
 
     const closeButton = document.getElementById('closeProfileModal');

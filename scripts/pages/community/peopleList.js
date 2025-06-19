@@ -23,6 +23,15 @@ export async function fetchUsernames() {
 }
 export async function renderPeopleList(filter = "") {
     var _a;
+    // Fonction pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath, username) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
     const communityButton = document.getElementById('communitybutton');
     if (!(communityButton === null || communityButton === void 0 ? void 0 : communityButton.classList.contains('activebutton'))) {
         console.log('Not in community page, skipping renderPeopleList');
@@ -68,7 +77,7 @@ export async function renderPeopleList(filter = "") {
             const img = document.createElement("img");
             const isOnline = await FriendsManager.isOnline(person.username);
             img.className = "profile-picture";
-            img.src = person.profile_picture || "default-profile.png";
+            img.src = getImageUrl(person.profile_picture, person.username);
             img.alt = `${person.username}'s profile picture`;
             // Add green circle if online
             if (isOnline) {
@@ -225,6 +234,15 @@ export function setupSearchInput() {
     });
 }
 export async function showProfileCard(username, profilePicture, bio, userId) {
+    // Fonction pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath, username) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
     // Each time it opens, fetch up-to-date user info
     let userInfo = null;
     try {
@@ -369,7 +387,7 @@ export async function showProfileCard(username, profilePicture, bio, userId) {
         img.className = "profile-card-picture-online";
     else
         img.className = "profile-card-picture";
-    img.src = profilePicture;
+    img.src = getImageUrl(profilePicture, username);
     img.alt = `${username}'s profile picture`;
     // Add the username
     const name = document.createElement("h3");

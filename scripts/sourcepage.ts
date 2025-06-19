@@ -1,10 +1,21 @@
-const header = (username: string, profilePicture: string) => `
+const header = (username: string, profilePicture: string) => {
+    // Fonction pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath: string | null, username: string) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
+    
+    return `
 			<img src="../../assets/logo.png" alt="Logo" class="logo" id="logoHeader" />
 			<button class="activebutton" id="storebutton">STORE</button>
 			<button class="button" id="librarybutton">LIBRARY</button>
 			<button class="button" id="communitybutton">COMMUNITY</button>
 			<div class="profile" id="profilea">
-				<img class="profilePicture" id="profilePicture" src="${profilePicture}" alt="Profile Picture" />
+				<img class="profilePicture" id="profilePicture" src="${getImageUrl(profilePicture, username)}" alt="Profile Picture" />
 				<span class="profileName">${username}</span>
 				<svg class="profileArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path d="M6 9l6 6 6-6"/>
@@ -14,6 +25,7 @@ const header = (username: string, profilePicture: string) => `
 				<button class="profilebutton" id="profilebutton"></button>
 			</div>
 `;
+};
 
 
 const profileWindow = `
@@ -133,7 +145,18 @@ const registerModalHTML = `
             <button id="registerRequestButton" class="signupButton">Sign up</button>
 `;
 
-const profileModalHTML = (username: string, email: string, profilePicture: string, bio: string, twoFactorEnabled: boolean, isGoogleAccount: boolean) => `
+const profileModalHTML = (username: string, email: string, profilePicture: string, bio: string, twoFactorEnabled: boolean, isGoogleAccount: boolean) => {
+    // Fonction pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath: string | null, username: string) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
+    
+    return `
     <div class="modal-overlay" id="modalOverlay">
         <div class="profile-modal" id="profile-modal">
           <div class="profile-modal-header">
@@ -142,7 +165,7 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
           <div class="profile-modal-content">
             <h2>Profile settings</h2>
             <div class="profile-picture-container-modal">
-              <img src="${profilePicture}" class="pictureProfileModal" alt="Profile Picture" />
+              <img src="${getImageUrl(profilePicture, username)}" class="pictureProfileModal" alt="Profile Picture" />
               <div class="profile-picture-overlay" id="changeProfilePictureButton">
                 Edit
               </div>
