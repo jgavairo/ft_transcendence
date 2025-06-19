@@ -3,6 +3,7 @@
 .env.local
 .env.*.local
 privkey.pem
+fullchain.pem
 
 # Dependencies
 node_modules/
