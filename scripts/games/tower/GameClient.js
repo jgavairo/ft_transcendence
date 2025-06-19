@@ -23,7 +23,6 @@ export class GameClient {
         return this.renderer.getStage();
     }
     quitMatch(socket) {
-        console.log("Quitting match with roomId:", this.roomId);
         if (socket)
             this.socket.emit("quitMatch", this.roomId, this.username);
         this.roomId = null;
@@ -56,10 +55,7 @@ export class GameClient {
         }
     }
     startSoloMode() {
-        console.log("Starting game client");
         this.socket.on("connect", () => {
-            console.log("Connected to server Tower");
-            console.log("Connected to server Tower, sending username:", this.username);
             this.socket.emit("register", this.username);
             this.socket.emit("playSolo", this.username);
         });
@@ -117,25 +113,21 @@ export class GameClient {
         }
     }
     startMultiplayerMode() {
-        console.log("Joining queue with username:", this.username);
         // Nettoyer les écouteurs existants
         this.socket.removeAllListeners();
         // Utiliser le renderer existant
         this.renderer.showWaitingScreen();
         this.socket.on("connect", () => {
-            console.log("Connected to server Tower, sending username:", this.username);
             this.socket.emit("register", this.username);
             this.socket.emit("joinQueue", this.username);
         });
         this.socket.on("error", (data) => {
-            console.log("Error received:", data);
             this.renderer.stopWaitingScreen();
             showErrorNotification(data.message);
             this.menu.changeMenu('play');
         });
         this.socket.on("matchFound", (data) => {
             this.roomId = data.roomId;
-            console.log("Match found:", data);
             this.renderer.stopWaitingScreen();
             this.menu.cleanup();
             this.renderer.setPlayerSide(data.side);
@@ -151,7 +143,6 @@ export class GameClient {
         }
     }
     cancelMatchmaking() {
-        console.log("Canceling matchmaking");
         this.socket.emit("leaveQueue");
         this.socket.disconnect();
         this.menu.changeMenu('play');
@@ -164,7 +155,6 @@ export class GameClient {
         this.menu.removeClient();
     }
     startSoloGame() {
-        console.log("Starting solo game with username:", this.username);
         this.socket.emit("playSolo", this.username);
         this.menu.cleanup();
     }

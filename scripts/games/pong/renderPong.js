@@ -269,7 +269,6 @@ export async function renderPong(state, isTournament = false) {
     // 7) overlay game over
     if (state.gameOver) {
         if (isTournament) {
-            console.log("Game over in tournament mode, skipping end animation.");
             // → Si on est en tournoi, on ne fait PAS l'animation de fin.
             //    On retourne directement, le client tournament prendra le relais
             //    (nettoyera le menu + retour au lobby).

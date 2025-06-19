@@ -37,8 +37,6 @@ function onCanvasClick(e) {
         y >= btnY && y <= btnY + btnHeight) {
         if (typeof window.close === 'function')
             window.close();
-        else
-            console.log("Quitter le jeu");
     }
 }
 function drawOptions() {

@@ -81,7 +81,6 @@ export async function onMatchFound(data) {
 export async function onTriMatchFound(data) {
     modePong = false;
     soloTri = data.mode === 'solo-tri';
-    console.log('data mode =', data.mode);
     soloMode = false; // pas utilisé ici
     mySide = soloTri ? 0 : data.side;
     lastState = null;
@@ -122,7 +121,6 @@ function onGameState(state) {
 let loopId = null;
 export function stopGame() {
     // 1) Stop the requestAnimationFrame loop
-    console.log('stopGame called');
     isPrivateLobby = false;
     running = false; // ← disables rendering
     if (loopId !== null) {
@@ -158,7 +156,6 @@ export function connectPong(isOnline) {
     // Refresh rankings and friend list at the end of a Pong game
     socket.on('pongGameEnded', async ({ gameId }) => {
         const isLogged = await MainApp.checkAuth();
-        console.log('is logged:', isLogged);
         if (!isLogged.success) {
             console.warn('User is not logged in, skipping rankings refresh.');
             return;
@@ -342,7 +339,6 @@ function onKeyUp(e) {
 }
 // Initialise le canvas et le contexte
 export function startPong() {
-    console.log('startpong lance');
     const modal = document.getElementById('games-modal');
     if (modal)
         modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';

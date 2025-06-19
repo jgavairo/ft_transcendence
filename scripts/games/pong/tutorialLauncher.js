@@ -16,20 +16,17 @@ export async function launchSoloPongVsBot(modal, username) {
         mode: 1
     });
     const { firstGame } = await response.json();
-    console.log("launchSoloPongVsBot after MENU");
     if (firstGame) {
         drawTutorialSolo3(canvas, ctx);
         const onEnter = (e) => {
             if (e.key === 'Enter') {
                 window.removeEventListener('keydown', onEnter);
-                console.log("startSoloPongVsBot");
                 startSoloPongVsBot(username);
             }
         };
         window.addEventListener('keydown', onEnter);
     }
     else {
-        console.log("startSoloPongVsBot");
         startSoloPongVsBot(username);
     }
 }
