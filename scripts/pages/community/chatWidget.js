@@ -1,4 +1,4 @@
-// Widget de chat flottant accessible partout
+// Floating chat widget accessible everywhere
 import { io } from "socket.io-client";
 import { fetchUsernames } from "./peopleList.js";
 import { showProfileCard } from "./peopleList.js";
@@ -49,7 +49,7 @@ function createChatWidgetHTML() {
         link.href = "/styles/chatWidget.css";
         document.head.appendChild(link);
     }
-    // Bulle flottante + fenêtre de chat masquée
+    // Floating bubble + hidden chat window
     const widget = document.createElement("div");
     widget.id = "chat-widget";
     widget.innerHTML = `
@@ -62,13 +62,13 @@ function createChatWidgetHTML() {
         </div>
         <div id="chat-window">
             <div class="chat-header">
-                <span>Chat Communauté</span>
+                <span>Community Chat</span>
                 <button id="close-chat-window">✖</button>
             </div>
             <div id="chatContainer"></div>
             <div class="chat-input-container">
                 <input id="chatInput" type="text" placeholder="Message..." autocomplete="off" />
-                <button id="sendMessage">Envoyer</button>
+                <button id="sendMessage">Send</button>
                 <div id="mention-suggestions" class="chat-widget-mention-suggestions-box"></div>
             </div>
         </div>
@@ -77,23 +77,23 @@ function createChatWidgetHTML() {
 }
 export async function setupChatWidget() {
     var _a;
-    // Ajout du conteneur pour la suggestion d'utilisateurs
+    // Add container for user suggestion
     let mentionBox = document.getElementById("mention-suggestions");
     if (!mentionBox) {
         mentionBox = document.createElement("div");
         mentionBox.id = "mention-suggestions";
         mentionBox.className = "chat-widget-mention-suggestions-box";
-        // Ajoute la box à body pour overlay flottant
+        // Add the box to body for floating overlay
         document.body.appendChild(mentionBox);
     }
     if (document.getElementById("chat-widget"))
-        return; // déjà présent
+        return; // already present
     createChatWidgetHTML();
     const chatBubble = document.getElementById("chat-bubble");
     const chatWindow = document.getElementById("chat-window");
     const closeBtn = document.getElementById("close-chat-window");
     const input = document.getElementById("chatInput");
-    input.maxLength = 250; // Limite de caractères côté HTML
+    input.maxLength = 250; // Character limit on HTML side
     const sendBtn = document.getElementById("sendMessage");
     const chatContainer = document.getElementById("chatContainer");
     const chatBubbleBadge = document.getElementById("chat-bubble-badge");
@@ -122,7 +122,7 @@ export async function setupChatWidget() {
     };
     closeBtn.onclick = () => { chatWindow.style.display = "none"; chatBubble.style.display = "flex"; };
     const users = await fetchUsernames();
-    // Correction : recharge les users si la liste est vide (problème de refresh)
+    // Fix: reload users if the list is empty (refresh issue)
     let userList = users;
     if (!userList || userList.length === 0) {
         userList = await fetchUsernames();
@@ -208,7 +208,7 @@ export async function setupChatWidget() {
             lastMsgWrapper = msgWrapper;
             return;
         }
-        // --- Affichage normal des messages ---
+        // --- Normal message display ---
         const msgWrapper = document.createElement("div");
         msgWrapper.className = `chat-widget-messenger-message-wrapper${self ? " self" : ""}${isGrouped ? " grouped" : ""}`;
         if (!self && !isGrouped) {
@@ -243,7 +243,7 @@ export async function setupChatWidget() {
             const match = content.match(pongInviteRegex);
             const dest = match ? match[1] : "?";
             if (self) {
-                messageContent.textContent = `Invitation sent to : ${dest}`;
+                messageContent.textContent = `Invitation sent to: ${dest}`;
             }
             else {
                 let roomId = null;
@@ -265,7 +265,7 @@ export async function setupChatWidget() {
             }
         }
         else if (mentionMatch) {
-            // Affichage sécurisé de la mention
+            // Secure display of mention
             const before = content.slice(0, mentionMatch[0].length);
             const after = content.slice(mentionMatch[0].length);
             const mentionSpan = document.createElement('span');
@@ -275,7 +275,7 @@ export async function setupChatWidget() {
             messageContent.appendChild(document.createTextNode(after));
         }
         else {
-            // Tout le reste : texte brut
+            // Everything else: plain text
             messageContent.textContent = content;
         }
         messageContent.className = `chat-widget-messenger-bubble${self ? " self" : ""}${mentionClass}`;
@@ -286,7 +286,7 @@ export async function setupChatWidget() {
         lastAuthor = authorId;
         lastMsgWrapper = msgWrapper;
     };
-    // Correction : lors de l'affichage de l'historique, recharge userMap si l'auteur n'est pas trouvé
+    // Fix: when displaying history, reload userMap if author not found
     const currentUser = await fetchCurrentUser();
     if (!currentUser)
         return;
@@ -295,7 +295,7 @@ export async function setupChatWidget() {
         const isSelf = message.author === currentUser.id;
         if (!isSelf && await isBlocked(((_a = userMap.get(message.author)) === null || _a === void 0 ? void 0 : _a.username) || ""))
             continue;
-        // Recharge userMap si l'auteur n'est pas trouvé (cas de refresh)
+        // Reload userMap if author not found (refresh case)
         if (!userMap.has(message.author)) {
             const newUsers = await fetchUsernames();
             newUsers.forEach(user => userMap.set(user.id, user));
@@ -337,7 +337,7 @@ export async function setupChatWidget() {
         }
         let text = input.value.trim();
         if (text.length > 250) {
-            showErrorNotification("Message trop long (max 250 caractères)");
+            showErrorNotification("Message too long (max 250 characters)");
             return;
         }
         if (!text || text.length === 0) {
@@ -371,7 +371,7 @@ export async function setupChatWidget() {
         if (e.key === "Enter") {
             let text = input.value.trim();
             if (text.length > 250) {
-                showErrorNotification("Message trop long (max 250 caractères)");
+                showErrorNotification("Message too long (max 250 characters)");
                 e.preventDefault();
                 return;
             }
@@ -412,7 +412,7 @@ export async function setupChatWidget() {
             showBadge();
         }
     });
-    // Suggestion de mention @
+    // @ mention suggestion
     let mentionActive = false;
     let mentionStart = -1;
     let filteredSuggestions = [];
@@ -432,7 +432,7 @@ export async function setupChatWidget() {
             item.onmouseenter = () => item.style.background = "#2a475e";
             item.onmouseleave = () => item.style.background = "";
             item.onclick = () => {
-                // Remplace le @... par @username
+                // Replace @... with @username
                 const val = input.value;
                 const before = val.slice(0, mentionStart);
                 const after = val.slice(input.selectionStart);
@@ -440,18 +440,18 @@ export async function setupChatWidget() {
                 mentionBox.style.display = "none";
                 mentionActive = false;
                 input.focus();
-                // Place le curseur après la mention
+                // Place cursor after the mention
                 const pos = (before + "@" + username + " ").length;
                 input.setSelectionRange(pos, pos);
             };
             mentionBox.appendChild(item);
         });
-        // Positionne la box juste au-dessus de l'input, overlay flottant
+        // Position the box just above the input, floating overlay
         const rect = input.getBoundingClientRect();
-        // Pour obtenir la hauteur même si display:none, on force temporairement l'affichage
+        // To get the height even if display:none, temporarily force display
         mentionBox.style.display = "block";
         mentionBox.style.left = rect.left + "px";
-        // On estime la hauteur si la box est vide (ex: 40px par défaut)
+        // Estimate height if box is empty (e.g. 40px default)
         const boxHeight = mentionBox.offsetHeight > 0 ? mentionBox.offsetHeight : 40;
         mentionBox.style.top = (rect.top - boxHeight - 4) + "px";
         mentionBox.style.width = rect.width + "px";
@@ -459,9 +459,9 @@ export async function setupChatWidget() {
     input.addEventListener("input", (e) => {
         const val = input.value;
         const pos = input.selectionStart || 0;
-        // Recherche le dernier @ avant le curseur
+        // Search for last @ before cursor
         const before = val.slice(0, pos);
-        // N'affiche la mention box que si le @ est le premier caractere
+        // Only show mention box if @ is the first character
         const match = before.match(/^@(\w*)$/);
         if (match) {
             mentionActive = true;
@@ -475,14 +475,14 @@ export async function setupChatWidget() {
             mentionBox.style.display = "none";
         }
     });
-    // Ferme la box si on clique ailleurs
+    // Close the box if clicking elsewhere
     document.addEventListener("click", (e) => {
         if (e.target !== input && e.target !== mentionBox) {
             mentionBox.style.display = "none";
             mentionActive = false;
         }
     });
-    // Navigation clavier (flèches + entrée)
+    // Keyboard navigation (arrows + enter)
     input.addEventListener("keydown", (e) => {
         if (!mentionActive || mentionBox.style.display === "none")
             return;
@@ -507,29 +507,28 @@ export async function setupChatWidget() {
             items[idx].click();
         }
     });
-    // Ajout : repositionne la mentionBox lors du resize
+    // Added: reposition mentionBox on resize
     window.addEventListener("resize", () => {
         if (mentionActive && mentionBox.style.display === "block") {
             updateMentionBox();
         }
     });
-    // Vider le cache partagé au début de setupChatWidget
-    // Vider le cache partagé au début de setupChatWidget
+    // Clear the shared cache at the start of setupChatWidget
     clearBlockedCache();
     document.addEventListener('click', handlePongInviteLinkClick);
 }
-// Gestion des liens d'invitation Pong pour le chat widget flottant
+// Handling Pong invitation links for the floating chat widget
 export function handleGameInviteLinkForWidget() {
     document.addEventListener('click', async function (e) {
         const target = e.target;
         if (target && target.tagName === 'A' && target.href && target.href.includes('/pong/join?room=')) {
             e.preventDefault();
-            // Extraire l'ID de la room depuis l'URL
+            // Extract the room ID from the URL
             const url = new URL(target.href);
             const roomId = url.searchParams.get('room');
             if (!roomId)
                 return;
-            // Vérifier si la room existe avant d'ouvrir le modal
+            // Check if the room exists before opening the modal
             try {
                 const resp = await fetch(`/api/pong/room-exists?roomId=${encodeURIComponent(roomId)}`, { credentials: "include" });
                 const data = await resp.json();
@@ -540,13 +539,13 @@ export function handleGameInviteLinkForWidget() {
             catch (err) {
                 return;
             }
-            // Charge la page library en arrière-plan pour éviter de garder community
+            // Load the library page in the background to avoid staying on community
             const libraryBtn = document.getElementById('librarybutton');
             if (libraryBtn) {
                 libraryBtn.click();
                 await new Promise(res => setTimeout(res, 100));
             }
-            // Ouvre le modal de jeu façon overlay
+            // Open the game modal as an overlay
             let modal = document.getElementById('optionnalModal');
             if (!modal) {
                 modal = document.createElement('div');
@@ -560,7 +559,7 @@ export function handleGameInviteLinkForWidget() {
               </div>
             `;
             document.getElementById('closeGameModal').onclick = () => { modal.innerHTML = ''; };
-            // Appel la fonction centralisée pour lancer Pong via le lien
+            // Call the centralized function to launch Pong via the link
             const { launchPongFromLink } = await import('../../games/pong/main.js');
             launchPongFromLink(roomId);
         }

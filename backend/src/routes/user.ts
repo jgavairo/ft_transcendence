@@ -221,7 +221,7 @@ const isBlockedHandler = async (request: FastifyRequest, reply: FastifyReply) =>
     try {
         await authMiddleware(request as AuthenticatedRequest, reply);
         const { username } = request.body as { username: string };
-        // Si c'est le BOT, ne pas envoyer l'erreur 400
+        // If it's the BOT, don't send 400 error
         if (!username) {
             if (username === 'BOT' || username === 'bot') {
                 return reply.send({ success: true, isBlocked: false });
