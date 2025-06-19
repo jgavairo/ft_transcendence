@@ -74,7 +74,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
     try {
       const chatNs = io.of('/chat');
       chatNs.emit('receiveMessage', {
-        author: 'system', // 0 or "System" to indicate a system message
+        author: 'BOT', // 0 or "System" to indicate a system message
         content,
         timestamp: new Date().toISOString()
       });

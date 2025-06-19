@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+privkey.pem
 
 # Dependencies
 node_modules/
