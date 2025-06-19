@@ -64,7 +64,7 @@ export async function renderRankings(gameId, container, currentUser) {
             const profilePicture = playerName.getAttribute('data-profile-picture') || 'default-profile.png';
             const bio = playerName.getAttribute('data-bio') || 'No bio available';
             const userId = ((_a = people.find(person => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
-            showProfileCard(username, profilePicture, bio, userId);
+            showProfileCard(username, getImageUrl(profilePicture, username), bio, userId);
         });
     });
     // Bouton Go to My Rank
@@ -128,6 +128,15 @@ export function renderFriendList(people) {
     `;
 }
 export async function showGameDetails(gameIdOrObj) {
+    // Fonction pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath, username) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
     // Récupérer l'objet game complet
     let game;
     if (typeof gameIdOrObj === 'number') {
@@ -195,7 +204,7 @@ export async function showGameDetails(gameIdOrObj) {
             const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
             const bio = friendName.getAttribute('data-bio') || 'No bio available';
             const userId = ((_a = people.find(person => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
-            showProfileCard(username, profilePicture, bio, userId);
+            showProfileCard(username, getImageUrl(profilePicture, username), bio, userId);
         });
     });
     // Bouton de fermeture

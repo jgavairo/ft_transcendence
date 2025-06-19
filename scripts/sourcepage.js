@@ -1,10 +1,20 @@
-const header = (username, profilePicture) => `
+const header = (username, profilePicture) => {
+    // Fonction pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath, username) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
+    return `
 			<img src="../../assets/logo.png" alt="Logo" class="logo" id="logoHeader" />
 			<button class="activebutton" id="storebutton">STORE</button>
 			<button class="button" id="librarybutton">LIBRARY</button>
 			<button class="button" id="communitybutton">COMMUNITY</button>
 			<div class="profile" id="profilea">
-				<img class="profilePicture" id="profilePicture" src="${profilePicture}" alt="Profile Picture" />
+				<img class="profilePicture" id="profilePicture" src="${getImageUrl(profilePicture, username)}" alt="Profile Picture" />
 				<span class="profileName">${username}</span>
 				<svg class="profileArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path d="M6 9l6 6 6-6"/>
@@ -14,6 +24,7 @@ const header = (username, profilePicture) => `
 				<button class="profilebutton" id="profilebutton"></button>
 			</div>
 `;
+};
 const profileWindow = `
 		<div class="profilewindow">
 				<button id="profileSettings">
@@ -123,7 +134,17 @@ const registerModalHTML = `
             </form>
             <button id="registerRequestButton" class="signupButton">Sign up</button>
 `;
-const profileModalHTML = (username, email, profilePicture, bio, twoFactorEnabled, isGoogleAccount) => `
+const profileModalHTML = (username, email, profilePicture, bio, twoFactorEnabled, isGoogleAccount) => {
+    // Fonction pour ajouter un timestamp aux URLs d'images
+    const getImageUrl = (imagePath, username) => {
+        if (!imagePath || imagePath === 'default-profile.png') {
+            return 'default-profile.png';
+        }
+        // Ajouter un timestamp pour forcer le rechargement
+        const timestamp = Date.now();
+        return `${imagePath}?v=${timestamp}&user=${username}`;
+    };
+    return `
     <div class="modal-overlay" id="modalOverlay">
         <div class="profile-modal" id="profile-modal">
           <div class="profile-modal-header">
@@ -132,7 +153,7 @@ const profileModalHTML = (username, email, profilePicture, bio, twoFactorEnabled
           <div class="profile-modal-content">
             <h2>Profile settings</h2>
             <div class="profile-picture-container-modal">
-              <img src="${profilePicture}" class="pictureProfileModal" alt="Profile Picture" />
+              <img src="${getImageUrl(profilePicture, username)}" class="pictureProfileModal" alt="Profile Picture" />
               <div class="profile-picture-overlay" id="changeProfilePictureButton">
                 Edit
               </div>
@@ -170,10 +191,10 @@ const profileModalHTML = (username, email, profilePicture, bio, twoFactorEnabled
               ${!isGoogleAccount ? `
               <div id="doubleAuthentification">
                   ${twoFactorEnabled ?
-    `<button id="disable2FAButton" class="profile-modal-button-disable2fa">
+        `<button id="disable2FAButton" class="profile-modal-button-disable2fa">
                           Disable 2FA Security
                       </button>` :
-    `<button id="enable2FAButton" class="profile-modal-button-enable2fa">
+        `<button id="enable2FAButton" class="profile-modal-button-enable2fa">
                           Enable 2FA Security
                       </button>`}
               </div>
@@ -183,6 +204,7 @@ const profileModalHTML = (username, email, profilePicture, bio, twoFactorEnabled
         </div>
     </div>
 `;
+};
 const uploadPictureFormHTML = `
       <div class="profile-modal-header">
           <button class="backArrow" id="backToProfileSettings" aria-label="Back">←</button>

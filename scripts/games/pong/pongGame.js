@@ -201,7 +201,7 @@ export function connectPong(isOnline) {
                             const userId = ((_a = people.find((person) => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
                             // showProfileCard is indirectly imported via showGameDetails
                             import('../../pages/community/peopleList.js').then(mod => {
-                                mod.showProfileCard(username, profilePicture, bio, userId);
+                                mod.showProfileCard(username, getImageUrl(profilePicture, username), bio, userId);
                             });
                         });
                     });
@@ -246,6 +246,15 @@ export function connectPong(isOnline) {
     });
 }
 // En haut du fichier
+// Fonction pour ajouter un timestamp aux URLs d'images
+const getImageUrl = (imagePath, username) => {
+    if (!imagePath || imagePath === 'default-profile.png') {
+        return 'default-profile.png';
+    }
+    // Ajouter un timestamp pour forcer le rechargement
+    const timestamp = Date.now();
+    return `${imagePath}?v=${timestamp}&user=${username}`;
+};
 function onKeyDown(e) {
     if (!ready || gameover)
         return;

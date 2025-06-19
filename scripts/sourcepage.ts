@@ -217,6 +217,7 @@ const profileModalHTML = (username: string, email: string, profilePicture: strin
         </div>
     </div>
 `;
+};
 
 const uploadPictureFormHTML = `
       <div class="profile-modal-header">
@@ -322,4 +323,4 @@ const gameInfosModalHTML = (game: any, inLibrary: boolean) => `
 </div>
 </div>`
 
-export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML, changeUsernameModalHTML, changeEmailModalHTML, changeDoubleAuthentificationModalHTML, disable2FAModalHTML, twoFactorModalHTML };
+export { storePage, libraryPage, communityPage, header, profileWindow, profileModalHTML, gameModalHTML, uploadPictureFormHTML, changePasswordModalHTML, loginModalHTML, registerModalHTML, gameInfosModalHTML, changeUsernameModalHTML, changeEmailModalHTML, changeDoubleAuthentificationModalHTML, disable2FAModalHTML, twoFactorModalHTML }

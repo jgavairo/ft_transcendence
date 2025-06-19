@@ -1473,21 +1473,8 @@ export class PongMenuManager {
                     }
                     else {
                         clearInterval(interval);
-                        // --- RESET COMPLET ---
                         this.stage.destroy();
                         stopGame();
-                        // Nettoyage instance et état statique
-                        PongMenuManager.instance = undefined;
-                        PongMenuManager.tournamentEnded = false;
-                        // Nettoyage du DOM si besoin
-                        const modal = document.getElementById('games-modal');
-                        if (modal)
-                            modal.remove();
-                        // Supprime overlay d'invitation si présent
-                        const inviteOverlay = document.getElementById("inviteOverlay");
-                        if (inviteOverlay)
-                            inviteOverlay.remove();
-                        // Relance le menu principal
                         displayMenu();
                     }
                 }, 100);
@@ -1798,6 +1785,15 @@ export class PongMenuManager {
         // Dynamically import to avoid cycles
         const { fetchUsernames } = await import("../../../pages/community/peopleList.js");
         const { GameManager } = await import("../../../managers/gameManager.js");
+        // Fonction pour ajouter un timestamp aux URLs d'images
+        const getImageUrl = (imagePath, username) => {
+            if (!imagePath || imagePath === 'default-profile.png') {
+                return 'default-profile.png';
+            }
+            // Ajouter un timestamp pour forcer le rechargement
+            const timestamp = Date.now();
+            return `${imagePath}?v=${timestamp}&user=${username}`;
+        };
         // Get all users
         const people = await fetchUsernames();
         // Get the current user
@@ -1862,7 +1858,7 @@ export class PongMenuManager {
             // Photo
             const img = document.createElement("img");
             img.className = "invite-profile-pic";
-            img.src = person.profile_picture || "default-profile.png";
+            img.src = getImageUrl(person.profile_picture, person.username);
             img.alt = person.username;
             // Name
             const name = document.createElement("span");
