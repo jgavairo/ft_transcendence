@@ -1117,6 +1117,11 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
       [A, B, match1Id],
       [C, D, match2Id]
     ];
+    // --- Annule le timer d'auto-ready si présent (dès que la game démarre) ---
+    if (tournamentAutoReadyTimers.has(tour.id)) {
+      clearTimeout(tournamentAutoReadyTimers.get(tour.id)!);
+      tournamentAutoReadyTimers.delete(tour.id);
+    }
     for (const [p1, p2, matchId] of demiFinales) {
       const s1 = ns.sockets.get(p1.id)!;
       const s2 = ns.sockets.get(p2.id)!;
@@ -1194,6 +1199,11 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
   if (tour.finalLaunched) return;
   if (!tour.finalists || tour.finalists.length !== 2) return;
   tour.finalLaunched = true;
+  // --- Annule le timer d'auto-ready de la finale si présent ---
+  if (tournamentAutoReadyTimers.has(tour.id + '-final')) {
+    clearTimeout(tournamentAutoReadyTimers.get(tour.id + '-final'));
+    tournamentAutoReadyTimers.delete(tour.id + '-final');
+  }
   const [G1, G2] = tour.finalists;
   const matchId = `${tour.id}-final`;
   const s1 = ns.sockets.get(G1.id)!;
