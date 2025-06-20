@@ -350,6 +350,11 @@ export class PongMenuManager {
         }
     }
     setupSocketListeners() {
+        gameSocket.off('tournamentBracket');
+        gameSocket.off('tournamentReadyUpdate');
+        gameSocket.off('tournamentMatchFound');
+        gameSocket.off('tournamentOver');
+        gameSocket.off('tournamentFinalSpectate');
         // 1) Bracket (liste des inscrits)
         gameSocket.on('tournamentBracket', (view) => {
             this.currentTourSize = view.size;
