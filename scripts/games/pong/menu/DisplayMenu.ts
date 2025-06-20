@@ -58,6 +58,7 @@ export class PongMenuManager
     private currentTourSize!: number;
     private myUsername = '';
     private showMainMenu: boolean;
+    private victoryAnimationId?: number; // Pour contrôler l'animation des particules de victoire
 
     private privateRoomId?: string;
 
@@ -152,6 +153,25 @@ export class PongMenuManager
             this.stage.height(gameHeight);
             this.updateLayout();
         });
+    }
+
+    private animateTitle2()
+    {
+      const image = new Image();
+      image.src = '../../../../assets/games/pong/title.png';
+      image.onload = () =>
+      {
+          this.titleImage = new Konva.Image
+          ({
+              image: image,
+              x: (this.stage.width() - image.width * 0.35) / 2,
+              y: -200,
+              width: image.width * 0.35,
+              height: image.height * 0.35
+          });
+          this.titleLayer.add(this.titleImage);
+          this.animateTitle();
+      };
     }
 
     private animateTitle()
@@ -1705,7 +1725,22 @@ export class PongMenuManager
                     } else {
                         clearInterval(interval);
                         stopGame();
-                        this.changeMenu('multi');
+                        // Arrêt de l'animation des particules de victoire
+                        if (this.victoryAnimationId) {
+                            cancelAnimationFrame(this.victoryAnimationId);
+                            this.victoryAnimationId = undefined;
+                        }
+                        // Nettoyage du stage et des particules
+                        this.menuLayer.removeChildren();
+                        this.particles.forEach(particle => {
+                            particle.shape.destroy();
+                        });
+                        this.particles = [];
+                        this.backgroundLayer.batchDraw();
+                        this.menuLayer.batchDraw();
+                        // Relance de l'animation des particules
+                        this.animateParticles();
+                        this.animateTitle2();
                     }
                 }, 100);
             }
@@ -1754,7 +1789,7 @@ export class PongMenuManager
             }
 
             this.backgroundLayer.batchDraw();
-            requestAnimationFrame(animateVictoryParticles);
+            this.victoryAnimationId = requestAnimationFrame(animateVictoryParticles);
         };
 
         // Lancement des animations

@@ -64,9 +64,9 @@ export class LoginManager {
                 showErrorNotification("Please enter a username and password");
                 return;
             }
-            const usernameRegex = /^[a-zA-Z0-9_-]{5,20}$/;
+            const usernameRegex = /^[a-zA-Z0-9_-]{5,15}$/;
             if (!usernameRegex.test(username)) {
-                showErrorNotification("Your username is not valid");
+                showErrorNotification("Username must be between 5 and 15 characters and can only contain letters, numbers, underscores and hyphens");
                 return;
             }
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%#*?&])[A-Za-z\d@$!%#*?&]{8,25}$/;
