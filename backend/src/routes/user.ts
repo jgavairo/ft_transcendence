@@ -221,12 +221,16 @@ const isBlockedHandler = async (request: FastifyRequest, reply: FastifyReply) =>
     try {
         await authMiddleware(request as AuthenticatedRequest, reply);
         const { username } = request.body as { username: string };
-        // If it's the BOT, don't send 400 error
-        if (!username) {
-            if (username === 'BOT' || username === 'bot') {
-                return reply.send({ success: true, isBlocked: false });
-            }
-            return reply.status(400).send({ success: false, message: "Username required" });
+        // Accept also 0 or "0" as BOT/system
+        if (
+            !username ||
+            username === 'BOT' ||
+            username === 'bot' ||
+            username === "0" ||
+            username === 'SYSTEM' ||
+            username === 'system'
+        ) {
+            return reply.send({ success: true, isBlocked: false });
         }
         const isBlocked = await dbManager.isUserBlocked((request as AuthenticatedRequest).user.id, username);
         return reply.send({ success: true, isBlocked });

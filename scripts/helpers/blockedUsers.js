@@ -2,6 +2,12 @@
 import { HOSTNAME } from "../main.js";
 const blockedCache = {};
 export async function isBlocked(author) {
+    if (author === "BOT" ||
+        author === "bot" ||
+        author === "0" ||
+        author === "SYSTEM" ||
+        author === "system")
+        return false; // Ne jamais bloquer BOT ou SYSTEM
     if (blockedCache[author] !== undefined)
         return blockedCache[author];
     try {

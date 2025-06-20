@@ -256,8 +256,9 @@ export async function setupChat() {
     let prevAuthor: number | null = null;
     for (const message of chatHistory) {
         const isSelf = message.author === currentUser.id;
-        if (!isSelf && await isBlocked(userMap.get(message.author)?.username || "")) continue;
-        // Fix: apply the same tournament formatting to history
+        // PATCH: skip isBlocked for system/BOT messages
+        const isSystem = message.author === 0 || String(message.author) === "BOT" || String(message.author) === "bot";
+        if (!isSelf && !isSystem && await isBlocked(userMap.get(message.author)?.username || "")) continue;
         addMessage(message.content, message.author, isSelf);
     }
 
@@ -376,7 +377,9 @@ export async function setupChat() {
         const authorId = Number(messageData.author);
         if (!currentUser) return;
         if (authorId === currentUser.id) return;
-        if (await isBlocked(userMap.get(authorId)?.username || "")) return;
+        // PATCH: skip isBlocked for system/BOT messages
+        const isSystem = messageData.author === 0 || String(messageData.author) === "BOT" || String(messageData.author) === "bot";
+        if (!isSystem && await isBlocked(userMap.get(authorId)?.username || "")) return;
         if (!userMap.has(authorId)) {
             const newUsers = await fetchUsernames();
             userMap.clear();

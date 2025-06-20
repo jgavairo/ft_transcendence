@@ -265,9 +265,10 @@ export async function setupChat() {
     let prevAuthor = null;
     for (const message of chatHistory) {
         const isSelf = message.author === currentUser.id;
-        if (!isSelf && await isBlocked(((_a = userMap.get(message.author)) === null || _a === void 0 ? void 0 : _a.username) || ""))
+        // PATCH: skip isBlocked for system/BOT messages
+        const isSystem = message.author === 0 || String(message.author) === "BOT" || String(message.author) === "bot";
+        if (!isSelf && !isSystem && await isBlocked(((_a = userMap.get(message.author)) === null || _a === void 0 ? void 0 : _a.username) || ""))
             continue;
-        // Fix: apply the same tournament formatting to history
         addMessage(message.content, message.author, isSelf);
     }
     // Connect client to Socket.IO server
@@ -384,7 +385,9 @@ export async function setupChat() {
             return;
         if (authorId === currentUser.id)
             return;
-        if (await isBlocked(((_a = userMap.get(authorId)) === null || _a === void 0 ? void 0 : _a.username) || ""))
+        // PATCH: skip isBlocked for system/BOT messages
+        const isSystem = messageData.author === 0 || String(messageData.author) === "BOT" || String(messageData.author) === "bot";
+        if (!isSystem && await isBlocked(((_a = userMap.get(authorId)) === null || _a === void 0 ? void 0 : _a.username) || ""))
             return;
         if (!userMap.has(authorId)) {
             const newUsers = await fetchUsernames();

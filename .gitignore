@@ -2,8 +2,6 @@
 .env
 .env.local
 .env.*.local
-privkey.pem
-fullchain.pem
 
 # Dependencies
 node_modules/
@@ -24,3 +22,6 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# SSL Certificates
+docker/nginx/ssl/privkey.pem
