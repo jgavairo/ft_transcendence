@@ -1,12 +1,12 @@
 import { ctx, setGameoverTrue, mySide, playerName, opponentName, playerNames, startPong } from "./pongGame.js";
 import { PongMenuManager } from "./menu/DisplayMenu.js";
 ;
-const FLASH_FRAMES = 20; // nombre de frames de l'animation
-const EXPANSION = 30; // de combien l'anneau s'agrandit
+const FLASH_FRAMES = 20; // nombre de frames de l’animation
+const EXPANSION = 30; // de combien l’anneau s’agrandit
 const MAX_ALPHA = 0.6; // opacité initiale
 let prevLives = [];
 let lifeFlashes = [];
-const DEATH_FRAMES = 30; // frames totales de l'animation
+const DEATH_FRAMES = 30; // frames totales de l’animation
 const DEATH_EXP = 60; // expansion max du ring gris
 let deathFlashes = [];
 const CW = 1200;
@@ -216,7 +216,7 @@ export async function renderPong(state, isTournament = false) {
     }
     // Explosion: update & draw
     updateAndDrawExplosions(ctx);
-    // Si la partie est terminée, on vide les particules d'explosion pour éviter quelles ne s'affichent au match suivant
+    // Si la partie est terminée, on vide les particules d'explosion pour éviter qu'elles ne s'affichent au match suivant
     if (state.gameOver) {
         explosionParticles.length = 0;
     }
@@ -285,14 +285,9 @@ export async function renderPong(state, isTournament = false) {
         const winnerName = (Array.isArray(playerNames) && playerNames.length === state.paddles.length)
             ? playerNames[winnerIndex]
             : (winnerIndex === mySide ? playerName : opponentName);
-        // b) on lance l'animation « animateEnd / displayEndMatch »
-        const menu = PongMenuManager.getInstance();
-        if (menu) {
-            menu.displayEndMatch(winnerName, padColor);
-        }
-        else {
-            console.error('[renderPong] Aucune instance de PongMenuManager trouvée pour displayEndMatch');
-        }
+        // b) on lance l’animation « animateEnd / displayEndMatch »
+        const menu = new PongMenuManager(false);
+        menu.displayEndMatch(winnerName, padColor);
         start = false; // pour remettre la particule en pause si besoin
         // on ne remonte pas plus haut
         return;
@@ -391,7 +386,7 @@ function drawSkull(ctx, x, y, size) {
     ctx.arc(-8, 10, 4, 0, Math.PI * 2);
     ctx.arc(8, 10, 4, 0, Math.PI * 2);
     ctx.fill();
-    // Croix d'os sous le crâne
+    // Croix d’os sous le crâne
     ctx.lineWidth = 4;
     ctx.strokeStyle = 'rgba(180,180,180,0.8)';
     ctx.beginPath();

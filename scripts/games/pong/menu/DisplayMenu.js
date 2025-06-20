@@ -16,31 +16,11 @@ export class PongMenuManager {
         this.buttons = [];
         this.animationSkipped = false;
         this.myUsername = '';
-        this.showMainMenu = true;
-        this.isInitialized = false;
-        this.isDisplayingEndMatch = false;
         // Dans DisplayMenu.ts (ou où vous aviez startMatchTournament)
         this.gameStateHandlers = new Map();
         this.activeTournamentMatchId = null;
-        // Si une instance existe déjà, la réutiliser
-        if (PongMenuManager.instance) {
-            console.log('[PongMenuManager] Réutilisation de l\'instance existante');
-            PongMenuManager.instance.cleanup();
-            PongMenuManager.instance.initialize(title, showMainMenu);
-            return;
-        }
-        console.log('[PongMenuManager] Création d\'une nouvelle instance');
         PongMenuManager.instance = this;
         this.showMainMenu = showMainMenu;
-        this.initialize(title, showMainMenu);
-    }
-    initialize(title = true, showMainMenu = true) {
-        if (this.isInitialized) {
-            console.log('[PongMenuManager] Instance déjà initialisée, nettoyage en cours...');
-            this.cleanup();
-        }
-        this.showMainMenu = showMainMenu;
-        this.isInitialized = true;
         // Correction : utiliser le bon container pour Konva
         let canvas = document.getElementById("games-modal");
         if (!canvas) {
@@ -52,7 +32,7 @@ export class PongMenuManager {
         }
         canvas.style.display = '';
         console.log('[KONVA] games-modal trouvé ou créé');
-        // --- Correction : supprime et recrée le div .konvajs-content à chaque fois ---
+        // --- Correction : supprime et recrée le div .konvajs-content à chaque fois ---
         let oldKonvaDiv = canvas.querySelector('.konvajs-content');
         if (oldKonvaDiv) {
             oldKonvaDiv.remove();
@@ -71,7 +51,7 @@ export class PongMenuManager {
             height: 800
         });
         console.log('[KONVA] Konva.Stage créé');
-        // --- Correction : assure la présence du div Konva et de la classe ---
+        // --- Correction : assure la présence du div Konva et de la classe ---
         let konvaDiv2 = canvas.querySelector('div');
         if (!konvaDiv2) {
             konvaDiv2 = document.createElement('div');
@@ -119,76 +99,6 @@ export class PongMenuManager {
             this.stage.height(gameHeight);
             this.updateLayout();
         });
-    }
-    cleanup() {
-        console.log('[PongMenuManager] Nettoyage de l\'instance');
-        // Nettoyer les boutons
-        this.buttons.forEach(button => {
-            if (button.group) {
-                button.group.destroy();
-            }
-        });
-        this.buttons = [];
-        // Nettoyer les particules
-        this.particles.forEach(particle => {
-            if (particle.shape) {
-                particle.shape.destroy();
-            }
-        });
-        this.particles = [];
-        // Nettoyer les layers
-        if (this.menuLayer) {
-            this.menuLayer.destroyChildren();
-        }
-        if (this.titleLayer) {
-            this.titleLayer.destroyChildren();
-        }
-        if (this.backgroundLayer) {
-            this.backgroundLayer.destroyChildren();
-        }
-        // Nettoyer le stage
-        if (this.stage) {
-            this.stage.destroy();
-        }
-        // Réinitialiser les propriétés
-        this.animationSkipped = false;
-        this.currentTourId = '';
-        this.currentTourSize = 0;
-        this.myUsername = '';
-        this.privateRoomId = undefined;
-        this.isInitialized = false;
-    }
-    static getInstance() {
-        return PongMenuManager.instance;
-    }
-    static destroyInstance() {
-        if (PongMenuManager.instance) {
-            PongMenuManager.instance.cleanup();
-            PongMenuManager.instance = null;
-            console.log('[PongMenuManager] Instance détruite');
-        }
-    }
-    static resetInstance() {
-        PongMenuManager.destroyInstance();
-        console.log('[PongMenuManager] Instance réinitialisée');
-    }
-    clearMenu() {
-        if (this.menuLayer) {
-            this.menuLayer.destroyChildren();
-            this.menuLayer.batchDraw();
-        }
-        this.buttons.forEach(button => {
-            if (button.group) {
-                button.group.destroy();
-            }
-        });
-        this.buttons = [];
-    }
-    getMenuLayer() {
-        return this.menuLayer;
-    }
-    getButtons() {
-        return this.buttons;
     }
     animateTitle() {
         const finalY = 70;
@@ -1294,7 +1204,6 @@ export class PongMenuManager {
     }
     start() {
         this.animateParticles();
-        this.ensureMenuVisible();
         setTimeout(() => {
             if (!this.animationSkipped && this.showMainMenu)
                 this.changeMenu('main');
@@ -1309,10 +1218,6 @@ export class PongMenuManager {
                 return;
             }
             const menu = PongMenuManager.instance;
-            if (!menu) {
-                console.error('[PongMenuManager] Aucune instance trouvée pour offlineLobby');
-                return;
-            }
             const currentUser = await GameManager.getCurrentUser();
             const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
             // Nettoyage des éléments existants
@@ -1420,10 +1325,6 @@ export class PongMenuManager {
             else if (nbPlayers === 3) {
                 console.log("match found 2 players");
                 const menu = PongMenuManager.instance;
-                if (!menu) {
-                    console.error('[PongMenuManager] Aucune instance trouvée pour offlineLobby 3 players');
-                    return;
-                }
                 // Nettoyage des éléments existants
                 menu.buttons.forEach(button => button.group.destroy());
                 menu.buttons = [];
@@ -1520,38 +1421,11 @@ export class PongMenuManager {
             startSoloPong("Player1"); // Fallback au nom par défaut en cas d'erreur
         }
     }
-    ensureMenuVisible() {
-        // S'assurer que le stage est visible
-        if (this.stage && !this.stage._destroyed) {
-            this.stage.show();
-            if (this.menuLayer) {
-                this.menuLayer.show();
-                this.menuLayer.moveToTop();
-            }
-            this.stage.batchDraw();
-        }
-        // S'assurer que le container est visible
-        const modal = document.getElementById('games-modal');
-        if (modal) {
-            modal.style.display = '';
-        }
-    }
     displayEndMatch(winnerName, padColor) {
-        // Protection contre les appels multiples
-        if (this.isDisplayingEndMatch) {
-            console.log('[PongMenuManager] displayEndMatch déjà en cours, ignoré');
-            return;
-        }
-        this.isDisplayingEndMatch = true;
-        console.log('[PongMenuManager] Début displayEndMatch pour:', winnerName);
         // Nettoyage des éléments existants
         this.buttons.forEach(button => button.group.destroy());
         this.buttons = [];
-        if (this.menuLayer) {
-            this.menuLayer.destroyChildren();
-        }
-        // S'assurer que le menu est visible
-        this.ensureMenuVisible();
+        this.menuLayer.destroyChildren();
         // Ajout du texte du timer
         let secondsLeft = 1.5;
         const timerText = new Konva.Text({
@@ -1578,59 +1452,29 @@ export class PongMenuManager {
             shadowBlur: 20,
             shadowOpacity: 0.8
         });
-        if (this.menuLayer) {
-            this.menuLayer.add(winnerText);
-        }
+        this.menuLayer.add(winnerText);
         // Animation d'entrée du texte
         const finalY = 300;
         const speed = 5;
         const animate = () => {
             if (winnerText.y() < finalY) {
                 winnerText.y(winnerText.y() + speed);
-                if (this.menuLayer)
-                    this.menuLayer.batchDraw();
+                this.menuLayer.batchDraw();
                 requestAnimationFrame(animate);
             }
             else {
-                if (this.menuLayer)
-                    this.menuLayer.add(timerText);
+                this.menuLayer.add(timerText);
                 // Timer de redirection
                 let interval = setInterval(() => {
                     secondsLeft -= 0.1;
                     if (secondsLeft > 0) {
                         timerText.text(`Returning to menu in ${secondsLeft.toFixed(1)}s...`);
-                        if (this.menuLayer)
-                            this.menuLayer.batchDraw();
+                        this.menuLayer.batchDraw();
                     }
                     else {
                         clearInterval(interval);
-                        // Arrêter le jeu
                         stopGame();
-                        // Vérifier si on est dans un tournoi
-                        if (PongMenuManager.tournamentEnded || this.currentTourId) {
-                            // Si on est dans un tournoi, on reste dans le menu tournoi
-                            console.log('[PongMenuManager] Match de tournoi terminé, retour au bracket');
-                            this.isDisplayingEndMatch = false;
-                            // Le bracket sera affiché automatiquement par les événements socket
-                        }
-                        else {
-                            // Si ce n'est pas un tournoi, retourner au menu principal
-                            console.log('[PongMenuManager] Match normal terminé, retour au menu principal');
-                            // S'assurer que le stage est toujours valide
-                            if (this.stage && !this.stage._destroyed) {
-                                // Réinitialiser le menu
-                                this.cleanup();
-                                this.initialize(true, true);
-                                this.start();
-                                this.ensureMenuVisible();
-                            }
-                            else {
-                                // Si le stage est détruit, recréer le menu complet
-                                console.log('[PongMenuManager] Stage détruit, recréation du menu');
-                                displayMenu();
-                            }
-                            this.isDisplayingEndMatch = false;
-                        }
+                        this.changeMenu('multi');
                     }
                 }, 100);
             }
@@ -1652,9 +1496,7 @@ export class PongMenuManager {
                 speed: -1 - Math.random() * 2, // Vitesse négative pour monter
                 glowDirection: 1
             });
-            if (this.backgroundLayer) {
-                this.backgroundLayer.add(particle);
-            }
+            this.backgroundLayer.add(particle);
         };
         // Animation des particules de victoire
         const animateVictoryParticles = () => {
@@ -1674,9 +1516,7 @@ export class PongMenuManager {
             if (Math.random() < 0.2) {
                 createVictoryParticle();
             }
-            if (this.backgroundLayer) {
-                this.backgroundLayer.batchDraw();
-            }
+            this.backgroundLayer.batchDraw();
             requestAnimationFrame(animateVictoryParticles);
         };
         // Lancement des animations
@@ -1689,44 +1529,42 @@ export class PongMenuManager {
         }
     }
     static matchFound2Players(data) {
-        const menu = PongMenuManager.getInstance();
-        if (!menu) {
-            console.error('[PongMenuManager] Aucune instance trouvée pour matchFound2Players');
-            return;
-        }
-        menu.menuLayer.destroyChildren();
+        console.log("match found 2 players");
+        const menu = PongMenuManager.instance;
+        // Nettoyage des éléments existants
         menu.buttons.forEach(button => button.group.destroy());
         menu.buttons = [];
+        menu.menuLayer.destroyChildren();
         // Affichage des joueurs
         const player1Text = new Konva.Text({
-            text: `Player 1: ${data.player1}`,
+            text: `${data.you}`,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
-            y: 300,
+            x: (gameWidth / 6),
+            y: 450,
             width: 400,
-            align: 'center',
+            align: 'center'
         });
         const player2Text = new Konva.Text({
-            text: `Player 2: ${data.player2}`,
+            text: `${data.opponent}`,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
-            fill: '#fc4cfc',
-            x: gameWidth / 2 - 200,
-            y: 350,
+            fill: '#00e7fe',
+            x: gameWidth / 2,
+            y: 450,
             width: 400,
-            align: 'center',
+            align: 'center'
         });
         const countdownText = new Konva.Text({
+            x: gameWidth / 2 - 200,
+            y: 520,
             text: 'Game starting in 5',
             fontFamily: 'Press Start 2P',
             fontSize: 24,
             fill: '#fc4cfc',
-            x: gameWidth / 2 - 200,
-            y: 420,
             width: 400,
-            align: 'center',
+            align: 'center'
         });
         menu.menuLayer.add(player1Text);
         menu.menuLayer.add(player2Text);
@@ -1744,46 +1582,48 @@ export class PongMenuManager {
                 onMatchFound(data);
             }
         }, 1000);
+        // Fermer l'overlay d'invitation si présent
+        const inviteOverlay = document.getElementById("inviteOverlay");
+        if (inviteOverlay)
+            inviteOverlay.remove();
     }
     static matchFound3Players(data) {
-        const menu = PongMenuManager.getInstance();
-        if (!menu) {
-            console.error('[PongMenuManager] Aucune instance trouvée pour matchFound3Players');
-            return;
-        }
-        menu.menuLayer.destroyChildren();
+        console.log("match found 2 players");
+        const menu = PongMenuManager.instance;
+        // Nettoyage des éléments existants
         menu.buttons.forEach(button => button.group.destroy());
         menu.buttons = [];
+        menu.menuLayer.destroyChildren();
         // Affichage des joueurs
         const player1Text = new Konva.Text({
-            text: `Player 1: ${data.player1}`,
+            text: `${data.players[0]}`,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#00e7fe',
-            x: gameWidth / 2 - 200,
-            y: 250,
+            x: 0,
+            y: 450,
             width: 400,
-            align: 'center',
+            align: 'center'
         });
         const player2Text = new Konva.Text({
-            text: `Player 2: ${data.player2}`,
+            text: `${data.players[1]}`,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
-            fill: '#fc4cfc',
-            x: gameWidth / 2 - 200,
-            y: 300,
+            fill: '#00e7fe',
+            x: gameWidth / 3,
+            y: 450,
             width: 400,
-            align: 'center',
+            align: 'center'
         });
         const player3Text = new Konva.Text({
-            text: `Player 3: ${data.player3}`,
+            text: `${data.players[2]}`,
             fontFamily: 'Press Start 2P',
             fontSize: 20,
-            fill: '#ff6b35',
-            x: gameWidth / 2 - 200,
-            y: 350,
+            fill: '#00e7fe',
+            x: gameWidth / 3 + ((gameWidth / 3)),
+            y: 450,
             width: 400,
-            align: 'center',
+            align: 'center'
         });
         const countdownText = new Konva.Text({
             text: 'Game starting in 5',
@@ -1791,9 +1631,9 @@ export class PongMenuManager {
             fontSize: 24,
             fill: '#fc4cfc',
             x: gameWidth / 2 - 200,
-            y: 420,
+            y: 570,
             width: 400,
-            align: 'center',
+            align: 'center'
         });
         menu.menuLayer.add(player1Text);
         menu.menuLayer.add(player2Text);
@@ -1812,6 +1652,10 @@ export class PongMenuManager {
                 onTriMatchFound(data);
             }
         }, 1000);
+        // Fermer l'overlay d'invitation si présent
+        const inviteOverlay = document.getElementById("inviteOverlay");
+        if (inviteOverlay)
+            inviteOverlay.remove();
     }
     // Crée une room privée non listée, met l'utilisateur en attente dans la room (sans afficher l'ID)
     // Si roomId est fourni, on rejoint la room existante et on affiche l'écran du salon
@@ -2071,32 +1915,13 @@ export class PongMenuManager {
         console.log("Menu displayed from link");
     }
 }
-PongMenuManager.instance = null;
 PongMenuManager.tournamentEnded = false;
 export async function displayMenu() {
-    // Utiliser l'instance existante ou en créer une nouvelle
-    let menu = PongMenuManager.getInstance();
-    if (!menu) {
-        menu = new PongMenuManager(true);
-    }
-    else {
-        // Réinitialiser l'instance existante
-        menu.cleanup();
-        menu.initialize(true, true);
-    }
+    const menu = new PongMenuManager(true);
     console.log("game started");
     menu.start();
 }
 export async function displayMenuFromLink(roomId) {
-    // Utiliser l'instance existante ou en créer une nouvelle
-    let menu = PongMenuManager.getInstance();
-    if (!menu) {
-        menu = new PongMenuManager(true, false); // no title, no main menu
-    }
-    else {
-        // Réinitialiser l'instance existante
-        menu.cleanup();
-        menu.initialize(true, false);
-    }
+    const menu = new PongMenuManager(true, false); // no title, no main menu
     menu.startFromLink(roomId);
 }
