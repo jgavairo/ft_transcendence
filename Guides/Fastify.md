@@ -1,28 +1,28 @@
-# Guide Fastify - Fonctions et Requêtes
+# Fastify Guide - Functions and Requests
 
-## Table des matières
-1. [Types de Requêtes](#types-de-requêtes)
-2. [Fonctions de Gestion des Utilisateurs](#fonctions-de-gestion-des-utilisateurs)
-3. [Middleware d'Authentification](#middleware-dauthentification)
-4. [Gestion des Erreurs](#gestion-des-erreurs)
+## Table of Contents
+1. [Request Types](#request-types)
+2. [User Management Functions](#user-management-functions)
+3. [Authentication Middleware](#authentication-middleware)
+4. [Error Handling](#error-handling)
 
-## Types de Requêtes
+## Request Types
 
 ### FastifyRequest
 ```typescript
 interface FastifyRequest {
-    // Propriétés de base
-    id: string;              // ID unique de la requête
-    params: any;             // Paramètres d'URL
-    query: any;              // Paramètres de requête
-    body: any;               // Corps de la requête
-    headers: any;            // En-têtes HTTP
+    // Base properties
+    id: string;              // Unique request ID
+    params: any;             // URL parameters
+    query: any;              // Query parameters
+    body: any;               // Request body
+    headers: any;            // HTTP headers
     cookies: any;            // Cookies
-    raw: any;                // Requête HTTP brute
+    raw: any;                // Raw HTTP request
 
-    // Méthodes utiles
+    // Useful methods
     log: any;                // Logger
-    server: any;             // Instance du serveur
+    server: any;             // Server instance
 }
 ```
 
@@ -32,117 +32,117 @@ interface AuthenticatedRequest extends FastifyRequest
 {
     user: 
     {
-        id: number;          // ID de l'utilisateur authentifié
+        id: number;          // Authenticated user ID
     };
 }
 ```
 
-## Fonctions de Gestion des Utilisateurs
+## User Management Functions
 
 ### getInfosHandler
 ```typescript
 async (request: FastifyRequest, reply: FastifyReply) => {
-    // Récupère les informations de l'utilisateur
-    // Requête: GET /api/user/infos
-    // Retourne: { success: boolean, user: UserInfo }
+    // Retrieves user information
+    // Request: GET /api/user/infos
+    // Returns: { success: boolean, user: UserInfo }
 }
 ```
 
 ### getUserLibraryHandler
 ```typescript
 async (request: FastifyRequest, reply: FastifyReply) => {
-    // Récupère la bibliothèque de jeux de l'utilisateur
-    // Requête: GET /api/user/library
-    // Retourne: { success: boolean, library: Game[] }
+    // Retrieves the user's game library
+    // Request: GET /api/user/library
+    // Returns: { success: boolean, library: Game[] }
 }
 ```
 
 ### addGameHandler
 ```typescript
 async (request: FastifyRequest, reply: FastifyReply) => {
-    // Ajoute un jeu à la bibliothèque de l'utilisateur
-    // Requête: POST /api/user/addGame
-    // Corps: { gameId: number }
-    // Retourne: { success: boolean, message: string }
+    // Adds a game to the user's library
+    // Request: POST /api/user/addGame
+    // Body: { gameId: number }
+    // Returns: { success: boolean, message: string }
 }
 ```
 
 ### changePictureHandler
 ```typescript
 async (request: FastifyRequest, reply: FastifyReply) => {
-    // Change la photo de profil de l'utilisateur
-    // Requête: POST /api/profile/changePicture
-    // Corps: FormData avec l'image
-    // Retourne: { success: boolean, message: string }
+    // Changes the user's profile picture
+    // Request: POST /api/profile/changePicture
+    // Body: FormData with the image
+    // Returns: { success: boolean, message: string }
 }
 ```
 
 ### updateBioHandler
 ```typescript
 async (request: FastifyRequest, reply: FastifyReply) => {
-    // Met à jour la bio de l'utilisateur
-    // Requête: POST /api/profile/updateBio
-    // Corps: { bio: string }
-    // Retourne: { success: boolean, message: string }
+    // Updates the user's bio
+    // Request: POST /api/profile/updateBio
+    // Body: { bio: string }
+    // Returns: { success: boolean, message: string }
 }
 ```
 
 ### getAllUsersHandler
 ```typescript
 async (request: FastifyRequest, reply: FastifyReply) => {
-    // Récupère tous les utilisateurs
-    // Requête: GET /api/users
-    // Retourne: { success: boolean, users: User[] }
+    // Retrieves all users
+    // Request: GET /api/users
+    // Returns: { success: boolean, users: User[] }
 }
 ```
 
-## Middleware d'Authentification
+## Authentication Middleware
 
 ### authMiddleware
 ```typescript
 async (request: AuthenticatedRequest, reply: FastifyReply) => {
-    // Vérifie le token JWT dans les cookies
-    // Ajoute l'ID de l'utilisateur à la requête
-    // Retourne une erreur 401 si non authentifié
+    // Checks the JWT token in cookies
+    // Adds the user ID to the request
+    // Returns a 401 error if not authenticated
 }
 ```
 
-## Gestion des Erreurs
+## Error Handling
 
-### Codes HTTP Courants
-- 200: Succès
-- 400: Mauvaise requête
-- 401: Non authentifié
-- 403: Interdit
-- 404: Non trouvé
-- 500: Erreur serveur
+### Common HTTP Codes
+- 200: Success
+- 400: Bad request
+- 401: Unauthorized
+- 403: Forbidden
+- 404: Not found
+- 500: Server error
 
-### Format de Réponse d'Erreur
+### Error Response Format
 ```typescript
 {
     success: false,
-    message: "Message d'erreur détaillé"
+    message: "Detailed error message"
 }
 ```
 
-## Bonnes Pratiques
+## Best Practices
 
-1. **Typage**
-   - Utiliser des interfaces pour les types de requêtes
-   - Définir clairement les types de retour
-   - Utiliser le type assertion (`as`) avec précaution
+1. **Typing**
+   - Use interfaces for request types
+   - Clearly define return types
+   - Use type assertion (`as`) with caution
 
-2. **Sécurité**
-   - Toujours vérifier l'authentification avec `authMiddleware`
-   - Valider les entrées utilisateur
-   - Utiliser HTTPS en production
+2. **Security**
+   - Always check authentication with `authMiddleware`
+   - Validate user input
+   - Use HTTPS in production
 
-3. **Gestion des Erreurs**
-   - Toujours utiliser try/catch
-   - Logger les erreurs détaillées
-   - Renvoyer des messages d'erreur clairs
+3. **Error Handling**
+   - Always use try/catch
+   - Log detailed errors
+   - Return clear error messages
 
 4. **Performance**
-   - Utiliser `async/await` pour les opérations asynchrones
-   - Éviter les requêtes inutiles à la base de données
-   - Mettre en cache quand possible 
+   - Use `async/await` for async operations
+   - Avoid unnecessary database queries
+   - Cache when possible

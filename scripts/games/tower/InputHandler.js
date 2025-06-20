@@ -10,13 +10,13 @@ export class InputHandler {
         });
     }
     cleanup() {
-        // Supprimer l'event listener du clavier
+        // Remove the keyboard event listener
         window.removeEventListener("keydown", (event) => {
             if (event.code === 'Escape') {
                 this.pauseMenu.toggle();
             }
         });
-        // Nettoyer le menu pause
+        // Clean up the pause menu
         if (this.pauseMenu) {
             this.pauseMenu.destroy();
         }

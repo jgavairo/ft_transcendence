@@ -1,4 +1,4 @@
-import { fetchUsernames, showProfileCard } from "../community/peopleList.js"; // Import de showProfileCard
+import { fetchUsernames, showProfileCard } from "../community/peopleList.js"; // Import showProfileCard
 import { GameManager } from "../../managers/gameManager.js";
 import { setupLibrary } from "./library.js";
 import api from "../../helpers/api.js"; // Import de l'API helper
@@ -6,28 +6,28 @@ import { launchPong } from "../../games/pong/main.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
 import { startTowerGame } from "../../games/tower/index.js";
 /**
- * Rend le HTML pour afficher le classement des joueurs pour un jeu spécifique
- * @param gameId - L'ID du jeu dont on veut afficher le classement
- * @param container - L'élément HTML dans lequel insérer le classement
- * @param currentUser - L'utilisateur actuellement connecté
+ * Renders the HTML to display the player ranking for a specific game
+ * @param gameId - The ID of the game for which to display the ranking
+ * @param container - The HTML element in which to insert the ranking
+ * @param currentUser - The currently logged-in user
  */
 export async function renderRankings(gameId, container, currentUser) {
-    // Récupérer les utilisateurs
+    // Retrieve users
     const people = await fetchUsernames();
-    // Récupérer les rankings depuis l'API
+    // Retrieve rankings from the API
     const rankingsResponse = await api.get(`/api/games/${gameId}/rankings`);
     const rankings = await rankingsResponse.json();
-    // Associer les rankings aux utilisateurs
+    // Associate rankings with users
     const rankedPeople = await Promise.all(rankings.map(async (ranking) => {
         const person = people.find((p) => p.id === ranking.userId);
         return Object.assign(Object.assign({}, person), { wins: ranking.win, losses: ranking.loss });
     }));
-    // Fonction simple pour ajouter un timestamp aux URLs d'images
+    // Simple function to add a timestamp to image URLs
     const getImageUrl = (imagePath, username) => {
         if (!imagePath || imagePath === 'default-profile.png') {
             return 'default-profile.png';
         }
-        // Ajouter un timestamp pour forcer le rechargement
+        // Add a timestamp to force reload
         const timestamp = Date.now();
         return `${imagePath}?v=${timestamp}&user=${username}`;
     };
@@ -55,7 +55,7 @@ export async function renderRankings(gameId, container, currentUser) {
             <button id="scrollToCurrentUser" class="scrollButton">Go to My Rank</button>
         </div>
     `;
-    // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
+    // Add a click event to each name to display the profile card
     const playerNames = container.querySelectorAll('.playerName');
     playerNames.forEach(playerName => {
         playerName.addEventListener('click', () => {
@@ -67,17 +67,17 @@ export async function renderRankings(gameId, container, currentUser) {
             showProfileCard(username, getImageUrl(profilePicture, username), bio, userId);
         });
     });
-    // Bouton Go to My Rank
+    // "Go to My Rank" button
     const scrollToCurrentUserBtn = container.querySelector('#scrollToCurrentUser');
     if (scrollToCurrentUserBtn && currentUser && currentUser.username) {
         scrollToCurrentUserBtn.addEventListener('click', () => {
-            // Trouver l'élément correspondant à l'utilisateur en cours
+            // Find the element corresponding to the current user
             const userElement = container.querySelector(`#user-${currentUser.username}`);
             if (userElement) {
                 userElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                userElement.style.backgroundColor = '#4a5568'; // Mettre en surbrillance temporaire
+                userElement.style.backgroundColor = '#4a5568'; // Highlight temporarily
                 setTimeout(() => {
-                    userElement.style.backgroundColor = ''; // Retirer la surbrillance après 2 secondes
+                    userElement.style.backgroundColor = ''; // Remove highlight after 2 seconds
                 }, 2000);
             }
         });
@@ -85,17 +85,17 @@ export async function renderRankings(gameId, container, currentUser) {
     return rankedPeople;
 }
 /**
- * Génère le HTML de la friend list pour la bibliothèque de jeux
- * @param people - Liste des utilisateurs
- * @returns string - HTML de la friend list
+ * Generates the HTML for the friend list for the game library
+ * @param people - List of users
+ * @returns string - HTML for the friend list
  */
 export function renderFriendList(people) {
-    // Fonction simple pour ajouter un timestamp aux URLs d'images
+    // Simple function to add a timestamp to image URLs
     const getImageUrl = (imagePath, username) => {
         if (!imagePath || imagePath === 'default-profile.png') {
             return 'default-profile.png';
         }
-        // Ajouter un timestamp pour forcer le rechargement
+        // Add a timestamp to force reload
         const timestamp = Date.now();
         return `${imagePath}?v=${timestamp}&user=${username}`;
     };
@@ -128,12 +128,12 @@ export function renderFriendList(people) {
     `;
 }
 export async function showGameDetails(gameIdOrObj) {
-    // Fonction pour ajouter un timestamp aux URLs d'images
+    // Function to add a timestamp to image URLs
     const getImageUrl = (imagePath, username) => {
         if (!imagePath || imagePath === 'default-profile.png') {
             return 'default-profile.png';
         }
-        // Ajouter un timestamp pour forcer le rechargement
+        // Add a timestamp to force reload
         const timestamp = Date.now();
         return `${imagePath}?v=${timestamp}&user=${username}`;
     };
@@ -172,7 +172,7 @@ export async function showGameDetails(gameIdOrObj) {
     catch (e) {
         friendIds = [];
     }
-    // Filtrer la friendlist pour n'afficher que les users possédant le jeu, qui ne sont pas l'utilisateur courant, et qui sont amis
+    // Filter the friend list to show only users who own the game, are not the current user, and are friends
     const filteredPeople = people.filter(person => userIds.includes(person.id) && person.id !== currentUser.id && friendIds.includes(person.id));
     const details = document.querySelector('.library-details');
     if (!details)

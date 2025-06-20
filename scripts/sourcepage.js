@@ -1,10 +1,10 @@
 const header = (username, profilePicture) => {
-    // Fonction pour ajouter un timestamp aux URLs d'images
+    // Function to add a timestamp to image URLs
     const getImageUrl = (imagePath, username) => {
         if (!imagePath || imagePath === 'default-profile.png') {
             return 'default-profile.png';
         }
-        // Ajouter un timestamp pour forcer le rechargement
+        // Add a timestamp to force reload
         const timestamp = Date.now();
         return `${imagePath}?v=${timestamp}&user=${username}`;
     };
@@ -135,12 +135,12 @@ const registerModalHTML = `
             <button id="registerRequestButton" class="signupButton">Sign up</button>
 `;
 const profileModalHTML = (username, email, profilePicture, bio, twoFactorEnabled, isGoogleAccount) => {
-    // Fonction pour ajouter un timestamp aux URLs d'images
+    // Function to add a timestamp to image URLs
     const getImageUrl = (imagePath, username) => {
         if (!imagePath || imagePath === 'default-profile.png') {
             return 'default-profile.png';
         }
-        // Ajouter un timestamp pour forcer le rechargement
+        // Add a timestamp to force reload
         const timestamp = Date.now();
         return `${imagePath}?v=${timestamp}&user=${username}`;
     };

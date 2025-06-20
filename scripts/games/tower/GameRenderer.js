@@ -9,7 +9,7 @@ export class GameRenderer {
             enemyBase: '/assets/games/Tower/rightTower.png',
             coin: '/assets/games/Tower/coin.png',
             endBackground: '/assets/games/Tower/endMatch.png',
-            waitingBackground: '/assets/games/Tower/waitingScreen.png', // Ajouter l'image de fin
+            waitingBackground: '/assets/games/Tower/waitingScreen.png', // Add end image
             // Knight //////////////////////////////////////////////////////////////////////
             //
             // -------------- Badge
@@ -120,28 +120,28 @@ export class GameRenderer {
         return Promise.all(promises).then(() => { });
     }
     constructor(canvasId, gameClient) {
-        this.buttons = []; // Pour stocker les boutons
+        this.buttons = []; // To store buttons
         this.isDestroyed = false;
         this.cooldownAnimationIds = [];
         this.buttonCooldowns = new Map();
-        this.cooldownDuration = 2000; // 2 secondes en millisecondes
-        this.cooldownSize = 15; // Taille réduite du cercle de cooldown
+        this.cooldownDuration = 2000; // 2 seconds in milliseconds
+        this.cooldownSize = 15; // Reduced cooldown circle size
         this.playerSide = 'player';
         this.matchIsEnded = false;
         this.animationFrame = 0;
         this.lastAnimationFrame = 0;
         this.animationSpeed = 120;
-        this.deathAnimationSpeed = 300; // Animation de mort plus lente
-        this.frameCount = 8; // Toutes les animations ont maintenant 8 frames
+        this.deathAnimationSpeed = 300; // Slower death animation
+        this.frameCount = 8; // All animations now have 8 frames
         this.frameWidth = 128;
         this.frameHeight = 128;
         this.images = {};
-        // Map pour suivre les frames de mort et leur timing
+        // Map to track death frames and their timing
         this.deathAnimationFrames = new Map();
         this.waitingAnimationFrame = null;
         this.dots = '';
         this.lastDotUpdate = 0;
-        this.dotUpdateInterval = 500; // Mise à jour des points toutes les 500ms
+        this.dotUpdateInterval = 500; // Update dots every 500ms
         this.gameClient = gameClient;
         this.stage = new Konva.Stage({
             container: canvasId,
@@ -164,14 +164,14 @@ export class GameRenderer {
             return;
         }
         this.buttonCooldowns.set(button, true);
-        // Créer le groupe pour le cooldown
+        // Create group for cooldown
         const cooldownGroup = new Konva.Group({
-            x: image.x() - image.width() / 2 + 10, // Décalage de 10px du bord
-            y: image.y() - image.height() / 2 + 10 // Décalage de 10px du bord
+            x: image.x() - image.width() / 2 + 10, // 10px offset from edge
+            y: image.y() - image.height() / 2 + 10 // 10px offset from edge
         });
-        // Arc de progression (cercle plein)
+        // Progress arc (full circle)
         const cooldownArc = new Konva.Arc({
-            innerRadius: 0, // Commence au centre pour un cercle plein
+            innerRadius: 0, // Start at center for full circle
             outerRadius: Math.max(0, this.cooldownSize / 2),
             angle: 0,
             rotation: -90,
@@ -180,7 +180,7 @@ export class GameRenderer {
         });
         cooldownGroup.add(cooldownArc);
         button.add(cooldownGroup);
-        // Appliquer l'effet grisé au bouton
+        // Apply grayscale effect to button
         const originalFilter = image.filters();
         image.filters([Konva.Filters.Grayscale]);
         image.opacity(0.5);
@@ -200,7 +200,7 @@ export class GameRenderer {
                 this.cooldownAnimationIds.push(id);
             }
             else {
-                // Animation terminée
+                // Animation finished
                 cooldownGroup.destroy();
                 image.filters(originalFilter);
                 image.opacity(1);
@@ -252,7 +252,7 @@ export class GameRenderer {
                     this.buttonsLayer.batchDraw();
                 }
             });
-            // Ajuster la position pour tenir compte du nouveau point d'origine
+            // Adjust position to account for new origin point
             archerImage.x(buttonPosition + buttonWidth / 2);
             archerImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(archerButton);
@@ -292,7 +292,7 @@ export class GameRenderer {
                     this.buttonsLayer.batchDraw();
                 }
             });
-            // Ajuster la position pour tenir compte du nouveau point d'origine
+            // Adjust position to account for new origin point
             knightImage.x(buttonPosition + buttonSpacing + buttonWidth / 2);
             knightImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(knightButton);
@@ -332,7 +332,7 @@ export class GameRenderer {
                     this.buttonsLayer.batchDraw();
                 }
             });
-            // Ajuster la position pour tenir compte du nouveau point d'origine
+            // Adjust position to account for new origin point
             mageImage.x(buttonPosition + (buttonSpacing * 2) + buttonWidth / 2);
             mageImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(mageButton);
@@ -372,7 +372,7 @@ export class GameRenderer {
                     this.buttonsLayer.batchDraw();
                 }
             });
-            // Ajuster la position pour tenir compte du nouveau point d'origine
+            // Adjust position to account for new origin point
             minotaurImage.x(buttonPosition + (buttonSpacing * 3) + buttonWidth / 2);
             minotaurImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(minotaurButton);
@@ -412,7 +412,7 @@ export class GameRenderer {
                     this.buttonsLayer.batchDraw();
                 }
             });
-            // Ajuster la position pour tenir compte du nouveau point d'origine
+            // Adjust position to account for new origin point
             samouraiImage.x(buttonPosition + (buttonSpacing * 4) + buttonWidth / 2);
             samouraiImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(samouraiButton);
@@ -452,7 +452,7 @@ export class GameRenderer {
                     this.buttonsLayer.batchDraw();
                 }
             });
-            // Ajuster la position pour tenir compte du nouveau point d'origine
+            // Adjust position to account for new origin point
             samouraiArcherImage.x(buttonPosition + (buttonSpacing * 5) + buttonWidth / 2);
             samouraiArcherImage.y(buttonY + buttonHeight / 2);
             this.buttonsLayer.add(samouraiArcherButton);
@@ -461,24 +461,24 @@ export class GameRenderer {
     }
     cleanup() {
         if (this.isDestroyed)
-            return; // Éviter le double cleanup
+            return; // Avoid double cleanup
         this.isDestroyed = true;
         this.matchIsEnded = true;
-        // Remettre le curseur par défaut
+        // Reset cursor to default
         document.body.style.cursor = 'default';
-        // Arrêter toutes les animations en cours
+        // Stop all ongoing animations
         this.cooldownAnimationIds.forEach(id => cancelAnimationFrame(id));
         this.cooldownAnimationIds = [];
-        // Retirer tous les event listeners des boutons
+        // Remove all event listeners from buttons
         this.buttons.forEach(button => {
             button.off('mouseover mouseout click');
         });
-        // Nettoyer les maps et tableaux AVANT de détruire les layers
+        // Clean up maps and arrays BEFORE destroying layers
         this.buttons = [];
         this.buttonCooldowns.clear();
         this.deathAnimationFrames.clear();
         try {
-            // Détruire les layers dans l'ordre
+            // Destroy layers in order
             if (this.buttonsLayer) {
                 this.buttonsLayer.destroyChildren();
                 this.buttonsLayer.destroy();
@@ -487,16 +487,16 @@ export class GameRenderer {
                 this.layer.destroyChildren();
                 this.layer.destroy();
             }
-            // Détruire le stage en dernier
+            // Destroy stage last
             if (this.stage) {
                 this.stage.destroyChildren();
                 this.stage.destroy();
             }
         }
         catch (error) {
-            console.error("Erreur pendant le cleanup:", error);
+            console.error("Error during cleanup:", error);
         }
-        // S'assurer que les références sont nulles
+        // Ensure references are null
         this.buttonsLayer = null;
         this.layer = null;
         this.stage = null;
@@ -514,7 +514,7 @@ export class GameRenderer {
             this.animationFrame = (this.animationFrame + 1) % this.frameCount;
             this.lastAnimationFrame = now;
         }
-        // Nettoyage des unités mortes du Map
+        // Cleaning up dead units from the Map
         this.deathAnimationFrames.forEach((_, unitId) => {
             const unitExists = [...state.player.units, ...state.enemy.units].some(unit => unit.id === unitId);
             if (!unitExists) {
@@ -530,7 +530,7 @@ export class GameRenderer {
                 y: 0
             }));
         }
-        // Affiche la base du joueur
+        // Display player base
         this.layer.add(new Konva.Image({
             image: this.images.playerBase,
             x: -50,
@@ -538,7 +538,7 @@ export class GameRenderer {
             scaleX: 0.5,
             scaleY: 0.5
         }));
-        // Affiche la base ennemie
+        // Display enemy base
         this.layer.add(new Konva.Image({
             image: this.images.enemyBase,
             x: 1040,
@@ -546,10 +546,10 @@ export class GameRenderer {
             scaleX: 0.5,
             scaleY: 0.5
         }));
-        // Affiche les unités du joueur
+        // Display player units
         state.player.units.forEach((unit) => {
             let currentFrame = this.animationFrame;
-            // Gestion spéciale pour l'animation de mort
+            // Special handling for death animation
             if (unit.state === 'dead') {
                 if (!this.deathAnimationFrames.has(unit.id)) {
                     this.deathAnimationFrames.set(unit.id, { frame: 0, lastUpdate: now });
@@ -580,10 +580,10 @@ export class GameRenderer {
                 }
             }));
         });
-        // Affiche les unités ennemies
+        // Display enemy units
         state.enemy.units.forEach((unit) => {
             let currentFrame = this.animationFrame;
-            // Gestion spéciale pour l'animation de mort
+            // Special handling for death animation
             if (unit.state === 'dead') {
                 if (!this.deathAnimationFrames.has(unit.id)) {
                     this.deathAnimationFrames.set(unit.id, { frame: 0, lastUpdate: now });
@@ -621,10 +621,10 @@ export class GameRenderer {
         if (playerHP <= 0 || enemyHP <= 0) {
             this.matchIsEnded = true;
             const winner = playerHP <= 0 ? state.enemy.username : state.player.username;
-            // Nettoyer l'écran
+            // Clear screen
             this.layer.destroyChildren();
             this.buttonsLayer.destroyChildren();
-            // Ajouter le fond
+            // Add background
             if (this.images.endBackground) {
                 const background = new Konva.Image({
                     image: this.images.endBackground,
@@ -635,7 +635,7 @@ export class GameRenderer {
                 this.layer.add(background);
             }
             else {
-                // Fallback au rectangle noir si l'image n'est pas chargée
+                // Fallback to black rectangle if image not loaded
                 const background = new Konva.Rect({
                     width: 1200,
                     height: 800,
@@ -644,7 +644,7 @@ export class GameRenderer {
                 });
                 this.layer.add(background);
             }
-            // Ajouter le texte du gagnant
+            // Add winner text
             const winnerText = new Konva.Text({
                 text: `${winner} WIN !`,
                 fontFamily: 'Press Start 2P',
@@ -660,7 +660,7 @@ export class GameRenderer {
                 shadowOpacity: 0.5
             });
             this.layer.add(winnerText);
-            // Créer un bouton pour retourner au menu
+            // Create button to return to menu
             const buttonGroup = new Konva.Group({
                 x: (1200 - 250) / 2,
                 y: 450
@@ -691,20 +691,20 @@ export class GameRenderer {
             buttonGroup.add(button);
             buttonGroup.add(buttonText);
             buttonGroup.on('mouseover', () => {
-                button.fill('#D18B00'); // Jaune/marron plus foncé (effet enfoncé)
-                button.stroke('#6B3F16'); // Garde le contour foncé
-                button.shadowColor('#000000'); // Ombre très discrète ou nulle
+                button.fill('#D18B00'); // Darker yellow/brown (pressed effect)
+                button.stroke('#6B3F16'); // Keep dark outline
+                button.shadowColor('#000000'); // Very subtle or no shadow
                 button.shadowBlur(2);
-                buttonText.fill('#6B3F16'); // Garde le texte foncé
-                buttonText.y(28); // Décale le texte vers le bas (effet appuyé)
+                buttonText.fill('#6B3F16'); // Keep text dark
+                buttonText.y(28); // Move text down (pressed effect)
             });
             buttonGroup.on('mouseout', () => {
-                button.fill('#FFB300'); // Jaune doré normal
+                button.fill('#FFB300'); // Normal golden yellow
                 button.stroke('#6B3F16');
                 button.shadowColor('#FF8C00');
                 button.shadowBlur(15);
                 buttonText.fill('#6B3F16');
-                buttonText.y(22); // Remet le texte à sa position normale
+                buttonText.y(22); // Reset text to normal position
             });
             buttonGroup.on('click', () => {
                 this.gameClient.quitMatch(false);
@@ -749,7 +749,7 @@ export class GameRenderer {
             fill: "red",
             cornerRadius: 4
         }));
-        // Affiche l'or et les HP
+        // Display gold and HP
         this.layer.add(new Konva.Image({
             image: this.images.coin,
             x: 10,
@@ -811,7 +811,7 @@ export class GameRenderer {
             return;
         this.layer.destroyChildren();
         this.buttonsLayer.hide();
-        // Fond noir semi-transparent
+        // Semi-transparent black background
         const background = new Konva.Image({
             image: this.images.waitingBackground,
             width: 1200,
@@ -819,9 +819,9 @@ export class GameRenderer {
             opacity: 1
         });
         this.layer.add(background);
-        // Texte "Recherche d'un adversaire"
+        // Text "Searching for an opponent"
         const waitingText = new Konva.Text({
-            text: 'Recherche d\'un adversaire',
+            text: "Searching for an opponent",
             fontFamily: 'Press Start 2P',
             fontSize: 36,
             fill: '#FFD700',
@@ -835,7 +835,7 @@ export class GameRenderer {
             shadowOpacity: 0.5
         });
         this.layer.add(waitingText);
-        // Points animés
+        // Animated dots
         const dotsText = new Konva.Text({
             text: '',
             fontFamily: 'Press Start 2P',
@@ -847,7 +847,7 @@ export class GameRenderer {
             align: 'center'
         });
         this.layer.add(dotsText);
-        // Bouton Annuler
+        // Cancel button
         const buttonGroup = new Konva.Group({
             x: (1200 - 250) / 2,
             y: 500
@@ -865,7 +865,7 @@ export class GameRenderer {
             shadowOpacity: 0.4
         });
         const buttonText = new Konva.Text({
-            text: "ANNULER",
+            text: "CANCEL",
             fontFamily: "Press Start 2P",
             fontSize: 22,
             fontWeight: "bold",
@@ -895,7 +895,7 @@ export class GameRenderer {
             }
         });
         this.layer.add(buttonGroup);
-        // Animation des points
+        // Dots animation
         const animate = () => {
             if (this.isDestroyed)
                 return;
@@ -918,11 +918,11 @@ export class GameRenderer {
         }
         this.dots = '';
         this.lastDotUpdate = 0;
-        // Nettoyer le layer principal
+        // Clear main layer
         if (this.layer) {
             this.layer.destroyChildren();
         }
-        // Réafficher les boutons de spawn
+        // Redisplay spawn buttons
         if (this.buttonsLayer) {
             this.buttonsLayer.show();
         }

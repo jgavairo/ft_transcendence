@@ -1,84 +1,84 @@
-# Guide de Personnalisation CSS
+# CSS Customization Guide
 
-## 1. Couleurs et Opacité
+## 1. Colors and Opacity
 ```css
-/* Couleurs */
-color: #ff0000;              /* Rouge en hexadécimal */
-color: rgb(255, 0, 0);       /* Rouge en RGB */
-color: rgba(255, 0, 0, 0.5); /* Rouge avec opacité */
-color: red;                  /* Nom de couleur */
-color: var(--ma-variable);   /* Variable CSS */
+/* Colors */
+color: #ff0000;              /* Hexadecimal red */
+color: rgb(255, 0, 0);       /* Red in RGB */
+color: rgba(255, 0, 0, 0.5); /* Red with opacity */
+color: red;                  /* Color name */
+color: var(--my-variable);   /* CSS variable */
 
-/* Opacité */
+/* Opacity */
 opacity: 0.5;                /* 0 = transparent, 1 = opaque */
 ```
 
-## 2. Dimensions et Positionnement
+## 2. Dimensions and Positioning
 ```css
 /* Dimensions */
-width: 100px;                /* Largeur fixe */
-width: 100%;                 /* Largeur relative */
-height: 100vh;               /* Hauteur relative à la fenêtre */
-min-width: 200px;            /* Largeur minimale */
-max-width: 800px;            /* Largeur maximale */
+width: 100px;                /* Fixed width */
+width: 100%;                 /* Relative width */
+height: 100vh;               /* Height relative to window */
+min-width: 200px;            /* Minimum width */
+max-width: 800px;            /* Maximum width */
 
-/* Positionnement */
-position: relative;          /* Position relative */
-position: absolute;          /* Position absolue */
-position: fixed;             /* Position fixe */
-top: 10px;                   /* Distance depuis le haut */
-left: 20px;                  /* Distance depuis la gauche */
-z-index: 1;                  /* Ordre d'empilement */
+/* Positioning */
+position: relative;          /* Relative position */
+position: absolute;          /* Absolute position */
+position: fixed;             /* Fixed position */
+top: 10px;                   /* Distance from top */
+left: 20px;                  /* Distance from left */
+z-index: 1;                  /* Stacking order */
 ```
 
-## 3. Mise en Page (Flexbox)
+## 3. Layout (Flexbox)
 ```css
-/* Conteneur Flex */
-display: flex;               /* Active Flexbox */
-flex-direction: row;         /* Direction horizontale */
-flex-direction: column;      /* Direction verticale */
-justify-content: center;     /* Alignement horizontal */
-align-items: center;         /* Alignement vertical */
-gap: 10px;                   /* Espace entre les éléments */
+/* Flex Container */
+display: flex;               /* Enable Flexbox */
+flex-direction: row;         /* Horizontal direction */
+flex-direction: column;      /* Vertical direction */
+justify-content: center;     /* Horizontal alignment */
+align-items: center;         /* Vertical alignment */
+gap: 10px;                   /* Space between elements */
 
-/* Éléments Flex */
-flex: 1;                     /* Prend l'espace disponible */
-flex-grow: 1;                /* Capacité à grandir */
-flex-shrink: 0;              /* Capacité à rétrécir */
-flex-basis: 100px;           /* Taille de base */
+/* Flex Items */
+flex: 1;                     /* Take available space */
+flex-grow: 1;                /* Ability to grow */
+flex-shrink: 0;              /* Ability to shrink */
+flex-basis: 100px;           /* Base size */
 ```
 
-## 4. Bordures et Ombres
+## 4. Borders and Shadows
 ```css
-/* Bordures */
-border: 1px solid black;     /* Bordure simple */
-border-radius: 10px;         /* Coins arrondis */
-border-top: 2px dashed red;  /* Bordure supérieure */
+/* Borders */
+border: 1px solid black;     /* Simple border */
+border-radius: 10px;         /* Rounded corners */
+border-top: 2px dashed red;  /* Top border */
 
-/* Ombres */
-box-shadow: 0 0 10px rgba(0,0,0,0.5);  /* Ombre portée */
-text-shadow: 2px 2px 4px black;        /* Ombre de texte */
+/* Shadows */
+box-shadow: 0 0 10px rgba(0,0,0,0.5);  /* Box shadow */
+text-shadow: 2px 2px 4px black;        /* Text shadow */
 ```
 
-## 5. Texte
+## 5. Text
 ```css
-/* Style de texte */
-font-family: Arial, sans-serif;  /* Police */
-font-size: 16px;                 /* Taille */
-font-weight: bold;               /* Épaisseur */
-text-align: center;              /* Alignement */
-text-decoration: underline;      /* Soulignement */
-line-height: 1.5;                /* Hauteur de ligne */
-letter-spacing: 2px;             /* Espacement des lettres */
+/* Text style */
+font-family: Arial, sans-serif;  /* Font */
+font-size: 16px;                 /* Size */
+font-weight: bold;               /* Weight */
+text-align: center;              /* Alignment */
+text-decoration: underline;      /* Underline */
+line-height: 1.5;                /* Line height */
+letter-spacing: 2px;             /* Letter spacing */
 ```
 
-## 6. Transitions et Animations
+## 6. Transitions and Animations
 ```css
 /* Transitions */
-transition: all 0.3s ease;       /* Transition générale */
-transition-property: color;      /* Propriété à animer */
-transition-duration: 0.3s;       /* Durée */
-transition-timing-function: ease;/* Type d'animation */
+transition: all 0.3s ease;       /* General transition */
+transition-property: color;      /* Property to animate */
+transition-duration: 0.3s;       /* Duration */
+transition-timing-function: ease;/* Animation type */
 
 /* Animations */
 @keyframes slide {
@@ -91,48 +91,48 @@ animation: slide 1s infinite;    /* Animation */
 ## 7. Transformations
 ```css
 transform: rotate(45deg);        /* Rotation */
-transform: scale(1.5);           /* Échelle */
+transform: scale(1.5);           /* Scale */
 transform: translate(100px);     /* Translation */
-transform: skew(10deg);          /* Inclinaison */
+transform: skew(10deg);          /* Skew */
 ```
 
-## 8. Arrière-plan
+## 8. Background
 ```css
-background-color: blue;          /* Couleur de fond */
-background-image: url('image.jpg'); /* Image de fond */
-background-size: cover;          /* Taille de l'image */
-background-position: center;     /* Position de l'image */
-background-repeat: no-repeat;    /* Répétition */
+background-color: blue;          /* Background color */
+background-image: url('image.jpg'); /* Background image */
+background-size: cover;          /* Image size */
+background-position: center;     /* Image position */
+background-repeat: no-repeat;    /* Repeat */
 ```
 
-## 9. Effets de Souris
+## 9. Mouse Effects
 ```css
-/* États */
-:hover { color: red; }          /* Au survol */
-:active { color: blue; }        /* Au clic */
-:focus { outline: 2px solid; }  /* Au focus */
-:disabled { opacity: 0.5; }     /* Désactivé */
+/* States */
+:hover { color: red; }          /* On hover */
+:active { color: blue; }        /* On click */
+:focus { outline: 2px solid; }  /* On focus */
+:disabled { opacity: 0.5; }     /* Disabled */
 ```
 
 ## 10. Media Queries (Responsive)
 ```css
-/* Écran mobile */
+/* Mobile screen */
 @media (max-width: 768px) {
     .container { width: 100%; }
 }
 
-/* Écran tablette */
+/* Tablet screen */
 @media (min-width: 769px) and (max-width: 1024px) {
     .container { width: 80%; }
 }
 
-/* Écran desktop */
+/* Desktop screen */
 @media (min-width: 1025px) {
     .container { width: 60%; }
 }
 ```
 
-## 11. Variables CSS
+## 11. CSS Variables
 ```css
 :root {
     --primary-color: #007bff;
@@ -146,28 +146,28 @@ background-repeat: no-repeat;    /* Répétition */
 }
 ```
 
-## 12. Sélecteurs Avancés
+## 12. Advanced Selectors
 ```css
-/* Sélection par attribut */
+/* Attribute selector */
 [type="text"] { /* ... */ }
 
-/* Sélection par état */
+/* State selector */
 input:checked { /* ... */ }
 
-/* Sélection par position */
+/* Position selector */
 li:first-child { /* ... */ }
 li:last-child { /* ... */ }
 li:nth-child(2) { /* ... */ }
 
-/* Sélection par relation */
+/* Relation selector */
 .parent > .child { /* ... */ }
 .sibling + .sibling { /* ... */ }
 ```
 
-## 13. Pseudo-éléments
+## 13. Pseudo-elements
 ```css
-::before { content: "→"; }      /* Avant l'élément */
-::after { content: "←"; }       /* Après l'élément */
-::first-letter { font-size: 2em; } /* Première lettre */
-::selection { background: yellow; } /* Texte sélectionné */
-``` 
+::before { content: "→"; }      /* Before the element */
+::after { content: "←"; }       /* After the element */
+::first-letter { font-size: 2em; } /* First letter */
+::selection { background: yellow; } /* Selected text */
+```

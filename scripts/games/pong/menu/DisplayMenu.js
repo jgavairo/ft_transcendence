@@ -456,6 +456,7 @@ export class PongMenuManager {
             this.menuLayer.batchDraw();
         });
         gameSocket.on('tournamentFinalSpectate', (data) => {
+            this.finalistUsernames = data.finalists; // Stocke les noms des finalistes
             this.menuLayer.removeChildren();
             this.buttons.forEach(btn => btn.group.destroy());
             this.buttons = [];
@@ -472,7 +473,9 @@ export class PongMenuManager {
             this.createButton('SPECTATE', gameWidth / 2 - 100, 450, () => {
                 const matchId = data.matchId;
                 this.removeGameStateHandler(matchId);
-                initTournamentPong(undefined, data.finalists[0], data.finalists[1]);
+                // Utilise les noms stockés
+                const [f1, f2] = this.finalistUsernames || data.finalists;
+                initTournamentPong(undefined, f1, f2);
                 const handler = (state) => {
                     if (!state || !state.paddles)
                         return;
@@ -936,7 +939,8 @@ export class PongMenuManager {
             // Show bracket and Ready button logic for finalists only
             if (isFinale && nonEliminated.length === 2) {
                 const allReady = status.filter(s => !s.eliminated).every(s => s.ready);
-                const finalistUsernames = nonEliminated.map(s => s.username);
+                // Utilise les noms stockés si on est spectateur
+                const finalistUsernames = this.finalistUsernames && this.finalistUsernames.length === 2 ? this.finalistUsernames : nonEliminated.map(s => s.username);
                 let you;
                 try {
                     const current = await GameManager.getCurrentUser();
@@ -1068,7 +1072,8 @@ export class PongMenuManager {
                     }));
                     this.createButton('SPECTATE', gameWidth / 2 - 100, 450, () => {
                         // Launch spectator mode for the final
-                        initTournamentPong(undefined, finalistUsernames[0], finalistUsernames[1]);
+                        const [f1, f2] = finalistUsernames;
+                        initTournamentPong(undefined, f1, f2);
                         // Subscribe to gameState updates for the final
                         const handler = (state) => {
                             if (!state || !state.paddles)
@@ -1078,7 +1083,6 @@ export class PongMenuManager {
                                 gameSocket.off('gameState', handler);
                                 this.gameStateHandlers.delete(matchId);
                                 this.activeTournamentMatchId = null;
-                                // Optionnel : nettoyage supplémentaire ici
                             }
                         };
                         this.gameStateHandlers.set(matchId, handler);

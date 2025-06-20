@@ -4,12 +4,12 @@ import { HOSTNAME } from "../../main.js";
 
 
 export interface News {
-    id?: number;          // Optionnel car auto-incrémenté
-    title: string;        // Titre de la news
-    content: string;      // Contenu de la news
-    image_url: string;    // URL de l'image associée
-    created_at?: string;  // Date de création (optionnel car auto-généré)
-    priority: number;     // Priorité d'affichage (0 = normal, plus grand = plus prioritaire)
+    id?: number;          // Optional, auto-incremented
+    title: string;        // News title
+    content: string;      // News content
+    image_url: string;    // Associated image URL
+    created_at?: string;  // Creation date (optional, auto-generated)
+    priority: number;     // Display priority (0 = normal, higher = more priority)
 }
 
 export async function setupNews(): Promise<void>
@@ -33,7 +33,7 @@ export async function setupNews(): Promise<void>
     if (!carousel || !controls || !prevButton || !nextButton) return;
 
     try {
-        // Récupération des news depuis l'API
+        // Fetch news from the API
         const response = await api.get(`https://${HOSTNAME}:8443/api/news/getAll`);
         const news = await response.json();
 
@@ -41,13 +41,13 @@ export async function setupNews(): Promise<void>
 
         let currentIndex = 0;
 
-        // Création des news dans le carousel
+        // Create news items in the carousel
         news.forEach((newsItem: any, index: number) => {
             const newsElement = document.createElement('div');
             newsElement.className = 'news-item';
             newsElement.style.display = index === 0 ? 'flex' : 'none';
             
-            // Structure de chaque news
+            // Structure of each news item
             newsElement.innerHTML = `
                 <div class="news-overlay"></div>
                 <div class="news-content">
@@ -56,19 +56,19 @@ export async function setupNews(): Promise<void>
                 </div>
             `;
             
-            // Ajout de l'image de fond
+            // Add background image
             newsElement.style.backgroundImage = `url('${newsItem.image_url}')`;
             
             carousel.appendChild(newsElement);
 
-            // Création du point de navigation
+            // Create navigation dot
             const dot = document.createElement('div');
             dot.className = `news-dot${index === 0 ? ' active' : ''}`;
             dot.addEventListener('click', () => showNews(index));
             controls.appendChild(dot);
         });
 
-        // Fonction pour afficher une news spécifique
+        // Function to display a specific news item
         function showNews(index: number): void {
             if (!carousel || !controls) return;
             const newsItems = carousel.getElementsByClassName('news-item');
@@ -85,7 +85,7 @@ export async function setupNews(): Promise<void>
             currentIndex = index;
         }
 
-        // Gestionnaires d'événements pour les boutons de navigation
+        // Event handlers for navigation buttons
         prevButton.addEventListener('click', () => {
             const newIndex = currentIndex > 0 ? currentIndex - 1 : news.length - 1;
             showNews(newIndex);
@@ -96,13 +96,13 @@ export async function setupNews(): Promise<void>
             showNews(newIndex);
         });
 
-        // Défilement automatique
+        // Automatic scrolling
         setInterval(() => {
             const newIndex = currentIndex < news.length - 1 ? currentIndex + 1 : 0;
             showNews(newIndex);
         }, 5000);
 
     } catch (error) {
-        console.error('Erreur lors du chargement des news:', error);
+        console.error('Error while loading news:', error);
     }
 }

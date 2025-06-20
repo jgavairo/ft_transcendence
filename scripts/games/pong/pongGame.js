@@ -372,6 +372,13 @@ export function initTournamentPong(side, you, opponent) {
     mySide = typeof side === 'number' ? side : -1; // -1 for spectator
     playerName = you;
     opponentName = opponent;
+    // Ajout pour spectateur : remplir playerNames
+    if (typeof side !== 'number' || side === -1) {
+        playerNames = [you, opponent];
+    }
+    else {
+        playerNames = [];
+    }
     lastState = null;
     ready = true;
     firstFrame = false;

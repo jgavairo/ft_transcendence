@@ -15,7 +15,7 @@ export class PauseMenu {
     }
 
     private createPauseMenu() {
-        // Fond semi-transparent
+        // Semi-transparent background
         const background = new Konva.Rect({
             x: 0,
             y: 0,
@@ -25,7 +25,7 @@ export class PauseMenu {
             opacity: 0.7
         });
 
-        // Fenêtre de pause
+        // Pause window
         const menuWindow = new Konva.Rect({
             x: 400,
             y: 250,
@@ -37,7 +37,7 @@ export class PauseMenu {
             cornerRadius: 10
         });
 
-        // Titre
+        // Title
         const title = new Konva.Text({
             x: 450,
             y: 280,
@@ -49,11 +49,11 @@ export class PauseMenu {
             align: 'center'
         });
 
-        // Bouton Reprendre
+        // Resume button
         const resumeButton = this.createButton(450, 350, 300, 50, 'RESUME');
         resumeButton.on('click', () => this.toggle());
 
-        // Bouton Quitter
+        // Quit button
         const quitButton = this.createButton(450, 420, 300, 50, 'QUIT');
         quitButton.on('click', () => {
             this.client.quitMatch(true);
@@ -95,7 +95,7 @@ export class PauseMenu {
         group.add(buttonBg);
         group.add(buttonText);
 
-        // Effets de survol
+        // Hover effects
         group.on('mouseenter', () => {
             buttonBg.fill('#2980B9');
             document.body.style.cursor = 'pointer';
@@ -127,4 +127,4 @@ export class PauseMenu {
             this.layer.destroy();
         }
     }
-} 
+}
