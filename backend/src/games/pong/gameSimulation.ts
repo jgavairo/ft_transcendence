@@ -65,7 +65,7 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
     return d;
   };
 
-  // --- 1) MOUVEMENT DES PADDLES + CLAMP ---
+  // --- 1) PADDLE MOVEMENT + CLAMP ---
   const aliveIndices = match.paddles
     .map((p, i) => p.lives > 0 ? i : -1)
     .filter(i => i >= 0);
@@ -77,7 +77,7 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
     if (paddle.direction === 'down') paddle.phi += PADDLE_SPEED;
     paddle.phi = normalizeAngle360(paddle.phi);
 
-    // clamp vis-à-vis des voisins vivants (alive neighbors)
+    // clamp with respect to alive neighbors
     const sorted = aliveIndices.slice().sort((a, b) =>
       normalizeAngle360(match.paddles[a].phi) - normalizeAngle360(match.paddles[b].phi)
     );
@@ -100,7 +100,7 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
     }
   });
 
-  // --- 2) MOUVEMENT DE LA BALLE ---
+  // --- 2) BALL MOVEMENT ---
   const b = match.ball;
   b.x += b.vx;
   b.y += b.vy;
@@ -108,7 +108,7 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
   const dx = b.x, dy = b.y;
   const dist = Math.hypot(dx, dy);
 
-  // --- 3) COLLISION AVEC LE BORD CIRCULAIRE ---
+  // --- 3) COLLISION WITH THE CIRCULAR EDGE ---
   if (dist + b.r >= RADIUS) {
     const nx = dx / dist, ny = dy / dist;
     const penetration = dist + b.r - RADIUS;
@@ -154,8 +154,7 @@ export async function updateMatch(match: MatchState, nsp: Namespace): Promise<vo
       }
     }
   }
-
-  // --- 4) FIN DE PARTIE ---
+  // --- 4) END OF GAME ---
   if (match.paddles.filter(p => p.lives > 0).length <= 1) {
     match.gameOver = true;
     // Emit the end of game event to refresh the ranking on the client side
