@@ -25,3 +25,4 @@ Thumbs.db
 
 # SSL Certificates
 docker/nginx/ssl/privkey.pem
+docker/nginx/ssl/fullchain.pem
