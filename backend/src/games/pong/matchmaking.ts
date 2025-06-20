@@ -53,6 +53,9 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
   let triQueue: Player[] = [];
   const matchStates = new Map<string, MatchState>();
   const triMatchStates = new Map<string, TriMatchState>();
+  // Ajout : Maps pour stocker les intervalles des parties classiques et tri-pong
+  const matchIntervals = new Map<string, NodeJS.Timeout>();
+  const triMatchIntervals = new Map<string, NodeJS.Timeout>();
   // Map of complete or pending tournaments, grouped by id
   // Store BasicTournament for the 4-player tournament
   const tournaments = new Map<string, BasicTournament>();
@@ -425,8 +428,10 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         gameNs.to(m.roomId).emit('gameState', m);
         if (m.gameOver) {
           clearInterval(iv);
+          matchIntervals.delete(m.roomId);
         }
       }, 1000 / 60);
+      matchIntervals.set(m.roomId, iv);
     });
 
     socket.on('startSoloVsBot', ({ username, userId }: { username: string, userId?: string }) => {
@@ -525,6 +530,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           clearInterval(botInterval);
         }
       }, 1000 / 60);
+      matchIntervals.set(m.roomId, iv);
     });
 
     // 2) SOLO TRI-PONG
@@ -549,6 +555,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         gameNs.to(m.roomId).emit('gameState', m);
         if (m.gameOver) clearInterval(iv);
       }, 1000 / 60);
+      triMatchIntervals.set(m.roomId, iv);
     });
 
     // 3) 2-PLAYERS MATCHMAKING
@@ -670,6 +677,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           }
         }
       }, 1000 / 60);
+      matchIntervals.set(m.roomId, iv);
     }
 });
 
@@ -746,6 +754,46 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         socketToUserId.delete(sid);
       });
 
+      // --- Arrêt des intervalles gameState pour les rooms classiques ---
+      for (const [roomId, m] of matchStates.entries()) {
+        // On suppose que l'ordre des paddles correspond à l'ordre des sockets dans la room
+        // On cherche si un des sockets déconnectés est dans la room (side 0 ou 1)
+        const playerSocketIds = [
+          ...playerInfo.entries()
+        ].filter(([sid, info]) => info.roomId === roomId).map(([sid]) => sid);
+        if (playerSocketIds.some(sid => socketIds.includes(sid))) {
+          if (matchIntervals.has(roomId)) {
+            clearInterval(matchIntervals.get(roomId));
+            matchIntervals.delete(roomId);
+          }
+          matchStates.delete(roomId);
+        }
+      }
+      // --- Idem pour les triMatchStates si besoin ---
+      for (const [roomId, m] of triMatchStates.entries()) {
+        const playerSocketIds = [
+          ...playerInfo.entries()
+        ].filter(([sid, info]) => info.roomId === roomId).map(([sid]) => sid);
+        if (playerSocketIds.some(sid => socketIds.includes(sid))) {
+          if (triMatchIntervals.has(roomId)) {
+            clearInterval(triMatchIntervals.get(roomId));
+            triMatchIntervals.delete(roomId);
+          }
+          triMatchStates.delete(roomId);
+        }
+      }
+      // --- Pour les tournois, tu as déjà tournamentMatchIntervals ---
+      for (const [matchId, interval] of tournamentMatchIntervals.entries()) {
+        const state = matchStates.get(matchId);
+        const playerSocketIds = [
+          ...playerInfo.entries()
+        ].filter(([sid, info]) => info.roomId === matchId).map(([sid]) => sid);
+        if (playerSocketIds.some(sid => socketIds.includes(sid))) {
+          clearInterval(interval);
+          tournamentMatchIntervals.delete(matchId);
+          matchStates.delete(matchId);
+        }
+      }
     });
 
     // --- PRIVATE ROOM ---
@@ -798,8 +846,12 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           const iv = setInterval(() => {
             updateMatch(m, gameNs);
             gameNs.to(roomId).emit('gameState', m);
-            if (m.gameOver) clearInterval(iv);
+            if (m.gameOver) {
+              clearInterval(iv);
+              matchIntervals.delete(roomId);
+            }
           }, 1000 / 60);
+          matchIntervals.set(roomId, iv);
         } else if (room.maxPlayers === 3) {
           const m = startTriMatch(room.sockets, gameNs, false);
           triMatchStates.set(roomId, m);
@@ -815,8 +867,12 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           const iv = setInterval(() => {
             updateMatch(m, gameNs);
             gameNs.to(roomId).emit('gameState', m);
-            if (m.gameOver) clearInterval(iv);
+            if (m.gameOver) {
+              clearInterval(iv);
+              triMatchIntervals.delete(roomId);
+            }
           }, 1000 / 60);
+          triMatchIntervals.set(roomId, iv);
         }
         privateRooms.delete(roomId);
       }
@@ -1356,6 +1412,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         gameNs.to(m.roomId).emit('gameState', m);
         if (m.gameOver) clearInterval(iv);
       }, 1000 / 60);
+      triMatchIntervals.set(m.roomId, iv);
     }
   }
 }

@@ -84,9 +84,9 @@ function startAnimation(drawText) {
             ctx.globalAlpha = 1;
         }
     }
-    // La boucle d'animation
+    // La boucle d’animation
     function frame() {
-        // 1) On n'attache le listener de clic qu'une seule fois
+        // 1) On n’attache le listener de clic qu’une seule fois
         if (!listenerAttached) {
             const canvasEl = ctx.canvas;
             canvasEl.addEventListener('click', onCanvasClick);
@@ -115,7 +115,7 @@ function startAnimation(drawText) {
             if (p.life <= 0)
                 particles.splice(i, 1);
         });
-        // 5) Texte "YOU LOSE" / "YOU WIN"
+        // 5) Texte “YOU LOSE” / “YOU WIN”
         drawText(goFrame);
         // 6) Fade-out final (frames 140→180)
         if (goFrame >= 140) {
@@ -157,11 +157,6 @@ export function animateEnd(winnerName, padColor) {
     //     ctx.restore();
     //   }
     // });
-    const menu = PongMenuManager.getInstance();
-    if (menu) {
-        menu.displayEndMatch(winnerName, padColor);
-    }
-    else {
-        console.error('[DisplayFinishGame] Aucune instance de PongMenuManager trouvée pour animateEnd');
-    }
+    const menu = new PongMenuManager(false);
+    menu.displayEndMatch(winnerName, padColor);
 }

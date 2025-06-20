@@ -132,6 +132,8 @@ export async function onTriMatchFound(data: any) {
   startPong();
 }
 
+let isTournamentGame = false;
+
 function onGameState(state: MatchState) {
   if (!running){ 
     return;
@@ -139,20 +141,23 @@ function onGameState(state: MatchState) {
   lastState = state;
   if (!ready) return;
 
-  if (showPauseMenu) {
+  if (showPauseMenu && !isTournamentGame) {
     if (lastState) {
       renderPong(lastState);
     }
     drawPauseMenu(canvas, ctx);
     return;
   }
-
+  
   if (!firstFrame) {
     firstFrame = true;
     // displayParticles();
-    setTimeout(() => renderPong(state), 500);
+    if (!isTournamentGame)
+      console.log('Received game state:', state);
+      setTimeout(() => renderPong(state), 500);
   } else {
-    renderPong(state);
+    if (!isTournamentGame)
+      renderPong(state);
   }
 }
 
@@ -393,6 +398,7 @@ export function startPong() {
   canvas.width = CW;
   canvas.height = CH;
   initPauseMenu(canvas, ctx, displayMenu);
+  isTournamentGame = false;
   // --- Plus besoin de startExplosionAnimation ici ---
 }
 
@@ -407,6 +413,10 @@ export function initTournamentPong(side: number | undefined, you: string, oppone
   lastState   = null;
   ready       = true;
   firstFrame  = false;
+
+  isTournamentGame = true;
+
+  console.log('isTournamentGame:', isTournamentGame);
 
   // 2) Create <canvas> (same as startPong)
   const modal = document.getElementById('games-modal');

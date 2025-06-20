@@ -95,6 +95,7 @@ export async function onTriMatchFound(data) {
     ready = true;
     startPong();
 }
+let isTournamentGame = false;
 function onGameState(state) {
     if (!running) {
         return;
@@ -102,7 +103,7 @@ function onGameState(state) {
     lastState = state;
     if (!ready)
         return;
-    if (showPauseMenu) {
+    if (showPauseMenu && !isTournamentGame) {
         if (lastState) {
             renderPong(lastState);
         }
@@ -112,10 +113,13 @@ function onGameState(state) {
     if (!firstFrame) {
         firstFrame = true;
         // displayParticles();
+        if (!isTournamentGame)
+            console.log('Received game state:', state);
         setTimeout(() => renderPong(state), 500);
     }
     else {
-        renderPong(state);
+        if (!isTournamentGame)
+            renderPong(state);
     }
 }
 let loopId = null;
@@ -209,33 +213,39 @@ export function connectPong(isOnline) {
             }
         }
     });
-    // Global handler for all matchmaking/tournament errors
+    // Centralized error handling for matchmaking (1v1, 1v1v1, tournament)
     socket.on('error', (data) => {
-        if (data && data.message) {
-            let msg = data.message;
-            if (/tournoi|tournament/i.test(msg)) {
-                msg = 'You are already registered for the tournament.';
+        var _a, _b;
+        // Display error notification with explicit message
+        let msg = data && data.message ? data.message : 'Unknown error.';
+        // If backend message is generic, we specify for tournament
+        if (/tournoi|tournament/i.test(msg)) {
+            msg = 'Already registered for the tournament.';
+        }
+        showErrorNotification(msg);
+        // Always clear menuLayer and buttons before changing menu
+        if (PongMenuManager.instance) {
+            const menuMgr = PongMenuManager.instance;
+            if (menuMgr.menuLayer && typeof menuMgr.menuLayer.removeChildren === 'function') {
+                menuMgr.menuLayer.removeChildren();
+                (_b = (_a = menuMgr.menuLayer).batchDraw) === null || _b === void 0 ? void 0 : _b.call(_a);
             }
-            showErrorNotification(msg);
-            // Utiliser le pattern Singleton
-            const menuManager = PongMenuManager.getInstance();
-            if (menuManager) {
-                // Clear menu using public method
-                menuManager.clearMenu();
-                // Redirect to appropriate menu
-                if (typeof menuManager.changeMenu === 'function') {
-                    if (/tournoi|tournament/i.test(msg)) {
-                        menuManager.changeMenu('tournament');
-                    }
-                    else {
-                        menuManager.changeMenu('main');
-                    }
-                }
+            if (Array.isArray(menuMgr.buttons)) {
+                menuMgr.buttons.forEach((btn) => { var _a, _b; return (_b = (_a = btn.group) === null || _a === void 0 ? void 0 : _a.destroy) === null || _b === void 0 ? void 0 : _b.call(_a); });
+                menuMgr.buttons = [];
+            }
+        }
+        // Redirect to appropriate menu
+        if (PongMenuManager.instance && typeof PongMenuManager.instance.changeMenu === 'function') {
+            if (/tournoi|tournament/i.test(msg)) {
+                PongMenuManager.instance.changeMenu('tournament');
             }
             else {
-                // Si aucune instance n'existe, en créer une nouvelle
-                displayMenu();
+                PongMenuManager.instance.changeMenu('main');
             }
+        }
+        else {
+            displayMenu();
         }
     });
 }
@@ -351,6 +361,7 @@ export function startPong() {
     canvas.width = CW;
     canvas.height = CH;
     initPauseMenu(canvas, ctx, displayMenu);
+    isTournamentGame = false;
     // --- Plus besoin de startExplosionAnimation ici ---
 }
 export function initTournamentPong(side, you, opponent) {
@@ -364,6 +375,8 @@ export function initTournamentPong(side, you, opponent) {
     lastState = null;
     ready = true;
     firstFrame = false;
+    isTournamentGame = true;
+    console.log('isTournamentGame:', isTournamentGame);
     // 2) Create <canvas> (same as startPong)
     const modal = document.getElementById('games-modal');
     if (modal) {
@@ -424,19 +437,49 @@ export function hideGameCanvasAndShowMenu() {
     if (gameCanvas) {
         gameCanvas.style.display = 'none';
     }
-    // Utiliser le PongMenuManager pour s'assurer que le menu est visible
-    const menuManager = PongMenuManager.getInstance();
-    if (menuManager) {
-        menuManager.ensureMenuVisible();
-    }
-    else {
-        // Fallback : s'assurer que le container est visible
-        const gamesModal = document.getElementById('games-modal');
-        if (gamesModal) {
-            gamesModal.style.display = '';
-        }
+    // Show the Konva menu layer if it exists
+    const gamesModal = document.getElementById('games-modal');
+    if (gamesModal) {
+        // If the Konva stage is still present, force a redraw
+        // (the menu manager will handle this in its event)
+        gamesModal.style.display = '';
     }
 }
+// Global handler for all matchmaking/tournament errors
+socket.on('error', (data) => {
+    var _a, _b;
+    if (data && data.message) {
+        let msg = data.message;
+        if (/tournoi|tournament/i.test(msg)) {
+            msg = 'You are already registered for the tournament.';
+        }
+        showErrorNotification(msg);
+        // Always clear menuLayer and buttons before changing menu
+        if (PongMenuManager.instance) {
+            const menuMgr = PongMenuManager.instance;
+            if (menuMgr.menuLayer && typeof menuMgr.menuLayer.removeChildren === 'function') {
+                menuMgr.menuLayer.removeChildren();
+                (_b = (_a = menuMgr.menuLayer).batchDraw) === null || _b === void 0 ? void 0 : _b.call(_a);
+            }
+            if (Array.isArray(menuMgr.buttons)) {
+                menuMgr.buttons.forEach((btn) => { var _a, _b; return (_b = (_a = btn.group) === null || _a === void 0 ? void 0 : _a.destroy) === null || _b === void 0 ? void 0 : _b.call(_a); });
+                menuMgr.buttons = [];
+            }
+        }
+        // Redirect to appropriate menu
+        if (PongMenuManager.instance && typeof PongMenuManager.instance.changeMenu === 'function') {
+            if (/tournoi|tournament/i.test(msg)) {
+                PongMenuManager.instance.changeMenu('tournament');
+            }
+            else {
+                PongMenuManager.instance.changeMenu('main');
+            }
+        }
+        else {
+            displayMenu();
+        }
+    }
+});
 // Nouvelle fonction pour réinitialiser l'état du tournoi
 export function resetPongTournamentState() {
     mySide = -1;

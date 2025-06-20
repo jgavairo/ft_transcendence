@@ -600,19 +600,25 @@ export class PongMenuManager
             align: 'center'
           }));
           this.createButton('SPECTATE', gameWidth / 2 - 100, 450, () => {
-            // Launch spectator mode for the final
+            const matchId = data.matchId;
+            this.removeGameStateHandler(matchId);
             initTournamentPong(undefined, data.finalists[0], data.finalists[1]);
-            // Subscribe to gameState updates for the final
             const handler = (state?: any) => {
               if (!state || !state.paddles) return;
-              // Render as spectator
               import('../renderPong.js').then(mod => mod.renderPong(state, true));
+              if (state.gameOver) {
+                gameSocket.off('gameState', handler);
+                this.gameStateHandlers.delete(matchId);
+                this.activeTournamentMatchId = null;
+              }
             };
+            this.gameStateHandlers.set(matchId, handler);
+            gameSocket.off('gameState'); // Remove all previous listeners
             gameSocket.on('gameState', handler);
-            // Hide buttons after click
             this.buttons.forEach(btn => btn.group.hide());
           });
           this.createButton('QUIT', gameWidth / 2 - 100, 530, () => {
+            this.removeGameStateHandler(data.matchId);
             this.stage.destroy();
             stopGame();
             displayMenu();
@@ -841,7 +847,7 @@ export class PongMenuManager
             }));
             // READY button for eligible finalist
             if (me && !me.eliminated && !me.ready && (this.myUsername === finalist1 || this.myUsername === finalist2)) {
-              this.createButton('READY', gameWidth / 2 - 100, gameHeight - 120, () => {
+              this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, () => {
                 gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
                 this.buttons.forEach(btn => btn.group.hide());
                 this.menuLayer.add(new Konva.Text({
@@ -889,7 +895,7 @@ export class PongMenuManager
           }
           // READY button pour eligible semi-finalist
           if (me && !me.eliminated && !me.ready) {
-            this.createButton('READY', gameWidth / 2 - 100, gameHeight - 120, () => {
+            this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, () => {
               gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
               this.buttons.forEach(btn => btn.group.hide());
               this.menuLayer.add(new Konva.Text({
@@ -963,7 +969,7 @@ export class PongMenuManager
             }));
             // READY button for eligible finalist
             if (me && !me.eliminated && !me.ready && (this.myUsername === p1 || this.myUsername === p2)) {
-              this.createButton('READY', gameWidth / 2 - 100, gameHeight - 120, () => {
+              this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, () => {
                 gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
                 this.buttons.forEach(btn => btn.group.hide());
                 this.menuLayer.add(new Konva.Text({
@@ -1021,6 +1027,16 @@ export class PongMenuManager
       private gameStateHandlers: Map<string, (state?: MatchState) => void> = new Map();
       private activeTournamentMatchId: string | null = null;
       private finalCountdownTimer?: ReturnType<typeof setInterval>;
+
+      private removeGameStateHandler(matchId?: string) {
+        // Fix type: ensure matchId is string | undefined
+        if (!matchId) matchId = this.activeTournamentMatchId || undefined;
+        if (matchId && this.gameStateHandlers.has(matchId)) {
+          const handler = this.gameStateHandlers.get(matchId);
+          if (handler) gameSocket.off('gameState', handler);
+          this.gameStateHandlers.delete(matchId);
+        }
+      }
 
       private async startMatchTournament({ matchId, side, opponent }: MatchFoundData) {
 
@@ -1088,31 +1104,33 @@ export class PongMenuManager
                 width: 400,
                 align: 'center'
               }));
-              const countdownText = this.menuLayer.add(new Konva.Text({
-                x: gameWidth / 2 - 200,
-                y: 400,
-                text: 'Game starting in 5',
-                fontFamily: 'Press Start 2P',
-                fontSize: 24,
-                fill: '#fc4cfc',
-                width: 400,
-                align: 'center'
-              }));
+              const countdownText = new Konva.Text({
+                  x: gameWidth / 2 - 200,
+                  y: 400,
+                  text: 'Game starting in 5',
+                  fontFamily: 'Press Start 2P',
+                  fontSize: 24,
+                  fill: '#fc4cfc',
+                  width: 400,
+                  align: 'center'
+              });
+              this.menuLayer.add(countdownText);
               // --- FIX: clear any previous interval and store timer as class property ---
               if (this.finalCountdownTimer) {
-                clearInterval(this.finalCountdownTimer);
-                this.finalCountdownTimer = undefined;
+                  clearInterval(this.finalCountdownTimer);
+                  this.finalCountdownTimer = undefined;
               }
               let count = 5;
               this.finalCountdownTimer = setInterval(() => {
-                count--;
-                if (count > 0) {
-                  countdownText.text(`Game starting in ${count}`);
-                  this.menuLayer.batchDraw();
-                } else {
-                  clearInterval(this.finalCountdownTimer);
-                  this.finalCountdownTimer = undefined;
-                  if (isSpectator) {
+                  count--;
+                  if (count > 0) {
+                      countdownText.text(`Game starting in ${count}`);
+                      this.menuLayer.batchDraw();
+                  }
+                  else {
+                      clearInterval(this.finalCountdownTimer);
+                      this.finalCountdownTimer = undefined;
+                      if (isSpectator) {
                     // Spectateur : lance le rendu sans contrôle
                     initTournamentPong(undefined, finalist1, finalist2);
                   } else {
@@ -1123,7 +1141,7 @@ export class PongMenuManager
                     if (!state || !state.paddles) return;
                     renderPong(state, true);
                     if (state.gameOver) {
-                      gameSocket.off(`gameState`, handler);
+                      gameSocket.off('gameState', handler);
                       this.gameStateHandlers.delete(matchId);
                       this.activeTournamentMatchId = null;
                       gameSocket.emit('tournamentReportResult', {
@@ -1162,7 +1180,8 @@ export class PongMenuManager
                     }
                   };
                   this.gameStateHandlers.set(matchId, handler);
-                  gameSocket.on(`gameState`, handler);
+                  gameSocket.off('gameState'); // Remove all previous listeners
+                  gameSocket.on('gameState', handler);
                 }
               }, 1000);
             } else if (isSpectator) {
@@ -1189,9 +1208,23 @@ export class PongMenuManager
                 align: 'center'
               }));
               this.createButton('SPECTATE', gameWidth / 2 - 100, 450, () => {
-                // Lance le rendu du match final en mode spectateur
+                // Launch spectator mode for the final
                 initTournamentPong(undefined, finalistUsernames[0], finalistUsernames[1]);
-                // Optionnel : masquer les boutons après clic
+                // Subscribe to gameState updates for the final
+                const handler = (state?: any) => {
+                  if (!state || !state.paddles) return;
+                  import('../renderPong.js').then(mod => mod.renderPong(state, true));
+                  if (state.gameOver) {
+                    gameSocket.off('gameState', handler);
+                    this.gameStateHandlers.delete(matchId);
+                    this.activeTournamentMatchId = null;
+                    // Optionnel : nettoyage supplémentaire ici
+                  }
+                };
+                this.gameStateHandlers.set(matchId, handler);
+                gameSocket.off('gameState'); // Remove all previous listeners
+                gameSocket.on('gameState', handler);
+                // Hide buttons after click
                 this.buttons.forEach(btn => btn.group.hide());
               });
               this.createButton('QUIT', gameWidth / 2 - 100, 530, () => {
@@ -1264,7 +1297,7 @@ export class PongMenuManager
                   if (!state || !state.paddles) return;
                   renderPong(state, true);
                   if (state.gameOver) {
-                    gameSocket.off(`gameState`, handler);
+                    gameSocket.off('gameState', handler);
                     this.gameStateHandlers.delete(matchId);
                     this.activeTournamentMatchId = null;
                     gameSocket.emit('tournamentReportResult', {
@@ -1303,7 +1336,8 @@ export class PongMenuManager
                   }
                 };
                 this.gameStateHandlers.set(matchId, handler);
-                gameSocket.on(`gameState`, handler);
+                gameSocket.off('gameState'); // Remove all previous listeners
+                gameSocket.on('gameState', handler);
               }
             }, 1000);
           } else {
@@ -1975,9 +2009,9 @@ export class PongMenuManager
                     fill: '#fc4cfc',
                     x: gameWidth / 2 - 250,
                     y: 470,
-                    width: 500,
+                                       width: 500,
                     align: 'center',
-                });
+                               });
                 this.menuLayer.add(waitingText);
                 this.createButton('INVITE', gameWidth / 2 - 100, 530, () => {
                     this.showInvitingList(1, data.roomId);
