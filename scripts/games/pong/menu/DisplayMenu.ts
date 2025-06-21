@@ -620,7 +620,7 @@ export class PongMenuManager
           this.menuLayer.add(new Konva.Text({
             x: gameWidth / 2 - 200,
             y: 350,
-            text: 'La finale va commencer !',
+            text: 'The final will start !',
             fontFamily: 'Press Start 2P',
             fontSize: 20,
             fill: '#ffe156',
@@ -675,7 +675,6 @@ export class PongMenuManager
             fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
         }));
         this.createButton('CANCEL', gameWidth/2 - 100, 200 + 450, () => {
-            if (typeof showErrorNotification === 'function') showErrorNotification('Cancel clicked, quitTournament envoyé');
             if (this.currentTourId) {
                 gameSocket.emit('quitTournament', { tournamentId: this.currentTourId });
                 // On cache le bouton pour éviter les doubles clics
@@ -868,8 +867,8 @@ export class PongMenuManager
           if (demi1Done && demi2Done && bothFinalistsKnown) {
             const [finalist1, finalist2] = finalists;
             this.menuLayer.add(new Konva.Text({
-              x: x0 + 260,
-              y: y0 + 1.5 * lineHeight + 10,
+              x: gameWidth / 2 - 250,
+              y: gameHeight / 2 - 100,
               text: `🏆 Final: ${finalist1} vs ${finalist2}`,
               fontFamily: 'Press Start 2P',
               fontSize: 18,
@@ -896,7 +895,7 @@ export class PongMenuManager
               // (rien ici)
             } else if (me && (this.myUsername === finalist1 || this.myUsername === finalist2) && me.ready) {
               this.menuLayer.add(new Konva.Text({
-                x: gameWidth / 2 - 100,
+                x: gameWidth / 2 - 150,
                 y: gameHeight - 120,
                 text: 'You are ready! Waiting for the other finalist...',
                 fontFamily: 'Press Start 2P',
@@ -911,7 +910,7 @@ export class PongMenuManager
           } else if (demi1Done || demi2Done) {
             // Only one semi-final done: show waiting message
             this.menuLayer.add(new Konva.Text({
-              x: x0 + 260,
+              x:gameWidth / 2 + 200,
               y: y0 + 1.5 * lineHeight + 10,
               text: `Waiting for the other semi-final to finish...`,
               fontFamily: 'Press Start 2P',
@@ -944,7 +943,7 @@ export class PongMenuManager
             // (rien ici)
           } else if (me && !me.eliminated && me.ready) {
             this.menuLayer.add(new Konva.Text({
-              x: gameWidth / 2 - 100,
+              x: gameWidth / 2 - 150,
               y: gameHeight - 80,
               text: 'You are ready! Waiting for other player...',
               fontFamily: 'Press Start 2P',
@@ -1018,7 +1017,7 @@ export class PongMenuManager
               // (rien ici)
             } else if (me && (this.myUsername === p1 || this.myUsername === p2) && me.ready) {
               this.menuLayer.add(new Konva.Text({
-                x: gameWidth / 2 - 100,
+                x: gameWidth / 2 - 150,
                 y: gameHeight - 120,
                 text: 'You are ready! Waiting for the other finalist...',
                 fontFamily: 'Press Start 2P',
@@ -1127,17 +1126,17 @@ export class PongMenuManager
               const [finalist1, finalist2] = finalistUsernames;
               this.menuLayer.add(new Konva.Text({
                 x: gameWidth / 2 - 200,
-                y: 350,
+                y: gameHeight / 2 - 100,
                 text: `🏆 Final: ${finalist1} vs ${finalist2}`,
                 fontFamily: 'Press Start 2P',
-                fontSize: 22,
+                fontSize: 20,
                 fill: '#ffe156',
                 width: 400,
                 align: 'center'
               }));
               const countdownText = new Konva.Text({
                   x: gameWidth / 2 - 200,
-                  y: 400,
+                  y: gameHeight / 2 + 100,
                   text: 'Game starting in 5',
                   fontFamily: 'Press Start 2P',
                   fontSize: 24,
@@ -1231,7 +1230,7 @@ export class PongMenuManager
               this.menuLayer.add(new Konva.Text({
                 x: gameWidth / 2 - 200,
                 y: 350,
-                text: 'La finale va commencer !',
+                text: 'The final will start !',
                 fontFamily: 'Press Start 2P',
                 fontSize: 20,
                 fill: '#ffe156',
@@ -1354,7 +1353,7 @@ export class PongMenuManager
                         this.menuLayer.removeChildren();
                         this.menuLayer.add(new Konva.Text({
                           x: gameWidth / 2 - 130,
-                          y: 350,
+                          y: 400,
                           text: 'Waiting for the next match... (bracket)',
                           fontFamily: 'Press Start 2P',
                           fontSize: 20,
