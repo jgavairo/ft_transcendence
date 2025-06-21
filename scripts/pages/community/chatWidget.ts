@@ -315,7 +315,6 @@ export async function setupChatWidget() {
     });
     chatWidgetSocket = socket;
     socket.on("connect", () => {
-        console.log("Connected to Socket.IO server");
         socket.emit("register", { userId: currentUser.id, username: currentUser.username });
     });
 

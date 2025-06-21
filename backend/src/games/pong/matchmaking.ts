@@ -919,11 +919,9 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         gameNs.sockets.get(p.id)?.emit('tournamentBracket', { size: 4, joined, status })
       );
 
-      // 🔹 On récupère le tournoi en cours (si encore en mémoire)
       const tour = tournaments.get(tournamentId) as BasicTournament | undefined;
 
       if (tour) {
-        // 🔸 Nettoyage des joueurs
         tour.allPlayers = tour.allPlayers.filter(p => {
           const pUid = socketToUserId.get(p.id);
           return p.id !== socket.id && pUid !== userId;
@@ -933,7 +931,6 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           return p.id !== socket.id && pUid !== userId;
         });
 
-        // 🔸 Nettoyage des états de readiness
         socketToUserId.forEach((uid, sid) => {
           if (uid === userId || sid === socket.id) {
             tour.ready.delete(sid);
@@ -941,7 +938,6 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           }
         });
 
-        // 🔸 Mise à jour des matchs (victoires par forfait)
         Object.values(tour.matches).forEach(m => {
           if (!m.winner && m.players.some(p => {
             const pUid = socketToUserId.get(p.id);
@@ -959,13 +955,11 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           }) as [Player, Player];
         });
 
-        // 🔸 Fin du tournoi si un seul joueur reste
         if (tour.allPlayers.length === 1) {
           const champ = tour.allPlayers[0];
           gameNs.to(`tour-${tour.id}`).emit('tournamentOver', { winner: champ.username });
           tournaments.delete(tour.id);
         } else {
-          // Sinon : mise à jour du bracket
           const joined = tour.allPlayers.map(p => p.username);
           const status = tour.allPlayers.map(p => {
             const inMatch = Object.values(tour.matches).find(m2 =>
@@ -993,7 +987,6 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
           });
         }
       } else {
-        // 🔹 Si le tournoi est déjà supprimé : nettoyage minimal
         if (userId) {
           getAllSocketIdsForUser(userId).forEach(sid => socketToUserId.delete(sid));
         } else {
@@ -1001,8 +994,6 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         }
       }
 
-      // 🔹 Nettoyage final - PLUS AGRESSIF
-      // Supprimer TOUTES les entrées socketToUserId pour cet userId + ce socket spécifiquement
       if (userId) {
         const allSocketsForUser = getAllSocketIdsForUser(userId);
         allSocketsForUser.forEach(sid => {
@@ -1010,10 +1001,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
         });
       }
       
-      // 🔹 IMPORTANT: Supprimer aussi ce socket spécifiquement de socketToUserId
-      // même s'il reste connecté, car il a quitté le tournoi
       socketToUserId.delete(socket.id);
-
     });
 
 
@@ -1021,86 +1009,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 });
 
 
-  function launchMatches(ns: Namespace, tour: Tournament) {
-    const players = tour.players;
-    tour.winners = [];
 
-    for (let i = 0; i < players.length; i += 2) {
-      const A = players[i], B = players[i + 1];
-      const matchId = `${tour.id}-r${tour.round}-m${i/2}`;
-      const sA = ns.sockets.get(A.id)!;
-      const sB = ns.sockets.get(B.id)!;
-  
-      // → Room + playerInfo
-      sA.join(matchId);
-      sB.join(matchId);
-      playerInfo.set(A.id, { side: 0, mode: 'multi', roomId: matchId });
-      playerInfo.set(B.id, { side: 1, mode: 'multi', roomId: matchId });
-  
-      // → Signal "match trouvé"
-      sA.emit('tournamentMatchFound', { matchId, side: 0, opponent: B.username });
-      sB.emit('tournamentMatchFound', { matchId, side: 1, opponent: A.username });
-  
-      // → Lancer la simulation
-      const state = startMatch([sA, sB], ns, false);
-      matchStates.set(matchId, state);
-  
-      // → Lancer l'intervalle et le stocker dans la Map
-      const iv = setInterval(() => {
-        updateMatch(state, ns);
-        ns.to(matchId).emit('gameState', state);
-
-        if (state.gameOver) {
-          clearInterval(iv);
-          tournamentMatchIntervals.delete(matchId);
-
-          const winSide = state.paddles.findIndex(pl => pl.lives > 0);
-          const winner  = winSide === 0 ? A : B;
-          const loser   = winSide === 0 ? B : A;
-
-          // Notifier seulement ces deux joueurs que le match est fini
-          ns.to(matchId).emit('tournamentMatchOver', {
-            tournamentId: tour.id,
-            matchId,
-            winner:  winner.username,
-            loser:   loser.username
-          });
-
-          tour.winners.push(winner);
-
-          // Si tous les matchs de ce round sont finis, préparer le round suivant
-          if (tour.winners.length === players.length / 2) {
-            const totalRounds = Math.log2(tour.size);
-
-            if (tour.round + 1 < totalRounds) {
-              // … calculer les perdants, ajuster tour.players, tour.ready …
-              tour.round++;
-              tour.players = tour.winners.slice();
-              tour.winners = [];
-              tour.ready.clear();
-              tour.players.forEach(p => tour.ready.set(p.id, false));
-              // Relancer les matchs du round suivant
-              launchMatches(ns, tour);
-            } else {
-              // Tournoi terminé
-              const champion = tour.winners[0];
-              ns.to(matchId).emit('tournamentMatchOver', {
-                tournamentId: tour.id,
-                matchId,
-                winner:  champion.username,
-                loser:   ""
-              });
-              ns.to(`tour-${tour.id}`).emit('tournamentOver', {
-                winner: champion.username
-              });
-              tournaments.delete(tour.id);
-            }
-          }
-        }
-      }, 1000 / 60);
-      tournamentMatchIntervals.set(matchId, iv);
-    }
-  }
   
   // Nouvelle logique de tournoi simple à 4 joueurs
   function launchTournament4(ns: Namespace, tour: BasicTournament) {

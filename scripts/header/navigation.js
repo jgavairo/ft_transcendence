@@ -30,7 +30,6 @@ export async function setupHeader() {
         reconnectionDelay: 1000
     });
     notificationSocket.on("connect", () => {
-        console.log("Connected to Socket.IO server");
     });
     notificationSocket.on("connect_error", (error) => {
         console.error("Socket.IO connection error:", error);
@@ -39,7 +38,6 @@ export async function setupHeader() {
         console.error("Socket.IO error:", error);
     });
     notificationSocket.on("friendNotification", (data) => {
-        console.log("friendNotification", data.message);
         if (data.message)
             showNotification(data.message);
         renderPeopleList();
@@ -49,7 +47,6 @@ export async function setupHeader() {
             showNotification(data.message);
     });
     notificationSocket.on("logout", (data) => {
-        console.log("logout", data.username);
         LoginManager.logout();
     });
     if (data && data.success)
@@ -192,15 +189,12 @@ if (initialPage === 'store' || initialPage === 'library') {
     setupChatWidget();
 }
 export function setupProfileButton() {
-    console.log("setupProfileButton");
     const profilewindow = document.getElementById('profileMenu');
     const profilePicture = document.getElementById('profilea');
     if (!profilePicture)
         return;
     profilePicture.addEventListener('click', () => {
-        console.log("profile button clicked");
         if (!profilewindow) {
-            console.log("profile window not found");
             return;
         }
         if (!boolprofileMenu) {
@@ -210,11 +204,9 @@ export function setupProfileButton() {
             if (!logoutButton)
                 return;
             logoutButton.addEventListener('click', async () => {
-                console.log("logout button clicked");
                 try {
                     const response = await api.get(`https://${HOSTNAME}:8443/api/auth/logout`);
                     const data = await response.json();
-                    console.log('response:', data);
                     if (data.success) {
                         showNotification("Logged out successfully");
                         const main = document.getElementById('main');
@@ -238,7 +230,6 @@ export function setupProfileButton() {
             if (!profileSettingsButton)
                 return;
             profileSettingsButton.addEventListener('click', () => {
-                console.log("profile settings button clicked");
                 setupProfileModal();
             });
         }

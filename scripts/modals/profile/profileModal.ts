@@ -119,7 +119,6 @@ export async function setupProfileModal() {
 
 function changePassword()
 {
-    console.log('changePassword');
     const modal = document.getElementById('profile-modal');
     if (!modal)
         return;
@@ -145,7 +144,6 @@ function changePassword()
     });
 
     sendNewPasswordButton.addEventListener('click', async () => {
-        console.log('sendNewPasswordButton clicked');
         const oldPassword = document.getElementById('oldPassword') as HTMLInputElement;
         const newPassword = document.getElementById('newPassword') as HTMLInputElement;
         const confirmNewPassword = document.getElementById('confirmNewPassword') as HTMLInputElement;
@@ -256,7 +254,6 @@ function setupChangeProfilePictureModal()
 
 function changeUsername()
 {
-    console.log('changeUsername');
     const modal = document.getElementById('profile-modal');
     if (!modal)
         return;
@@ -283,7 +280,6 @@ function changeUsername()
     });
 
     sendNewUsernameButton.addEventListener('click', async () => {
-        console.log('sendNewUsernameButton clicked');
         const newUsername = document.getElementById('newUsername') as HTMLInputElement;
         if (!newUsername)
         {
@@ -325,7 +321,6 @@ function changeUsername()
 
 function changeEmail()
 {
-    console.log('changeEmail');
     const modal = document.getElementById('profile-modal');
     if (!modal)
         return;
@@ -352,7 +347,6 @@ function changeEmail()
     });
 
     sendNewEmailButton.addEventListener('click', async () => {
-        console.log('sendNewEmailButton clicked');
         const newEmail = document.getElementById('newEmail') as HTMLInputElement;
         if (!newEmail)
         {
@@ -389,7 +383,6 @@ function changeEmail()
 
 async function disable2FA()
 {
-    console.log('disable2FA');
     const modal = document.getElementById('profile-modal');
     if (!modal)
         return;
@@ -416,7 +409,6 @@ async function disable2FA()
     });
 
     disable2FAButton.addEventListener('click', async () => {
-        console.log('disable2FAButton clicked');
         const password = document.getElementById('password') as HTMLInputElement;
         if (!password)
         {
@@ -453,7 +445,6 @@ async function disable2FA()
 
 async function changeDoubleAuthentification()
 {
-    console.log('changeDoubleAuthentification');
     const modal = document.getElementById('profile-modal');
     if (!modal)
         return;
@@ -485,7 +476,6 @@ async function changeDoubleAuthentification()
         });
 
         enableDoubleAuthentificationButton.addEventListener('click', async () => {
-            console.log('enableDoubleAuthentificationButton clicked');
             const code = document.getElementById('code') as HTMLInputElement;
             if (!code)
                 return;

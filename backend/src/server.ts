@@ -660,11 +660,9 @@ const start = async () => {
         const chatNs = app.io.of('/chat');
         chatNs.on('connection', (socket: Socket) => {
             socket.on('register', (data) => {
-                // data doit contenir userId et username
                 if (data.userId !== undefined) {
                     userSocketMapChat.set(String(data.userId), socket.id);
                 }
-                // Pour compatibilité, on garde aussi l'ancien mapping si besoin
                 if (data.username) {
                     userSocketMapChat.set(data.username, socket.id);
                 }
@@ -678,11 +676,9 @@ const start = async () => {
                         if (callback) callback({ success: false, error: 'Message trop long (max 250 caractères)' });
                         return;
                     }
-                    // author est maintenant un id utilisateur (number)
                     await dbManager.saveMessage(author, content);
                     const targetSocketid = userSocketMapChat.get(String(to));
                     const authorSocketid = userSocketMapChat.get(String(author));
-                    // Récupérer les infos de l'auteur pour enrichir le message
                     let authorUser = null;
                     try {
                         authorUser = await dbManager.getUserById(Number(author));
@@ -695,10 +691,6 @@ const start = async () => {
                     if (targetSocketid) {
                         chatNs.to(targetSocketid).emit('receivePrivateMessage', {author: authorInfo.id, content, authorInfo });
                     }
-                    // (Suppression de l'envoi au sender)
-                    // if (authorSocketid) {
-                    //     chatNs.to(authorSocketid).emit('receivePrivateMessage', {author: authorInfo.id, content, authorInfo });
-                    // }
                     if (callback) callback({ success: true });
                 } catch (error) {
                     if (callback) {
@@ -711,7 +703,7 @@ const start = async () => {
                 try 
                 {
                     if (typeof data.content !== 'string' || data.content.length > 250) {
-                        if (callback) callback({ success: false, error: 'Message trop long (max 250 caractères)' });
+                        if (callback) callback({ success: false, error: 'Message too long (max 250 characters)' });
                         return;
                     }
                     await dbManager.saveMessage(data.author, data.content);
@@ -794,7 +786,7 @@ const start = async () => {
                     towerNs.sockets.has(player.id)
                 );
                 if (alreadyInQueue) {
-                    socket.emit('error', { message: 'Vous êtes déjà dans la file d\'attente' });
+                    socket.emit('error', { message: 'you are already in the queue' });
                     return;
                 }
 
@@ -812,7 +804,7 @@ const start = async () => {
                 });
 
                 if (existingGame) {
-                    socket.emit('error', { message: 'Vous êtes déjà dans une partie en cours' });
+                    socket.emit('error', { message: 'you are already in a game' });
                     return;
                 }
 
@@ -983,7 +975,7 @@ const start = async () => {
 
                 userSocketMapTower.delete(socket.id);
                 
-                console.log('Client déconnecté du namespace /tower:', socket.id);
+                console.log('Client disconnected from /tower namespace:', socket.id);
             });
         });
     } 

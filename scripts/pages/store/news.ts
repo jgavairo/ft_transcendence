@@ -16,7 +16,6 @@ export async function setupNews(): Promise<void>
 {
     if(!await LoginManager.isLoggedIn())
     {
-        console.log("Not logged in, showing login modal");
         LoginManager.showLoginModal();
         return;
     }

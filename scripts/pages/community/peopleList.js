@@ -34,7 +34,6 @@ export async function renderPeopleList(filter = "") {
     };
     const communityButton = document.getElementById('communitybutton');
     if (!(communityButton === null || communityButton === void 0 ? void 0 : communityButton.classList.contains('activebutton'))) {
-        console.log('Not in community page, skipping renderPeopleList');
         return;
     }
     const container = document.getElementById("friendList");
@@ -157,10 +156,8 @@ export async function renderPeopleList(filter = "") {
     }
 }
 export async function refuseFriendRequest(name) {
-    console.log('Refusing friend request from:', name);
     const success = await FriendsManager.refuseFriendRequest(name);
     if (success) {
-        console.log('Friend request refused successfully');
         showNotification("Friend request from " + name + " has been refused");
     }
     else {
@@ -169,10 +166,8 @@ export async function refuseFriendRequest(name) {
     }
 }
 export async function cancelFriendRequest(name) {
-    console.log('Cancelling friend request to:', name);
     const success = await FriendsManager.cancelFriendRequest(name);
     if (success) {
-        console.log("Friend request cancelled successfully");
         showNotification(name + " is no longer requesting to be your friend");
         return true;
     }
@@ -184,10 +179,8 @@ export async function cancelFriendRequest(name) {
 }
 export async function removeFriend(name) {
     try {
-        console.log("removeFriend: " + name);
         const success = await FriendsManager.removeFriend(name);
         if (success) {
-            console.log("Friend removed successfully");
             showNotification(name + " is no longer your friend");
             return true;
         }
@@ -204,7 +197,6 @@ export async function removeFriend(name) {
 }
 export async function acceptFriendRequest(name) {
     try {
-        console.log('Accepting friend request from:', name);
         const success = await FriendsManager.acceptFriendRequest(name);
         if (success) {
             showNotification(name + " is now your friend");

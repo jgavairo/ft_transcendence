@@ -268,16 +268,9 @@ export async function renderPong(state, isTournament = false) {
     });
     // 7) overlay game over
     if (state.gameOver) {
-        console.log("gameOver is tournament:", isTournament);
         if (isTournament) {
-            // → Si on est en tournoi, on ne fait PAS l'animation de fin.
-            //    On retourne directement, le client tournament prendra le relais
-            //    (nettoyera le menu + retour au lobby).
-            console.log("gameOver is tournament: returning");
             return;
         }
-        console.log("gameOver is tournament: not returning");
-        // -- Sinon, on est en mode solo/2-players classique : on joue l'animation de fin --
         setGameoverTrue();
         // a) trouver l'indice du gagnant (première raquette dont lives > 0)
         const winnerIndex = state.paddles.findIndex(pl => pl.lives > 0);

@@ -12,13 +12,9 @@ export class LoginManager
         if (modal)
             modal.innerHTML = "";
         const user = await MainApp.getUserInfo();
-        if (user && user.id)
+        if (!user || !user.id)
         {
-            console.log('user id:', user.id);
-        }
-        else
-        {
-            console.log('user id not found');
+            console.error('user id not found');
         }
         showNotification("Logged in successfully");
     }
@@ -26,7 +22,6 @@ export class LoginManager
     static async isLoggedIn(): Promise<boolean>
     {
         const data = await MainApp.checkAuth();
-        console.log('data:', data);
         return data.success;
     }
 
@@ -57,7 +52,6 @@ export class LoginManager
 
     private static async setupLoginModal(): Promise<void>
     {
-        console.log("Setting up login modal");
         const loginbutton = document.getElementById('loginButton');
         const loginForm = document.getElementById('loginForm');
         if (!loginbutton || !loginForm)
@@ -100,7 +94,6 @@ export class LoginManager
             api.post(`https://${HOSTNAME}:8443/api/auth/login`, { username, password })
             .then(response => response.json())
             .then(data => {
-                console.log('backend response:', data);
                 if (data.success) 
                 {
                     if (data.message === "2FA")
@@ -126,7 +119,6 @@ export class LoginManager
                             return;
                         loginButton.addEventListener('click', async (e) => {
                             e.preventDefault();
-                            console.log('login button clicked');
                             const code = (document.getElementById('code') as HTMLInputElement).value;
                             if (!code)
                             {
@@ -143,10 +135,8 @@ export class LoginManager
                             .then(response => response.json())
                             .then(data => 
                             {
-                                console.log('backend response:', data);
                                 if (data.success)
                                 {
-                                    console.log('Login successful, user data:', data);
                                     this.removeLoginModal();
                                     MainApp.setupHeader();
                                     MainApp.setupCurrentPage(true);
@@ -158,7 +148,6 @@ export class LoginManager
                         });
                         return;
                     }
-                    console.log('Login successful, user data:', data);
                     this.removeLoginModal();
                     MainApp.setupHeader();
                     MainApp.setupCurrentPage(true);
@@ -177,7 +166,6 @@ export class LoginManager
             return;
         googleButton.addEventListener('click', async (e) => {
             e.preventDefault();
-            console.log("google button clicked");
             const { googleSignInHandler } = await import('../modals/login/googleSignIn.js');
             googleSignInHandler();
         });
@@ -253,7 +241,6 @@ export class LoginManager
                 api.post(`https://${HOSTNAME}:8443/api/auth/register`, { username, password, email })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('backend response:', data);
                     if (data.success)
                     {
                         showNotification("User registered successfully");
@@ -275,7 +262,6 @@ export class LoginManager
         try {
             const response = await api.get(`https://${HOSTNAME}:8443/api/auth/logout`);
             const data = await response.json();
-            console.log('response:', data);
             if (data.success) {
                 showNotification("Logged out successfully");
                 const main = document.getElementById('main');

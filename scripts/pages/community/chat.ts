@@ -272,9 +272,7 @@ export async function setupChat() {
     });
 
     socket.on("connect", () => {
-        console.log("Connected to Socket.IO server");
         if (!currentUser) {
-            // Cannot emit register without current user
             return;
         }
         socket.emit("register", { userId: currentUser.id, username: currentUser.username });

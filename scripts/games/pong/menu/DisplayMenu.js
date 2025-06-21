@@ -31,12 +31,9 @@ export class PongMenuManager {
             document.body.appendChild(canvas);
         }
         canvas.style.display = '';
-        console.log('[KONVA] games-modal trouvé ou créé');
-        // --- Correction : supprime et recrée le div .konvajs-content à chaque fois ---
         let oldKonvaDiv = canvas.querySelector('.konvajs-content');
         if (oldKonvaDiv) {
             oldKonvaDiv.remove();
-            console.log('[KONVA] Ancien .konvajs-content supprimé');
         }
         const konvaDiv = document.createElement('div');
         konvaDiv.className = 'konvajs-content';
@@ -44,14 +41,11 @@ export class PongMenuManager {
         konvaDiv.style.width = '1200px';
         konvaDiv.style.height = '800px';
         canvas.appendChild(konvaDiv);
-        console.log('[KONVA] Nouveau .konvajs-content ajouté dans games-modal');
         this.stage = new Konva.Stage({
             container: canvas,
             width: 1200,
             height: 800
         });
-        console.log('[KONVA] Konva.Stage créé');
-        // --- Correction : assure la présence du div Konva et de la classe ---
         let konvaDiv2 = canvas.querySelector('div');
         if (!konvaDiv2) {
             konvaDiv2 = document.createElement('div');
@@ -404,17 +398,13 @@ export class PongMenuManager {
                 joined: view.joined,
                 status: fullStatus
             };
-            // Re-dessiner le bracket
             this.renderSimpleBracket(view.size, view.joined, fullStatus);
         });
-        // 2) Match trouvé
         gameSocket.on('tournamentMatchFound', (data) => {
             this.startMatchTournament(data);
         });
-        // 3) Tournoi terminé
         gameSocket.on('tournamentOver', (data) => {
             PongMenuManager.tournamentEnded = true;
-            console.log('[DEBUG] tournamentOver event received', data, 'tournamentEnded:', PongMenuManager.tournamentEnded);
             this.activeTournamentMatchId = null;
             this.menuLayer.removeChildren();
             // Do NOT call renderSimpleBracket here! Only show winner message and MENU button.
@@ -422,7 +412,6 @@ export class PongMenuManager {
             if (this.lastBracketView) {
                 const me = this.lastBracketView.status.find(s => s.username === this.myUsername);
                 const finalists = this.lastBracketView.status.filter(s => !s.eliminated);
-                console.log('[DEBUG] tournamentOver: me', me, 'finalists', finalists);
                 if (me && !me.eliminated && finalists.length === 2 && finalists.some(f => f.username === data.winner)) {
                     winnerText = `🏆 ${data.winner} wins the tournament!`;
                 }
@@ -433,7 +422,6 @@ export class PongMenuManager {
             else {
                 winnerText = `Tournament over! Winner: ${data.winner}`;
             }
-            console.log('[DEBUG] tournamentOver: winnerText', winnerText);
             this.menuLayer.add(new Konva.Text({
                 x: gameWidth / 2 - 200,
                 y: 350,
@@ -445,7 +433,6 @@ export class PongMenuManager {
                 align: 'center'
             }));
             this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
-                console.log('[DEBUG] MENU button clicked, tournamentEnded:', PongMenuManager.tournamentEnded);
                 socket.emit('quitTournament', { tournamentId: this.currentTourId });
                 socket.disconnect();
                 PongMenuManager.tournamentEnded = false;
@@ -456,7 +443,7 @@ export class PongMenuManager {
             this.menuLayer.batchDraw();
         });
         gameSocket.on('tournamentFinalSpectate', (data) => {
-            this.finalistUsernames = data.finalists; // Stocke les noms des finalistes
+            this.finalistUsernames = data.finalists;
             this.menuLayer.removeChildren();
             this.buttons.forEach(btn => btn.group.destroy());
             this.buttons = [];
@@ -473,7 +460,6 @@ export class PongMenuManager {
             this.createButton('SPECTATE', gameWidth / 2 - 100, 450, () => {
                 const matchId = data.matchId;
                 this.removeGameStateHandler(matchId);
-                // Utilise les noms stockés
                 const [f1, f2] = this.finalistUsernames || data.finalists;
                 initTournamentPong(undefined, f1, f2);
                 const handler = (state) => {
@@ -501,13 +487,10 @@ export class PongMenuManager {
         });
     }
     showLobbyList(joined) {
-        // Set a synthetic tournament ID if not set (for queue phase)
-        console.log('[PONG] showLobbyList called with joined:', joined);
         if (!this.menuLayer || !this.menuLayer.getStage()) {
             return;
         }
         if (!this.currentTourId) {
-            // Default to 4-player queue, or detect from joined size if needed
             this.currentTourId = `queue-${joined.length >= 8 ? 8 : 4}`;
         }
         this.menuLayer.removeChildren();
@@ -519,16 +502,13 @@ export class PongMenuManager {
         this.createButton('CANCEL', gameWidth / 2 - 100, 200 + 450, () => {
             if (this.currentTourId) {
                 gameSocket.emit('quitTournament', { tournamentId: this.currentTourId });
-                // On cache le bouton pour éviter les doubles clics
                 const btn = this.buttons.find(b => b.text === 'CANCEL');
                 if (btn)
                     btn.group.hide();
             }
-            // Nettoyage complet de l'UI
             this.buttons.forEach(button => button.group.destroy());
             this.buttons = [];
             this.menuLayer.removeChildren();
-            // Retour menu multi
             this.changeMenu('multi');
         });
         // Ajout : quitter le tournoi si la page est quittée (refresh/fermeture)
@@ -1265,7 +1245,6 @@ export class PongMenuManager {
             if (!this.animationSkipped && this.showMainMenu)
                 this.changeMenu('main');
         }, 2000);
-        console.log("Menu displayed");
     }
     async offlineLobby(nbPlayers) {
         try {
@@ -1380,13 +1359,10 @@ export class PongMenuManager {
                 }, 1000);
             }
             else if (nbPlayers === 3) {
-                console.log("match found 2 players");
                 const menu = PongMenuManager.instance;
-                // Nettoyage des éléments existants
                 menu.buttons.forEach(button => button.group.destroy());
                 menu.buttons = [];
                 menu.menuLayer.destroyChildren();
-                // Affichage des joueurs
                 const player1Text = new Konva.Text({
                     text: `${username}1`,
                     fontFamily: 'Press Start 2P',
@@ -1458,8 +1434,6 @@ export class PongMenuManager {
                 connectPong(false);
                 const currentUser = await GameManager.getCurrentUser();
                 const username = (currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) || "Player";
-                // modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
-                console.log('Current user for solo 2 players:', username);
                 switch (nbPlayers) {
                     case 1:
                         await launchSoloPongVsBot(modal, username);
@@ -1601,13 +1575,10 @@ export class PongMenuManager {
         }
     }
     static matchFound2Players(data) {
-        console.log("match found 2 players");
         const menu = PongMenuManager.instance;
-        // Nettoyage des éléments existants
         menu.buttons.forEach(button => button.group.destroy());
         menu.buttons = [];
         menu.menuLayer.destroyChildren();
-        // Affichage des joueurs
         const player1Text = new Konva.Text({
             text: `${data.you}`,
             fontFamily: 'Press Start 2P',
@@ -1660,13 +1631,10 @@ export class PongMenuManager {
             inviteOverlay.remove();
     }
     static matchFound3Players(data) {
-        console.log("match found 2 players");
         const menu = PongMenuManager.instance;
-        // Nettoyage des éléments existants
         menu.buttons.forEach(button => button.group.destroy());
         menu.buttons = [];
         menu.menuLayer.destroyChildren();
-        // Affichage des joueurs
         const player1Text = new Konva.Text({
             text: `${data.players[0]}`,
             fontFamily: 'Press Start 2P',
@@ -1982,15 +1950,12 @@ export class PongMenuManager {
     }
     startFromLink(roomId) {
         this.animateParticles();
-        // Start directly the private lobby with the roomId (2 players by default)
         this.privateLobby(2, roomId);
-        console.log("Menu displayed from link");
     }
 }
 PongMenuManager.tournamentEnded = false;
 export async function displayMenu() {
     const menu = new PongMenuManager(true);
-    console.log("game started");
     menu.start();
 }
 export async function displayMenuFromLink(roomId) {

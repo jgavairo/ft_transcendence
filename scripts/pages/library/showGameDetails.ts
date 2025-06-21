@@ -59,7 +59,6 @@ export async function renderRankings(gameId: number, container: HTMLElement, cur
         return `${imagePath}?v=${timestamp}&user=${username}`;
     };
 
-    // Générer le HTML pour le classement
     container.innerHTML = `
         <div class="rankingSection">
             <h3 class="sectionTitle">Online 1vs1 Ranking</h3>
@@ -181,13 +180,10 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
     }
     if (!game) return;
 
-    // Récupérer les utilisateurs
     const people = await fetchUsernames();
 
-    // Récupérer l'utilisateur en cours
     const currentUser = await GameManager.getCurrentUser();
 
-    // Récupérer les user_ids du jeu (utilisateurs possédant ce jeu)
     let userIds: number[] = [];
     try {
         userIds = JSON.parse((game as any).user_ids || '[]');
@@ -195,7 +191,6 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
         userIds = [];
     }
 
-    // Récupérer les ids des amis via l'API
     let friendIds: number[] = [];
     try {
         const res = await api.get('/api/friends/allFriendIds');
@@ -229,11 +224,9 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
       </div>
     `;
 
-    // Afficher le classement en utilisant la nouvelle fonction
     const rankingsContainer = details.querySelector('#rankings-container') as HTMLElement;
     await renderRankings(game.id, rankingsContainer, currentUser);
 
-    // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
     const friendNames = details.querySelectorAll('.friendName') as NodeListOf<HTMLSpanElement>;
     friendNames.forEach(friendName => {
         friendName.addEventListener('click', () => {
@@ -245,13 +238,11 @@ export async function showGameDetails(gameIdOrObj: number | any): Promise<void> 
         });
     });
 
-    // Bouton de fermeture
     const closeBtn = details.querySelector('.close-button') as HTMLButtonElement;
     closeBtn.addEventListener('click', () => {
         setupLibrary();
     });
 
-    // Bouton PLAY
     const playBtn = details.querySelector('#launchGameButton') as HTMLButtonElement;
     playBtn.addEventListener('click', () => {
       switch (game.name) {

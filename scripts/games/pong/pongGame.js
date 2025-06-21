@@ -114,8 +114,7 @@ function onGameState(state) {
         firstFrame = true;
         // displayParticles();
         if (!isTournamentGame)
-            console.log('Received game state:', state);
-        setTimeout(() => renderPong(state), 500);
+            setTimeout(() => renderPong(state), 500);
     }
     else {
         if (!isTournamentGame)
@@ -383,8 +382,6 @@ export function initTournamentPong(side, you, opponent) {
     ready = true;
     firstFrame = false;
     isTournamentGame = true;
-    console.log('isTournamentGame:', isTournamentGame);
-    // 2) Create <canvas> (same as startPong)
     const modal = document.getElementById('games-modal');
     if (modal) {
         modal.innerHTML = '<canvas id="gameCanvas" style="width: 1200px; height: 800px;"></canvas>';
@@ -392,8 +389,8 @@ export function initTournamentPong(side, you, opponent) {
     running = true;
     canvas = document.querySelector('#gameCanvas');
     ctx = canvas.getContext('2d');
-    canvas.width = CW; // 1200
-    canvas.height = CH; // 800
+    canvas.width = CW;
+    canvas.height = CH;
     socket.off('matchFound');
     socket.off('matchFoundTri');
     socket.off('stateUpdateTri');

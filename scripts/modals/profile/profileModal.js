@@ -103,7 +103,6 @@ export async function setupProfileModal() {
     }
 }
 function changePassword() {
-    console.log('changePassword');
     const modal = document.getElementById('profile-modal');
     if (!modal)
         return;
@@ -126,7 +125,6 @@ function changePassword() {
         }
     });
     sendNewPasswordButton.addEventListener('click', async () => {
-        console.log('sendNewPasswordButton clicked');
         const oldPassword = document.getElementById('oldPassword');
         const newPassword = document.getElementById('newPassword');
         const confirmNewPassword = document.getElementById('confirmNewPassword');
@@ -212,7 +210,6 @@ function setupChangeProfilePictureModal() {
     });
 }
 function changeUsername() {
-    console.log('changeUsername');
     const modal = document.getElementById('profile-modal');
     if (!modal)
         return;
@@ -235,7 +232,6 @@ function changeUsername() {
         }
     });
     sendNewUsernameButton.addEventListener('click', async () => {
-        console.log('sendNewUsernameButton clicked');
         const newUsername = document.getElementById('newUsername');
         if (!newUsername) {
             showErrorNotification('Please fill in all fields');
@@ -268,7 +264,6 @@ function changeUsername() {
     });
 }
 function changeEmail() {
-    console.log('changeEmail');
     const modal = document.getElementById('profile-modal');
     if (!modal)
         return;
@@ -291,7 +286,6 @@ function changeEmail() {
         }
     });
     sendNewEmailButton.addEventListener('click', async () => {
-        console.log('sendNewEmailButton clicked');
         const newEmail = document.getElementById('newEmail');
         if (!newEmail) {
             showErrorNotification('Please fill in all fields');
@@ -320,7 +314,6 @@ function changeEmail() {
     });
 }
 async function disable2FA() {
-    console.log('disable2FA');
     const modal = document.getElementById('profile-modal');
     if (!modal)
         return;
@@ -343,7 +336,6 @@ async function disable2FA() {
         }
     });
     disable2FAButton.addEventListener('click', async () => {
-        console.log('disable2FAButton clicked');
         const password = document.getElementById('password');
         if (!password) {
             showErrorNotification('Please fill in all fields');
@@ -372,7 +364,6 @@ async function disable2FA() {
     });
 }
 async function changeDoubleAuthentification() {
-    console.log('changeDoubleAuthentification');
     const modal = document.getElementById('profile-modal');
     if (!modal)
         return;
@@ -399,7 +390,6 @@ async function changeDoubleAuthentification() {
             }
         });
         enableDoubleAuthentificationButton.addEventListener('click', async () => {
-            console.log('enableDoubleAuthentificationButton clicked');
             const code = document.getElementById('code');
             if (!code)
                 return;

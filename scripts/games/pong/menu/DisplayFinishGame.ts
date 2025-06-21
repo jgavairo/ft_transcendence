@@ -154,29 +154,3 @@ function startAnimation(drawText: (frame: number) => void) {
 }
 
 
-export function animateEnd(winnerName: string, padColor: string): void {
-  console.log("animateEnd");
-  // startAnimation((frame) => {
-  //   if (frame >= 60) {
-  //     const tText = Math.min(1, (frame - 60) / 40);
-  //     const scale = easeOutElastic(tText);
-  //     const shake = (1 - tText) * 10 * Math.sin(frame * 0.5);
-
-  //     ctx.save();
-  //     ctx.translate(CX + shake, CY);
-  //     ctx.scale(scale, scale);
-
-  //     ctx.font        = 'bold 96px Arial';
-  //     ctx.textAlign   = 'center';
-  //     ctx.lineWidth   = 2;
-  //     ctx.shadowColor = padColor;
-  //     ctx.shadowBlur  = 20;
-  //     ctx.fillStyle   = padColor;
-
-  //     ctx.fillText(`${winnerName} WIN`, 0, 0);
-  //     ctx.restore();
-  //   }
-  // });
-  const menu = new PongMenuManager(false);
-  menu.displayEndMatch(winnerName, padColor);
-}
