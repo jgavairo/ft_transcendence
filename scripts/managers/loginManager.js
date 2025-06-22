@@ -61,12 +61,12 @@ export class LoginManager {
             }
             const usernameRegex = /^[a-zA-Z0-9_-]{5,15}$/;
             if (!usernameRegex.test(username)) {
-                showErrorNotification("Username must be between 5 and 15 characters and can only contain letters, numbers, underscores and hyphens");
+                showErrorNotification("Connection failed");
                 return;
             }
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%#*?&])[A-Za-z\d@$!%#*?&]{8,25}$/;
             if (!passwordRegex.test(password)) {
-                showErrorNotification("Your password is not valid");
+                showErrorNotification("Connection failed");
                 return;
             }
             api.post(`https://${HOSTNAME}:8443/api/auth/login`, { username, password })

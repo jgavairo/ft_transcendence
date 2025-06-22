@@ -24,7 +24,7 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
         if (!usernameRegex.test(username)) {
             return res.status(400).send({
                 success: false,
-                message: "Username must be between 5 and 20 characters and can only contain letters, numbers, underscores and hyphens"
+                message: "Connection failed"
             });
         }
 
@@ -32,7 +32,7 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
         if (!passwordRegex.test(password)) {
             return res.status(400).send({
                 success: false,
-                message: "Password must be between 8 and 25 characters and contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%#*?&)"
+                message: "Connection failed"
             });
         }
         
@@ -42,16 +42,15 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
         {
             return res.status(401).send({
                 success: false,
-                message: "User not found with this username: " + username
+                message: "Connection failed"
             });
         }
         
-        // Comparaison sécurisée avec bcrypt
         const isValid = await bcrypt.compare(password, user.password_hash);
         if (!isValid) {
             return res.status(401).send({
                 success: false,
-                message: "Password is incorrect for this username: " + username
+                message: "Connection failed"
             });
         }
         if (userSocketMap.get(username))
@@ -104,7 +103,7 @@ const loginHandler = async (req: FastifyRequest, res: FastifyReply) => {
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'lax',
                 path: '/',
-                maxAge: 24 * 60 * 60 * 1000 // 24 heures
+                maxAge: 24 * 60 * 60 * 1000
             });
     
             return res.send
