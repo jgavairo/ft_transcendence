@@ -209,11 +209,81 @@ function setupChangeProfilePictureModal()
     if (!newPictureInput)
         return;
 
+    // Validation côté client
+    const validateImageFile = (file: File): boolean => {
+        // Vérifier le type MIME
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            showErrorNotification('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.');
+            return false;
+        }
+
+        // Vérifier la taille (5MB max)
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+            showErrorNotification('File size must be less than 5MB.');
+            return false;
+        }
+
+        // Vérifier l'extension
+        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+        const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        if (!allowedExtensions.includes(fileExtension)) {
+            showErrorNotification('Invalid file extension. Only .jpg, .jpeg, .png, .gif, and .webp are allowed.');
+            return false;
+        }
+
+        return true;
+    };
+
+    // Validation des dimensions d'image
+    const validateImageDimensions = (file: File): Promise<boolean> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                const maxWidth = 1920;
+                const maxHeight = 1080;
+                
+                if (img.width > maxWidth || img.height > maxHeight) {
+                    showErrorNotification(`Image dimensions must be less than ${maxWidth}x${maxHeight} pixels.`);
+                    resolve(false);
+                } else if (img.width <= 0 || img.height <= 0) {
+                    showErrorNotification('Invalid image dimensions.');
+                    resolve(false);
+                } else {
+                    resolve(true);
+                }
+            };
+            
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                showErrorNotification('Could not load image. Please try another file.');
+                resolve(false);
+            };
+            
+            img.src = url;
+        });
+    };
+
     submitButton.addEventListener('click', async () => {
         const newPicture = newPictureInput.files?.[0];
         if (!newPicture) 
         {
             showErrorNotification('No picture selected');
+            return;
+        }
+
+        // Validation côté client
+        if (!validateImageFile(newPicture)) {
+            return;
+        }
+
+        // Validation des dimensions
+        const isValidDimensions = await validateImageDimensions(newPicture);
+        if (!isValidDimensions) {
             return;
         }
 

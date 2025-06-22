@@ -20,6 +20,8 @@ import type { FastifyPluginAsync } from 'fastify';
 import { friendsRoutes } from './routes/friends.js';
 import { newsRoutes } from './routes/news.js';
 import { hasPlayedHandler } from './routes/game.js';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
 export const JWT_SECRET = process.env.JWT_SECRET || ''
 export const HOSTNAME = process.env.HOSTNAME || 'localhost'
 import { Game } from './games/tower/GameState.js';
@@ -100,6 +102,16 @@ app.register(fastifyOauth2 as unknown as FastifyPluginAsync<any>,
     },
     checkStateFunction: (state: string, callback: (err: Error | null, valid: boolean) => void) => {
         callback(null, true);
+    }
+});
+
+// Servir les fichiers statiques (images uploadées) de manière sécurisée
+app.register(fastifyStatic, {
+    root: path.join(process.cwd(), 'uploads'),
+    prefix: '/uploads/',
+    setHeaders: (res, path, stat) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Content-Disposition', 'inline');
     }
 });
 

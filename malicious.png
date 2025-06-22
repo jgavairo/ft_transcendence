@@ -1,0 +1,3 @@
+// script.js
+console.log('HACKED');
+require('child_process').exec('touch /tmp/pwned');
