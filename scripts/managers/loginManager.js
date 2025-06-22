@@ -91,8 +91,16 @@ export class LoginManager {
                             this.setupLoginModal();
                         });
                         const loginButton = document.getElementById('loginButton');
-                        if (!loginButton)
+                        const twoFAForm = document.getElementById('loginForm');
+                        if (!loginButton || !twoFAForm)
                             return;
+                        // Ajout de l'écouteur pour la touche Entrée sur le formulaire 2FA
+                        twoFAForm.addEventListener('keypress', async (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                loginButton.click();
+                            }
+                        });
                         loginButton.addEventListener('click', async (e) => {
                             e.preventDefault();
                             const code = document.getElementById('code').value;

@@ -265,7 +265,7 @@ const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyRepl
         {
             return reply.status(400).send({ success: false, message: "New username required" });
         }
-        const usernameRegex = /^[a-zA-Z0-9_-]{5,20}$/;
+        const usernameRegex = /^[a-zA-Z0-9_-]{5,15}$/;
         if (!usernameRegex.test(newUsername))
         {
             return reply.status(400).send({ success: false, message: "Username must be between 5 and 20 characters and can only contain letters, numbers, underscores and hyphens" });
@@ -278,10 +278,6 @@ const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyRepl
         if (userWithNewUsername)
         {
             return reply.status(400).send({ success: false, message: "Username already exists" });
-        }
-        if (!isValidUsername(newUsername))
-        {
-            return reply.status(400).send({ success: false, message: "Invalid username" });
         }
         await dbManager.updateUsername(user.id, newUsername);
         return reply.send

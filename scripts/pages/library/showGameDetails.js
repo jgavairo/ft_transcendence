@@ -31,7 +31,6 @@ export async function renderRankings(gameId, container, currentUser) {
         const timestamp = Date.now();
         return `${imagePath}?v=${timestamp}&user=${username}`;
     };
-    // Générer le HTML pour le classement
     container.innerHTML = `
         <div class="rankingSection">
             <h3 class="sectionTitle">Online 1vs1 Ranking</h3>
@@ -148,11 +147,8 @@ export async function showGameDetails(gameIdOrObj) {
     }
     if (!game)
         return;
-    // Récupérer les utilisateurs
     const people = await fetchUsernames();
-    // Récupérer l'utilisateur en cours
     const currentUser = await GameManager.getCurrentUser();
-    // Récupérer les user_ids du jeu (utilisateurs possédant ce jeu)
     let userIds = [];
     try {
         userIds = JSON.parse(game.user_ids || '[]');
@@ -160,7 +156,6 @@ export async function showGameDetails(gameIdOrObj) {
     catch (_a) {
         userIds = [];
     }
-    // Récupérer les ids des amis via l'API
     let friendIds = [];
     try {
         const res = await api.get('/api/friends/allFriendIds');
@@ -192,10 +187,8 @@ export async function showGameDetails(gameIdOrObj) {
         </div>
       </div>
     `;
-    // Afficher le classement en utilisant la nouvelle fonction
     const rankingsContainer = details.querySelector('#rankings-container');
     await renderRankings(game.id, rankingsContainer, currentUser);
-    // Ajouter un événement de clic sur chaque nom pour afficher la carte de profil
     const friendNames = details.querySelectorAll('.friendName');
     friendNames.forEach(friendName => {
         friendName.addEventListener('click', () => {
@@ -207,12 +200,10 @@ export async function showGameDetails(gameIdOrObj) {
             showProfileCard(username, getImageUrl(profilePicture, username), bio, userId);
         });
     });
-    // Bouton de fermeture
     const closeBtn = details.querySelector('.close-button');
     closeBtn.addEventListener('click', () => {
         setupLibrary();
     });
-    // Bouton PLAY
     const playBtn = details.querySelector('#launchGameButton');
     playBtn.addEventListener('click', () => {
         switch (game.name) {
