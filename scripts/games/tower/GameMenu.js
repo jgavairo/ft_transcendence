@@ -219,6 +219,11 @@ export class TowerMenuManager {
             showErrorNotification("You are disconnected, please login and try again");
             return;
         }
+        // Nettoyer l'ancien client s'il existe
+        if (this.client) {
+            this.client.cleanup();
+            this.client = null;
+        }
         this.stage.destroy();
         if (this.startGameCallback)
             this.startGameCallback(false);

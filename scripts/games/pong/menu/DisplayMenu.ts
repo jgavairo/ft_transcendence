@@ -115,6 +115,7 @@ export class PongMenuManager
 
         this.setupSocketListeners();
         
+        window.addEventListener('resize', this.boundResizeHandler);
 
         // Add the black background
         const background = new Konva.Rect({
@@ -143,12 +144,12 @@ export class PongMenuManager
                 this.animateTitle();
             };
         }
+    }
 
-        window.addEventListener('resize', () => {
-            this.stage.width(gameWidth);
-            this.stage.height(gameHeight);
-            this.updateLayout();
-        });
+    private boundResizeHandler = () => {
+        this.stage.width(gameWidth);
+        this.stage.height(gameHeight);
+        this.updateLayout();
     }
 
     private animateTitle2()
@@ -2177,6 +2178,42 @@ export class PongMenuManager
     public startFromLink(roomId: string) {
         this.animateParticles();
         this.privateLobby(2, roomId);
+    }
+
+    //cursor a aussi ajouter ca, a verifier
+    public destroy() {
+        console.log("Destroying PongMenuManager and cleaning up resources.");
+
+        // Stop any ongoing animations
+        if (this.victoryAnimationId) {
+            cancelAnimationFrame(this.victoryAnimationId);
+            this.victoryAnimationId = undefined;
+        }
+
+        // Remove event listeners
+        window.removeEventListener('resize', this.boundResizeHandler);
+        this.stage.destroy(); // Destroy the Konva stage and all its children
+
+        // Disconnect sockets if they are managed by this instance
+        // Note: Be careful if socket is shared across the app
+        // gameSocket.disconnect();
+
+        // Clear intervals
+        if (this.finalCountdownTimer) {
+            clearInterval(this.finalCountdownTimer);
+        }
+
+        // Clear maps and arrays
+        this.buttons = [];
+        this.particles = [];
+        this.gameStateHandlers.clear();
+    }
+
+    public static destroyInstance() {
+        if (PongMenuManager.instance) {
+            PongMenuManager.instance.destroy();
+            PongMenuManager.instance = null!;
+        }
     }
 }
 

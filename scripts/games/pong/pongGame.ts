@@ -170,12 +170,17 @@ export function stopGame() {
     cancelAnimationFrame(loopId);
     loopId = null;
   }
+      ///////modif cursor pour leak
+  // // Destroy the menu manager instance to clean up listeners
+  // PongMenuManager.destroyInstance();
   socket.disconnect();
   
-  window.removeEventListener('keydown', onEscapeKey);
+
+  ////////////////////////////////////////////il a aussi enlever le mode commentaire de ca 
   // 2) Unbind keyboard listeners
-  // window.removeEventListener('keydown', onKeyDown);
-  // window.removeEventListener('keyup',   onKeyUp);
+  window.removeEventListener('keydown', onKeyDown);
+  window.removeEventListener('keyup',   onKeyUp);
+  window.removeEventListener('keydown', onEscapeKey);
 
   // 5) Clear the canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);

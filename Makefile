@@ -20,3 +20,5 @@ restart:
 
 clean:
 	docker compose down -v
+	rm -rf ./docker/nginx/ssl/fullchain.pem
+	rm -rf ./docker/nginx/ssl/privkey.pem
