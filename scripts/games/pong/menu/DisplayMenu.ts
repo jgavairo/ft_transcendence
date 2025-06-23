@@ -64,6 +64,8 @@ export class PongMenuManager
 
     private finalistUsernames?: string[]; // Ajout pour stocker les finalistes
 
+    private particlesAnimationId?: number; // Ajout pour stopper l'animation
+
     constructor(title: boolean = true, showMainMenu: boolean = true)
     {
         PongMenuManager.instance = this;
@@ -184,6 +186,7 @@ export class PongMenuManager
                 cancelAnimationFrame(animationFrame);
                 this.stage.off('click', skipAnimation);
                 if (this.showMainMenu) this.changeMenu('main');
+                console.log('[MENU ANIM] Title animation skipped');
             }
         };
 
@@ -194,11 +197,13 @@ export class PongMenuManager
                 this.titleImage.y(this.titleImage.y() + speed);
                 this.titleLayer.batchDraw();
                 animationFrame = requestAnimationFrame(animate);
+                console.log('[MENU ANIM] Title anim frame, y =', this.titleImage.y());
             }
             else
             {
                 this.stage.off('click', skipAnimation);
                 if (this.showMainMenu) this.changeMenu('main');
+                console.log('[MENU ANIM] Title animation finished');
             }
         };
 
@@ -333,6 +338,9 @@ export class PongMenuManager
 
     private createParticle()
     {
+      if (this.particles.length >= 50) {
+        return;
+      }
         const particle = new Konva.Circle
         ({
             x: Math.random() * this.stage.width(),
@@ -344,49 +352,49 @@ export class PongMenuManager
             shadowBlur: 10,
             shadowOpacity: 0.8
         });
-        
-        this.particles.push
-        ({
+        this.particles.push({
             shape: particle,
             speed: 0.5 + Math.random() * 2.5,
             glowDirection: 1
         });
-
         this.backgroundLayer.add(particle);
     }
 
     public animateParticles(): void
     {
-        // Parcourt toutes les particules existantes
-        this.particles.forEach((particle, index) => {
+        // Parcourt toutes les particules existantes à l'envers pour éviter les problèmes de suppression
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
             // Déplace la particule vers le bas selon sa vitesse
             particle.shape.y(particle.shape.y() + particle.speed);
-            
             // Animation de la lueur
             const currentBlur = particle.shape.shadowBlur();
             if (currentBlur >= 15) particle.glowDirection = -1;
             if (currentBlur <= 5) particle.glowDirection = 1;
             particle.shape.shadowBlur(currentBlur + particle.glowDirection * 0.2);
-            
             // Si la particule sort de l'écran par le bas
             if (particle.shape.y() > this.stage.height()) {
-                // Supprime la particule du canvas
+                // Supprime la particule du canvas et détruit l'objet Konva
                 particle.shape.destroy();
-                // Retire la particule du tableau
-                this.particles.splice(index, 1);
+                this.particles.splice(i, 1);
             }
-        });
-
-        // 5% chance to create a new particle each frame
+        }
+        // 15% chance to create a new particle each frame (mais max 5)
         if (Math.random() < 0.15) {
             this.createParticle();
         }
-
         // Refresh the background layer display
         this.backgroundLayer.batchDraw();
-
         // Continue the animation on the next frame
-        requestAnimationFrame(() => this.animateParticles());
+        this.particlesAnimationId = requestAnimationFrame(() => this.animateParticles());
+    }
+
+    public stopParticlesAnimation(): void {
+        if (this.particlesAnimationId !== undefined) {
+            cancelAnimationFrame(this.particlesAnimationId);
+            this.particlesAnimationId = undefined;
+            console.log('[MENU ANIM] Particles animation stopped');
+        }
     }
 
     private updateLayout()
@@ -426,6 +434,12 @@ export class PongMenuManager
                 this.createButton('QUIT', gameWidth / 2 - 100, 520, () => {
                     const modal = document.getElementById('optionnalModal');
                     this.stage.destroy();
+                    this.stopParticlesAnimation();
+                    // Détruit toutes les particules restantes à l'écran
+                    this.particles.forEach(particle => {
+                        particle.shape.destroy();
+                    });
+                    this.particles = [];
                     if (modal) modal.innerHTML = '';
                 });
                 break;
@@ -1620,6 +1634,10 @@ export class PongMenuManager
 
     async launchLocalPong(nbPlayers: number)
     {
+        // Stoppe et détruit toutes les particules du menu avant de lancer la partie
+        this.stopParticlesAnimation();
+        this.particles.forEach(particle => particle.shape.destroy());
+        this.particles = [];
         try 
         {
             const modal = document.getElementById("games-modal");
@@ -1694,6 +1712,7 @@ export class PongMenuManager
                 winnerText.y(winnerText.y() + speed);
                 this.menuLayer.batchDraw();
                 requestAnimationFrame(animate);
+                console.log('[MENU ANIM] EndMatch anim frame, y =', winnerText.y());
             }
             else 
             {
@@ -1723,6 +1742,7 @@ export class PongMenuManager
                         // Relance de l'animation des particules
                         this.animateParticles();
                         this.animateTitle2();
+                        console.log('[MENU ANIM] EndMatch animation finished, returning to menu');
                     }
                 }, 100);
             }
@@ -1754,23 +1774,20 @@ export class PongMenuManager
         const animateVictoryParticles = () => {
             this.particles.forEach((particle, index) => {
                 particle.shape.y(particle.shape.y() + particle.speed);
-                
                 const currentBlur = particle.shape.shadowBlur();
                 if (currentBlur >= 15) particle.glowDirection = -1;
                 if (currentBlur <= 5) particle.glowDirection = 1;
                 particle.shape.shadowBlur(currentBlur + particle.glowDirection * 0.2);
-                
                 if (particle.shape.y() < 0) {
                     particle.shape.destroy();
                     this.particles.splice(index, 1);
                 }
             });
-
             if (Math.random() < 0.2) {
                 createVictoryParticle();
             }
-
             this.backgroundLayer.batchDraw();
+            console.log('[MENU ANIM] Victory particles count:', this.particles.length);
             this.victoryAnimationId = requestAnimationFrame(animateVictoryParticles);
         };
 
@@ -1788,6 +1805,7 @@ export class PongMenuManager
     public static matchFound2Players(data: any) : void
     {
         const menu = PongMenuManager.instance;
+        menu.stopParticlesAnimation(); // Stoppe l'animation des particules au lancement du jeu
         
         menu.buttons.forEach(button => button.group.destroy());
         menu.buttons = [];
@@ -1851,6 +1869,7 @@ export class PongMenuManager
     public static matchFound3Players(data: any) : void
     {
         const menu = PongMenuManager.instance;
+        menu.stopParticlesAnimation(); // Stoppe l'animation des particules au lancement du jeu
         
         menu.buttons.forEach(button => button.group.destroy());
         menu.buttons = [];
@@ -1998,7 +2017,7 @@ export class PongMenuManager
                             onMatchFound(matchData);
                         }
                     }, 1000);
-                    // Fermer l'overlay d'invitation si présent
+                    // Fermer lmer l'overlay d'invitation si présent
                     const inviteOverlay = document.getElementById("inviteOverlay");
                     if (inviteOverlay) inviteOverlay.remove();
                 };
@@ -2018,7 +2037,7 @@ export class PongMenuManager
                     fontFamily: 'Press Start 2P',
                     fontSize: 20,
                     fill: '#fc4cfc',
-                    x: gameWidth / 2 - 250,
+                    x: gameWidth /  2 - 250,
                     y: 470,
                                        width: 500,
                     align: 'center',
@@ -2178,15 +2197,25 @@ export class PongMenuManager
         this.animateParticles();
         this.privateLobby(2, roomId);
     }
+
+    public setupDestroyHandler() {
+        const origDestroy = this.stage.destroy.bind(this.stage);
+        this.stage.destroy = (...args: any[]) => {
+            this.stopParticlesAnimation();
+            return origDestroy(...args);
+        };
+    }
 }
 
 export async function displayMenu() : Promise<void>
 {
     const menu = new PongMenuManager(true);
     menu.start();
+    menu.setupDestroyHandler();
 }
 
 export async function displayMenuFromLink(roomId: string): Promise<void> {
     const menu = new PongMenuManager(true, false); // no title, no main menu
     menu.startFromLink(roomId);
+    menu.setupDestroyHandler();
 }
