@@ -177,38 +177,5 @@ export class GameClient {
         }
         return 3; // fallback
     }
-    async sendMatchToHistory(winner) {
-        var _a, _b, _c, _d, _e, _f;
-        if (!this.currentState)
-            return;
-        // Récupérer les infos nécessaires
-        const playerId = ((_a = this.currentState.player) === null || _a === void 0 ? void 0 : _a.id) || null;
-        const enemyId = ((_b = this.currentState.enemy) === null || _b === void 0 ? void 0 : _b.id) || null;
-        const playerScore = Math.max(0, Math.min(100, Math.round((_d = (_c = this.currentState.player) === null || _c === void 0 ? void 0 : _c.tower) !== null && _d !== void 0 ? _d : 0)));
-        const enemyScore = Math.max(0, Math.min(100, Math.round((_f = (_e = this.currentState.enemy) === null || _e === void 0 ? void 0 : _e.tower) !== null && _f !== void 0 ? _f : 0)));
-        // Si les IDs ne sont pas présents dans le state, on ne peut pas envoyer l'historique
-        if (!playerId || !enemyId)
-            return;
-        try {
-            const gameId = await GameClient.getTowerGameId();
-            await fetch('/api/match/addToHistory', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    user1Id: playerId,
-                    user2Id: enemyId,
-                    gameId: gameId,
-                    user1Lives: playerScore,
-                    user2Lives: enemyScore,
-                }),
-            });
-        }
-        catch (e) {
-            console.error('Erreur lors de l\'envoi de l\'historique Tower:', e);
-        }
-    }
 }
 GameClient.towerGameId = null;

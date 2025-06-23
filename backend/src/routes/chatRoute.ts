@@ -1,10 +1,21 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { dbManager } from "../database/database.js";
+import { authMiddleware } from "../middleware/auth.js";
+import { AuthenticatedRequest } from "./user";
 
 const getChatHistoryHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+        // Vérification authentification
+        await authMiddleware(request as AuthenticatedRequest, reply);
+        const authenticatedUserId = (request as AuthenticatedRequest).user.id;
         // On récupère l'id utilisateur depuis la query (author est maintenant un number)
         const userId = Number((request.query as any).userId);
+        if (userId !== authenticatedUserId) {
+            return reply.status(403).send({
+                success: false,
+                message: "Forbidden: userId does not match authenticated user."
+            });
+        }
         const messages = await dbManager.getLastMessages(50);
 
         // Récupérer le username de l'utilisateur courant
