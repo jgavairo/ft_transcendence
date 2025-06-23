@@ -3,7 +3,7 @@ import { startSoloPong, startSoloPongVsBot, startSoloTri } from './SocketEmit.js
 import api from '../../helpers/api.js';
 import { HOSTNAME } from '../../main.js';
 export async function getFirstPlay() {
-    const response = await api.get(`https://${HOSTNAME}:8443/api/games/1/1/hasPlayed`);
+    const response = await api.get(`https://${HOSTNAME}:8443/api/games/1/1/hasPhttps://:8443layed`);
     const { hasPlayed } = await response.json();
     return hasPlayed;
 }

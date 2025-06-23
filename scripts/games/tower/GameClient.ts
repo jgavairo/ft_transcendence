@@ -231,34 +231,4 @@ export class GameClient
         }
         return 3; // fallback
     }
-
-    public async sendMatchToHistory(winner: string) {
-        if (!this.currentState) return;
-        // Récupérer les infos nécessaires
-        const playerId = this.currentState.player?.id || null;
-        const enemyId = this.currentState.enemy?.id || null;
-        const playerScore = Math.max(0, Math.min(100, Math.round(this.currentState.player?.tower ?? 0)));
-        const enemyScore = Math.max(0, Math.min(100, Math.round(this.currentState.enemy?.tower ?? 0)));
-        // Si les IDs ne sont pas présents dans le state, on ne peut pas envoyer l'historique
-        if (!playerId || !enemyId) return;
-        try {
-            const gameId = await GameClient.getTowerGameId();
-            await fetch('/api/match/addToHistory', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    user1Id: playerId,
-                    user2Id: enemyId,
-                    gameId: gameId,
-                    user1Lives: playerScore,
-                    user2Lives: enemyScore,
-                }),
-            });
-        } catch (e) {
-            console.error('Erreur lors de l\'envoi de l\'historique Tower:', e);
-        }
-    }
 }
