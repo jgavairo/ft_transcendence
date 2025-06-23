@@ -231,7 +231,6 @@ const isBlockedHandler = async (request: FastifyRequest, reply: FastifyReply) =>
         const { username } = request.body as { username: string };
         // Accept also 0 or "0" as BOT/system
         if (
-            !username ||
             username === 'BOT' ||
             username === 'bot' ||
             username === "0" ||
@@ -240,19 +239,17 @@ const isBlockedHandler = async (request: FastifyRequest, reply: FastifyReply) =>
         ) {
             return reply.send({ success: true, isBlocked: false });
         }
+        const targetUser = await dbManager.getUserByUsername(username);
+        if (!targetUser) {
+            return reply.status(404).send({ success: false, message: "User not found" });
+        }
         const isBlocked = await dbManager.isUserBlocked((request as AuthenticatedRequest).user.id, username);
         return reply.send({ success: true, isBlocked });
     } catch (error) {
         console.error("Error in isBlockedHandler:", error);
-        return reply.status(500).send({ success: false, message: "Server error" });
+        return reply.status(500).send({ success: false, message: "Erreur serveur" });
     }
 };
-
-function isValidUsername(username: string)
-{
-    const usernameRegex = /^(?=.{3,20$)(?!.*[_.-]{2})[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/;
-    return usernameRegex.test(username);
-}
 
 const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyReply) => 
 {
