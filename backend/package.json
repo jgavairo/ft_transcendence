@@ -30,7 +30,7 @@
     "fastify-socket.io": "^5.1.0",
     "file-type": "^21.0.0",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.2",
+    "multer": "^2.0.1",
     "node-fetch": "^2.7.0",
     "nodemailer": "^7.0.3",
     "passport": "^0.7.0",
