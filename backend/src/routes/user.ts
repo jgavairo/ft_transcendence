@@ -372,6 +372,16 @@ const send2FACodeHandler = async (request: FastifyRequest, reply: FastifyReply) 
                 message: "User not found"
             });
         }
+        
+        const date = Date.now();
+        if (user.two_factor_code_expiration && user.two_factor_code_expiration > date)
+        {
+            return reply.status(200).send({ 
+                success: true, 
+                message: "Code already sent" 
+            });
+        }
+        
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         await dbManager.update2FACode(user.id, code);
         const mailOptions = {
@@ -379,19 +389,22 @@ const send2FACodeHandler = async (request: FastifyRequest, reply: FastifyReply) 
             to: user.email,
             subject: 'Your 2FA Code - ft_transcendence',
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2>Your Two-Factor Authentication Code</h2>
-                    <p>Here is your verification code:</p>
-                    <h1 style="font-size: 32px; letter-spacing: 5px; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px;">
-                        ${code}
-                    </h1>
-                    <p>This code will expire in 5 minutes.</p>
-                    <p>If you didn't request this code, please ignore this email.</p>
-                </div>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Your Two-Factor Authentication Code</h2>
+            <p>Here is your verification code:</p>
+            <h1 style="font-size: 32px; letter-spacing: 5px; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px;">
+            ${code}
+            </h1>
+            <p>This code will expire in 5 minutes.</p>
+            <p>If you didn't request this code, please ignore this email.</p>
+            </div>
             `
         };
         await transporter.sendMail(mailOptions);
-        return reply.send({ success: true });
+        return reply.send({ 
+            success: true, 
+            message: "2FA code sent successfully" 
+        });
     }
     catch (error)
     {
