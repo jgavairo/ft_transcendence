@@ -2,6 +2,64 @@
 import Konva from "https://cdn.skypack.dev/konva";
 const buttonPosition = 400;
 export class GameRenderer {
+    initScene(state) {
+        // Clear existing layers
+        this.backgroundLayer.destroyChildren();
+        this.uiLayer.destroyChildren();
+        // Background and bases
+        if (this.images.background) {
+            this.backgroundLayer.add(new Konva.Image({
+                image: this.images.background,
+                width: 1200, height: 800, x: 0, y: 0
+            }));
+        }
+        this.backgroundLayer.add(new Konva.Image({
+            image: this.images.playerBase, x: -50, y: 330, scaleX: 0.5, scaleY: 0.5
+        }));
+        this.backgroundLayer.add(new Konva.Image({
+            image: this.images.enemyBase, x: 1040, y: 330, scaleX: 0.5, scaleY: 0.5
+        }));
+        const barWidth = 250;
+        const barHeight = 25;
+        // Player HP Bar
+        this.uiLayer.add(new Konva.Rect({
+            x: 10, y: 15, width: barWidth, height: barHeight, fill: "#333", cornerRadius: 4
+        }));
+        this.playerHpBar = new Konva.Rect({
+            x: 10, y: 15, width: barWidth, height: barHeight, fill: "red", cornerRadius: 4
+        });
+        this.uiLayer.add(this.playerHpBar);
+        // Enemy HP Bar
+        this.uiLayer.add(new Konva.Rect({
+            x: 940, y: 15, width: barWidth, height: barHeight, fill: "#333", cornerRadius: 4
+        }));
+        this.enemyHpBar = new Konva.Rect({
+            x: 940, y: 15, width: barWidth, height: barHeight, fill: "red", cornerRadius: 4
+        });
+        this.uiLayer.add(this.enemyHpBar);
+        // Gold display
+        this.uiLayer.add(new Konva.Image({
+            image: this.images.coin, x: 10, y: 745, width: 48, height: 48
+        }));
+        this.playerGoldText = new Konva.Text({
+            x: 55, y: 760, width: barWidth, fontFamily: "Press Start 2P",
+            text: `...`, fontSize: 24, fontWeight: "bold", fill: "yellow"
+        });
+        this.uiLayer.add(this.playerGoldText);
+        // Username displays
+        this.uiLayer.add(new Konva.Text({
+            x: 10, y: 60, width: barWidth, text: state.player.username,
+            fontSize: 24, fontWeight: "bold", align: "center", fontFamily: "Press Start 2P",
+            shadowColor: "#000", shadowBlur: 4, shadowOpacity: 0.5, fill: "white"
+        }));
+        this.uiLayer.add(new Konva.Text({
+            x: 940, y: 60, width: barWidth, text: state.enemy.username,
+            fontSize: 24, fontWeight: "bold", align: "center", fontFamily: "Press Start 2P",
+            shadowColor: "#000", shadowBlur: 4, shadowOpacity: 0.5, fill: "white"
+        }));
+        this.backgroundLayer.draw();
+        this.uiLayer.draw();
+    }
     loadImages() {
         const paths = {
             background: '/assets/games/Tower/TowerBackground.webp',
@@ -121,6 +179,10 @@ export class GameRenderer {
     }
     constructor(canvasId, gameClient) {
         this.buttons = []; // To store buttons
+        this.unitNodes = new Map();
+        this.playerHpBar = null;
+        this.enemyHpBar = null;
+        this.playerGoldText = null;
         this.isDestroyed = false;
         this.cooldownAnimationIds = [];
         this.buttonCooldowns = new Map();
@@ -142,17 +204,21 @@ export class GameRenderer {
         this.dots = '';
         this.lastDotUpdate = 0;
         this.dotUpdateInterval = 500; // Update dots every 500ms
+        this.isInitialized = false;
         this.gameClient = gameClient;
         this.stage = new Konva.Stage({
             container: canvasId,
             width: 1200,
             height: 800
         });
-        this.layer = new Konva.Layer();
+        this.backgroundLayer = new Konva.Layer();
+        this.unitsLayer = new Konva.Layer();
+        this.uiLayer = new Konva.Layer();
         this.buttonsLayer = new Konva.Layer();
-        this.stage.add(this.layer);
-        this.stage.add(this.buttonsLayer);
-        this.loadImages().then(() => {
+        this.stage.add(this.backgroundLayer, this.unitsLayer, this.uiLayer, this.buttonsLayer);
+    }
+    initialize() {
+        return this.loadImages().then(() => {
             this.createUnitButtons();
         });
     }
@@ -477,15 +543,24 @@ export class GameRenderer {
         this.buttons = [];
         this.buttonCooldowns.clear();
         this.deathAnimationFrames.clear();
+        this.unitNodes.clear();
         try {
             // Destroy layers in order
             if (this.buttonsLayer) {
                 this.buttonsLayer.destroyChildren();
                 this.buttonsLayer.destroy();
             }
-            if (this.layer) {
-                this.layer.destroyChildren();
-                this.layer.destroy();
+            if (this.unitsLayer) {
+                this.unitsLayer.destroyChildren();
+                this.unitsLayer.destroy();
+            }
+            if (this.uiLayer) {
+                this.uiLayer.destroyChildren();
+                this.uiLayer.destroy();
+            }
+            if (this.backgroundLayer) {
+                this.backgroundLayer.destroyChildren();
+                this.backgroundLayer.destroy();
             }
             // Destroy stage last
             if (this.stage) {
@@ -498,304 +573,147 @@ export class GameRenderer {
         }
         // Ensure references are null
         this.buttonsLayer = null;
-        this.layer = null;
+        this.uiLayer = null;
+        this.unitsLayer = null;
+        this.backgroundLayer = null;
         this.stage = null;
     }
     render(state) {
-        if (this.isDestroyed || !this.layer || !this.stage) {
+        if (this.isDestroyed || !this.stage) {
             return;
+        }
+        if (!this.isInitialized) {
+            this.initScene(state);
+            this.isInitialized = true;
         }
         if (this.matchIsEnded) {
             return;
         }
-        this.layer.destroyChildren();
         const now = Date.now();
         if (now - this.lastAnimationFrame > this.animationSpeed) {
             this.animationFrame = (this.animationFrame + 1) % this.frameCount;
             this.lastAnimationFrame = now;
         }
-        // Cleaning up dead units from the Map
-        this.deathAnimationFrames.forEach((_, unitId) => {
-            const unitExists = [...state.player.units, ...state.enemy.units].some(unit => unit.id === unitId);
-            if (!unitExists) {
+        // --- UPDATE UI ---
+        const barWidth = 250;
+        const maxHP = 500;
+        this.playerHpBar.width(Math.max(0, barWidth * (state.player.tower / maxHP)));
+        this.enemyHpBar.width(Math.max(0, barWidth * (state.enemy.tower / maxHP)));
+        this.playerGoldText.text(`${Math.floor(this.playerSide === 'player' ? state.player.gold : state.enemy.gold)}`);
+        // --- SYNCHRONIZE UNITS ---
+        const allUnitIdsInState = new Set();
+        const allUnits = [...state.player.units, ...state.enemy.units];
+        allUnits.forEach(unit => allUnitIdsInState.add(unit.id));
+        // Update existing units and add new ones
+        allUnits.forEach((unit) => {
+            let unitNode = this.unitNodes.get(unit.id);
+            if (!unitNode) {
+                unitNode = new Konva.Image({
+                    width: this.frameWidth,
+                    height: this.frameHeight,
+                });
+                this.unitNodes.set(unit.id, unitNode);
+                this.unitsLayer.add(unitNode);
+            }
+            // Determine correct image key
+            const team = state.player.units.some((u) => u.id === unit.id) ? 'player' : 'enemy';
+            let imageKey = `${team}_${unit.imgKey}`;
+            if (unit.state === 'attacking')
+                imageKey = `${team}_${unit.attackImgKey}`;
+            else if (unit.state === 'idle')
+                imageKey = `${team}_${unit.idleImgKey}`;
+            else if (unit.state === 'dead')
+                imageKey = `${team}_${unit.deadImgKey}`;
+            // Handle animation frame
+            let currentFrame = this.animationFrame;
+            if (unit.state === 'dead') {
+                if (!this.deathAnimationFrames.has(unit.id)) {
+                    this.deathAnimationFrames.set(unit.id, { frame: 0, lastUpdate: now });
+                }
+                const deathAnim = this.deathAnimationFrames.get(unit.id);
+                if (now - deathAnim.lastUpdate > this.deathAnimationSpeed) {
+                    if (deathAnim.frame < this.frameCount - 1) {
+                        deathAnim.frame++;
+                        deathAnim.lastUpdate = now;
+                    }
+                }
+                currentFrame = deathAnim.frame;
+            }
+            // Update node properties
+            unitNode.image(this.images[imageKey]);
+            unitNode.position({ x: unit.x, y: unit.y });
+            unitNode.crop({
+                x: currentFrame * this.frameWidth,
+                y: 0,
+                width: this.frameWidth,
+                height: this.frameHeight
+            });
+        });
+        // Remove units that are no longer in the state
+        this.unitNodes.forEach((node, unitId) => {
+            if (!allUnitIdsInState.has(unitId)) {
+                node.destroy();
+                this.unitNodes.delete(unitId);
                 this.deathAnimationFrames.delete(unitId);
             }
         });
-        if (this.images.background) {
-            this.layer.add(new Konva.Image({
-                image: this.images.background,
-                width: 1200,
-                height: 800,
-                x: 0,
-                y: 0
-            }));
-        }
-        // Display player base
-        this.layer.add(new Konva.Image({
-            image: this.images.playerBase,
-            x: -50,
-            y: 330,
-            scaleX: 0.5,
-            scaleY: 0.5
-        }));
-        // Display enemy base
-        this.layer.add(new Konva.Image({
-            image: this.images.enemyBase,
-            x: 1040,
-            y: 330,
-            scaleX: 0.5,
-            scaleY: 0.5
-        }));
-        // Display player units
-        state.player.units.forEach((unit) => {
-            let currentFrame = this.animationFrame;
-            // Special handling for death animation
-            if (unit.state === 'dead') {
-                if (!this.deathAnimationFrames.has(unit.id)) {
-                    this.deathAnimationFrames.set(unit.id, { frame: 0, lastUpdate: now });
-                }
-                const deathAnim = this.deathAnimationFrames.get(unit.id);
-                if (now - deathAnim.lastUpdate > this.deathAnimationSpeed) {
-                    if (deathAnim.frame < this.frameCount - 1) {
-                        deathAnim.frame++;
-                        deathAnim.lastUpdate = now;
-                    }
-                }
-                currentFrame = deathAnim.frame;
-            }
-            this.layer.add(new Konva.Image({
-                x: unit.x,
-                y: unit.y,
-                image: this.images[`player_${unit.state === 'attacking' ? unit.attackImgKey :
-                    unit.state === 'idle' ? unit.idleImgKey :
-                        unit.state === 'dead' ? unit.deadImgKey :
-                            unit.imgKey}`],
-                width: this.frameWidth,
-                height: this.frameHeight,
-                crop: {
-                    x: currentFrame * this.frameWidth,
-                    y: 0,
-                    width: this.frameWidth,
-                    height: this.frameHeight
-                }
-            }));
-        });
-        // Display enemy units
-        state.enemy.units.forEach((unit) => {
-            let currentFrame = this.animationFrame;
-            // Special handling for death animation
-            if (unit.state === 'dead') {
-                if (!this.deathAnimationFrames.has(unit.id)) {
-                    this.deathAnimationFrames.set(unit.id, { frame: 0, lastUpdate: now });
-                }
-                const deathAnim = this.deathAnimationFrames.get(unit.id);
-                if (now - deathAnim.lastUpdate > this.deathAnimationSpeed) {
-                    if (deathAnim.frame < this.frameCount - 1) {
-                        deathAnim.frame++;
-                        deathAnim.lastUpdate = now;
-                    }
-                }
-                currentFrame = deathAnim.frame;
-            }
-            this.layer.add(new Konva.Image({
-                x: unit.x,
-                y: unit.y,
-                image: this.images[`enemy_${unit.state === 'attacking' ? unit.attackImgKey :
-                    unit.state === 'idle' ? unit.idleImgKey :
-                        unit.state === 'dead' ? unit.deadImgKey :
-                            unit.imgKey}`],
-                width: this.frameWidth,
-                height: this.frameHeight,
-                crop: {
-                    x: currentFrame * this.frameWidth,
-                    y: 0,
-                    width: this.frameWidth,
-                    height: this.frameHeight
-                }
-            }));
-        });
-        const playerHP = state.player.tower;
-        const maxPlayerHP = 500;
-        const enemyHP = state.enemy.tower;
-        const maxEnemyHP = 500;
-        if (playerHP <= 0 || enemyHP <= 0) {
+        // --- HANDLE MATCH END ---
+        if (state.player.tower <= 0 || state.enemy.tower <= 0) {
             this.matchIsEnded = true;
-            const winner = playerHP <= 0 ? state.enemy.username : state.player.username;
-            // Clear screen
-            this.layer.destroyChildren();
-            this.buttonsLayer.destroyChildren();
-            // Add background
-            if (this.images.endBackground) {
-                const background = new Konva.Image({
-                    image: this.images.endBackground,
-                    width: 1200,
-                    height: 800,
-                    opacity: 0.9
-                });
-                this.layer.add(background);
-            }
-            else {
-                // Fallback to black rectangle if image not loaded
-                const background = new Konva.Rect({
-                    width: 1200,
-                    height: 800,
-                    fill: 'black',
-                    opacity: 0.9
-                });
-                this.layer.add(background);
-            }
-            // Add winner text
-            const winnerText = new Konva.Text({
-                text: `${winner} WIN !`,
-                fontFamily: 'Press Start 2P',
-                fontSize: 48,
-                fill: '#FFD700',
-                x: 0,
-                y: 300,
-                width: 1200,
-                align: 'center',
-                shadowColor: '#000',
-                shadowBlur: 10,
-                shadowOffset: { x: 5, y: 5 },
-                shadowOpacity: 0.5
-            });
-            this.layer.add(winnerText);
-            // Create button to return to menu
-            const buttonGroup = new Konva.Group({
-                x: (1200 - 250) / 2,
-                y: 450
-            });
-            const button = new Konva.Rect({
-                width: 250,
-                height: 70,
-                fill: "#FFB300",
-                cornerRadius: 10,
-                opacity: 1,
-                stroke: '#6B3F16',
-                strokeWidth: 4,
-                shadowColor: "#FF8C00",
-                shadowBlur: 15,
-                shadowOpacity: 0.4
-            });
-            const buttonText = new Konva.Text({
-                text: "QUIT",
-                fontFamily: "Press Start 2P",
-                fontSize: 22,
-                fontWeight: "bold",
-                fill: "#6B3F16",
-                align: 'center',
-                width: 250,
-                height: 70,
-                y: 22
-            });
-            buttonGroup.add(button);
-            buttonGroup.add(buttonText);
-            buttonGroup.on('mouseover', () => {
-                button.fill('#D18B00'); // Darker yellow/brown (pressed effect)
-                button.stroke('#6B3F16'); // Keep dark outline
-                button.shadowColor('#000000'); // Very subtle or no shadow
-                button.shadowBlur(2);
-                buttonText.fill('#6B3F16'); // Keep text dark
-                buttonText.y(28); // Move text down (pressed effect)
-            });
-            buttonGroup.on('mouseout', () => {
-                button.fill('#FFB300'); // Normal golden yellow
-                button.stroke('#6B3F16');
-                button.shadowColor('#FF8C00');
-                button.shadowBlur(15);
-                buttonText.fill('#6B3F16');
-                buttonText.y(22);
-            });
-            buttonGroup.on('click', () => {
-                this.gameClient.quitMatch(false);
-            });
-            this.layer.add(buttonGroup);
-            this.layer.draw();
+            const winner = state.player.tower <= 0 ? state.enemy.username : state.player.username;
+            this.showEndScreen(winner);
             return;
         }
-        const barWidth = 250;
-        const barHeight = 25;
-        const playerHPWidth = Math.max(0, barWidth * (playerHP / maxPlayerHP));
-        const enemyHPWidth = Math.max(0, barWidth * (enemyHP / maxEnemyHP));
-        this.layer.add(new Konva.Rect({
-            x: 10,
-            y: 15,
-            width: barWidth,
-            height: barHeight,
-            fill: "#333",
-            cornerRadius: 4
+        this.stage.batchDraw();
+    }
+    showEndScreen(winner) {
+        // Hide game layers
+        this.unitsLayer.hide();
+        this.uiLayer.hide();
+        this.buttonsLayer.hide();
+        const endLayer = new Konva.Layer();
+        // Add background
+        if (this.images.endBackground) {
+            endLayer.add(new Konva.Image({
+                image: this.images.endBackground,
+                width: 1200, height: 800, opacity: 0.9
+            }));
+        }
+        else {
+            endLayer.add(new Konva.Rect({
+                width: 1200, height: 800, fill: 'black', opacity: 0.9
+            }));
+        }
+        // Add winner text
+        endLayer.add(new Konva.Text({
+            text: `${winner} WINS!`,
+            fontFamily: 'Press Start 2P', fontSize: 48, fill: '#FFD700',
+            x: 0, y: 300, width: 1200, align: 'center',
+            shadowColor: '#000', shadowBlur: 10, shadowOffset: { x: 5, y: 5 }, shadowOpacity: 0.5
         }));
-        this.layer.add(new Konva.Rect({
-            x: 10,
-            y: 15,
-            width: playerHPWidth,
-            height: barHeight,
-            fill: "red",
-            cornerRadius: 4
-        }));
-        this.layer.add(new Konva.Rect({
-            x: 940,
-            y: 15,
-            width: barWidth,
-            height: barHeight,
-            fill: "#333",
-            cornerRadius: 4
-        }));
-        this.layer.add(new Konva.Rect({
-            x: 940,
-            y: 15,
-            width: enemyHPWidth,
-            height: barHeight,
-            fill: "red",
-            cornerRadius: 4
-        }));
-        // Display gold and HP
-        this.layer.add(new Konva.Image({
-            image: this.images.coin,
-            x: 10,
-            y: 745,
-            width: 48,
-            height: 48
-        }));
-        this.layer.add(new Konva.Text({
-            x: 55,
-            y: 760,
-            width: barWidth,
-            fontFamily: "Press Start 2P",
-            text: `${Math.floor(this.playerSide === 'player' ? state.player.gold : state.enemy.gold)}`,
-            fontSize: 24,
-            fontWeight: "bold",
-            fill: "yellow"
-        }));
-        this.layer.add(new Konva.Text({
-            x: 10,
-            y: 60,
-            width: barWidth,
-            text: state.player.username,
-            fontSize: 24,
-            fontWeight: "bold",
-            align: "center",
-            fontFamily: "Press Start 2P",
-            shadowColor: "#000",
-            shadowBlur: 4,
-            shadowOpacity: 0.5,
-            fill: "white"
-        }));
-        this.layer.add(new Konva.Text({
-            x: 940,
-            y: 60,
-            width: barWidth,
-            text: state.enemy.username,
-            fontSize: 24,
-            fontWeight: "bold",
-            align: "center",
-            fontFamily: "Press Start 2P",
-            shadowColor: "#000",
-            shadowBlur: 4,
-            shadowOpacity: 0.5,
-            fill: "white"
-        }));
-        this.layer.draw();
+        // Create button to return to menu
+        const buttonGroup = new Konva.Group({ x: (1200 - 250) / 2, y: 450 });
+        const button = new Konva.Rect({
+            width: 250, height: 70, fill: "#FFB300", cornerRadius: 10,
+            stroke: '#6B3F16', strokeWidth: 4, shadowColor: "#FF8C00", shadowBlur: 15, shadowOpacity: 0.4
+        });
+        const buttonText = new Konva.Text({
+            text: "QUIT", fontFamily: "Press Start 2P", fontSize: 22, fontWeight: "bold",
+            fill: "#6B3F16", align: 'center', width: 250, height: 70, y: 22
+        });
+        buttonGroup.add(button, buttonText);
+        buttonGroup.on('click', () => this.gameClient.quitMatch(false));
+        buttonGroup.on('mouseover', () => {
+            button.fill('#D18B00');
+            document.body.style.cursor = 'pointer';
+        });
+        buttonGroup.on('mouseout', () => {
+            button.fill('#FFB300');
+            document.body.style.cursor = 'default';
+        });
+        endLayer.add(buttonGroup);
+        this.stage.add(endLayer);
+        endLayer.draw();
     }
     getStage() {
         return this.stage;
@@ -807,9 +725,9 @@ export class GameRenderer {
         return this.playerSide;
     }
     showWaitingScreen() {
-        if (this.isDestroyed || !this.layer || !this.stage)
+        if (this.isDestroyed || !this.unitsLayer || !this.stage)
             return;
-        this.layer.destroyChildren();
+        this.unitsLayer.destroyChildren();
         this.buttonsLayer.hide();
         // Semi-transparent black background
         const background = new Konva.Image({
@@ -818,7 +736,7 @@ export class GameRenderer {
             height: 800,
             opacity: 1
         });
-        this.layer.add(background);
+        this.unitsLayer.add(background);
         // Text "Searching for an opponent"
         const waitingText = new Konva.Text({
             text: "Searching for an opponent",
@@ -834,7 +752,7 @@ export class GameRenderer {
             shadowOffset: { x: 5, y: 5 },
             shadowOpacity: 0.5
         });
-        this.layer.add(waitingText);
+        this.unitsLayer.add(waitingText);
         // Animated dots
         const dotsText = new Konva.Text({
             text: '',
@@ -846,7 +764,7 @@ export class GameRenderer {
             width: 1200,
             align: 'center'
         });
-        this.layer.add(dotsText);
+        this.unitsLayer.add(dotsText);
         // Cancel button
         const buttonGroup = new Konva.Group({
             x: (1200 - 250) / 2,
@@ -894,7 +812,7 @@ export class GameRenderer {
                 this.gameClient.cancelMatchmaking();
             }
         });
-        this.layer.add(buttonGroup);
+        this.unitsLayer.add(buttonGroup);
         // Dots animation
         const animate = () => {
             if (this.isDestroyed)
@@ -904,12 +822,12 @@ export class GameRenderer {
                 this.dots = this.dots.length >= 3 ? '' : this.dots + '.';
                 dotsText.text(this.dots);
                 this.lastDotUpdate = now;
-                this.layer.batchDraw();
+                this.unitsLayer.batchDraw();
             }
             this.waitingAnimationFrame = requestAnimationFrame(animate);
         };
         animate();
-        this.layer.draw();
+        this.unitsLayer.draw();
     }
     stopWaitingScreen() {
         if (this.waitingAnimationFrame !== null) {
@@ -919,8 +837,8 @@ export class GameRenderer {
         this.dots = '';
         this.lastDotUpdate = 0;
         // Clear main layer
-        if (this.layer) {
-            this.layer.destroyChildren();
+        if (this.unitsLayer) {
+            this.unitsLayer.destroyChildren();
         }
         // Redisplay spawn buttons
         if (this.buttonsLayer) {

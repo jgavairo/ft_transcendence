@@ -13,6 +13,7 @@ export class TowerMenuManager {
         this.animationSkipped = false;
         this.animationFrames = []; // Pour stocker les IDs des animations
         this.client = null; // Stockage du client
+        this.resizeHandler = null; // Pour stocker la référence au resize handler
         TowerMenuManager.instance = this;
         this.username = username;
         this.startGameCallback = startGameCallback;
@@ -115,11 +116,12 @@ export class TowerMenuManager {
             animate();
         };
         // Gérer le redimensionnement
-        window.addEventListener('resize', () => {
+        this.resizeHandler = () => {
             this.stage.width(gameWidth);
             this.stage.height(gameHeight);
             this.updateLayout();
-        });
+        };
+        window.addEventListener('resize', this.resizeHandler);
     }
     animateTitle() {
         const finalY = 120;
@@ -251,123 +253,124 @@ export class TowerMenuManager {
             this.backgroundLayer.add(panel);
             this.backgroundLayer.batchDraw();
         };
+        panelImage.onerror = () => console.error("Could not load image: /assets/games/Tower/UnitsPanel.png");
     }
     async changeMenu(menuType, winner) {
-        // Annuler les animations existantes avant de changer de menu
         this.cancelAllAnimations();
         const container = document.getElementById("games-modal");
         if (!container) {
             console.error("Canvas not found");
             return;
         }
-        // Détruire l'ancien stage s'il existe
         if (this.stage) {
             this.stage.destroy();
         }
-        // Créer un nouveau stage
         this.stage = new Konva.Stage({
             container: container,
             width: gameWidth,
             height: gameHeight
         });
-        // Initialiser les layers
         this.backgroundLayer = new Konva.Layer();
         this.titleLayer = new Konva.Layer();
         this.menuLayer = new Konva.Layer();
-        this.stage.add(this.backgroundLayer);
-        this.stage.add(this.titleLayer);
-        this.stage.add(this.menuLayer);
-        // Nettoyer les layers
-        this.backgroundLayer.destroyChildren();
-        this.titleLayer.destroyChildren();
-        this.menuLayer.destroyChildren();
-        // Charger le background normal
+        this.stage.add(this.backgroundLayer, this.titleLayer, this.menuLayer);
+        const loadContent = () => {
+            // Nettoie les anciens boutons
+            this.buttons.forEach(button => button.group.destroy());
+            this.buttons = [];
+            // Charger le titre (sauf pour le menu 'units')
+            if (menuType !== 'units') {
+                const titleImg = new window.Image();
+                titleImg.src = '/assets/games/Tower/TowerTitle.png';
+                titleImg.onload = () => {
+                    const scale = 0.4;
+                    const konvaTitle = new Konva.Image({
+                        image: titleImg,
+                        x: (gameWidth - titleImg.width * scale) / 2,
+                        y: 20,
+                        width: titleImg.width * scale,
+                        height: titleImg.height * scale
+                    });
+                    this.titleLayer.add(konvaTitle);
+                    this.titleLayer.batchDraw();
+                };
+                titleImg.onerror = () => console.error("Could not load image: /assets/games/Tower/TowerTitle.png");
+            }
+            // Gérer les menus spécifiques
+            switch (menuType) {
+                case 'main':
+                    this.createButton('PLAY', gameWidth / 2 - 125, 350, () => this.changeMenu('play'));
+                    this.createButton('UNITS', gameWidth / 2 - 125, 440, () => this.changeMenu('units'));
+                    this.createButton('QUIT', gameWidth / 2 - 125, 530, async () => {
+                        var _a;
+                        const res = await api.get('/api/games/getAll');
+                        const data = await res.json();
+                        const gameId = (_a = data.games.find((g) => g.name.toLowerCase() === 'tower')) === null || _a === void 0 ? void 0 : _a.id;
+                        const rankingsContainer = document.querySelector('#rankings-container');
+                        if (rankingsContainer && rankingsContainer.offsetParent !== null) {
+                            const currentUser = await GameManager.getCurrentUser();
+                            await renderRankings(gameId, rankingsContainer, currentUser);
+                        }
+                        const modal = document.getElementById('optionnalModal');
+                        this.stage.destroy();
+                        if (modal)
+                            modal.innerHTML = '';
+                    });
+                    break;
+                case 'play':
+                    this.createButton('SOLO', gameWidth / 2 - 125, 350, () => this.changeMenu('solo'));
+                    this.createButton('MULTI', gameWidth / 2 - 125, 440, () => this.changeMenu('multi'));
+                    this.createButton('BACK', gameWidth / 2 - 125, 530, () => this.changeMenu('main'));
+                    break;
+                case 'solo':
+                    this.createButton('START GAME', gameWidth / 2 - 125, 440, () => this.launchSoloGame());
+                    this.createButton('BACK', gameWidth / 2 - 125, 530, () => this.changeMenu('play'));
+                    break;
+                case 'multi':
+                    this.createButton('SEARCH GAME', gameWidth / 2 - 125, 440, () => this.launchMultiGame());
+                    this.createButton('BACK', gameWidth / 2 - 125, 530, () => this.changeMenu('play'));
+                    break;
+                case 'units':
+                    this.createUnitsPanel();
+                    this.createButton('BACK', gameWidth / 2 - 125, 700, () => this.changeMenu('main'));
+                    break;
+            }
+        };
+        // Toujours charger le background de base en premier
         const bgImage = new window.Image();
         bgImage.src = '/assets/games/Tower/TowerBackground.webp';
         bgImage.onload = () => {
             const KonvaBg = new Konva.Image({
-                image: bgImage,
-                x: 0,
-                y: 0,
-                width: gameWidth,
-                height: gameHeight
+                image: bgImage, x: 0, y: 0, width: gameWidth, height: gameHeight
             });
             this.backgroundLayer.add(KonvaBg);
             this.backgroundLayer.batchDraw();
+            // Une fois le fond chargé, charger le reste du contenu
+            loadContent();
         };
-        // Charger le titre seulement si ce n'est pas le menu units
-        if (menuType !== 'units') {
-            const titleImg = new window.Image();
-            titleImg.src = '/assets/games/Tower/TowerTitle.webp';
-            titleImg.onload = () => {
-                const scale = 0.4;
-                const konvaTitle = new Konva.Image({
-                    image: titleImg,
-                    x: (gameWidth - titleImg.width * scale) / 2,
-                    y: 20,
-                    width: titleImg.width * scale,
-                    height: titleImg.height * scale
-                });
-                this.titleLayer.add(konvaTitle);
-                this.titleLayer.batchDraw();
-            };
-        }
-        // Nettoie les anciens boutons
-        this.buttons.forEach(button => button.group.destroy());
-        this.buttons = [];
-        switch (menuType) {
-            case 'main':
-                this.createButton('PLAY', gameWidth / 2 - 125, 350, () => this.changeMenu('play'));
-                this.createButton('UNITS', gameWidth / 2 - 125, 440, () => this.changeMenu('units'));
-                this.createButton('QUIT', gameWidth / 2 - 125, 530, async () => {
-                    var _a;
-                    const res = await api.get('/api/games/getAll');
-                    const data = await res.json();
-                    const gameId = (_a = data.games.find((g) => g.name.toLowerCase() === 'tower')) === null || _a === void 0 ? void 0 : _a.id;
-                    const rankingsContainer = document.querySelector('#rankings-container');
-                    if (rankingsContainer && rankingsContainer.offsetParent !== null) {
-                        const currentUser = await GameManager.getCurrentUser();
-                        await renderRankings(gameId, rankingsContainer, currentUser);
-                    }
-                    const modal = document.getElementById('optionnalModal');
-                    this.stage.destroy();
-                    if (modal)
-                        modal.innerHTML = '';
-                });
-                break;
-            case 'play':
-                this.createButton('SOLO', gameWidth / 2 - 125, 350, () => this.changeMenu('solo'));
-                this.createButton('MULTI', gameWidth / 2 - 125, 440, () => this.changeMenu('multi'));
-                this.createButton('BACK', gameWidth / 2 - 125, 530, () => {
-                    this.changeMenu('main');
-                });
-                break;
-            case 'solo':
-                this.createButton('START GAME', gameWidth / 2 - 125, 440, () => this.launchSoloGame());
-                this.createButton('BACK', gameWidth / 2 - 125, 530, () => {
-                    this.changeMenu('play');
-                });
-                break;
-            case 'multi':
-                this.createButton('SEARCH GAME', gameWidth / 2 - 125, 440, () => this.launchMultiGame());
-                this.createButton('BACK', gameWidth / 2 - 125, 530, () => {
-                    this.changeMenu('play');
-                });
-                break;
-            case 'units':
-                this.createUnitsPanel();
-                this.createButton('BACK', gameWidth / 2 - 125, 700, () => {
-                    this.changeMenu('main');
-                });
-                break;
-        }
+        bgImage.onerror = () => {
+            console.error("Could not load image: /assets/games/Tower/TowerBackground.png");
+            // Essayer de charger le contenu même si le fond échoue
+            loadContent();
+        };
     }
     cleanup() {
         // Annuler toutes les animations
         this.cancelAllAnimations();
-        // Nettoyer les event listeners
+        // Nettoyer les event listeners des boutons
+        this.buttons.forEach(button => {
+            if (button.group) {
+                button.group.off(); // Supprime tous les event listeners du groupe
+            }
+        });
+        // Nettoyer les event listeners du stage
         if (this.stage) {
             this.stage.off();
+        }
+        // Nettoyer l'event listener de resize
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler);
+            this.resizeHandler = null;
         }
         // Détruire les layers
         if (this.backgroundLayer) {
