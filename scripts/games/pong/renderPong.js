@@ -289,6 +289,12 @@ export async function renderPong(state, isTournament = false) {
         const menu = new PongMenuManager(false);
         menu.displayEndMatch(winnerName, padColor);
         start = false; // pour remettre la particule en pause si besoin
+        // Retire le listener pause si la partie est finie
+        try {
+            const { removePauseMenuListeners } = await import('./pauseMenu.js');
+            removePauseMenuListeners();
+        }
+        catch (_a) { }
         // on ne remonte pas plus haut
         return;
     }

@@ -704,7 +704,7 @@ export class GameRenderer {
                 button.shadowColor('#FF8C00');
                 button.shadowBlur(15);
                 buttonText.fill('#6B3F16');
-                buttonText.y(22); // Reset text to normal position
+                buttonText.y(22);
             });
             buttonGroup.on('click', () => {
                 this.gameClient.quitMatch(false);

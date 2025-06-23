@@ -338,6 +338,9 @@ export class PongMenuManager
 
     private createParticle()
     {
+      if (this.particles.length >= 50) {
+        return;
+      }
         const particle = new Konva.Circle
         ({
             x: Math.random() * this.stage.width(),
@@ -349,21 +352,19 @@ export class PongMenuManager
             shadowBlur: 10,
             shadowOpacity: 0.8
         });
-        
-        this.particles.push
-        ({
+        this.particles.push({
             shape: particle,
             speed: 0.5 + Math.random() * 2.5,
             glowDirection: 1
         });
-
         this.backgroundLayer.add(particle);
     }
 
     public animateParticles(): void
     {
-        // Parcourt toutes les particules existantes
-        this.particles.forEach((particle, index) => {
+        // Parcourt toutes les particules existantes à l'envers pour éviter les problèmes de suppression
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
             // Déplace la particule vers le bas selon sa vitesse
             particle.shape.y(particle.shape.y() + particle.speed);
             // Animation de la lueur
@@ -373,19 +374,17 @@ export class PongMenuManager
             particle.shape.shadowBlur(currentBlur + particle.glowDirection * 0.2);
             // Si la particule sort de l'écran par le bas
             if (particle.shape.y() > this.stage.height()) {
-                // Supprime la particule du canvas
+                // Supprime la particule du canvas et détruit l'objet Konva
                 particle.shape.destroy();
-                // Retire la particule du tableau
-                this.particles.splice(index, 1);
+                this.particles.splice(i, 1);
             }
-        });
-        // 5% chance to create a new particle each frame
+        }
+        // 15% chance to create a new particle each frame (mais max 5)
         if (Math.random() < 0.15) {
             this.createParticle();
         }
         // Refresh the background layer display
         this.backgroundLayer.batchDraw();
-        console.log('[MENU ANIM] Particles count:', this.particles.length);
         // Continue the animation on the next frame
         this.particlesAnimationId = requestAnimationFrame(() => this.animateParticles());
     }
@@ -2038,7 +2037,7 @@ export class PongMenuManager
                     fontFamily: 'Press Start 2P',
                     fontSize: 20,
                     fill: '#fc4cfc',
-                    x: gameWidth / 2 - 250,
+                    x: gameWidth /  2 - 250,
                     y: 470,
                                        width: 500,
                     align: 'center',

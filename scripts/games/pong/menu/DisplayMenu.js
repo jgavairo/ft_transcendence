@@ -237,6 +237,9 @@ export class PongMenuManager {
         return colors[Math.floor(Math.random() * colors.length)];
     }
     createParticle() {
+        if (this.particles.length >= 50) {
+            return;
+        }
         const particle = new Konva.Circle({
             x: Math.random() * this.stage.width(),
             y: 0,
@@ -255,8 +258,9 @@ export class PongMenuManager {
         this.backgroundLayer.add(particle);
     }
     animateParticles() {
-        // Parcourt toutes les particules existantes
-        this.particles.forEach((particle, index) => {
+        // Parcourt toutes les particules existantes à l'envers pour éviter les problèmes de suppression
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
             // Déplace la particule vers le bas selon sa vitesse
             particle.shape.y(particle.shape.y() + particle.speed);
             // Animation de la lueur
@@ -268,13 +272,12 @@ export class PongMenuManager {
             particle.shape.shadowBlur(currentBlur + particle.glowDirection * 0.2);
             // Si la particule sort de l'écran par le bas
             if (particle.shape.y() > this.stage.height()) {
-                // Supprime la particule du canvas
+                // Supprime la particule du canvas et détruit l'objet Konva
                 particle.shape.destroy();
-                // Retire la particule du tableau
-                this.particles.splice(index, 1);
+                this.particles.splice(i, 1);
             }
-        });
-        // 5% chance to create a new particle each frame
+        }
+        // 15% chance to create a new particle each frame (mais max 5)
         if (Math.random() < 0.15) {
             this.createParticle();
         }
