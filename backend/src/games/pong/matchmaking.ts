@@ -3,6 +3,8 @@ import type { Namespace, Socket } from 'socket.io';
 import { startMatch, updateMatch, MatchState } from './gameSimulation.js';
 import { startTriMatch, TriMatchState } from './TripongSimulation.js';
 import { dbManager } from '../../database/database.js';
+import { JWT_SECRET } from '../../server.js';
+import jwt from 'jsonwebtoken';
 
 interface PlayerInfo {
   side: number;               // 0|1 for bi-pong, 0|1|2 for tri-pong, -1 for solo modes
@@ -88,10 +90,21 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
     }
   }
 
-  // Checks if a userId is in the tournament queue (before launch)
-  function isUserInTournamentQueue(userId: string, size: 4): boolean {
-    return tournamentQueues[4].some((p: Player) => socketToUserId.get(p.id) === userId);
-  }
+  gameNs.use((socket, next) => {
+    const token = socket.handshake.auth?.token || socket.handshake.headers?.cookie?.split('token=')[1]?.split(';')[0];
+
+    if (!token) {
+      return next(new Error('Unauthorized no token provided'));
+    }
+
+    try {
+      const payload = jwt.verify(token, JWT_SECRET);
+      (socket as any).user = payload; // ou socket.data.user = payload
+      next();
+    } catch (err) {
+      return next(new Error('Unauthorized invalid token'));
+    }
+  });
 
   gameNs.on('connection', socket => {
     

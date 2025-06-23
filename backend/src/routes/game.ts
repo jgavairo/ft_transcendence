@@ -31,6 +31,9 @@ const isFirstGameHandler = async ( request: FastifyRequest, reply:   FastifyRepl
 
     // now cast body
     const { gameId, mode } = request.body as { gameId: number; mode: number };
+    if (typeof gameId !== 'number' || typeof mode !== 'number') {
+      return reply.status(400).send({ success: false, message: "Missing or invalid gameId/mode" });
+    }
     const userId = (request as AuthenticatedRequest).user.id;
 
     const firstGame = await dbManager.isFirstGame(userId, gameId, mode);
@@ -55,6 +58,9 @@ const isFirstGameHandler = async ( request: FastifyRequest, reply:   FastifyRepl
       const userId = (request as AuthenticatedRequest).user.id;
       const gameId = Number(request.params.gameId);
       const mode   = Number(request.params.mode);
+      if (isNaN(gameId) || isNaN(mode)) {
+        return reply.status(400).send({ success: false, message: "Missing or invalid gameId/mode" });
+      }
   
       const hasPlayed = await dbManager.hasPlayed(userId, gameId, mode);
       return reply.send({ success: true, hasPlayed });
