@@ -102,7 +102,7 @@ export async function setupChat() {
         if (authorIdRaw === 'BOT' || isNaN(authorId) || authorIdRaw == 0) {
             isSystem = true;
             displayName = 'BOT';
-            profilePic = '/assets/games/pong/pong.png';
+            profilePic = '/assets/games/pong/pong.webp';
         }
         else {
             const user = userMap.get(authorId);

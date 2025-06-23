@@ -177,7 +177,7 @@ const registerHandler = async (req: FastifyRequest, res: FastifyReply) =>
             username: username,
             email: email,
             password_hash: password_hash,
-            profile_picture: '../assets/profile_pictures/default.png',
+            profile_picture: '../assets/profile_pictures/default.webp',
             friends: [],
             friend_requests: [],
             attempting_friend_ids: []
@@ -298,7 +298,7 @@ export const googleAuthHandler = async (userInfo: { email?: string; name?: strin
             username: username,
             email: email,
             password_hash: '',
-            profile_picture: picture || '../assets/profile_pictures/default.png',
+            profile_picture: picture || '../assets/profile_pictures/default.webp',
             friends: [],
             friend_requests: [],
             attempting_friend_ids: [],

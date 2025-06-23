@@ -86,7 +86,7 @@ export class TowerMenuManager {
 
         // Charger le background
         const bgImage = new window.Image();
-        bgImage.src = '/assets/games/Tower/TowerBackground.png';
+        bgImage.src = '/assets/games/Tower/TowerBackground.webp';
         bgImage.onload = () => {
             const KonvaBg = new Konva.Image({
                 image: bgImage,
@@ -113,7 +113,7 @@ export class TowerMenuManager {
 
         // Charger et animer le titre
         const titleImg = new window.Image();
-        titleImg.src = '/assets/games/Tower/TowerTitle.png';
+        titleImg.src = '/assets/games/Tower/TowerTitle.webp';
         titleImg.onload = () => {
             const scale = 0.4;
             const konvaTitle = new Konva.Image({
@@ -304,7 +304,7 @@ export class TowerMenuManager {
 
     private createUnitsPanel() {
         const panelImage = new window.Image();
-        panelImage.src = '/assets/games/Tower/UnitsPanel.png';
+        panelImage.src = '/assets/games/Tower/UnitsPanel.webp';
         panelImage.onload = () => {
             const panel = new Konva.Image({
                 image: panelImage,
@@ -358,7 +358,7 @@ export class TowerMenuManager {
 
         // Charger le background normal
         const bgImage = new window.Image();
-        bgImage.src = '/assets/games/Tower/TowerBackground.png';
+        bgImage.src = '/assets/games/Tower/TowerBackground.webp';
         bgImage.onload = () => {
             const KonvaBg = new Konva.Image({
                 image: bgImage,
@@ -374,7 +374,7 @@ export class TowerMenuManager {
         // Charger le titre seulement si ce n'est pas le menu units
         if (menuType !== 'units') {
             const titleImg = new window.Image();
-            titleImg.src = '/assets/games/Tower/TowerTitle.png';
+            titleImg.src = '/assets/games/Tower/TowerTitle.webp';
             titleImg.onload = () => {
                 const scale = 0.4;
                 const konvaTitle = new Konva.Image({

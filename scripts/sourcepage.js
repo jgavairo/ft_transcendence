@@ -1,15 +1,15 @@
 const header = (username, profilePicture) => {
     // Function to add a timestamp to image URLs
     const getImageUrl = (imagePath, username) => {
-        if (!imagePath || imagePath === 'default-profile.png') {
-            return 'default-profile.png';
+        if (!imagePath || imagePath === 'default-profile.webp') {
+            return 'default-profile.webp';
         }
         // Add a timestamp to force reload
         const timestamp = Date.now();
         return `${imagePath}?v=${timestamp}&user=${username}`;
     };
     return `
-			<img src="../../assets/logo.png" alt="Logo" class="logo" id="logoHeader" />
+			<img src="../../assets/logo.webp" alt="Logo" class="logo" id="logoHeader" />
 			<button class="activebutton" id="storebutton">STORE</button>
 			<button class="button" id="librarybutton">LIBRARY</button>
 			<button class="button" id="communitybutton">COMMUNITY</button>
@@ -97,7 +97,7 @@ const loginModalHTML = `
                 </form>
             <button id="loginButton" class="loginButton">Sign in</button>
             <button id="googleSignIn" class="googleButton">
-                    <img src="../../assets/google.png" class="googleLogo" alt="Google logo">
+                    <img src="../../assets/google.webp" class="googleLogo" alt="Google logo">
                     Sign in with Google
             </button>
             <div class="registerContainer">
@@ -137,8 +137,8 @@ const registerModalHTML = `
 const profileModalHTML = (username, email, profilePicture, bio, twoFactorEnabled, isGoogleAccount) => {
     // Function to add a timestamp to image URLs
     const getImageUrl = (imagePath, username) => {
-        if (!imagePath || imagePath === 'default-profile.png') {
-            return 'default-profile.png';
+        if (!imagePath || imagePath === 'default-profile.webp') {
+            return 'default-profile.webp';
         }
         // Add a timestamp to force reload
         const timestamp = Date.now();

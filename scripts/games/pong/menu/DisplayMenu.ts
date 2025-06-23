@@ -130,7 +130,7 @@ export class PongMenuManager
 
         if (title) {
             const image = new Image();
-            image.src = '../../../../assets/games/pong/title.png';
+            image.src = '../../../../assets/games/pong/title.webp';
             image.onload = () =>
             {
                 this.titleImage = new Konva.Image
@@ -156,7 +156,7 @@ export class PongMenuManager
     private animateTitle2()
     {
       const image = new Image();
-      image.src = '../../../../assets/games/pong/title.png';
+      image.src = '../../../../assets/games/pong/title.webp';
       image.onload = () =>
       {
           this.titleImage = new Konva.Image
@@ -186,7 +186,6 @@ export class PongMenuManager
                 cancelAnimationFrame(animationFrame);
                 this.stage.off('click', skipAnimation);
                 if (this.showMainMenu) this.changeMenu('main');
-                console.log('[MENU ANIM] Title animation skipped');
             }
         };
 
@@ -197,13 +196,11 @@ export class PongMenuManager
                 this.titleImage.y(this.titleImage.y() + speed);
                 this.titleLayer.batchDraw();
                 animationFrame = requestAnimationFrame(animate);
-                console.log('[MENU ANIM] Title anim frame, y =', this.titleImage.y());
             }
             else
             {
                 this.stage.off('click', skipAnimation);
                 if (this.showMainMenu) this.changeMenu('main');
-                console.log('[MENU ANIM] Title animation finished');
             }
         };
 
@@ -393,7 +390,6 @@ export class PongMenuManager
         if (this.particlesAnimationId !== undefined) {
             cancelAnimationFrame(this.particlesAnimationId);
             this.particlesAnimationId = undefined;
-            console.log('[MENU ANIM] Particles animation stopped');
         }
     }
 
@@ -1712,7 +1708,6 @@ export class PongMenuManager
                 winnerText.y(winnerText.y() + speed);
                 this.menuLayer.batchDraw();
                 requestAnimationFrame(animate);
-                console.log('[MENU ANIM] EndMatch anim frame, y =', winnerText.y());
             }
             else 
             {
@@ -1742,7 +1737,6 @@ export class PongMenuManager
                         // Relance de l'animation des particules
                         this.animateParticles();
                         this.animateTitle2();
-                        console.log('[MENU ANIM] EndMatch animation finished, returning to menu');
                     }
                 }, 100);
             }
@@ -1787,7 +1781,6 @@ export class PongMenuManager
                 createVictoryParticle();
             }
             this.backgroundLayer.batchDraw();
-            console.log('[MENU ANIM] Victory particles count:', this.particles.length);
             this.victoryAnimationId = requestAnimationFrame(animateVictoryParticles);
         };
 
@@ -1805,8 +1798,6 @@ export class PongMenuManager
     public static matchFound2Players(data: any) : void
     {
         const menu = PongMenuManager.instance;
-        menu.stopParticlesAnimation(); // Stoppe l'animation des particules au lancement du jeu
-        
         menu.buttons.forEach(button => button.group.destroy());
         menu.buttons = [];
         menu.menuLayer.destroyChildren();
@@ -1857,6 +1848,7 @@ export class PongMenuManager
                 menu.menuLayer.batchDraw();
             } else {
                 clearInterval(countdown);
+                menu.stopParticlesAnimation(); // Stoppe l'animation juste avant de lancer le jeu
                 onMatchFound(data);
             }
         }, 1000);
@@ -1869,8 +1861,6 @@ export class PongMenuManager
     public static matchFound3Players(data: any) : void
     {
         const menu = PongMenuManager.instance;
-        menu.stopParticlesAnimation(); // Stoppe l'animation des particules au lancement du jeu
-        
         menu.buttons.forEach(button => button.group.destroy());
         menu.buttons = [];
         menu.menuLayer.destroyChildren();
@@ -1933,6 +1923,7 @@ export class PongMenuManager
                 menu.menuLayer.batchDraw();
             } else {
                 clearInterval(countdown);
+                menu.stopParticlesAnimation(); // Stoppe l'animation juste avant de lancer le jeu
                 onTriMatchFound(data);
             }
         }, 1000);
@@ -2071,8 +2062,8 @@ export class PongMenuManager
         
         // Fonction pour ajouter un timestamp aux URLs d'images
         const getImageUrl = (imagePath: string | null, username: string) => {
-            if (!imagePath || imagePath === 'default-profile.png') {
-                return 'default-profile.png';
+            if (!imagePath || imagePath === 'default-profile.webp') {
+                return 'default-profile.webp';
             }
             // Ajouter un timestamp pour forcer le rechargement
             const timestamp = Date.now();

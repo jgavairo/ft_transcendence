@@ -8,8 +8,8 @@ import { showErrorNotification } from "../../helpers/notifications.js";
 import { handlePongInviteLinkClick } from "../../helpers/pongInviteHandler.js";
 // Fonction pour ajouter un timestamp aux URLs d'images
 const getImageUrl = (imagePath, username) => {
-    if (!imagePath || imagePath === 'default-profile.png') {
-        return 'default-profile.png';
+    if (!imagePath || imagePath === 'default-profile.webp') {
+        return 'default-profile.webp';
     }
     // Ajouter un timestamp pour forcer le rechargement
     const timestamp = Date.now();
@@ -148,12 +148,12 @@ export async function setupChatWidget() {
         if (authorIdRaw === 'BOT' || isNaN(authorId) || authorIdRaw == 0) {
             isSystem = true;
             displayName = 'BOT';
-            profilePic = '/assets/games/pong/pong.png';
+            profilePic = '/assets/games/pong/pong.webp';
         }
         else {
             const user = userMap.get(authorId);
             displayName = (user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`;
-            profilePic = (user === null || user === void 0 ? void 0 : user.profile_picture) || 'default-profile.png';
+            profilePic = (user === null || user === void 0 ? void 0 : user.profile_picture) || 'default-profile.webp';
         }
         const isGrouped = lastAuthor === authorId;
         const bracketRegex = /^\[TOURNOI( PONG)?\] (.+?)(?:\n|: )([\s\S]+)/i;
@@ -187,7 +187,7 @@ export async function setupChatWidget() {
                 profileImg.className = "chat-widget-messenger-avatar";
                 if (!isSystem) {
                     const user = userMap.get(authorId);
-                    profileImg.onclick = () => showProfileCard((user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
+                    profileImg.onclick = () => showProfileCard((user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.webp", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
                 }
                 row.appendChild(profileImg);
             }
@@ -235,7 +235,7 @@ export async function setupChatWidget() {
             profileImg.className = "chat-widget-messenger-avatar";
             if (!isSystem) {
                 const user = userMap.get(authorId);
-                profileImg.onclick = () => showProfileCard((user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.png", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
+                profileImg.onclick = () => showProfileCard((user === null || user === void 0 ? void 0 : user.username) || `User#${authorId}`, (user === null || user === void 0 ? void 0 : user.profile_picture) || "default-profile.webp", (user === null || user === void 0 ? void 0 : user.bio) || "No bio available", (user === null || user === void 0 ? void 0 : user.id) || 0);
             }
             row.appendChild(profileImg);
         }

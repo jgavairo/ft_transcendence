@@ -149,11 +149,9 @@ export async function renderPong(state: MatchState, isTournament = false) {
   state.paddles.forEach((p, i) => {
     if (prevLives[i] === 1 && p.lives === 0) {
         deathFlashes.push({ index: i, frame: 0 });
-        console.log('[ANIM] deathFlash triggered for paddle', i, 'frame', 0);
       }
     if (p.lives < prevLives[i]) {
         lifeFlashes.push({ index: i, frame: 0 });
-        console.log('[ANIM] lifeFlash triggered for paddle', i, 'frame', 0);
     }
   });
 
@@ -191,7 +189,6 @@ export async function renderPong(state: MatchState, isTournament = false) {
     }
 
     death.frame++;
-    console.log('[ANIM] deathFlash anim for paddle', i, 'frame', death.frame);
     }
         const flash = lifeFlashes.find(f => f.index === i);
         if (flash) {
@@ -208,7 +205,6 @@ export async function renderPong(state: MatchState, isTournament = false) {
             ctx.restore()
       
             flash.frame++
-            console.log('[ANIM] lifeFlash anim for paddle', i, 'frame', flash.frame);
         }
         ctx.save();
         ctx.lineWidth   = P_TH;
@@ -223,7 +219,6 @@ export async function renderPong(state: MatchState, isTournament = false) {
   
     deathFlashes = deathFlashes.filter(f => f.frame < DEATH_FRAMES);
     lifeFlashes = lifeFlashes.filter(f => f.frame < FLASH_FRAMES);
-    console.log('[ANIM] deathFlashes count:', deathFlashes.length, '| lifeFlashes count:', lifeFlashes.length);
     // 5) balle avec ombre portée
     const bx = CX + state.ball.x;
     const by = CY + state.ball.y;
@@ -255,7 +250,6 @@ export async function renderPong(state: MatchState, isTournament = false) {
       for (let i = 0; i < state.paddles.length; i++) {
         if (prevLives[i] > state.paddles[i].lives) {
           createExplosion(lastBallXBeforeLifeLoss, lastBallYBeforeLifeLoss);
-          console.log('[ANIM] createExplosion at', lastBallXBeforeLifeLoss, lastBallYBeforeLifeLoss, 'for paddle', i);
         }
       }
     }
@@ -267,7 +261,6 @@ export async function renderPong(state: MatchState, isTournament = false) {
 
     // Explosion: update & draw
     updateAndDrawExplosions(ctx);
-    console.log('[ANIM] explosionParticles count:', explosionParticles.length);
 
     // Si la partie est terminée, on vide les particules d'explosion pour éviter qu'elles ne s'affichent au match suivant
     if (state.gameOver) {

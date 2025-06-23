@@ -28,8 +28,8 @@ export async function fetchUsernames(): Promise<{ id: number, username: string, 
 export async function renderPeopleList(filter: string = "") {
     // Fonction pour ajouter un timestamp aux URLs d'images
     const getImageUrl = (imagePath: string | null, username: string) => {
-        if (!imagePath || imagePath === 'default-profile.png') {
-            return 'default-profile.png';
+        if (!imagePath || imagePath === 'default-profile.webp') {
+            return 'default-profile.webp';
         }
         // Ajouter un timestamp pour forcer le rechargement
         const timestamp = Date.now();
@@ -261,8 +261,8 @@ export function setupSearchInput() {
 export async function showProfileCard(username: string, profilePicture: string, bio: string, userId: number) {
     // Fonction pour ajouter un timestamp aux URLs d'images
     const getImageUrl = (imagePath: string | null, username: string) => {
-        if (!imagePath || imagePath === 'default-profile.png') {
-            return 'default-profile.png';
+        if (!imagePath || imagePath === 'default-profile.webp') {
+            return 'default-profile.webp';
         }
         // Ajouter un timestamp pour forcer le rechargement
         const timestamp = Date.now();
@@ -279,7 +279,7 @@ export async function showProfileCard(username: string, profilePicture: string, 
         }
     } catch (e) { userInfo = null; }
     if (userInfo) {
-        profilePicture = userInfo.profile_picture || 'default-profile.png';
+        profilePicture = userInfo.profile_picture || 'default-profile.webp';
         bio = userInfo.bio || 'No bio available';
         userId = userInfo.id || userId;
     }

@@ -24,8 +24,8 @@ export async function renderRankings(gameId, container, currentUser) {
     }));
     // Simple function to add a timestamp to image URLs
     const getImageUrl = (imagePath, username) => {
-        if (!imagePath || imagePath === 'default-profile.png') {
-            return 'default-profile.png';
+        if (!imagePath || imagePath === 'default-profile.webp') {
+            return 'default-profile.webp';
         }
         // Add a timestamp to force reload
         const timestamp = Date.now();
@@ -60,7 +60,7 @@ export async function renderRankings(gameId, container, currentUser) {
         playerName.addEventListener('click', () => {
             var _a;
             const username = playerName.getAttribute('data-username');
-            const profilePicture = playerName.getAttribute('data-profile-picture') || 'default-profile.png';
+            const profilePicture = playerName.getAttribute('data-profile-picture') || 'default-profile.webp';
             const bio = playerName.getAttribute('data-bio') || 'No bio available';
             const userId = ((_a = people.find(person => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
             showProfileCard(username, getImageUrl(profilePicture, username), bio, userId);
@@ -91,8 +91,8 @@ export async function renderRankings(gameId, container, currentUser) {
 export function renderFriendList(people) {
     // Simple function to add a timestamp to image URLs
     const getImageUrl = (imagePath, username) => {
-        if (!imagePath || imagePath === 'default-profile.png') {
-            return 'default-profile.png';
+        if (!imagePath || imagePath === 'default-profile.webp') {
+            return 'default-profile.webp';
         }
         // Add a timestamp to force reload
         const timestamp = Date.now();
@@ -129,8 +129,8 @@ export function renderFriendList(people) {
 export async function showGameDetails(gameIdOrObj) {
     // Function to add a timestamp to image URLs
     const getImageUrl = (imagePath, username) => {
-        if (!imagePath || imagePath === 'default-profile.png') {
-            return 'default-profile.png';
+        if (!imagePath || imagePath === 'default-profile.webp') {
+            return 'default-profile.webp';
         }
         // Add a timestamp to force reload
         const timestamp = Date.now();
@@ -194,7 +194,7 @@ export async function showGameDetails(gameIdOrObj) {
         friendName.addEventListener('click', () => {
             var _a;
             const username = friendName.getAttribute('data-username');
-            const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
+            const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.webp';
             const bio = friendName.getAttribute('data-bio') || 'No bio available';
             const userId = ((_a = people.find(person => person.username === username)) === null || _a === void 0 ? void 0 : _a.id) || 0;
             showProfileCard(username, getImageUrl(profilePicture, username), bio, userId);

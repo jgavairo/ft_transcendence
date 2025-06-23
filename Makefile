@@ -15,6 +15,9 @@ down:
 	docker compose down
 
 restart:
+	rm -rf ./docker/nginx/ssl/fullchain.pem
+	rm -rf ./docker/nginx/ssl/privkey.pem
+	bash scripts/generate-certs.sh
 	docker compose down
 	docker compose up --build -d
 

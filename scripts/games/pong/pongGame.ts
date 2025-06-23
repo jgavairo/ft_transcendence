@@ -246,7 +246,7 @@ export function connectPong(isOnline: boolean) {
           friendNames.forEach(friendName => {
             friendName.addEventListener('click', () => {
               const username = friendName.getAttribute('data-username')!;
-              const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.png';
+              const profilePicture = friendName.getAttribute('data-profile-picture') || 'default-profile.webp';
               const bio = friendName.getAttribute('data-bio') || 'No bio available';
               // We can't get userId here without access to people, so we search for it again
               const userId = people.find((person: { id: number, username: string }) => person.username === username)?.id || 0;
@@ -298,8 +298,8 @@ export function connectPong(isOnline: boolean) {
 // En haut du fichier
 // Fonction pour ajouter un timestamp aux URLs d'images
 const getImageUrl = (imagePath: string | null, username: string) => {
-    if (!imagePath || imagePath === 'default-profile.png') {
-        return 'default-profile.png';
+    if (!imagePath || imagePath === 'default-profile.webp') {
+        return 'default-profile.webp';
     }
     // Ajouter un timestamp pour forcer le rechargement
     const timestamp = Date.now();

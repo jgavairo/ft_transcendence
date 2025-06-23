@@ -34,7 +34,7 @@ const getChatHistoryHandler = async (request: FastifyRequest, reply: FastifyRepl
                 const user = await dbManager.getUserById(message.author);
                 return {
                     ...message,
-                    profile_picture: user?.profile_picture || "default-profile.png",
+                    profile_picture: user?.profile_picture || "default-profile.webp",
                     username: user?.username || `User#${message.author}`
                 };
             })

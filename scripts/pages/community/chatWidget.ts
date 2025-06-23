@@ -10,8 +10,8 @@ import { handlePongInviteLinkClick } from "../../helpers/pongInviteHandler.js";
 
 // Fonction pour ajouter un timestamp aux URLs d'images
 const getImageUrl = (imagePath: string | null, username: string) => {
-    if (!imagePath || imagePath === 'default-profile.png') {
-        return 'default-profile.png';
+    if (!imagePath || imagePath === 'default-profile.webp') {
+        return 'default-profile.webp';
     }
     // Ajouter un timestamp pour forcer le rechargement
     const timestamp = Date.now();
@@ -154,11 +154,11 @@ export async function setupChatWidget() {
         if (authorIdRaw === 'BOT' || isNaN(authorId) || authorIdRaw == 0) {
             isSystem = true;
             displayName = 'BOT';
-            profilePic = '/assets/games/pong/pong.png';
+            profilePic = '/assets/games/pong/pong.webp';
         } else {
             const user = userMap.get(authorId);
             displayName = user?.username || `User#${authorId}`;
-            profilePic = user?.profile_picture || 'default-profile.png';
+            profilePic = user?.profile_picture || 'default-profile.webp';
         }
         const isGrouped = lastAuthor === authorId;
         const bracketRegex = /^\[TOURNOI( PONG)?\] (.+?)(?:\n|: )([\s\S]+)/i;
@@ -191,7 +191,7 @@ export async function setupChatWidget() {
                 profileImg.className = "chat-widget-messenger-avatar";
                 if (!isSystem) {
                     const user = userMap.get(authorId);
-                    profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.bio || "No bio available", user?.id || 0);
+                    profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.webp", user?.bio || "No bio available", user?.id || 0);
                 }
                 row.appendChild(profileImg);
             } else {
@@ -237,7 +237,7 @@ export async function setupChatWidget() {
             profileImg.className = "chat-widget-messenger-avatar";
             if (!isSystem) {
                 const user = userMap.get(authorId);
-                profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.png", user?.bio || "No bio available", user?.id || 0);
+                profileImg.onclick = () => showProfileCard(user?.username || `User#${authorId}`, user?.profile_picture || "default-profile.webp", user?.bio || "No bio available", user?.id || 0);
             }
             row.appendChild(profileImg);
         } else {

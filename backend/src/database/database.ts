@@ -86,7 +86,7 @@ export class DatabaseManager
                         name: "Pong",
                         price: 0,
                         description: "Pong is a two-dimensional sports game that simulates table tennis. The player controls an in-game paddle by moving it vertically along the left or right side of the screen, and can use the paddle to hit a ball back and forth across the screen. The goal is to manoeuvre the ball past the opponent's paddle and into the opposing side's court, and to prevent the ball from being hit back into their own court",
-                        image: "../../assets/games/pong/pong.png",
+                        image: "../../assets/games/pong/pong.webp",
                         is_available: true
                     },
                     {
@@ -94,7 +94,7 @@ export class DatabaseManager
                         name: "Tower",
                         price: 0,
                         description: "Tower is a game where you have to defend your tower from waves of enemies.",
-                        image: "../../assets/games/Tower/Tower.jpg",
+                        image: "../../assets/games/Tower/Tower.webp",
                         is_available: true
                     },
                     {
@@ -102,7 +102,7 @@ export class DatabaseManager
                         name: "Grand theft auto 6",
                         price: 0,
                         description: "Grand theft auto 6 is a game that allows you to drive a car and shoot at people.",
-                        image: "../../assets/games/gta6/gta6.jpg",
+                        image: "../../assets/games/gta6/gta6.webp",
                         is_available: false
                     },
                     {
@@ -110,7 +110,7 @@ export class DatabaseManager
                         name: "Minecraft",
                         price: 0,
                         description: "Minecraft is a game that allows you to build a house and explore the world.",
-                        image: "../../assets/games/minecraft/Minecraft.jpg",
+                        image: "../../assets/games/minecraft/Minecraft.webp",
                         is_available: false
                     },
                     {
@@ -118,7 +118,7 @@ export class DatabaseManager
                         name: "Rick & Morty",
                         price: 0,
                         description: "In Rick & Morty, you play as Rick, a scientist who travels through space and time with his grandson, Morty.",
-                        image: "../../assets/games/rickAndMorty/RickAndMorty.png",
+                        image: "../../assets/games/rickAndMorty/RickAndMorty.webp",
                         is_available: false
                     },
                     {
@@ -134,7 +134,7 @@ export class DatabaseManager
                         name: "Lumen",
                         price: 0,
                         description: "Lumen is a game from new studio called 'Ruptur'.",
-                        image: "../../assets/games/lumen/Lumen.png",
+                        image: "../../assets/games/lumen/Lumen.webp",
                         is_available: false
                     }
                 ];
@@ -155,25 +155,25 @@ export class DatabaseManager
                 {
                     title: "Launch of ft_transcendence",
                     content: "Welcome on our new online gaming platform inspired by Steam. Discover the games, and challenge other players in real time!",
-                    image_url: "../../assets/news/launch.png",
+                    image_url: "../../assets/news/launch.webp",
                     priority: 2
                 },
                 {
                     title: "Pong 2.0 is now available",
                     content: "Pong 2.0 is now available! Discover the new playing mode and the new features!",
-                    image_url: "../../assets/news/PongNews.jpg",
+                    image_url: "../../assets/news/PongNews.webp",
                     priority: 1
                 },
                 {
                     title: "Grand theft auto 6 is coming",
                     content: "The new GTA 6 is coming and he will be on our favorite platform ft_transcendence !",
-                    image_url: "../../assets/news/gta6.jpg",
+                    image_url: "../../assets/news/gta6.webp",
                     priority: 0
                 },
                 {
                     title: "Tower is now available",
                     content: "Tower is now available! Discover the new playing mode and the new features!",
-                    image_url: "../../assets/games/Tower/TowerBackground.png",
+                    image_url: "../../assets/games/Tower/TowerBackground.webp",
                     priority: 0
                 }
             ];

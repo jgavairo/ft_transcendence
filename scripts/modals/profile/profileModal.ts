@@ -5,8 +5,8 @@ import { showErrorNotification, showNotification } from '../../helpers/notificat
 
 // Fonction pour ajouter un timestamp aux URLs d'images
 const getImageUrl = (imagePath: string | null, username: string) => {
-    if (!imagePath || imagePath === 'default-profile.png') {
-        return 'default-profile.png';
+    if (!imagePath || imagePath === 'default-profile.webp') {
+        return 'default-profile.webp';
     }
     // Ajouter un timestamp pour forcer le rechargement
     const timestamp = Date.now();
