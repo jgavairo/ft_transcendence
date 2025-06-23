@@ -5,10 +5,28 @@ export let showPauseMenu = false;
 export let hoverResume = false;
 export let hoverQuit   = false;
 
+let escapeHandler: ((e: KeyboardEvent) => void) | null = null;
+let mouseMoveHandler: ((e: MouseEvent) => void) | null = null;
+let clickHandler: ((e: MouseEvent) => void) | null = null;
 
 export function onEscapeKey(e: KeyboardEvent) {
   if (e.key === 'Escape') {
     showPauseMenu = !showPauseMenu;
+  }
+}
+
+export function removePauseMenuListeners(canvas?: HTMLCanvasElement) {
+  if (escapeHandler) {
+    window.removeEventListener('keydown', escapeHandler);
+    escapeHandler = null;
+  }
+  if (canvas && mouseMoveHandler) {
+    canvas.removeEventListener('mousemove', mouseMoveHandler);
+    mouseMoveHandler = null;
+  }
+  if (canvas && clickHandler) {
+    canvas.removeEventListener('click', clickHandler);
+    clickHandler = null;
   }
 }
 
@@ -19,9 +37,10 @@ export function initPauseMenu(
   displayMenu: () => void
 ) {
   // 1) Toggle avec la touche Échap
-  window.addEventListener('keydown', onEscapeKey);
+  escapeHandler = (e: KeyboardEvent) => onEscapeKey(e);
+  window.addEventListener('keydown', escapeHandler);
 
-  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  mouseMoveHandler = (e: MouseEvent) => {
     if (!showPauseMenu) return;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -32,17 +51,14 @@ export function initPauseMenu(
     const CH = canvas.height;
     const CX = CW / 2;
     const CY = CH / 2;
-  
     const pmWidth   = 300;
     const btnW      = 200;
     const btnH      = 60;
     const spacing   = 20;
     const paddingV  = 20;
-  
     const totalBtnsH = btnH * 2 + spacing;
     const pmHeight   = totalBtnsH + paddingV * 2;
     const pmY        = CY - pmHeight / 2;
-  
     const btnX       = CX - btnW / 2;
     // Y des deux boutons
     const btnResumeY = pmY + paddingV;
@@ -52,10 +68,10 @@ export function initPauseMenu(
       && y >= btnResumeY && y <= btnResumeY + btnH;
     hoverQuit   = x >= btnX && x <= btnX + btnW
       && y >= btnQuitY   && y <= btnQuitY   + btnH;
-  });
+  };
+  canvas.addEventListener('mousemove', mouseMoveHandler);
 
-  // 2) Click sur le canvas pour Resume/Quit
-  canvas.addEventListener('click', (e: MouseEvent) => {
+  clickHandler = (e: MouseEvent) => {
     if (!showPauseMenu) return;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -94,11 +110,14 @@ export function initPauseMenu(
       x >= btnX && x <= btnX + btnW
       && y >= btnQuitY   && y <= btnQuitY   + btnH
     ) {
+        // Supprime les listeners pause avant de quitter
+        removePauseMenuListeners(canvas);
         stopGame();
         showPauseMenu = false;
         displayMenu();
     }
-  });
+  };
+  canvas.addEventListener('click', clickHandler);
 }
 
 export function drawPauseMenu(
