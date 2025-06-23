@@ -96,19 +96,27 @@ const addGameHandler = async (request: FastifyRequest, reply: FastifyReply) =>
     try 
     {
         await authMiddleware(request as AuthenticatedRequest, reply);
-        await dbManager.addGameToLibrary((request as AuthenticatedRequest).user.id, (request.body as { gameId: number }).gameId);
+        const { gameId } = request.body as { gameId: number };
+        // Autoriser uniquement Tower (2) ou Pong (1)
+        if (gameId !== 1 && gameId !== 2) {
+            return reply.status(400).send({
+                success: false,
+                message: "Game not available"
+            });
+        }
+        await dbManager.addGameToLibrary((request as AuthenticatedRequest).user.id, gameId);
         return reply.send
         ({
             success: true,
-            message: "Jeu ajouté à la bibliothèque"
+            message: "Game added to library successfully"
         });
     } 
     catch (error)
     {
-        console.error("Erreur détaillée:", error);
+        console.error("Detailed error:", error);
         return reply.status(500).send({
             success: false,
-            message: "Erreur serveur"
+            message: "Server Error"
         });
     }
 };
@@ -129,7 +137,7 @@ const getAllUsersHandler = async (request: FastifyRequest, reply: FastifyReply) 
         console.error('Error fetching usernames:', error);
         return reply.status(500).send({
             success: false,
-            message: "Erreur lors de la récupération des utilisateurs"
+            message: "Error fetching usernames"
         });
     }
 }
@@ -183,10 +191,10 @@ const changePasswordHandler = async (request: FastifyRequest<{ Body: ChangePassw
     }
     catch (error)
     {
-        console.error("Erreur détaillée:", error);
+        console.error("Detailed error:", error);
         return reply.status(500).send({
             success: false,
-            message: "Erreur serveur"
+            message: "Server Error"
         });
     }
 };
@@ -200,7 +208,7 @@ const blockUserHandler = async (request: FastifyRequest, reply: FastifyReply) =>
         return reply.send({ success: true });
     } catch (error) {
         console.error("Error in blockUserHandler:", error);
-        return reply.status(500).send({ success: false, message: "Erreur serveur" });
+        return reply.status(500).send({ success: false, message: "Server error" });
     }
 };
 
@@ -213,7 +221,7 @@ const unblockUserHandler = async (request: FastifyRequest, reply: FastifyReply) 
         return reply.send({ success: true });
     } catch (error) {
         console.error("Error in unblockUserHandler:", error);
-        return reply.status(500).send({ success: false, message: "Erreur serveur" });
+        return reply.status(500).send({ success: false, message: "Server error" });
     }
 };
 
@@ -236,7 +244,7 @@ const isBlockedHandler = async (request: FastifyRequest, reply: FastifyReply) =>
         return reply.send({ success: true, isBlocked });
     } catch (error) {
         console.error("Error in isBlockedHandler:", error);
-        return reply.status(500).send({ success: false, message: "Erreur serveur" });
+        return reply.status(500).send({ success: false, message: "Server error" });
     }
 };
 
@@ -288,10 +296,10 @@ const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyRepl
     }
     catch (error)
     {
-        console.error("Erreur détaillée:", error);
+        console.error("Detailed error:", error);
         return reply.status(500).send({
             success: false,
-            message: "Erreur serveur"
+            message: "Server Error"
         });
     }
 }
@@ -346,10 +354,10 @@ const changeEmailHandler = async (request: FastifyRequest, reply: FastifyReply) 
     }
     catch (error)
     {
-        console.error("Erreur détaillée:", error);
+        console.error("Detailed error:", error);
         return reply.status(500).send({
             success: false,
-            message: "Erreur serveur"
+            message: "Server Error"
         });
     }
 }
@@ -392,10 +400,10 @@ const send2FACodeHandler = async (request: FastifyRequest, reply: FastifyReply) 
     {
         console.error("process.env.EMAIL_ADDRESS:", process.env.EMAIL_ADDRESS);
         console.error("process.env.EMAIL_PASSWORD:", process.env.EMAIL_PASSWORD);
-        console.error("Erreur détaillée:", error);
+        console.error("Detailed error:", error);
         return reply.status(500).send({
             success: false,
-            message: "Erreur serveur"
+            message: "Server Error"
         });
     }
 }
@@ -432,10 +440,10 @@ const enable2FAHandler = async (request: FastifyRequest, reply: FastifyReply) =>
     }
     catch (error)
     {
-        console.error("Erreur détaillée:", error);
+        console.error("Detailed error:", error);
         return reply.status(500).send({
             success: false,
-            message: "Erreur serveur"
+            message: "Server Error"
         });
     }
 }
@@ -469,8 +477,11 @@ const disable2FAHandler = async (request: FastifyRequest, reply: FastifyReply) =
     }
     catch (error)
     {
-        console.error("Erreur détaillée:", error);
-        
+        console.error("Detailed error:", error);
+        return reply.status(500).send({
+            success: false,
+            message: "Server Error"
+        });
     }
 }
 
@@ -492,10 +503,10 @@ const isGoogleUserHandler = async (request: FastifyRequest, reply: FastifyReply)
     }
     catch (error)
     {
-        console.error("Erreur détaillée:", error);
+        console.error("Detailed error:", error);
         return reply.status(500).send({
             success: false,
-            message: "Erreur serveur"
+            message: "Server Error"
         });
     }
 }
