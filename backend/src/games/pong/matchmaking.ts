@@ -1308,8 +1308,6 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
     tour.playRound = playRound;
     playRound(pairs as [Player, Player][], 0);
   }
-  
-
 
   // --- ASSOCIATION FUNCTION FOR 3-PLAYER TRI-PONG ---
   function attemptTriMatch() {

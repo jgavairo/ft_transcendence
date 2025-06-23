@@ -122,6 +122,7 @@ export class PongMenuManager {
                 this.stage.off('click', skipAnimation);
                 if (this.showMainMenu)
                     this.changeMenu('main');
+                console.log('[MENU ANIM] Title animation skipped');
             }
         };
         const animate = () => {
@@ -129,11 +130,13 @@ export class PongMenuManager {
                 this.titleImage.y(this.titleImage.y() + speed);
                 this.titleLayer.batchDraw();
                 animationFrame = requestAnimationFrame(animate);
+                console.log('[MENU ANIM] Title anim frame, y =', this.titleImage.y());
             }
             else {
                 this.stage.off('click', skipAnimation);
                 if (this.showMainMenu)
                     this.changeMenu('main');
+                console.log('[MENU ANIM] Title animation finished');
             }
         };
         this.stage.on('click', skipAnimation);
@@ -277,8 +280,16 @@ export class PongMenuManager {
         }
         // Refresh the background layer display
         this.backgroundLayer.batchDraw();
+        console.log('[MENU ANIM] Particles count:', this.particles.length);
         // Continue the animation on the next frame
-        requestAnimationFrame(() => this.animateParticles());
+        this.particlesAnimationId = requestAnimationFrame(() => this.animateParticles());
+    }
+    stopParticlesAnimation() {
+        if (this.particlesAnimationId !== undefined) {
+            cancelAnimationFrame(this.particlesAnimationId);
+            this.particlesAnimationId = undefined;
+            console.log('[MENU ANIM] Particles animation stopped');
+        }
     }
     updateLayout() {
         // Update the black background
@@ -306,6 +317,12 @@ export class PongMenuManager {
                 this.createButton('QUIT', gameWidth / 2 - 100, 520, () => {
                     const modal = document.getElementById('optionnalModal');
                     this.stage.destroy();
+                    this.stopParticlesAnimation();
+                    // Détruit toutes les particules restantes à l'écran
+                    this.particles.forEach(particle => {
+                        particle.shape.destroy();
+                    });
+                    this.particles = [];
                     if (modal)
                         modal.innerHTML = '';
                 });
@@ -1429,6 +1446,7 @@ export class PongMenuManager {
     }
     async launchLocalPong(nbPlayers) {
         try {
+            this.stopParticlesAnimation(); // Stoppe l'animation des particules au lancement du jeu
             const modal = document.getElementById("games-modal");
             if (modal) {
                 connectPong(false);
@@ -1492,6 +1510,7 @@ export class PongMenuManager {
                 winnerText.y(winnerText.y() + speed);
                 this.menuLayer.batchDraw();
                 requestAnimationFrame(animate);
+                console.log('[MENU ANIM] EndMatch anim frame, y =', winnerText.y());
             }
             else {
                 this.menuLayer.add(timerText);
@@ -1521,6 +1540,7 @@ export class PongMenuManager {
                         // Relance de l'animation des particules
                         this.animateParticles();
                         this.animateTitle2();
+                        console.log('[MENU ANIM] EndMatch animation finished, returning to menu');
                     }
                 }, 100);
             }
@@ -1563,6 +1583,7 @@ export class PongMenuManager {
                 createVictoryParticle();
             }
             this.backgroundLayer.batchDraw();
+            console.log('[MENU ANIM] Victory particles count:', this.particles.length);
             this.victoryAnimationId = requestAnimationFrame(animateVictoryParticles);
         };
         // Lancement des animations
@@ -1576,6 +1597,7 @@ export class PongMenuManager {
     }
     static matchFound2Players(data) {
         const menu = PongMenuManager.instance;
+        menu.stopParticlesAnimation(); // Stoppe l'animation des particules au lancement du jeu
         menu.buttons.forEach(button => button.group.destroy());
         menu.buttons = [];
         menu.menuLayer.destroyChildren();
@@ -1632,6 +1654,7 @@ export class PongMenuManager {
     }
     static matchFound3Players(data) {
         const menu = PongMenuManager.instance;
+        menu.stopParticlesAnimation(); // Stoppe l'animation des particules au lancement du jeu
         menu.buttons.forEach(button => button.group.destroy());
         menu.buttons = [];
         menu.menuLayer.destroyChildren();
@@ -1773,7 +1796,7 @@ export class PongMenuManager {
                             onMatchFound(matchData);
                         }
                     }, 1000);
-                    // Fermer l'overlay d'invitation si présent
+                    // Fermer lmer l'overlay d'invitation si présent
                     const inviteOverlay = document.getElementById("inviteOverlay");
                     if (inviteOverlay)
                         inviteOverlay.remove();
@@ -1952,13 +1975,22 @@ export class PongMenuManager {
         this.animateParticles();
         this.privateLobby(2, roomId);
     }
+    setupDestroyHandler() {
+        const origDestroy = this.stage.destroy.bind(this.stage);
+        this.stage.destroy = (...args) => {
+            this.stopParticlesAnimation();
+            return origDestroy(...args);
+        };
+    }
 }
 PongMenuManager.tournamentEnded = false;
 export async function displayMenu() {
     const menu = new PongMenuManager(true);
     menu.start();
+    menu.setupDestroyHandler();
 }
 export async function displayMenuFromLink(roomId) {
     const menu = new PongMenuManager(true, false); // no title, no main menu
     menu.startFromLink(roomId);
+    menu.setupDestroyHandler();
 }
