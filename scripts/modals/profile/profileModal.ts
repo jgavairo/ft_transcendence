@@ -531,6 +531,9 @@ async function changeDoubleAuthentification()
     const data = await response.json();
     if (data.success)
     {
+        if (data.message && data.message === 'Code already sent')
+            showErrorNotification('Code already sent and not expired. Please wait before requesting a new one.');
+        else
         showNotification('2FA code sent successfully, check your mailbox.');
         const enableDoubleAuthentificationButton = document.getElementById('changeDoubleAuthentificationButton');
         const doubleAuthForm = document.querySelector('.changeDoubleAuthentification-modal-content');

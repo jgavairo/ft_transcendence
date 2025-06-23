@@ -16,11 +16,6 @@ export class PongMenuManager {
         this.buttons = [];
         this.animationSkipped = false;
         this.myUsername = '';
-        this.boundResizeHandler = () => {
-            this.stage.width(gameWidth);
-            this.stage.height(gameHeight);
-            this.updateLayout();
-        };
         // Dans DisplayMenu.ts (ou où vous aviez startMatchTournament)
         this.gameStateHandlers = new Map();
         this.activeTournamentMatchId = null;
@@ -69,7 +64,6 @@ export class PongMenuManager {
         this.stage.add(this.titleLayer);
         this.stage.add(this.menuLayer);
         this.setupSocketListeners();
-        window.addEventListener('resize', this.boundResizeHandler);
         // Add the black background
         const background = new Konva.Rect({
             x: 0,
@@ -94,6 +88,11 @@ export class PongMenuManager {
                 this.animateTitle();
             };
         }
+        window.addEventListener('resize', () => {
+            this.stage.width(gameWidth);
+            this.stage.height(gameHeight);
+            this.updateLayout();
+        });
     }
     animateTitle2() {
         const image = new Image();
@@ -1952,35 +1951,6 @@ export class PongMenuManager {
     startFromLink(roomId) {
         this.animateParticles();
         this.privateLobby(2, roomId);
-    }
-    //cursor a aussi ajouter ca, a verifier
-    destroy() {
-        console.log("Destroying PongMenuManager and cleaning up resources.");
-        // Stop any ongoing animations
-        if (this.victoryAnimationId) {
-            cancelAnimationFrame(this.victoryAnimationId);
-            this.victoryAnimationId = undefined;
-        }
-        // Remove event listeners
-        window.removeEventListener('resize', this.boundResizeHandler);
-        this.stage.destroy(); // Destroy the Konva stage and all its children
-        // Disconnect sockets if they are managed by this instance
-        // Note: Be careful if socket is shared across the app
-        // gameSocket.disconnect();
-        // Clear intervals
-        if (this.finalCountdownTimer) {
-            clearInterval(this.finalCountdownTimer);
-        }
-        // Clear maps and arrays
-        this.buttons = [];
-        this.particles = [];
-        this.gameStateHandlers.clear();
-    }
-    static destroyInstance() {
-        if (PongMenuManager.instance) {
-            PongMenuManager.instance.destroy();
-            PongMenuManager.instance = null;
-        }
     }
 }
 PongMenuManager.tournamentEnded = false;
