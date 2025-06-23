@@ -18,6 +18,17 @@ export class GameClient
     private menu: TowerMenuManager;
     private roomId: string | null = null;
     private static towerGameId: number | null = null;
+
+    private setupConnection(onConnectedCallback: () => void) {
+        if (this.socket.connected) {
+            onConnectedCallback();
+        } else {
+            // Use .once() for a one-time event listener for the initial connection
+            this.socket.once('connect', onConnectedCallback);
+            this.socket.connect(); // Explicitly try to connect if not already doing so
+        }
+    }
+
     constructor(username: string, menuManager: TowerMenuManager)
     {
         this.username = username;
@@ -67,20 +78,24 @@ export class GameClient
 
     public launchNewGame(multiplayer: boolean)
     {
-        switch (multiplayer)
-        {
-            case true:
-                this.startMultiplayerMode();
-                break;
-            case false:
-                this.startSoloMode();
-                break;
-        }
+        this.renderer.initialize().then(() => {
+            switch (multiplayer)
+            {
+                case true:
+                    this.startMultiplayerMode();
+                    break;
+                case false:
+                    this.startSoloMode();
+                    break;
+            }
+        });
     }
 
     public startSoloMode()
     {
-        this.socket.on("connect", () => 
+        this.socket.removeAllListeners(); // Clean up listeners from other modes
+
+        this.setupConnection(() => 
         {
             this.socket.emit("register", this.username);
             this.socket.emit("playSolo", this.username);
@@ -160,7 +175,7 @@ export class GameClient
         // Utiliser le renderer existant
         this.renderer.showWaitingScreen();
 
-        this.socket.on("connect", () => 
+        this.setupConnection(() => 
         {
             this.socket.emit("register", this.username);
             this.socket.emit("joinQueue", this.username);

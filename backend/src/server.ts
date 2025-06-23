@@ -706,7 +706,7 @@ const start = async () => {
             console.log("Tower namespace connected:", socket.id);
 
             socket.on('register', (username: string) => {
-                console.log("XXX Register event received in tower namespace:", username, "with socket.id:", socket.id);
+                console.log("Register event received in tower namespace:", username, "with socket.id:", socket.id);
                 userSocketMapTower.set(socket.id, username);
             });
             
