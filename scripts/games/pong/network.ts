@@ -1,5 +1,17 @@
 import { io, type Socket } from 'socket.io-client';
+import { setupGlobalSocketErrorHandler } from './pongGame.js';
 
-export const socket: Socket = io(`https://${window.location.hostname}:8443/game`, {
-  withCredentials: true
-});
+let socket: Socket | null = null;
+
+export async function connectsSocket() {
+
+  if (!socket) {
+    socket = io(`https://${window.location.hostname}:8443/game`, {
+      withCredentials: true
+    });
+  }
+  if (socket) {
+    setupGlobalSocketErrorHandler(socket);
+  }
+  return socket;
+}

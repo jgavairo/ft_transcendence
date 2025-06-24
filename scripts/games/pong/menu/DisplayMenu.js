@@ -3,7 +3,7 @@ import Konva from "https://cdn.skypack.dev/konva";
 import { GameManager } from "../../../managers/gameManager.js";
 import { joinQueue, joinTriQueue, startSoloPong } from "../SocketEmit.js";
 import { connectPong, onMatchFound, onTriMatchFound, stopGame, initTournamentPong, hideGameCanvasAndShowMenu, setPrivateLobbyTrue } from "../pongGame.js";
-import { socket as gameSocket, socket } from "../network.js";
+import { connectsSocket } from "../network.js";
 import { launchSoloPongVsBot, launchSoloPongWithTutorial, launchSoloTriWithTutorial } from "../tutorialLauncher.js";
 import { renderPong } from "../renderPong.js";
 import { showErrorNotification, showNotification } from "../../../helpers/notifications.js";
@@ -358,16 +358,18 @@ export class PongMenuManager {
                 break;
         }
     }
-    setupSocketListeners() {
-        gameSocket.off('tournamentBracket');
-        gameSocket.off('tournamentReadyUpdate');
-        gameSocket.off('tournamentMatchFound');
-        gameSocket.off('tournamentOver');
-        gameSocket.off('tournamentFinalSpectate');
+    async setupSocketListeners() {
+        const socket = await connectsSocket();
+        if (!socket)
+            return;
+        socket.off('tournamentBracket');
+        socket.off('tournamentReadyUpdate');
+        socket.off('tournamentMatchFound');
+        socket.off('tournamentOver');
+        socket.off('tournamentFinalSpectate');
         // 1) Bracket (liste des inscrits)
-        gameSocket.on('tournamentBracket', (view) => {
+        socket.on('tournamentBracket', (view) => {
             this.currentTourSize = view.size;
-            // Si le joueur n'est plus dans la liste, on sort du lobby
             if (view.joined && view.joined.indexOf(this.myUsername) === -1) {
                 this.menuLayer.removeChildren();
                 this.changeMenu('multi');
@@ -375,7 +377,7 @@ export class PongMenuManager {
             }
             if (view.tournamentId && view.status) {
                 this.currentTourId = view.tournamentId;
-                const fullStatus = view.status.map(s => ({
+                const fullStatus = view.status.map((s) => ({
                     id: s.id,
                     username: s.username,
                     ready: s.ready || false,
@@ -394,19 +396,16 @@ export class PongMenuManager {
                 this.showLobbyList(view.joined);
             }
         });
-        // À chaque update "ready"
-        gameSocket.on('tournamentReadyUpdate', (view) => {
+        socket.on('tournamentReadyUpdate', (view) => {
             this.currentTourSize = view.size;
             this.currentTourId = view.tournamentId;
-            // Convertir en PlayerStatus[]
-            const fullStatus = view.status.map(s => ({
+            const fullStatus = view.status.map((s) => ({
                 id: s.id,
                 username: s.username,
                 ready: s.ready,
                 eliminated: s.eliminated,
                 isInGame: typeof s.isInGame === 'boolean' ? s.isInGame : undefined
             }));
-            // Mettre à jour la vue stockée
             this.lastBracketView = {
                 tournamentId: view.tournamentId,
                 size: view.size,
@@ -415,19 +414,18 @@ export class PongMenuManager {
             };
             this.renderSimpleBracket(view.size, view.joined, fullStatus);
         });
-        gameSocket.on('tournamentMatchFound', (data) => {
+        socket.on('tournamentMatchFound', (data) => {
             this.startMatchTournament(data);
         });
-        gameSocket.on('tournamentOver', (data) => {
+        socket.on('tournamentOver', (data) => {
             PongMenuManager.tournamentEnded = true;
             this.activeTournamentMatchId = null;
             this.menuLayer.removeChildren();
-            // Do NOT call renderSimpleBracket here! Only show winner message and MENU button.
             let winnerText = '';
             if (this.lastBracketView) {
-                const me = this.lastBracketView.status.find(s => s.username === this.myUsername);
-                const finalists = this.lastBracketView.status.filter(s => !s.eliminated);
-                if (me && !me.eliminated && finalists.length === 2 && finalists.some(f => f.username === data.winner)) {
+                const me = this.lastBracketView.status.find((s) => s.username === this.myUsername);
+                const finalists = this.lastBracketView.status.filter((s) => !s.eliminated);
+                if (me && !me.eliminated && finalists.length === 2 && finalists.some((f) => f.username === data.winner)) {
                     winnerText = `🏆 ${data.winner} wins the tournament!`;
                 }
                 else {
@@ -447,9 +445,12 @@ export class PongMenuManager {
                 width: 400,
                 align: 'center'
             }));
-            this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, () => {
-                socket.emit('quitTournament', { tournamentId: this.currentTourId });
-                socket.disconnect();
+            this.createButton('MENU', gameWidth / 2 - 100, gameHeight - 200, async () => {
+                const socket = await connectsSocket();
+                if (socket) {
+                    socket.emit('quitTournament', { tournamentId: this.currentTourId });
+                    socket.disconnect();
+                }
                 PongMenuManager.tournamentEnded = false;
                 this.activeTournamentMatchId = null;
                 this.stage.destroy();
@@ -457,7 +458,7 @@ export class PongMenuManager {
             });
             this.menuLayer.batchDraw();
         });
-        gameSocket.on('tournamentFinalSpectate', (data) => {
+        socket.on('tournamentFinalSpectate', (data) => {
             this.finalistUsernames = data.finalists;
             this.menuLayer.removeChildren();
             this.buttons.forEach(btn => btn.group.destroy());
@@ -472,7 +473,7 @@ export class PongMenuManager {
                 width: 400,
                 align: 'center'
             }));
-            this.createButton('SPECTATE', gameWidth / 2 - 100, 450, () => {
+            this.createButton('SPECTATE', gameWidth / 2 - 100, 450, async () => {
                 const matchId = data.matchId;
                 this.removeGameStateHandler(matchId);
                 const [f1, f2] = this.finalistUsernames || data.finalists;
@@ -482,14 +483,18 @@ export class PongMenuManager {
                         return;
                     import('../renderPong.js').then(mod => mod.renderPong(state, true));
                     if (state.gameOver) {
-                        gameSocket.off('gameState', handler);
+                        // Remove handler
                         this.gameStateHandlers.delete(matchId);
                         this.activeTournamentMatchId = null;
                     }
                 };
                 this.gameStateHandlers.set(matchId, handler);
-                gameSocket.off('gameState'); // Remove all previous listeners
-                gameSocket.on('gameState', handler);
+                // Remove all previous listeners and add new
+                const socket = await connectsSocket();
+                if (socket) {
+                    socket.off('gameState');
+                    socket.on('gameState', handler);
+                }
                 this.buttons.forEach(btn => btn.group.hide());
             });
             this.createButton('QUIT', gameWidth / 2 - 100, 530, () => {
@@ -514,9 +519,11 @@ export class PongMenuManager {
             text: `Waiting for player…`,
             fontFamily: 'Press Start 2P', fontSize: 20, fill: '#00e7fe'
         }));
-        this.createButton('CANCEL', gameWidth / 2 - 100, 200 + 450, () => {
+        this.createButton('CANCEL', gameWidth / 2 - 100, 200 + 450, async () => {
             if (this.currentTourId) {
-                gameSocket.emit('quitTournament', { tournamentId: this.currentTourId });
+                const socket = await connectsSocket();
+                if (socket)
+                    socket.emit('quitTournament', { tournamentId: this.currentTourId });
                 const btn = this.buttons.find(b => b.text === 'CANCEL');
                 if (btn)
                     btn.group.hide();
@@ -528,8 +535,10 @@ export class PongMenuManager {
         });
         // Ajout : quitter le tournoi si la page est quittée (refresh/fermeture)
         if (this.currentTourId) {
-            const quitHandler = () => {
-                gameSocket.emit('quitTournament', { tournamentId: this.currentTourId });
+            const quitHandler = async () => {
+                const socket = await connectsSocket();
+                if (socket)
+                    socket.emit('quitTournament', { tournamentId: this.currentTourId });
             };
             window.addEventListener('beforeunload', quitHandler, { once: true });
         }
@@ -555,16 +564,19 @@ export class PongMenuManager {
         }
     }
     async joinTournamentQueue(size, username) {
-        if (gameSocket.disconnected) {
-            gameSocket.connect();
+        const socket = await connectsSocket();
+        if (!socket)
+            return;
+        if (socket.disconnected) {
+            socket.connect();
         }
         try {
             const current = await GameManager.getCurrentUser();
             const userId = current === null || current === void 0 ? void 0 : current.id;
-            gameSocket.emit('joinTournamentQueue', { size, username, userId });
+            socket.emit('joinTournamentQueue', { size, username, userId });
         }
         catch (_a) {
-            gameSocket.emit('joinTournamentQueue', { size, username });
+            socket.emit('joinTournamentQueue', { size, username });
         }
     }
     async onlineTournament(size) {
@@ -701,8 +713,10 @@ export class PongMenuManager {
                 }));
                 // READY button for eligible finalist
                 if (me && !me.eliminated && !me.ready && (this.myUsername === finalist1 || this.myUsername === finalist2)) {
-                    this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, () => {
-                        gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
+                    this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, async () => {
+                        const socket = await connectsSocket();
+                        if (socket)
+                            socket.emit('playerReady', { tournamentId: this.currentTourId });
                         this.buttons.forEach(btn => btn.group.hide());
                         this.menuLayer.add(new Konva.Text({
                             x: gameWidth / 2 - 100,
@@ -751,8 +765,10 @@ export class PongMenuManager {
             }
             // READY button pour eligible semi-finalist
             if (me && !me.eliminated && !me.ready) {
-                this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, () => {
-                    gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
+                this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, async () => {
+                    const socket = await connectsSocket();
+                    if (socket)
+                        socket.emit('playerReady', { tournamentId: this.currentTourId });
                     this.buttons.forEach(btn => btn.group.hide());
                     this.menuLayer.add(new Konva.Text({
                         x: gameWidth / 2 - 100,
@@ -826,8 +842,10 @@ export class PongMenuManager {
                 }));
                 // READY button for eligible finalist
                 if (me && !me.eliminated && !me.ready && (this.myUsername === p1 || this.myUsername === p2)) {
-                    this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, () => {
-                        gameSocket.emit('playerReady', { tournamentId: this.currentTourId });
+                    this.createButton('READY', gameWidth / 2 - 100, gameHeight - 100, async () => {
+                        const socket = await connectsSocket();
+                        if (socket)
+                            socket.emit('playerReady', { tournamentId: this.currentTourId });
                         this.buttons.forEach(btn => btn.group.hide());
                         this.menuLayer.add(new Konva.Text({
                             x: gameWidth / 2 - 100,
@@ -879,13 +897,15 @@ export class PongMenuManager {
         }
     }
     removeGameStateHandler(matchId) {
-        // Fix type: ensure matchId is string | undefined
         if (!matchId)
             matchId = this.activeTournamentMatchId || undefined;
         if (matchId && this.gameStateHandlers.has(matchId)) {
             const handler = this.gameStateHandlers.get(matchId);
-            if (handler)
-                gameSocket.off('gameState', handler);
+            (async () => {
+                const socket = await connectsSocket();
+                if (handler && socket)
+                    socket.off('gameState', handler);
+            })();
             this.gameStateHandlers.delete(matchId);
         }
     }
@@ -973,7 +993,7 @@ export class PongMenuManager {
                         this.finalCountdownTimer = undefined;
                     }
                     let count = 5;
-                    this.finalCountdownTimer = setInterval(() => {
+                    this.finalCountdownTimer = setInterval(async () => {
                         count--;
                         if (count > 0) {
                             countdownText.text(`Game starting in ${count}`);
@@ -990,18 +1010,21 @@ export class PongMenuManager {
                                 // Finaliste : logique normale
                                 initTournamentPong(side, you, opponent);
                             }
-                            const handler = (state) => {
+                            const handler = async (state) => {
                                 if (!state || !state.paddles)
                                     return;
                                 renderPong(state, true);
                                 if (state.gameOver) {
-                                    gameSocket.off('gameState', handler);
+                                    const socket = await connectsSocket();
+                                    if (socket) {
+                                        socket.off('gameState', handler);
+                                        socket.emit('tournamentReportResult', {
+                                            tournamentId: this.currentTourId,
+                                            matchId
+                                        });
+                                    }
                                     this.gameStateHandlers.delete(matchId);
                                     this.activeTournamentMatchId = null;
-                                    gameSocket.emit('tournamentReportResult', {
-                                        tournamentId: this.currentTourId,
-                                        matchId
-                                    });
                                     hideGameCanvasAndShowMenu();
                                     if (this.lastBracketView) {
                                         const { size, joined, status } = this.lastBracketView;
@@ -1035,8 +1058,11 @@ export class PongMenuManager {
                                 }
                             };
                             this.gameStateHandlers.set(matchId, handler);
-                            gameSocket.off('gameState'); // Remove all previous listeners
-                            gameSocket.on('gameState', handler);
+                            const gameSocket = await connectsSocket();
+                            if (gameSocket) {
+                                gameSocket.off('gameState'); // Remove all previous listeners
+                                gameSocket.on('gameState', handler);
+                            }
                         }
                     }, 1000);
                 }
@@ -1063,24 +1089,29 @@ export class PongMenuManager {
                         width: 400,
                         align: 'center'
                     }));
-                    this.createButton('SPECTATE', gameWidth / 2 - 100, 450, () => {
+                    this.createButton('SPECTATE', gameWidth / 2 - 100, 450, async () => {
                         // Launch spectator mode for the final
                         const [f1, f2] = finalistUsernames;
                         initTournamentPong(undefined, f1, f2);
                         // Subscribe to gameState updates for the final
-                        const handler = (state) => {
+                        const handler = (state) => async () => {
                             if (!state || !state.paddles)
                                 return;
                             import('../renderPong.js').then(mod => mod.renderPong(state, true));
                             if (state.gameOver) {
-                                gameSocket.off('gameState', handler);
+                                const gameSocket = await connectsSocket();
+                                if (gameSocket)
+                                    gameSocket.off('gameState', handler);
                                 this.gameStateHandlers.delete(matchId);
                                 this.activeTournamentMatchId = null;
                             }
                         };
                         this.gameStateHandlers.set(matchId, handler);
-                        gameSocket.off('gameState'); // Remove all previous listeners
-                        gameSocket.on('gameState', handler);
+                        const gameSocket = await connectsSocket();
+                        if (gameSocket) {
+                            gameSocket.off('gameState'); // Remove all previous listeners
+                            gameSocket.on('gameState', handler);
+                        }
                         // Hide buttons after click
                         this.buttons.forEach(btn => btn.group.hide());
                     });
@@ -1142,7 +1173,7 @@ export class PongMenuManager {
                 this.menuLayer.add(p1, p2, countdownText);
                 this.menuLayer.batchDraw();
                 let count = 5;
-                const timer = setInterval(() => {
+                const timer = setInterval(async () => {
                     count--;
                     if (count > 0) {
                         countdownText.text(`Game starting in ${count}`);
@@ -1151,18 +1182,21 @@ export class PongMenuManager {
                     else {
                         clearInterval(timer);
                         initTournamentPong(side, you, opponent);
-                        const handler = (state) => {
+                        const handler = async (state) => {
                             if (!state || !state.paddles)
                                 return;
                             renderPong(state, true);
                             if (state.gameOver) {
-                                gameSocket.off('gameState', handler);
+                                const socket = await connectsSocket();
+                                if (socket) {
+                                    socket.off('gameState', handler);
+                                    socket.emit('tournamentReportResult', {
+                                        tournamentId: this.currentTourId,
+                                        matchId
+                                    });
+                                }
                                 this.gameStateHandlers.delete(matchId);
                                 this.activeTournamentMatchId = null;
-                                gameSocket.emit('tournamentReportResult', {
-                                    tournamentId: this.currentTourId,
-                                    matchId
-                                });
                                 hideGameCanvasAndShowMenu();
                                 if (this.lastBracketView) {
                                     const { size, joined, status } = this.lastBracketView;
@@ -1196,8 +1230,11 @@ export class PongMenuManager {
                             }
                         };
                         this.gameStateHandlers.set(matchId, handler);
-                        gameSocket.off('gameState'); // Remove all previous listeners
-                        gameSocket.on('gameState', handler);
+                        const gameSocket = await connectsSocket();
+                        if (gameSocket) {
+                            gameSocket.off('gameState'); // Remove all previous listeners
+                            gameSocket.on('gameState', handler);
+                        }
                     }
                 }, 1000);
             }
@@ -1247,10 +1284,12 @@ export class PongMenuManager {
         // Nettoyage des boutons existants
         this.buttons.forEach(button => button.group.destroy());
         this.buttons = [];
-        this.createButton('CANCEL', gameWidth / 2 - 100, 670, () => {
+        this.createButton('CANCEL', gameWidth / 2 - 100, 670, async () => {
             // Nettoyage du texte d'attente
             waitingText.destroy();
-            gameSocket.disconnect();
+            const gameSocket = await connectsSocket();
+            if (gameSocket)
+                gameSocket.disconnect();
             this.changeMenu('multi');
         });
     }
@@ -1471,7 +1510,7 @@ export class PongMenuManager {
             startSoloPong("Player1"); // Fallback au nom par défaut en cas d'erreur
         }
     }
-    displayEndMatch(winnerName, padColor) {
+    async displayEndMatch(winnerName, padColor) {
         // Nettoyage des éléments existants
         this.buttons.forEach(button => button.group.destroy());
         this.buttons = [];
@@ -1589,7 +1628,9 @@ export class PongMenuManager {
         animateVictoryParticles();
         // À la fin de l'animation, si on était dans une privateLobby, on quitte la room
         if (this.privateRoomId) {
-            gameSocket.emit('leavePrivateRoom', { roomId: this.privateRoomId });
+            const gameSocket = await connectsSocket();
+            if (gameSocket)
+                gameSocket.emit('leavePrivateRoom', { roomId: this.privateRoomId });
             this.privateRoomId = undefined;
         }
     }
@@ -1738,6 +1779,9 @@ export class PongMenuManager {
         if (roomId) {
             // Join an existing room (invitation)
             const userId = currentUser === null || currentUser === void 0 ? void 0 : currentUser.id;
+            const gameSocket = await connectsSocket();
+            if (!gameSocket)
+                return;
             gameSocket.emit('joinPrivateRoom', { roomId, username, userId }, (data) => {
                 this.privateRoomId = data.roomId;
                 this.menuLayer.destroyChildren();
@@ -1806,6 +1850,9 @@ export class PongMenuManager {
         else {
             // Création d'une nouvelle room
             const userId = currentUser === null || currentUser === void 0 ? void 0 : currentUser.id;
+            const gameSocket = await connectsSocket();
+            if (!gameSocket)
+                return;
             gameSocket.emit('createPrivateRoom', { username, nbPlayers, userId }, (data) => {
                 this.privateRoomId = data.roomId;
                 this.menuLayer.destroyChildren();
