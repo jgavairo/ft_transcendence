@@ -353,6 +353,72 @@ export class TowerMenuManager {
             // Essayer de charger le contenu même si le fond échoue
             loadContent();
         };
+        // Charger le titre seulement si ce n'est pas le menu units
+        if (menuType !== 'units') {
+            const titleImg = new window.Image();
+            titleImg.src = '/assets/games/Tower/TowerTitle.webp';
+            titleImg.onload = () => {
+                const scale = 0.4;
+                const konvaTitle = new Konva.Image({
+                    image: titleImg,
+                    x: (gameWidth - titleImg.width * scale) / 2,
+                    y: 20,
+                    width: titleImg.width * scale,
+                    height: titleImg.height * scale
+                });
+                this.titleLayer.add(konvaTitle);
+                this.titleLayer.batchDraw();
+            };
+        }
+        // Nettoie les anciens boutons
+        this.buttons.forEach(button => button.group.destroy());
+        this.buttons = [];
+        switch (menuType) {
+            case 'main':
+                this.createButton('PLAY', gameWidth / 2 - 125, 350, () => this.changeMenu('play'));
+                this.createButton('UNITS', gameWidth / 2 - 125, 440, () => this.changeMenu('units'));
+                this.createButton('QUIT', gameWidth / 2 - 125, 530, async () => {
+                    var _a;
+                    const res = await api.get('/api/games/getAll');
+                    const data = await res.json();
+                    const gameId = (_a = data.games.find((g) => g.name.toLowerCase() === 'tower')) === null || _a === void 0 ? void 0 : _a.id;
+                    const rankingsContainer = document.querySelector('#rankings-container');
+                    if (rankingsContainer && rankingsContainer.offsetParent !== null) {
+                        const currentUser = await GameManager.getCurrentUser();
+                        await renderRankings(gameId, rankingsContainer, currentUser);
+                    }
+                    const modal = document.getElementById('optionnalModal');
+                    this.stage.destroy();
+                    if (modal)
+                        modal.innerHTML = '';
+                });
+                break;
+            case 'play':
+                this.createButton('SOLO', gameWidth / 2 - 125, 350, () => this.changeMenu('solo'));
+                this.createButton('MULTI', gameWidth / 2 - 125, 440, () => this.changeMenu('multi'));
+                this.createButton('BACK', gameWidth / 2 - 125, 530, () => {
+                    this.changeMenu('main');
+                });
+                break;
+            case 'solo':
+                this.createButton('START GAME', gameWidth / 2 - 125, 440, () => this.launchSoloGame());
+                this.createButton('BACK', gameWidth / 2 - 125, 530, () => {
+                    this.changeMenu('play');
+                });
+                break;
+            case 'multi':
+                this.createButton('SEARCH GAME', gameWidth / 2 - 125, 440, () => this.launchMultiGame());
+                this.createButton('BACK', gameWidth / 2 - 125, 530, () => {
+                    this.changeMenu('play');
+                });
+                break;
+            case 'units':
+                this.createUnitsPanel();
+                this.createButton('BACK', gameWidth / 2 - 125, 700, () => {
+                    this.changeMenu('main');
+                });
+                break;
+        }
     }
     cleanup() {
         // Annuler toutes les animations
