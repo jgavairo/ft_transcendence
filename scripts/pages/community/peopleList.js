@@ -118,7 +118,7 @@ export async function renderPeopleList(filter = "") {
             else {
                 button.className = "toggle-button";
                 button.title = "Add friend";
-                button.textContent = "＋";
+                button.textContent = "+";
             }
             button.setAttribute("data-name", person.username);
             if (isRequested) {

@@ -120,12 +120,15 @@
 	width: 11rem;
 	height: 4rem;
 	background-color: var(--bleu-clair);
+	border: none;
 	border-radius: 5px;
 	padding: 10px 20px;
 	font-weight: bold;
 	transition: 0.3s;
     position: relative;
     top: 70%;
+	color: white;
+	cursor: pointer;
 }
 
 .buybutton:hover
@@ -141,12 +144,14 @@
 	height: fit-content;
 	background-color: var(--anthracite-fonce);
 	color: var(--gris-police);
+	border: none;
 	border-radius: 5px;
 	padding: 10px 20px;
 	font-weight: bold;
 	font-style: italic;
     position: relative;
     top: 70%;
+	cursor: default;
 }
 
 .notification {

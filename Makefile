@@ -2,11 +2,8 @@
 
 all: up
 
-certs:
-	bash scripts/generate-certs.sh
-
-up: certs
-	docker compose up --build -d
+up:
+	bash scripts/generate-certs.sh && docker compose up --build -d
 
 stop:
 	docker compose stop

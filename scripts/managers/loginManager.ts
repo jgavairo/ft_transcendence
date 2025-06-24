@@ -57,7 +57,6 @@ export class LoginManager
         if (!loginbutton || !loginForm)
             return;
 
-        // Ajout de l'écouteur pour la touche Entrée sur le formulaire de connexion
         loginForm.addEventListener('keypress', async (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -205,7 +204,6 @@ export class LoginManager
             if (!registerRequestButton || !registerForm)
                 return;
 
-            // Ajout de l'écouteur pour la touche Entrée sur le formulaire d'inscription
             registerForm.addEventListener('keypress', async (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -232,7 +230,7 @@ export class LoginManager
 
                 const usernameRegex = /^[a-zA-Z0-9_-]{5,20}$/;
                 if (!usernameRegex.test(username)) {
-                    showErrorNotification("Username must be between 5 and 20 characters and can only contain letters, numbers, underscores and hyphens");
+                    showErrorNotification("Username must be between 5 and 15 characters and can only contain letters, numbers, underscores and hyphens");
                     return;
                 }
 
