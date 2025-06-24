@@ -25,7 +25,6 @@ async function fetchCurrentUser(): Promise<{ id: number, username: string } | nu
         if (data.success) {
             return { id: data.user.id, username: data.user.username };
         } else {
-            console.error("Failed to fetch user info:", data.message);
             return null;
         }
     } catch (error) {
@@ -43,7 +42,6 @@ async function fetchChatHistory(userId: number): Promise<{ author: number, conte
         if (data.success) {
             return data.messages;
         } else {
-            console.error("Failed to fetch chat history:", data.message);
             return [];
         }
     } catch (error) {
