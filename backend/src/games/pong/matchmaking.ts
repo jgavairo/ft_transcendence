@@ -99,7 +99,7 @@ export function setupGameMatchmaking(gameNs: Namespace, io: import('socket.io').
 
     try {
       const payload = jwt.verify(token, JWT_SECRET);
-      (socket as any).user = payload; // ou socket.data.user = payload
+      (socket as any).user = payload;
       next();
     } catch (err) {
       return next(new Error('Unauthorized invalid token'));

@@ -1,4 +1,4 @@
-import { socket } from "./network.js";
+import { connectsSocket } from "./network.js";
 import { GameManager } from "../../managers/gameManager.js";
 
 
@@ -7,18 +7,21 @@ export async function joinQueue(username: string) {
   try {
     const currentUser = await GameManager.getCurrentUser();
     const userId = currentUser?.id;
-    
-    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
-    socket.emit('joinQueue', { username, userId });
+    const socket = await connectsSocket();
+    if (socket)
+      socket.emit('joinQueue', { username, userId });
   } catch (error) {
     console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-    // En cas d'erreur, envoyer seulement le nom d'utilisateur
-    socket.emit('joinQueue', { username });
+    const socket = await connectsSocket();
+    if (socket)
+      socket.emit('joinQueue', { username });
   }
 }
 
-export function joinTournament(nbPlayers: number, username: string) {
-  socket.emit('joinTournament', { size: nbPlayers, username });
+export async function joinTournament(nbPlayers: number, username: string) {
+  const socket = await connectsSocket();
+  if (socket)
+    socket.emit('joinTournament', { size: nbPlayers, username });
 }
 
 
@@ -27,13 +30,14 @@ export async function startSoloPong(username: string) {
   try {
     const currentUser = await GameManager.getCurrentUser();
     const userId = currentUser?.id;
-    
-    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
-    socket.emit('startSolo', { username, userId });
+    const socket = await connectsSocket();
+    if (socket)
+      socket.emit('startSolo', { username, userId });
   } catch (error) {
     console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-    // En cas d'erreur, envoyer seulement le nom d'utilisateur
-    socket.emit('startSolo', { username });
+    const socket = await connectsSocket();
+    if (socket)
+      socket.emit('startSolo', { username });
   }
 }
 
@@ -42,13 +46,14 @@ export async function startSoloPongVsBot(username: string) {
   try {
     const currentUser = await GameManager.getCurrentUser();
     const userId = currentUser?.id;
-    
-    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
-    socket.emit('startSoloVsBot', { username, userId });
+    const socket = await connectsSocket();
+    if (socket)
+      socket.emit('startSoloVsBot', { username, userId });
   } catch (error) {
     console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-    // En cas d'erreur, envoyer seulement le nom d'utilisateur
-    socket.emit('startSoloVsBot', { username });
+    const socket = await connectsSocket();
+    if (socket)
+      socket.emit('startSoloVsBot', { username });
   }
 }
 
@@ -58,13 +63,14 @@ export async function joinTriQueue(username: string) {
   try {
     const currentUser = await GameManager.getCurrentUser();
     const userId = currentUser?.id;
-    
-    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
-    socket.emit('joinTriQueue', { username, userId });
+    const socket = await connectsSocket();
+    if (socket)
+      socket.emit('joinTriQueue', { username, userId });
   } catch (error) {
     console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-    // En cas d'erreur, envoyer seulement le nom d'utilisateur
-    socket.emit('joinTriQueue', { username });
+    const socket = await connectsSocket();
+    if (socket)
+      socket.emit('joinTriQueue', { username });
   }
 }
 
@@ -73,22 +79,26 @@ export async function startSoloTri(username: string) {
   try {
     const currentUser = await GameManager.getCurrentUser();
     const userId = currentUser?.id;
-    
-    // Envoyer à la fois le nom d'utilisateur et l'ID utilisateur
-    socket.emit('startSoloTri', { username, userId });
+    const socket = await connectsSocket();
+    if (socket)
+      socket.emit('startSoloTri', { username, userId });
   } catch (error) {
     console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-    // En cas d'erreur, envoyer seulement le nom d'utilisateur
-    socket.emit('startSoloTri', { username });
+    const socket = await connectsSocket();
+    if (socket)
+      socket.emit('startSoloTri', { username });
   }
 }
 
 // Envoi des commandes paddle au serveur
-export function sendMove(side: number, direction: 'up' | 'down' | null) {
-  socket.emit('movePaddle', { side, direction });
+export async function sendMove(side: number, direction: 'up' | 'down' | null) {
+  const socket = await connectsSocket();
+  if (socket)
+    socket.emit('movePaddle', { side, direction });
 }
 
-export function sendMoveTri(side: number, direction: 'up'|'down'|null) {
+export async function sendMoveTri(side: number, direction: 'up'|'down'|null) {
+  const socket = await connectsSocket();
+  if (socket)
     socket.emit('movePaddleTri', { side, direction });
-  }
-  
+}

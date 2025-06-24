@@ -1,5 +1,5 @@
 import { displayMenu, PongMenuManager } from './menu/DisplayMenu.js';
-import { socket } from './network.js';
+import { connectsSocket } from './network.js';
 import { renderRankings } from '../../pages/library/showGameDetails.js';
 import { GameManager } from '../../managers/gameManager.js'; // Import de GameManager
 import { renderPong } from './renderPong.js';
@@ -45,7 +45,11 @@ window.addEventListener('keydown', onKeyDown);
 window.addEventListener('keyup', onKeyUp);
 // Function to get user ID from socket_id
 export function getUserIdFromSocketId(socketId) {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
+        const socket = await connectsSocket();
+        if (!socket) {
+            return;
+        }
         socket.emit('getUserIdFromSocketId', { socketId }, (userId) => {
             resolve(userId);
         });
@@ -122,13 +126,17 @@ function onGameState(state) {
     }
 }
 let loopId = null;
-export function stopGame() {
+export async function stopGame() {
     // 1) Stop the requestAnimationFrame loop
     isPrivateLobby = false;
     running = false; // ← disables rendering
     if (loopId !== null) {
         cancelAnimationFrame(loopId);
         loopId = null;
+    }
+    const socket = await connectsSocket();
+    if (!socket) {
+        return;
     }
     socket.disconnect();
     window.removeEventListener('keydown', onEscapeKey);
@@ -140,7 +148,11 @@ export function stopGame() {
     // 6) Other cleanup
     resetGame();
 }
-export function connectPong(isOnline) {
+export async function connectPong(isOnline) {
+    const socket = await connectsSocket();
+    if (!socket) {
+        return;
+    }
     // Pong classique
     socket.connect();
     if (isOnline) {
@@ -363,7 +375,7 @@ export function startPong() {
     isTournamentGame = false;
     // --- Plus besoin de startExplosionAnimation ici ---
 }
-export function initTournamentPong(side, you, opponent) {
+export async function initTournamentPong(side, you, opponent) {
     // 1) Replicate what onMatchFound + startPong did, but in tournament mode
     modePong = true;
     soloTri = false;
@@ -391,6 +403,10 @@ export function initTournamentPong(side, you, opponent) {
     ctx = canvas.getContext('2d');
     canvas.width = CW;
     canvas.height = CH;
+    const socket = await connectsSocket();
+    if (!socket) {
+        return;
+    }
     socket.off('matchFound');
     socket.off('matchFoundTri');
     socket.off('stateUpdateTri');
@@ -450,40 +466,43 @@ export function hideGameCanvasAndShowMenu() {
     }
 }
 // Global handler for all matchmaking/tournament errors
-socket.on('error', (data) => {
-    var _a, _b;
-    if (data && data.message) {
-        let msg = data.message;
-        if (/tournoi|tournament/i.test(msg)) {
-            msg = 'You are already registered for the tournament.';
-        }
-        showErrorNotification(msg);
-        // Always clear menuLayer and buttons before changing menu
-        if (PongMenuManager.instance) {
-            const menuMgr = PongMenuManager.instance;
-            if (menuMgr.menuLayer && typeof menuMgr.menuLayer.removeChildren === 'function') {
-                menuMgr.menuLayer.removeChildren();
-                (_b = (_a = menuMgr.menuLayer).batchDraw) === null || _b === void 0 ? void 0 : _b.call(_a);
-            }
-            if (Array.isArray(menuMgr.buttons)) {
-                menuMgr.buttons.forEach((btn) => { var _a, _b; return (_b = (_a = btn.group) === null || _a === void 0 ? void 0 : _a.destroy) === null || _b === void 0 ? void 0 : _b.call(_a); });
-                menuMgr.buttons = [];
-            }
-        }
-        // Redirect to appropriate menu
-        if (PongMenuManager.instance && typeof PongMenuManager.instance.changeMenu === 'function') {
+export function setupGlobalSocketErrorHandler(socket) {
+    console.log('Setting up global socket error handler for Pong');
+    socket.on('error', (data) => {
+        var _a, _b;
+        if (data && data.message) {
+            let msg = data.message;
             if (/tournoi|tournament/i.test(msg)) {
-                PongMenuManager.instance.changeMenu('tournament');
+                msg = 'You are already registered for the tournament.';
+            }
+            showErrorNotification(msg);
+            // Always clear menuLayer and buttons before changing menu
+            if (PongMenuManager.instance) {
+                const menuMgr = PongMenuManager.instance;
+                if (menuMgr.menuLayer && typeof menuMgr.menuLayer.removeChildren === 'function') {
+                    menuMgr.menuLayer.removeChildren();
+                    (_b = (_a = menuMgr.menuLayer).batchDraw) === null || _b === void 0 ? void 0 : _b.call(_a);
+                }
+                if (Array.isArray(menuMgr.buttons)) {
+                    menuMgr.buttons.forEach((btn) => { var _a, _b; return (_b = (_a = btn.group) === null || _a === void 0 ? void 0 : _a.destroy) === null || _b === void 0 ? void 0 : _b.call(_a); });
+                    menuMgr.buttons = [];
+                }
+            }
+            // Redirect to appropriate menu
+            if (PongMenuManager.instance && typeof PongMenuManager.instance.changeMenu === 'function') {
+                if (/tournoi|tournament/i.test(msg)) {
+                    PongMenuManager.instance.changeMenu('tournament');
+                }
+                else {
+                    PongMenuManager.instance.changeMenu('main');
+                }
             }
             else {
-                PongMenuManager.instance.changeMenu('main');
+                displayMenu();
             }
         }
-        else {
-            displayMenu();
-        }
-    }
-});
+    });
+}
 // Nouvelle fonction pour réinitialiser l'état du tournoi
 export function resetPongTournamentState() {
     mySide = -1;

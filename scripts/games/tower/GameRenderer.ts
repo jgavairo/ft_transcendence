@@ -1,6 +1,5 @@
 // @ts-ignore
 import Konva from "https://cdn.skypack.dev/konva";
-import { socket } from "../pong/network";
 
 const buttonPosition = 400;
 
