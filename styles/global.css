@@ -498,15 +498,15 @@ body
 }
 
 .profilewindow {
-	pointer-events: auto;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	justify-content: center;
-	color: #ffffff;
-	background-color: var(--anthracite);
-	border-radius: 4px;
-	overflow: hidden;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    color: #ffffff;
+    background-color: var(--anthracite);
+    border-radius: 4px;
+    overflow: hidden;
 }
 
 .profilewindow button 
@@ -524,6 +524,8 @@ body
 	font-size: 0.9rem;
 	margin: 0;
 	outline: none;
+    border: 2px solid var(--bleu-fonce); /* <-- Bordure discrète */
+
 }
 
 .profilewindow button:hover 

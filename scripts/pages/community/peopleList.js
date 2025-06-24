@@ -89,14 +89,15 @@ export async function renderPeopleList(filter = "") {
             const label = document.createElement("span");
             label.className = "friend-name";
             label.textContent = person.username;
-            // Group the photo and name in a .friend-info container
             const friendInfo = document.createElement("div");
             friendInfo.className = "friend-info";
             friendInfo.appendChild(profileContainer);
             friendInfo.appendChild(label);
             div.appendChild(friendInfo);
             const button = document.createElement("button");
-            const button2 = document.createElement("button");
+            let button2 = null;
+            if (isRequested)
+                button2 = document.createElement("button");
             if (isFriend) {
                 button.className = "toggle-button added";
                 button.title = "Delete friend";
@@ -111,17 +112,19 @@ export async function renderPeopleList(filter = "") {
                 button.className = "toggle-button requested";
                 button.title = "Accept request";
                 button.textContent = "✓";
-                button2.className = "toggle-button refused";
-                button2.title = "Refuse request";
-                button2.textContent = "✖";
+                if (button2) {
+                    button2.className = "toggle-button refused";
+                    button2.title = "Refuse request";
+                    button2.textContent = "✖";
+                }
             }
             else {
                 button.className = "toggle-button";
                 button.title = "Add friend";
-                button.textContent = "+";
+                button.textContent = "＋";
             }
             button.setAttribute("data-name", person.username);
-            if (isRequested) {
+            if (isRequested && button2) {
                 button2.addEventListener("click", async (e) => {
                     e.stopPropagation();
                     await refuseFriendRequest(person.username);
@@ -145,7 +148,8 @@ export async function renderPeopleList(filter = "") {
                 await renderPeopleList();
             });
             div.appendChild(button);
-            div.appendChild(button2);
+            if (button2)
+                div.appendChild(button2);
             container.appendChild(div);
         }));
     }
