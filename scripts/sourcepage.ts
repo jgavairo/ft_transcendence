@@ -22,7 +22,6 @@ const header = (username: string, profilePicture: string) => {
 				</svg>
 				<div id="profileMenu" class="profileMenu">
 				</div>
-				<button class="profilebutton" id="profilebutton"></button>
 			</div>
 `;
 };

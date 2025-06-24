@@ -5,7 +5,7 @@
     color:#66c0f4;border-radius:28px;width:auto;min-width:56px;height:56px;display:flex;align-items:center;justify-content:center;
     box-shadow:0 4px 18px 0 rgba(34, 60, 80, 0.25);
     font-size:2rem;transition:box-shadow 0.2s, background 0.2s, transform 0.15s;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Roboto', Arial, sans-serif;
     border: 2px solid #181a21;
     padding: 0 22px 0 16px;
     gap: 10px;
@@ -49,7 +49,7 @@
     border-radius:18px;box-shadow:0 2px 12px rgba(34,60,80,0.10);
     z-index:10000;flex-direction:column;overflow:hidden;
     border: 1.5px solid #2a475e;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Roboto', Arial, sans-serif;
     color: #c7d5e0;
 }
 #chat-window .chat-header {
@@ -71,7 +71,7 @@
 #chatInput {
     flex:1;padding:8px 10px;border-radius:6px;border:1px solid #2a475e;outline:none;
     background:#181a21;color:#c7d5e0;font-size:1rem;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Roboto', Arial, sans-serif;
     transition: border 0.2s;
 }
 #chatInput:focus {
@@ -80,7 +80,7 @@
 #sendMessage {
     margin-left:8px;padding:8px 14px;background:#2a475e;
     color:#c7d5e0;border:none;border-radius:6px;cursor:pointer;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Roboto', Arial, sans-serif;
     font-size:1rem;font-weight:500;
     transition: background 0.2s, color 0.2s;
 }
@@ -264,7 +264,7 @@
     display: none;
     max-height: 180px;
     overflow-y: auto;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Roboto', Arial, sans-serif;
     font-size: 1rem;
     min-width: 120px;
     padding: 2px 0;
@@ -284,7 +284,7 @@
   padding: 10px 18px;
   font-size: 1.08em;
   color: #ffe156;
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family: 'Roboto', Arial, sans-serif;
   box-shadow: 0 2px 10px #0002;
   border-left: 4px solid #ffe156;
   transition: background 0.18s, box-shadow 0.18s, transform 0.18s;

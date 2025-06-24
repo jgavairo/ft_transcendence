@@ -1,10 +1,15 @@
 import { showErrorNotification, showNotification } from "../../helpers/notifications.js";
 import { FriendsManager } from "../../managers/friendsManager.js";
 import api from "../../helpers/api.js";
+import { LoginManager } from "../../managers/loginManager.js";
 const STORAGE_KEY = "people";
 const HOSTNAME = window.location.hostname;
 export async function fetchUsernames() {
     try {
+        if (!await LoginManager.isLoggedIn()) {
+            LoginManager.showLoginModal();
+            return [];
+        }
         const response = await api.get(`https://${HOSTNAME}:8443/api/users`);
         const data = await response.json();
         if (data.success) {
@@ -228,12 +233,10 @@ export function setupSearchInput() {
     });
 }
 export async function showProfileCard(username, profilePicture, bio, userId) {
-    // Fonction pour ajouter un timestamp aux URLs d'images
     const getImageUrl = (imagePath, username) => {
         if (!imagePath || imagePath === 'default-profile.webp') {
             return 'default-profile.webp';
         }
-        // Ajouter un timestamp pour forcer le rechargement
         const timestamp = Date.now();
         return `${imagePath}?v=${timestamp}&user=${username}`;
     };

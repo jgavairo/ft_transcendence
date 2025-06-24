@@ -7,6 +7,7 @@ import { HOSTNAME } from "../../main.js";
 import { isBlocked, clearBlockedCache } from "../../helpers/blockedUsers.js";
 import { showErrorNotification } from "../../helpers/notifications.js";
 import { handlePongInviteLinkClick } from "../../helpers/pongInviteHandler.js";
+import { LoginManager } from "../../managers/loginManager.js";
 
 // Fonction pour ajouter un timestamp aux URLs d'images
 const getImageUrl = (imagePath: string | null, username: string) => {
@@ -22,6 +23,11 @@ let chatWidgetSocket: Socket | null = null;
 
 async function fetchCurrentUser(): Promise<{ id: number, username: string } | null> {
     try {
+        if (!await LoginManager.isLoggedIn())
+        {
+            LoginManager.showLoginModal();
+            return null;
+        }
         const response = await fetch(`https://${HOSTNAME}:8443/api/user/infos`, { credentials: "include" });
         const data = await response.json();
         if (data.success) return { id: data.user.id, username: data.user.username };

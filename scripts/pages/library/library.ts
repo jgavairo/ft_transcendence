@@ -9,19 +9,15 @@ export async function setupLibrary(): Promise<void> {
 
   const searchBar = document.getElementById("searchBar") as HTMLInputElement;
   if (searchBar) {
-    // Limite HTML
     searchBar.maxLength = 15;
 
-    // Validation JavaScript
     searchBar.addEventListener("input", () => {
-      // Limite la longueur à 15 caractères
       if (searchBar.value.length > 15) {
         searchBar.value = searchBar.value.slice(0, 15);
       }
       renderLibrary(searchBar.value.toLowerCase());
     });
 
-    // Empêcher le copier-coller de texte trop long
     searchBar.addEventListener("paste", (e: ClipboardEvent) => {
       e.preventDefault();
       const pastedText = e.clipboardData?.getData('text') || '';
@@ -34,6 +30,5 @@ export async function setupLibrary(): Promise<void> {
     });
   }
 
-  // Initial render
   renderLibrary("");
 }

@@ -467,7 +467,6 @@ export function hideGameCanvasAndShowMenu() {
 }
 // Global handler for all matchmaking/tournament errors
 export function setupGlobalSocketErrorHandler(socket) {
-    console.log('Setting up global socket error handler for Pong');
     socket.on('error', (data) => {
         var _a, _b;
         if (data && data.message) {

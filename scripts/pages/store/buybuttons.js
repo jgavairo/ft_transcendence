@@ -18,7 +18,6 @@ export function setupBuyButtons() {
             const gameId = (_a = gameList.find(g => g.name + 'card' === gameCard.id)) === null || _a === void 0 ? void 0 : _a.id;
             if (gameId === undefined)
                 return;
-            // Appeler l'API pour ajouter le jeu à la bibliothèque
             const response = await fetch('/api/user/addGame', {
                 method: 'POST',
                 headers: {
