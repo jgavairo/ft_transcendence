@@ -670,19 +670,22 @@ body
     height: 3.7rem;
     width: 100%;
     text-align: center;
-    background-color: #a3a3a31e;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-	padding: 5px;
-	margin: 0;
-	color: #939393;
+    background: #23262e;
+    border-radius: 8px;
+    border: 1px solid #195887;
+    padding: 10px;
+    margin: 0;
+    color: #e3eaf5;
     outline: none;
+    font-size: 0.92rem;
     font-style: italic;
 }
 
-.profile-modal .bio-input:focus
-{
-    font-style: normal;
+.profile-modal .bio-input::placeholder {
+    color: #8da6c1;
+    opacity: 1;
+    font-size: 0.92rem;
+    font-style: italic;
 }
 
 .profile-modal .profile-modal-button-container
@@ -740,11 +743,12 @@ body
     height: 1.3rem;
     line-height: 1.3rem;
     width: 100%;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
+    border-radius: 5px;
     white-space: nowrap;
     background-color: #195787aa; 
     transition: 0.3s;
+    border: none;
+    color: #e3eaf5; /* gris clair */
 }
 
 .profile-modal .profile-modal-button-disable2fa

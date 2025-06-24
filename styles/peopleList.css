@@ -457,3 +457,24 @@ body.profile-overlay-open {
     overflow-y: auto;
     width: 100%;
 }
+
+.profile-card-block {
+    background: none;
+    color: #e3eaf5;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 18px;
+    font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: color 0.18s;
+    box-shadow: none;
+}
+
+.profile-card-block:hover {
+    color: #66c0f4;
+    cursor: pointer;
+}
