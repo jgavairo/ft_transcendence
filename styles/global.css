@@ -8,6 +8,7 @@ body
 	min-height: 100vh;
 	display: flex;
 	flex-direction: column;
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .main
@@ -51,28 +52,32 @@ body
 
 .header .activebutton
 {
-	font-size: 32px;
-	color: var(--bleu-clair);
-	text-decoration: underline;
-	padding: 10px 20px;
-	font-weight: bold;
-	transition: color 0.3s ease, text-decoration 0.3s ease;
+	font-size: 32px !important;
+	color: var(--bleu-clair) !important;
+    background-color: var(--bleu-fonce) !important;
+	text-decoration: underline !important;
+	padding: 10px 20px !important;
+	font-weight: bold !important;
+	border: none !important;
+	transition: color 0.3s ease, text-decoration 0.3s ease !important;
 }
 
 .header .button
 {
-	font-size: 32px;
-	color: #c2c2c2;
-	padding: 10px 20px;
-	font-weight: bold;
-	transition: color 0.3s ease, text-decoration 0.3s ease;
+    background-color: var(--bleu-fonce) !important;
+	font-size: 32px !important;
+	color: #c2c2c2 !important;
+	padding: 10px 20px !important;
+	font-weight: bold !important;
+	border: none !important;
+	transition: color 0.3s ease, text-decoration 0.3s ease !important;
 }
 
 .header .button:hover
 {
-	color: #ffffff;
-	transition: 0.3s;
-	cursor: pointer;
+	color: #ffffff !important;
+	transition: 0.3s !important;
+	cursor: pointer !important;
 }
 
 .header .profile
@@ -160,26 +165,33 @@ body
 }
 
 .login-modal input {
-	
 	background-color: #a3a3a36c;
+	border: none;
 	border-radius: 7px;
-	padding: 5px;
+	padding: 10px;
 	margin: 10px 0;
 	width: 60%;
 	color: rgb(255, 255, 255);
+	font-size: 16px;
+	outline: none;
+}
+
+.login-modal input::placeholder {
+	color: #a3a3a3;
 }
 
 .login-modal .loginButton {
     width: 20%;
     padding: 10px;
-    margin-top: 20px;
-	margin-left: 40%;
+    margin: 20px auto 0 auto;
     background-color: #195887;
     border: none;
     border-radius: 5px;
     color: white;
     font-weight: bold;
     cursor: pointer;
+    font-size: 16px;
+    display: block;
 }
 
 .login-modal .loginButton:hover {
@@ -188,19 +200,21 @@ body
 }
 
 .login-modal .googleButton {
-    border: none;
-    border-radius: 5px;
+    background: none;
+    border: 2px solid #ffffff;
+    border-radius: 100px;
     color: white;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	gap: 10px;
-	border: 2px solid #ffffff;
-	border-radius: 100px;
-	padding: 5px;
-	margin-left: 36%;
-	margin-top: 30px;
+	padding: 10px 20px;
+	margin: 30px auto 0 auto;
+    cursor: pointer;
+    font-size: 16px;
+    width: fit-content;
 }
+
 .login-modal .googleLogo
 {
 	max-width: 30px;
@@ -225,6 +239,11 @@ body
 .login-modal .registerButton
 {
 	font-weight: bold;
+	background: none;
+	border: none;
+	color: #b1b1b1;
+	cursor: pointer;
+	font-size: 16px;
 }
 
 .login-modal .registerButton:hover
@@ -246,25 +265,33 @@ body
 .login-modal .register-form input
 {
 	background-color: #a3a3a36c;
+	border: none;
 	border-radius: 7px;
-	padding: 5px;
+	padding: 10px;
 	margin: 10px 0;
 	width: 60%;
 	color: rgb(255, 255, 255);
+	font-size: 16px;
+	outline: none;
+}
+
+.login-modal .register-form input::placeholder {
+	color: #a3a3a3;
 }
 
 .login-modal .signupButton
 {
 	width: 20%;
-    padding: 2%;
-    margin-top: 8%;
-	margin-left: 40%;
+    padding: 10px;
+    margin: 8% auto 0 auto;
     background-color: #195887;
     border: none;
     border-radius: 5px;
     color: rgb(255, 255, 255);
     font-weight: bold;
     cursor: pointer;
+    font-size: 16px;
+    display: block;
 }
 
 .login-modal .signupButton:hover
@@ -275,15 +302,20 @@ body
 
 .login-modal .cancelButton
 {
-	margin-top: -10px;
-	font-weight: bold;
+	background: none;
+	border: none;
 	color: #8d8d8d;
+	font-weight: bold;
+	cursor: pointer;
+	font-size: 16px;
+	margin: 0;
+	padding: 5px 10px;
 }
 
 .login-modal .cancelButton:hover
 {
 	transition: 0.3s;
-	cursor: pointer;
+	color: #ffffff;
 }
 
 .twofaModal {
@@ -472,6 +504,9 @@ body
 	align-items: flex-start;
 	justify-content: center;
 	color: #ffffff;
+	background-color: var(--anthracite);
+	border-radius: 4px;
+	overflow: hidden;
 }
 
 .profilewindow button 
@@ -486,8 +521,9 @@ body
 	color: #ffffff;
 	cursor: pointer;
 	background-color: var(--anthracite);
-	border: 2px solid var(--bleu-fonce);
 	font-size: 0.9rem;
+	margin: 0;
+	outline: none;
 }
 
 .profilewindow button:hover 

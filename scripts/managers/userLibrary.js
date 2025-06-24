@@ -1,20 +1,6 @@
 import api from '../helpers/api.js';
 import { HOSTNAME } from '../main.js';
 export class UserLibraryManager {
-    static getCurrentUser() {
-        const stored = localStorage.getItem(this.STORAGE_KEY);
-        if (stored) {
-            return JSON.parse(stored);
-        }
-        return null;
-    }
-    static getUser() {
-        const stored = localStorage.getItem(this.STORAGE_KEY);
-        if (stored) {
-            return JSON.parse(stored);
-        }
-        return null;
-    }
     static async hasGame(gameId) {
         const response = await api.get(`https://${HOSTNAME}:8443/api/user/library`);
         const data = await response.json();
@@ -40,4 +26,3 @@ export class UserLibraryManager {
             return [];
     }
 }
-UserLibraryManager.STORAGE_KEY = 'userLibrary';

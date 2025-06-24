@@ -108,7 +108,6 @@ export async function renderPeopleList(filter: string = "") {
             label.className = "friend-name";
             label.textContent = person.username;
 
-            // Group the photo and name in a .friend-info container
             const friendInfo = document.createElement("div");
             friendInfo.className = "friend-info";
             friendInfo.appendChild(profileContainer);

@@ -11,27 +11,6 @@ export interface UserLibrary {
 
 export class UserLibraryManager
 {
-    private static readonly STORAGE_KEY = 'userLibrary';
-
-    static getCurrentUser(): UserLibrary | null {
-        const stored = localStorage.getItem(this.STORAGE_KEY);
-        if (stored) {
-            return JSON.parse(stored);
-        }
-        return null;
-    }
-
-    static getUser(): UserLibrary | null
-    {
-        const stored = localStorage.getItem(this.STORAGE_KEY);
-        if (stored) 
-        {
-            return JSON.parse(stored);
-        }
-        return null;
-    }
-    
-
     static async hasGame(gameId: number): Promise<boolean>
     {
         const response = await api.get(`https://${HOSTNAME}:8443/api/user/library`);

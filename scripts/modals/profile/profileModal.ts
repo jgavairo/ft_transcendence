@@ -361,10 +361,10 @@ function changeUsername()
             showErrorNotification('New username cannot be empty');
             return;
         }
-        const usernameRegex = /^[a-zA-Z0-9_-]{5,20}$/;
+        const usernameRegex = /^[a-zA-Z0-9_-]{5,15}$/;
         if (!usernameRegex.test(newUsername.value))
         {
-            showErrorNotification('Username must be between 5 and 20 characters and can only contain letters, numbers, underscores and hyphens');
+            showErrorNotification('Username must be between 5 and 15 characters and can only contain letters, numbers, underscores and hyphens');
             return;
         }
         const response = await api.post(`https://${HOSTNAME}:8443/api/user/changeUsername`, 

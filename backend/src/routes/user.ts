@@ -273,7 +273,7 @@ const changeUsernameHandler = async (request: FastifyRequest, reply: FastifyRepl
         const usernameRegex = /^[a-zA-Z0-9_-]{5,15}$/;
         if (!usernameRegex.test(newUsername))
         {
-            return reply.status(400).send({ success: false, message: "Username must be between 5 and 20 characters and can only contain letters, numbers, underscores and hyphens" });
+            return reply.status(400).send({ success: false, message: "Username must be between 5 and 15 characters and can only contain letters, numbers, underscores and hyphens" });
         }
         if (newUsername === user.username)
         {
