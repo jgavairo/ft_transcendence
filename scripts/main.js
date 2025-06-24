@@ -46,7 +46,6 @@ export class MainApp {
             setupHeader();
         }
         else {
-            console.error('User not logged in');
             LoginManager.showLoginModal();
         }
     }
@@ -67,7 +66,6 @@ export class MainApp {
         const libraryButton = document.getElementById('librarybutton');
         const communityButton = document.getElementById('communitybutton');
         if (!storeButton || !libraryButton || !communityButton) {
-            console.error('Buttons not found');
             return;
         }
         let currentActiveButton = document.querySelector('.header .activebutton');

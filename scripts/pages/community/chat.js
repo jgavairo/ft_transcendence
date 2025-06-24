@@ -24,7 +24,6 @@ async function fetchCurrentUser() {
             return { id: data.user.id, username: data.user.username };
         }
         else {
-            console.error("Failed to fetch user info:", data.message);
             return null;
         }
     }
@@ -43,7 +42,6 @@ async function fetchChatHistory(userId) {
             return data.messages;
         }
         else {
-            console.error("Failed to fetch chat history:", data.message);
             return [];
         }
     }

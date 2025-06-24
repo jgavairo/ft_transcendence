@@ -6,7 +6,6 @@ import api from "../../helpers/api.js";
 export function setupBuyButtons() {
     const buyButtons = document.querySelectorAll('.buybutton');
     if (!buyButtons) {
-        console.error('Buy buttons not found');
         return;
     }
     buyButtons.forEach(async (button) => {

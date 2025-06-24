@@ -16,11 +16,9 @@ export async function fetchUsernames(): Promise<{ id: number, username: string, 
             }));
             return Promise.all(users);
         } else {
-            console.error('Failed to fetch usernames:', data.message);
             return [];
         }
     } catch (error) {
-        console.error('Error fetching usernames:', error);
         return [];
     }
 }
