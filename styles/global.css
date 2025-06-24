@@ -681,6 +681,10 @@ body
     outline: none;
     font-size: 0.92rem;
     font-style: italic;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 .profile-modal .bio-input::placeholder {
@@ -751,6 +755,11 @@ body
     transition: 0.3s;
     border: none;
     color: #e3eaf5; /* gris clair */
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    margin-top: 0;
 }
 
 .profile-modal .profile-modal-button-disable2fa
