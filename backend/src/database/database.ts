@@ -379,7 +379,7 @@ export class DatabaseManager
 
     public async getAllUsernamesWithIds(): Promise<{ id: number, username: string, profile_picture: string, email: string, bio: string }[]> {
         if (!this.db) throw new Error('Database not initialized');
-        const result = await this.db.all('SELECT id, username, profile_picture, email, bio FROM users');
+        const result = await this.db.all('SELECT id, username, profile_picture, bio FROM users');
         return result;
     }
     
