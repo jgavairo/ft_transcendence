@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ft_transcendence — Diagrammes d'utilisation et architecture</title>
+  <style>
+    :root {
+      /* Light theme defaults */
+      --bg: #f7f9fc;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-600: #1d4ed8;
+      --actor-external: #fbbf24; /* amber-300 */
+      --actor-internal: #93c5fd; /* blue-300 */
+      --usecase: #eef2ff;       /* indigo-50 */
+      --edge: #94a3b8;          /* slate-400 */
+      --include: #16a34a;       /* green-600 */
+      --extend: #ea580c;        /* orange-600 */
+      --grid: rgba(17,24,39,0.04);
+
+      /* Group colors (light) */
+      --g-auth-bg: #eef2ff;        --g-auth-border: #6366f1;
+      --g-profile-bg: #e0f2fe;     --g-profile-border: #0284c7;
+      --g-friends-bg: #ecfccb;     --g-friends-border: #65a30d;
+      --g-chat-bg: #fef9c3;        --g-chat-border: #ca8a04;
+      --g-games-bg: #fae8ff;       --g-games-border: #a21caf;
+      --g-library-bg: #d1fae5;     --g-library-border: #059669;
+      --g-news-bg: #ffe4e6;        --g-news-border: #e11d48;
+      --g-notifications-bg: #f1f5f9; --g-notifications-border: #475569;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1220;
+        --panel: #0f172a;
+        --text: #e5e7eb;
+        --muted: #9aa3b2;
+        --accent: #60a5fa;
+        --accent-600: #3b82f6;
+        --actor-external: #f59e0b;
+        --actor-internal: #60a5fa;
+        --usecase: #111827;
+        --edge: #64748b;
+        --grid: rgba(148,163,184,0.08);
+
+        /* Group colors (dark) */
+        --g-auth-bg: #0b1020;        --g-auth-border: #818cf8;
+        --g-profile-bg: #071724;     --g-profile-border: #38bdf8;
+        --g-friends-bg: #0f1a07;     --g-friends-border: #84cc16;
+        --g-chat-bg: #1a1807;        --g-chat-border: #f59e0b;
+        --g-games-bg: #1a0f1a;       --g-games-border: #e879f9;
+        --g-library-bg: #081a14;     --g-library-border: #34d399;
+        --g-news-bg: #1b0a0d;        --g-news-border: #fb7185;
+        --g-notifications-bg: #0b1220; --g-notifications-border: #94a3b8;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+    }
+    header {
+      padding: 18px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      background: var(--panel);
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    h1 { font-size: 18px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+    .tabs { display: flex; gap: 8px; }
+    .tab-btn {
+      background: transparent; color: var(--text);
+      border: 1px solid #2a3140; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+      transition: all .2s ease;
+    }
+  .tab-btn:hover { border-color: var(--accent-600); transform: translateY(-1px); }
+  .tab-btn.active { background: linear-gradient(180deg, rgba(99,102,241,0.12), transparent); border-color: var(--accent); box-shadow: 0 1px 0 rgba(0,0,0,0.06) inset; }
+
+    .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .pill {
+      background: var(--panel); border: 1px solid #e5e7eb; border-radius: 999px;
+      padding: 6px 10px; display: inline-flex; gap: 8px; align-items: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .legend { display: flex; gap: 8px; align-items: center; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+    .content { display: grid; grid-template-columns: 320px 1fr; gap: 12px; padding: 12px; }
+    .panel {
+      background: var(--panel); border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    }
+    .panel h2 { margin: 0 0 8px; font-size: 16px; }
+    .panel h3 { margin: 16px 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .hint { color: var(--muted); font-size: 12px; }
+    .footer-hint { margin-top: 8px; color: var(--muted); font-size: 12px; }
+
+    #canvas {
+      height: calc(100vh - 120px);
+      min-height: 480px;
+      width: 100%;
+      border-radius: 12px; background: #ffffff; border: 1px solid #e5e7eb;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 28px,
+          var(--grid) 28px,
+          var(--grid) 29px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          transparent,
+          transparent 28px,
+          var(--grid) 28px,
+          var(--grid) 29px
+        ),
+        var(--panel);
+    }
+
+  .badge { font-size: 11px; padding: 2px 6px; border-radius: 999px; border: 1px solid #e5e7eb; color: var(--muted); background: #f9fafb; }
+    .kpis { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    main.panel { position: relative; }
+    .graph-controls {
+      position: absolute; right: 14px; top: 14px; display: flex; gap: 8px; z-index: 20;
+      background: var(--panel); border: 1px solid #e5e7eb; border-radius: 999px; padding: 6px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    }
+    .gc-btn {
+      border: 1px solid #d1d5db; background: #fff; color: #111827; padding: 6px 10px; border-radius: 999px; cursor: pointer;
+      font-size: 12px; transition: all .2s ease;
+    }
+    .gc-btn:hover { border-color: var(--accent-600); color: var(--accent-600); transform: translateY(-1px); }
+    @media (prefers-color-scheme: dark) {
+      .gc-btn { background: #111827; color: var(--text); border-color: #223047; }
+    }
+
+    @media (max-width: 1024px) {
+      .content { grid-template-columns: 1fr; }
+      #canvas { height: 70vh; }
+    }
+
+    /* Cytoscape styles via classes (applied in script) */
+  </style>
+  <!-- Graph libs (order matters: dagre -> cytoscape -> plugin) -->
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+</head>
+<body>
+  <header>
+    <h1>ft_transcendence — Use cases et architecture</h1>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="usecases">Diagramme d'utilisation</button>
+      <button class="tab-btn" data-tab="architecture">Architecture globale</button>
+    </div>
+    <div class="toolbar">
+      <div class="pill legend">
+        <span class="swatch" style="background: var(--actor-external)"></span> Acteur externe
+      </div>
+      <div class="pill legend">
+        <span class="swatch" style="background: var(--actor-internal)"></span> Acteur interne
+      </div>
+      <div class="pill legend">
+        <span class="swatch" style="background: var(--usecase)"></span> Use case
+      </div>
+      <div class="pill legend">
+        <span class="swatch" style="background: var(--include)"></span> «include»
+      </div>
+      <div class="pill legend">
+        <span class="swatch" style="background: var(--extend)"></span> «extend»
+      </div>
+      <div class="pill legend">
+        <span class="swatch" style="background: #91a4d1"></span> uses
+      </div>
+      <div class="pill legend">
+        <span class="swatch" style="background: #94a3b8"></span> flux
+      </div>
+      <div class="pill legend">
+        <span class="swatch" style="background: #9aa3b2"></span> association
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+    <aside class="panel">
+      <h2>Filtres</h2>
+      <div class="filters" id="filters"></div>
+      <label class="pill" style="cursor: pointer; margin-top: 8px; display: inline-flex; align-items: center; gap: 8px;">
+        <input id="toggle-hide-isolated" type="checkbox" checked style="accent-color: var(--accent);"> Masquer nœuds isolés
+      </label>
+      <p class="footer-hint">Astuce: clic sur un noeud pour surligner son voisinage. Molette pour zoomer, drag pour déplacer.</p>
+
+      <h3>Contexte</h3>
+      <div class="hint">
+        Basé sur votre code: Fastify + Socket.IO, OAuth2 Google, envoi d'emails (Gmail), upload sécurisé, amis, chat, jeux (Pong, Tower), matchmaking, stats/rankings, news.
+      </div>
+
+      <h3>KPIs</h3>
+      <div class="kpis">
+        <span class="badge" id="count-actors">— acteurs</span>
+        <span class="badge" id="count-usecases">— use cases</span>
+      </div>
+      <div class="hint" id="rel-stats"></div>
+    </aside>
+
+    <main class="panel">
+      <div class="graph-controls" aria-label="Contrôles du graphe">
+        <button class="gc-btn" id="btn-zoom-out" title="Zoom -">Zoom −</button>
+        <button class="gc-btn" id="btn-zoom-in" title="Zoom +">Zoom +</button>
+        <button class="gc-btn" id="btn-fit" title="Ajuster la vue">Ajuster</button>
+        <button class="gc-btn" id="btn-reflow" title="Recomposer le layout">Recomposer</button>
+        <button class="gc-btn" id="btn-reset" title="Réinitialiser la sélection">Réinitialiser</button>
+      </div>
+      <div id="canvas" role="application" aria-label="Diagramme interactif"></div>
+      <div class="footer-hint" id="status">Prêt.</div>
+    </main>
+  </div>
+
+<script>
+(function(){
+  const $ = (sel, ctx=document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+
+  // Try to register the dagre plugin if available
+  try {
+    if (window.cytoscape && window.cytoscapeDagre) {
+      window.cytoscape.use(window.cytoscapeDagre);
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const groups = [
+    { id: 'auth', label: 'Authentification' },
+    { id: 'profile', label: 'Profil & Compte' },
+    { id: 'friends', label: 'Amis' },
+    { id: 'chat', label: 'Chat' },
+    { id: 'games', label: 'Jeux (Pong/Tower)' },
+    { id: 'library', label: 'Boutique & Bibliothèque' },
+    { id: 'news', label: 'Actualités' },
+    { id: 'notifications', label: 'Notifications' },
+  ];
+
+  // Nodes and edges model
+  // type: actor-ext | actor-int | usecase | container (architecture)
+  // rel: include | extend | uses | flows
+  const model = {
+    tabs: {
+      usecases: {
+        nodes: [
+          // External actors
+          N('guest', 'Invité', 'actor-ext'),
+          N('user', 'Utilisateur', 'actor-ext'),
+          N('friend', 'Autre utilisateur', 'actor-ext'),
+          N('google', 'Google OAuth2', 'actor-ext'),
+          N('gmail', 'Service Email (Gmail SMTP)', 'actor-ext'),
+
+          // Internal actors (systems/services inside boundary)
+          N('socketio', 'Socket.IO (namespaces)\n/game, /chat, /notification, /tower', 'actor-int'),
+          N('db', 'Base de données', 'actor-int'),
+          N('uploads', 'Serveur fichiers (uploads)', 'actor-int'),
+          N('matchmaking', 'Matchmaking Pong', 'actor-int'),
+          N('enginePong', 'Moteur de jeu Pong', 'actor-int'),
+          N('engineTower', 'Moteur de jeu Tower', 'actor-int'),
+
+          // Auth use cases
+          U('uc_register', "S'inscrire", 'auth'),
+          U('uc_login', 'Se connecter', 'auth'),
+          U('uc_login_google', 'Se connecter via Google', 'auth'),
+          U('uc_logout', 'Se déconnecter', 'auth'),
+          U('uc_checkauth', 'Vérifier authentification', 'auth'),
+          U('uc_enable2fa', 'Activer 2FA', 'auth'),
+          U('uc_disable2fa', 'Désactiver 2FA', 'auth'),
+          U('uc_confirm2fa', 'Confirmer code 2FA', 'auth'),
+          U('uc_send2fa', 'Envoyer code 2FA', 'auth'),
+
+          // Profile/Account
+          U('uc_getinfos', 'Consulter mes infos', 'profile'),
+          U('uc_change_password', 'Modifier mot de passe', 'profile'),
+          U('uc_change_email', 'Changer email', 'profile'),
+          U('uc_change_username', 'Changer username', 'profile'),
+          U('uc_change_picture', 'Changer photo de profil', 'profile'),
+          U('uc_update_bio', 'Mettre à jour bio', 'profile'),
+          U('uc_validate_image', 'Valider/Purifier image', 'profile'),
+
+          // Friends
+          U('uc_send_friend_request', "Envoyer demande d'ami", 'friends'),
+          U('uc_accept_request', 'Accepter demande', 'friends'),
+          U('uc_refuse_request', 'Refuser / Annuler demande', 'friends'),
+          U('uc_remove_friend', 'Supprimer ami', 'friends'),
+          U('uc_is_friend', 'Vérifier statut ami', 'friends'),
+          U('uc_is_online', 'Vérifier si en ligne', 'friends'),
+
+          // Blocking
+          U('uc_block_user', 'Bloquer utilisateur', 'profile'),
+          U('uc_unblock_user', 'Débloquer utilisateur', 'profile'),
+          U('uc_is_blocked', 'Est-il bloqué ?', 'profile'),
+
+          // Chat
+          U('uc_fetch_chat', 'Afficher historique chat', 'chat'),
+          U('uc_send_public', 'Envoyer message public', 'chat'),
+          U('uc_send_private', 'Envoyer message privé', 'chat'),
+
+          // Library / Store
+          U('uc_get_games', 'Voir boutique (jeux)', 'library'),
+          U('uc_add_game', 'Ajouter jeu à ma bibliothèque', 'library'),
+          U('uc_get_library', 'Voir ma bibliothèque', 'library'),
+
+          // Games generic
+          U('uc_get_rankings', 'Consulter classements', 'games'),
+          U('uc_get_match_history', 'Consulter historique de matchs', 'games'),
+
+          // Pong
+          U('uc_join_matchmaking', 'Rejoindre matchmaking (Pong)', 'games'),
+          U('uc_join_private', 'Rejoindre salon privé (Pong)', 'games'),
+          U('uc_play_pong', 'Jouer à Pong', 'games'),
+
+          // Tower
+          U('uc_queue_tower', 'Rejoindre file (Tower)', 'games'),
+          U('uc_play_tower', 'Jouer à Tower', 'games'),
+          U('uc_spawn_unit', 'Poser une unité', 'games'),
+
+          // News
+          U('uc_get_news', 'Consulter actualités', 'news'),
+
+          // Notifications
+          U('uc_receive_notifications', 'Recevoir notifications (amis/invitations)', 'notifications'),
+
+          // Derived/auxiliary
+          U('uc_issue_jwt', 'Émettre cookie JWT', 'auth'),
+          U('uc_oauth_token', 'Obtenir token OAuth2', 'auth'),
+          U('uc_create_or_link_account', 'Créer / Lier compte', 'auth'),
+          U('uc_force_previous_logout', 'Forcer déconnexion sessions précédentes', 'auth'),
+          U('uc_validate_credentials', 'Valider identifiants', 'auth')
+        ],
+        edges: [
+          // Actors to use cases
+          E('guest','uc_register'),
+          E('guest','uc_login'),
+          E('guest','uc_login_google'),
+
+          E('user','uc_logout'),
+          E('user','uc_checkauth'),
+          E('user','uc_enable2fa'),
+          E('user','uc_disable2fa'),
+          E('user','uc_confirm2fa'),
+          E('user','uc_send2fa'),
+
+          E('user','uc_getinfos'),
+          E('user','uc_change_password'),
+          E('user','uc_change_email'),
+          E('user','uc_change_username'),
+          E('user','uc_change_picture'),
+          E('user','uc_update_bio'),
+
+          E('user','uc_send_friend_request'),
+          E('friend','uc_send_friend_request'), // interaction bilatérale
+          E('user','uc_accept_request'),
+          E('user','uc_refuse_request'),
+          E('user','uc_remove_friend'),
+          E('user','uc_is_friend'),
+          E('user','uc_is_online'),
+
+          E('user','uc_block_user'),
+          E('user','uc_unblock_user'),
+          E('user','uc_is_blocked'),
+
+          E('user','uc_fetch_chat'),
+          E('user','uc_send_public'),
+          E('user','uc_send_private'),
+
+          E('user','uc_get_games'),
+          E('user','uc_add_game'),
+          E('user','uc_get_library'),
+
+          E('user','uc_get_rankings'),
+          E('user','uc_get_match_history'),
+
+          E('user','uc_join_matchmaking'),
+          E('user','uc_join_private'),
+          E('user','uc_play_pong'),
+
+          E('user','uc_queue_tower'),
+          E('user','uc_play_tower'),
+          E('user','uc_spawn_unit'),
+
+          E('user','uc_get_news'),
+          E('user','uc_receive_notifications'),
+
+          // Includes & extends
+          // Login includes validation & JWT
+          R('uc_login','uc_validate_credentials','include'),
+          R('uc_login','uc_issue_jwt','include'),
+          // Login extends confirm 2FA (optionnel)
+          R('uc_login','uc_confirm2fa','extend'),
+          // Google login includes OAuth token, create/link, issue jwt, force previous logout
+          R('uc_login_google','uc_oauth_token','include'),
+          R('uc_login_google','uc_create_or_link_account','include'),
+          R('uc_login_google','uc_issue_jwt','include'),
+          R('uc_login_google','uc_force_previous_logout','extend'),
+          // 2FA enable includes send code
+          R('uc_enable2fa','uc_send2fa','include'),
+
+          // Change picture includes validate/purify image
+          R('uc_change_picture','uc_validate_image','include'),
+
+          // Friend request includes notification
+          R('uc_send_friend_request','uc_receive_notifications','include'),
+          R('uc_accept_request','uc_receive_notifications','include'),
+
+          // Chat send private involves Socket.IO (internal actor)
+          R('uc_send_private','socketio','uses'),
+          R('uc_send_public','socketio','uses'),
+          R('uc_receive_notifications','socketio','uses'),
+
+          // Games
+          R('uc_join_matchmaking','matchmaking','uses'),
+          R('uc_play_pong','enginePong','uses'),
+          R('uc_play_tower','engineTower','uses'),
+          R('uc_spawn_unit','engineTower','uses'),
+
+          // Data persistence
+          R('uc_get_rankings','db','uses'),
+          R('uc_get_match_history','db','uses'),
+          R('uc_add_game','db','uses'),
+          R('uc_get_library','db','uses'),
+          R('uc_fetch_chat','db','uses'),
+          R('uc_send_private','db','uses'),
+          R('uc_change_picture','uploads','uses'),
+
+          // External systems
+          R('uc_login_google','google','uses'),
+          R('uc_send2fa','gmail','uses')
+        ]
+      },
+      architecture: {
+        nodes: [
+          C('user_ext', 'Utilisateur\n(Navigateur Web)', 'actor-ext'),
+          C('nginx', 'Nginx (reverse proxy TLS)', 'actor-int'),
+          C('backend', 'Backend Fastify + Socket.IO', 'actor-int'),
+          C('routes', 'Routes REST\n/auth, /user, /profile, /friends, /chat, /games, /news, /stats', 'actor-int'),
+          C('namespaces', 'Socket.IO namespaces\n/game, /chat, /notification, /tower', 'actor-int'),
+          C('db_arch', 'Base de données', 'actor-int'),
+          C('uploads_arch', 'Fichiers statiques (uploads)', 'actor-int'),
+          C('google_arch', 'Google OAuth2', 'actor-ext'),
+          C('gmail_arch', 'Gmail SMTP', 'actor-ext')
+        ],
+        edges: [
+          A('user_ext','nginx','flows','HTTPS 443 / HTTP 8443'),
+          A('nginx','backend','flows','Proxy /api, /socket.io'),
+          A('backend','routes','flows','Fastify routes'),
+          A('backend','namespaces','flows','Socket.IO'),
+          A('backend','db_arch','flows','SQL'),
+          A('backend','uploads_arch','flows','fastify-static /uploads'),
+          A('backend','google_arch','flows','OAuth2 code flow'),
+          A('backend','gmail_arch','flows','SMTP nodemailer'),
+          A('user_ext','uploads_arch','flows','GET /uploads/*')
+        ]
+      }
+    }
+  };
+
+  // Helpers to build model entries
+  function N(id, label, type) { return { id, label, type }; }
+  function U(id, label, group) { return { id, label, type: 'usecase', group }; }
+  function C(id, label, type) { return { id, label, type }; }
+  function E(src, dst) { return { src, dst, rel: 'assocs' }; }
+  function R(src, dst, rel) { return { src, dst, rel }; }
+  function A(src, dst, rel, label) { return { src, dst, rel, label }; }
+
+  // UI
+  const filtersRoot = $('#filters');
+  groups.forEach(g => {
+    const id = `filter-${g.id}`;
+    const wrap = document.createElement('label');
+    wrap.className = 'pill';
+    wrap.style.cursor = 'pointer';
+    wrap.innerHTML = `<input id="${id}" type="checkbox" checked style="accent-color: var(--accent);"> ${g.label}`;
+    filtersRoot.appendChild(wrap);
+  });
+
+  const state = {
+    tab: 'usecases',
+    visibleGroups: new Set(groups.map(g => g.id)),
+    hideIsolated: true
+  };
+
+  $$('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.tab = btn.dataset.tab;
+      render();
+    });
+  });
+
+  groups.forEach(g => {
+    $('#filter-' + g.id).addEventListener('change', (e) => {
+      if (e.target.checked) state.visibleGroups.add(g.id);
+      else state.visibleGroups.delete(g.id);
+      render();
+    });
+  });
+
+  const hideIsolatedCb = $('#toggle-hide-isolated');
+  if (hideIsolatedCb) {
+    hideIsolatedCb.addEventListener('change', (e) => {
+      state.hideIsolated = !!e.target.checked;
+      render();
+    });
+  }
+
+  // Cytoscape init
+  let cy;
+  function initCy() {
+    cy = cytoscape({
+      container: document.getElementById('canvas'),
+      minZoom: 0.15,
+      maxZoom: 5,
+      wheelSensitivity: 0.1, // less sensitive wheel zoom (default is 1)
+      style: [
+        { selector: 'node', style: {
+          'shape': 'round-rectangle',
+          'background-color': '#ffffff',
+          'border-color': '#d1d5db',
+          'border-width': 1.2,
+          'color': '#111827',
+          'font-size': 14,
+          'min-zoomed-font-size': 10,
+          'text-wrap': 'wrap',
+          'text-max-width': 220,
+          'text-valign': 'center',
+          'text-halign': 'center',
+          'text-outline-color': 'rgba(255,255,255,0.8)',
+          'text-outline-width': 2,
+          'padding': '10px',
+          'label': 'data(label)',
+          'shadow-blur': 12,
+          'shadow-color': 'rgba(0,0,0,0.15)',
+          'shadow-opacity': 1,
+          'shadow-offset-x': 0,
+          'shadow-offset-y': 2,
+          'transition-property': 'border-width, border-color, background-color, color',
+          'transition-duration': '200ms'
+        }},
+        { selector: 'node.type-actor-ext', style: {
+          'background-color': 'var(--actor-external)',
+          'border-color': '#b45309',
+          'border-width': 1.4,
+          'color': '#0b0f17',
+          'text-outline-color': 'rgba(255,255,255,0.55)',
+          'text-outline-width': 2
+        } },
+        { selector: 'node.type-actor-int', style: {
+          'background-color': 'var(--actor-internal)',
+          'border-color': '#1e40af',
+          'border-width': 1.4,
+          'color': '#0b0f17',
+          'text-outline-color': 'rgba(255,255,255,0.55)',
+          'text-outline-width': 2
+        } },
+        { selector: 'node.type-usecase', style: {
+          'shape': 'ellipse',
+          'background-color': 'var(--usecase)',
+          'border-color': '#c7d2fe',
+          'border-width': 1.4
+        } },
+
+        /* Group theming for use cases */
+        { selector: 'node.type-usecase.group-auth',          style: { 'background-color': 'var(--g-auth-bg)',          'border-color': 'var(--g-auth-border)' } },
+        { selector: 'node.type-usecase.group-profile',       style: { 'background-color': 'var(--g-profile-bg)',       'border-color': 'var(--g-profile-border)' } },
+        { selector: 'node.type-usecase.group-friends',       style: { 'background-color': 'var(--g-friends-bg)',       'border-color': 'var(--g-friends-border)' } },
+        { selector: 'node.type-usecase.group-chat',          style: { 'background-color': 'var(--g-chat-bg)',          'border-color': 'var(--g-chat-border)' } },
+        { selector: 'node.type-usecase.group-games',         style: { 'background-color': 'var(--g-games-bg)',         'border-color': 'var(--g-games-border)' } },
+        { selector: 'node.type-usecase.group-library',       style: { 'background-color': 'var(--g-library-bg)',       'border-color': 'var(--g-library-border)' } },
+        { selector: 'node.type-usecase.group-news',          style: { 'background-color': 'var(--g-news-bg)',          'border-color': 'var(--g-news-border)' } },
+        { selector: 'node.type-usecase.group-notifications', style: { 'background-color': 'var(--g-notifications-bg)', 'border-color': 'var(--g-notifications-border)' } },
+
+        { selector: 'node:hover', style: { 'border-color': 'var(--accent)', 'border-width': 2 } },
+
+        { selector: 'edge', style: {
+          'curve-style': 'bezier',
+          'line-color': 'var(--edge)',
+          'width': 2.2,
+          'line-cap': 'round',
+          'target-arrow-shape': 'vee',
+          'target-arrow-color': 'var(--edge)',
+          'arrow-scale': 0.9,
+          'opacity': 0.95,
+          'label': 'data(label)',
+          'color': '#111827',
+          'font-size': 12,
+          'min-zoomed-font-size': 9,
+          'text-rotation': 'autorotate',
+          'text-background-color': 'rgba(255,255,255,0.95)',
+          'text-background-opacity': 0.95,
+          'text-background-shape': 'round-rectangle',
+          'text-background-padding': 4,
+          'text-outline-color': 'rgba(255,255,255,1)',
+          'text-outline-width': 2,
+          'text-margin-y': -8
+        }},
+        { selector: 'edge.rel-include', style: { 'line-style': 'dashed', 'line-color': 'var(--include)', 'target-arrow-color': 'var(--include)', 'label': '«include»' } },
+        { selector: 'edge.rel-extend',  style: { 'line-style': 'dashed', 'line-color': 'var(--extend)',  'target-arrow-color': 'var(--extend)',  'label': '«extend»' } },
+        { selector: 'edge.rel-uses',    style: { 'line-style': 'dotted', 'line-color': '#91a4d1',        'target-arrow-color': '#91a4d1',        'label': 'uses' } },
+        { selector: 'edge.rel-flows',   style: { 'line-style': 'solid',  'line-color': '#94a3b8',        'target-arrow-color': '#94a3b8' } },
+  { selector: 'edge.rel-assocs',  style: { 'line-style': 'solid',  'line-color': '#9aa3b2',        'target-arrow-shape': 'none',            'opacity': 0.9 } },
+
+        { selector: 'edge:hover', style: { 'width': 3, 'line-color': 'var(--accent)', 'target-arrow-color': 'var(--accent)' } },
+
+        { selector: '.faded', style: { 'opacity': 0.15 } },
+        { selector: '.highlight', style: { 'border-width': 3, 'border-color': 'var(--accent)', 'z-index': 9999 } },
+        { selector: 'edge.highlight', style: { 'width': 3 } },
+        { selector: 'node:selected', style: { 'border-color': 'var(--accent)', 'border-width': 3 } },
+        { selector: 'edge:selected', style: { 'width': 3, 'line-color': 'var(--accent)', 'target-arrow-color': 'var(--accent)' } },
+      ],
+      // Initial layout is set later after adding elements (we fallback if dagre isn't available)
+    });
+
+    cy.on('tap', 'node', (evt) => {
+      const node = evt.target;
+      const neighborhood = node.closedNeighborhood();
+      cy.elements().removeClass('faded');
+      cy.elements().not(neighborhood).addClass('faded');
+      neighborhood.addClass('highlight');
+      setStatus('Noeud: ' + node.data('label'));
+    });
+
+    cy.on('tap', (evt) => {
+      if (evt.target === cy) {
+        cy.elements().removeClass('faded highlight');
+        setStatus('Prêt.');
+      }
+    });
+
+    window.addEventListener('resize', () => cy.resize());
+  }
+
+  function setStatus(msg) { $('#status').textContent = msg; }
+
+  function render() {
+    const tab = model.tabs[state.tab];
+
+    const filteredNodes = tab.nodes.filter(n => {
+      if (n.type === 'usecase') return state.visibleGroups.has(n.group);
+      return true; // actors always visible
+    });
+
+    const nodeIds = new Set(filteredNodes.map(n => n.id));
+
+    const filteredEdges = tab.edges.filter(e => nodeIds.has(e.src) && nodeIds.has(e.dst));
+
+    // Hide isolated nodes (those without any incident edges under current selection)
+    const connectedIds = new Set();
+    filteredEdges.forEach(e => { connectedIds.add(e.src); connectedIds.add(e.dst); });
+    const visibleNodes = filteredNodes.filter(n => connectedIds.has(n.id));
+    const nodesToUse = state.hideIsolated ? visibleNodes : filteredNodes;
+
+    // Build Cytoscape elements
+    const elements = [];
+    nodesToUse.forEach(n => {
+      elements.push({ data: { id: n.id, label: n.label }, classes: classForNode(n) });
+    });
+    filteredEdges.forEach(e => {
+      elements.push({ data: { id: e.src + '->' + e.dst + ':' + e.rel, source: e.src, target: e.dst, label: e.label || '' }, classes: 'rel-' + e.rel });
+    });
+
+    if (!cy) initCy();
+    try {
+      cy.elements().remove();
+      cy.add(elements);
+
+      const dagreAvailable = !!(window.cytoscapeDagre && window.dagre);
+      const layoutName = dagreAvailable ? 'dagre' : 'breadthfirst';
+      const layoutOpts = dagreAvailable
+        ? { name: 'dagre', rankDir: state.tab === 'usecases' ? 'LR' : 'TB', nodeSep: 70, rankSep: 160, edgeSep: 18 }
+        : { name: 'breadthfirst', directed: true, spacingFactor: 1.25 };
+
+      if (!dagreAvailable) {
+        setStatus('Plugin dagre non disponible (utilisation du layout de secours). Vérifiez votre connexion réseau/CDN.');
+      }
+
+      cy.layout(layoutOpts).run();
+      cy.fit(undefined, 20);
+    } catch (e) {
+      console.error(e);
+      setStatus('Erreur lors du rendu du diagramme: ' + (e && e.message ? e.message : e));
+    }
+
+    // update KPIs
+    const actors = nodesToUse.filter(n => n.type === 'actor-ext' || n.type === 'actor-int').length;
+    const usecases = nodesToUse.filter(n => n.type === 'usecase').length;
+    $('#count-actors').textContent = actors + ' acteurs';
+    $('#count-usecases').textContent = usecases + ' use cases';
+
+    // diagnostic: log relation counts currently visible
+    const relCounts = filteredEdges.reduce((acc, e) => { acc[e.rel] = (acc[e.rel] || 0) + 1; return acc; }, {});
+    console.log('[Usecases diagram] Relations visibles:', relCounts);
+    const relStatsEl = document.getElementById('rel-stats');
+    if (relStatsEl) {
+      const order = ['assocs','include','extend','uses','flows'];
+      const text = order
+        .filter(k => relCounts[k])
+        .map(k => `${k}: ${relCounts[k]}`)
+        .join(' • ');
+      relStatsEl.textContent = text ? `Relations visibles — ${text}` : '';
+    }
+  }
+
+  function classForNode(n) {
+    if (n.type === 'actor-ext') return 'type-actor-ext';
+    if (n.type === 'actor-int') return 'type-actor-int';
+    if (n.type === 'usecase')   return 'type-usecase' + (n.group ? ' group-' + n.group : '');
+    return '';
+  }
+
+  // Initial render
+  render();
+
+  // Graph controls
+  const btnFit = document.getElementById('btn-fit');
+  const btnReflow = document.getElementById('btn-reflow');
+  const btnReset = document.getElementById('btn-reset');
+  const btnZoomIn = document.getElementById('btn-zoom-in');
+  const btnZoomOut = document.getElementById('btn-zoom-out');
+  function runLayout() {
+    const dagreAvailable = !!(window.cytoscapeDagre && window.dagre);
+    const layoutOpts = dagreAvailable
+      ? { name: 'dagre', rankDir: state.tab === 'usecases' ? 'LR' : 'TB', nodeSep: 60, rankSep: 120, edgeSep: 16 }
+      : { name: 'breadthfirst', directed: true, spacingFactor: 1.25 };
+    cy.layout(layoutOpts).run();
+  }
+  function stepZoom(dir) {
+    if (!cy) return;
+    const factor = 1.12; // small step for more "paliers"
+    const current = cy.zoom();
+    let target = dir > 0 ? current * factor : current / factor;
+    // clamp to min/max
+    const min = cy.minZoom ? cy.minZoom() : 0.1;
+    const max = cy.maxZoom ? cy.maxZoom() : 5;
+    target = Math.max(min, Math.min(max, target));
+    const rect = cy.container().getBoundingClientRect();
+    const center = { x: rect.width / 2, y: rect.height / 2 };
+    cy.zoom({ level: target, renderedPosition: center });
+    setStatus('Zoom: ' + target.toFixed(2) + 'x');
+  }
+  if (btnFit) btnFit.addEventListener('click', () => { if (!cy) return; cy.fit(undefined, 20); setStatus('Vue ajustée'); });
+  if (btnReflow) btnReflow.addEventListener('click', () => { if (!cy) return; runLayout(); cy.fit(undefined, 20); setStatus('Layout recomposé'); });
+  if (btnReset) btnReset.addEventListener('click', () => {
+    if (!cy) return;
+    cy.elements().removeClass('faded highlight');
+    cy.fit(undefined, 20);
+    setStatus('Prêt.');
+  });
+  if (btnZoomIn) btnZoomIn.addEventListener('click', () => stepZoom(1));
+  if (btnZoomOut) btnZoomOut.addEventListener('click', () => stepZoom(-1));
+})();
+</script>
+</body>
+</html>
