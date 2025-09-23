@@ -394,10 +394,11 @@
           // Login extends confirm 2FA (optionnel)
           R('uc_login','uc_confirm2fa','extend'),
           // Google login includes OAuth token, create/link, issue jwt, force previous logout
-          R('uc_login_google','uc_oauth_token','include'),
+          R('google','uc_oauth_token','include'),
           R('uc_login_google','uc_create_or_link_account','include'),
           R('uc_login_google','uc_issue_jwt','include'),
           R('uc_login_google','uc_force_previous_logout','extend'),
+          R('uc_login','uc_force_previous_logout','extend'),
           // 2FA enable includes send code
           R('uc_enable2fa','uc_send2fa','include'),
 
@@ -630,7 +631,7 @@
 
         { selector: 'edge:hover', style: { 'width': 3, 'line-color': 'var(--accent)', 'target-arrow-color': 'var(--accent)' } },
 
-        { selector: '.faded', style: { 'opacity': 0.15 } },
+        { selector: '.faded', style: { 'opacity': 0.1 } },
         { selector: '.highlight', style: { 'border-width': 3, 'border-color': 'var(--accent)', 'z-index': 9999 } },
         { selector: 'edge.highlight', style: { 'width': 3 } },
         { selector: 'node:selected', style: { 'border-color': 'var(--accent)', 'border-width': 3 } },
