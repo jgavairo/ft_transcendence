@@ -202,7 +202,7 @@
 
       <h3>Contexte</h3>
       <div class="hint">
-        Basé sur votre code: Fastify + Socket.IO, OAuth2 Google, envoi d'emails (Gmail), upload sécurisé, amis, chat, jeux (Pong, Tower), matchmaking, stats/rankings, news.
+        Basé sur votre code: Fastify + Socket.IO, OAuth2 Google, envoi d'emails (Gmail), upload sécurisé, amis, chat, Pong , matchmaking, stats/rankings, news.
       </div>
 
       <h3>KPIs</h3>
@@ -245,7 +245,7 @@
     { id: 'profile', label: 'Profil & Compte' },
     { id: 'friends', label: 'Amis' },
     { id: 'chat', label: 'Chat' },
-    { id: 'games', label: 'Jeux (Pong/Tower)' },
+    { id: 'games', label: 'Pong' },
     { id: 'library', label: 'Boutique & Bibliothèque' },
     { id: 'news', label: 'Actualités' },
     { id: 'notifications', label: 'Notifications' },
@@ -266,12 +266,11 @@
           N('gmail', 'Service Email (Gmail SMTP)', 'actor-ext'),
 
           // Internal actors (systems/services inside boundary)
-          N('socketio', 'Socket.IO (namespaces)\n/game, /chat, /notification, /tower', 'actor-int'),
+          N('socketio', 'Socket.IO (namespaces)\n/game, /chat, /notification', 'actor-int'),
           N('db', 'Base de données', 'actor-int'),
           N('uploads', 'Serveur fichiers (uploads)', 'actor-int'),
           N('matchmaking', 'Matchmaking Pong', 'actor-int'),
           N('enginePong', 'Moteur de jeu Pong', 'actor-int'),
-          N('engineTower', 'Moteur de jeu Tower', 'actor-int'),
 
           // Auth use cases
           U('uc_register', "S'inscrire", 'auth'),
@@ -304,7 +303,6 @@
           // Blocking
           U('uc_block_user', 'Bloquer utilisateur', 'profile'),
           U('uc_unblock_user', 'Débloquer utilisateur', 'profile'),
-          U('uc_is_blocked', 'Est-il bloqué ?', 'profile'),
 
           // Chat
           U('uc_fetch_chat', 'Afficher historique chat', 'chat'),
@@ -321,14 +319,10 @@
           U('uc_get_match_history', 'Consulter historique de matchs', 'games'),
 
           // Pong
-          U('uc_join_matchmaking', 'Rejoindre matchmaking (Pong)', 'games'),
-          U('uc_join_private', 'Rejoindre salon privé (Pong)', 'games'),
+          U('uc_join_matchmaking', 'Rejoindre salon public', 'games'),
+          U('uc_join_private', 'Rejoindre salon privé', 'games'),
           U('uc_play_pong', 'Jouer à Pong', 'games'),
-
-          // Tower
-          U('uc_queue_tower', 'Rejoindre file (Tower)', 'games'),
-          U('uc_play_tower', 'Jouer à Tower', 'games'),
-          U('uc_spawn_unit', 'Poser une unité', 'games'),
+          U('uc_play_AI', 'Jouer contre IA', 'games'),
 
           // News
           U('uc_get_news', 'Consulter actualités', 'news'),
@@ -388,11 +382,7 @@
 
           E('user','uc_join_matchmaking'),
           E('user','uc_join_private'),
-          E('user','uc_play_pong'),
-
-          E('user','uc_queue_tower'),
-          E('user','uc_play_tower'),
-          E('user','uc_spawn_unit'),
+          E('user','uc_play_AI'),
 
           E('user','uc_get_news'),
           E('user','uc_receive_notifications'),
@@ -425,9 +415,10 @@
 
           // Games
           R('uc_join_matchmaking','matchmaking','uses'),
+          R('uc_join_private', 'matchmaking', 'uses'),
           R('uc_play_pong','enginePong','uses'),
-          R('uc_play_tower','engineTower','uses'),
-          R('uc_spawn_unit','engineTower','uses'),
+          R('matchmaking','uc_play_pong','extend'),
+          R('uc_play_AI','uc_play_pong','extend'),
 
           // Data persistence
           R('uc_get_rankings','db','uses'),
@@ -437,6 +428,27 @@
           R('uc_fetch_chat','db','uses'),
           R('uc_send_private','db','uses'),
           R('uc_change_picture','uploads','uses'),
+          R('uc_change_picture','db','uses'),
+          R('uc_send_public','db','uses'),
+          R('uc_validate_credentials','db','uses'),
+          R('uc_register','db','uses'),
+          R('uc_create_or_link_account','db','include'),
+          R('uc_accept_request', 'db', 'uses'),
+          R('uc_refuse_request', 'db', 'uses'),
+          R('uc_remove_friend', 'db', 'uses'),
+          R('uc_is_friend', 'db', 'uses'),
+          R('uc_is_online', 'db', 'uses'),
+          R('uc_block_user', 'db', 'uses'),
+          R('uc_unblock_user', 'db', 'uses'),
+          R('uc_is_blocked', 'db', 'uses'),
+          R('uc_getinfos','db','uses'),
+          R('uc_change_password','db','uses'),
+          R('uc_change_email','db','uses'),
+          R('uc_change_username','db','uses'),
+          R('uc_update_bio','db','uses'),
+          R('uc_send_friend_request','db','uses'),
+
+          
 
           // External systems
           R('uc_login_google','google','uses'),
@@ -449,7 +461,7 @@
           C('nginx', 'Nginx (reverse proxy TLS)', 'actor-int'),
           C('backend', 'Backend Fastify + Socket.IO', 'actor-int'),
           C('routes', 'Routes REST\n/auth, /user, /profile, /friends, /chat, /games, /news, /stats', 'actor-int'),
-          C('namespaces', 'Socket.IO namespaces\n/game, /chat, /notification, /tower', 'actor-int'),
+          C('namespaces', 'Socket.IO namespaces\n/game, /chat, /notification', 'actor-int'),
           C('db_arch', 'Base de données', 'actor-int'),
           C('uploads_arch', 'Fichiers statiques (uploads)', 'actor-int'),
           C('google_arch', 'Google OAuth2', 'actor-ext'),
