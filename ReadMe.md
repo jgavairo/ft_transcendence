@@ -3,30 +3,33 @@
 Plateforme web temps-réel mêlant mini‑jeux (Pong, Tower), chat privé, gestion d’amis, classement et profils, avec authentification (Email + Google OAuth2), servie derrière un Nginx en HTTPS.
 
 ![Accueil](assets/screens/home.png)
-![Chat privé](assets/screens/chat.gif)
-![Pong matchmaking](assets/screens/pong-matchmaking.gif)
-![Tower 1v1](assets/screens/tower-1v1.gif)
-![Upload avatar](assets/screens/profile-upload.png)
+![Chat privé](assets/screens/chat.png)
+![Pong gameplay](assets/screens/pong.gif)
+![Tower gameplay](assets/screens/tower.gif)
+![Store](assets/screens/store.png)
+![Profil](assets/screens/profile.png)
 
 ## Demo
 - URL locale: `https://localhost:8443`
 - En prod, le reverse proxy redirige vers `https://<hostname>.42lyon.fr:8443`
 
 ## Sommaire
-- Aperçu
-- Stack technique
-- Architecture
-- Lancer le projet
-- Variables d’environnement
-- Scripts utiles
-- Frontend (statique)
-- Backend (Fastify + Socket.IO)
-- Base de données
-- Jeux inclus
-- Sécurité
-- Déploiement
-- FAQ
-- Crédits
+Chaque section ci-dessous est cliquable pour accéder directement à la partie.
+
+- [Aperçu](#aperçu)
+- [Stack technique](#stack-technique)
+- [Architecture](#architecture)
+- [Lancer le projet](#lancer-le-projet)
+- [Variables d’environnement](#variables-denvironnement)
+- [Scripts utiles](#scripts-utiles)
+- [Frontend (statique)](#frontend-statique)
+- [Backend (Fastify + Socket.IO)](#backend-fastify--socketio)
+- [Base de données](#base-de-données)
+- [Jeux inclus](#jeux-inclus)
+- [Sécurité](#sécurité)
+- [Déploiement](#déploiement)
+- [FAQ](#faq)
+- [Crédits](#crédits)
 
 ## Aperçu
 - Authentification email/mot de passe + Google OAuth2
@@ -151,30 +154,33 @@ Projet 42 ft_transcendence. Équipe: Gavairon Jordan (jgavairo), Le-Pierres Loic
 Real-time web platform mixing mini-games (Pong, Tower), private chat, friends management, rankings and profiles, with authentication (Email + Google OAuth2), served behind an HTTPS Nginx reverse proxy.
 
 ![Home](assets/screens/home.png)
-![Private chat](assets/screens/chat.gif)
-![Pong matchmaking](assets/screens/pong-matchmaking.gif)
-![Tower 1v1](assets/screens/tower-1v1.gif)
-![Avatar upload](assets/screens/profile-upload.png)
+![Private chat](assets/screens/chat.png)
+![Pong gameplay](assets/screens/pong.gif)
+![Tower gameplay](assets/screens/tower.gif)
+![Store](assets/screens/store.png)
+![Profile](assets/screens/profile.png)
 
 ## Demo
 - Local URL: `https://localhost:8443`
 - In production, the reverse proxy redirects to `https://<hostname>.42lyon.fr:8443`
 
 ## Table of Contents
-- Overview
-- Tech Stack
-- Architecture
-- Getting Started
-- Environment Variables
-- Useful Scripts
-- Frontend (static)
-- Backend (Fastify + Socket.IO)
-- Database
-- Included Games
-- Security
-- Deployment
-- FAQ
-- Credits
+Each section below is clickable to jump directly to it.
+
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture-1)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [Useful Scripts](#useful-scripts)
+- [Frontend (static)](#frontend-static)
+- [Backend (Fastify + Socket.IO)](#backend-fastify--socketio-1)
+- [Database](#database)
+- [Included Games](#included-games)
+- [Security](#security)
+- [Deployment](#deployment)
+- [FAQ](#faq-1)
+- [Credits](#credits-1)
 
 ## Overview
 - Email/password authentication + Google OAuth2
