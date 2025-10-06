@@ -2,13 +2,6 @@
 
 Plateforme web temps-réel mêlant mini‑jeux (Pong, Tower), chat privé, gestion d’amis, classement et profils, avec authentification (Email + Google OAuth2), servie derrière un Nginx en HTTPS.
 
-![Accueil](assets/screens/home.png)
-![Chat privé](assets/screens/chat.png)
-![Pong gameplay](assets/screens/pong.gif)
-![Tower gameplay](assets/screens/tower.gif)
-![Store](assets/screens/store.png)
-![Profil](assets/screens/profile.png)
-
 ## Demo
 - URL locale: `https://localhost:8443`
 - En prod, le reverse proxy redirige vers `https://<hostname>.42lyon.fr:8443`
@@ -39,6 +32,9 @@ Chaque section ci-dessous est cliquable pour accéder directement à la partie.
 - News / Store / Library
 - Upload d’avatar, profil, bio
 - HTTPS via Nginx (certificats auto-générés en local)
+
+![Accueil](assets/screens/home.png)
+![Chat privé](assets/screens/chat.png)
 
 ## Stack technique
 - Serveur: Fastify 4 + Socket.IO 4, TypeScript
@@ -104,6 +100,9 @@ Note: le backend lit les certificats en `/app/ssl/*.pem` (montés depuis `docker
 - Socket.IO client importé via importmap CDN sur `index.html`
 - Les assets sont dans `assets/` (images, sprites, etc.)
 
+![Store](assets/screens/store.png)
+![Profil](assets/screens/profile.png)
+
 ## Backend (Fastify + Socket.IO)
 - Entrée: `backend/src/server.ts`
 - Plugins: `@fastify/cors`, `@fastify/cookie`, `@fastify/multipart`, `@fastify/static`, `@fastify/oauth2`, `fastify-socket.io`
@@ -127,6 +126,9 @@ Routes principales: voir `backend/src/routes/*`.
 ## Jeux inclus
 - Pong: matchmaking via namespace `/game`, endpoints utilitaires `room-exists`, etc.
 - Tower: solo ou 1v1, `GAME_CONFIG.TICK_RATE` pour la fréquence, sauvegarde historique et classements.
+
+![Pong gameplay](assets/screens/pong.gif)
+![Tower gameplay](assets/screens/tower.gif)
 
 ## Sécurité
 - Cookies HTTPOnly pour JWT (secure en prod)
@@ -152,13 +154,6 @@ Projet 42 ft_transcendence. Équipe: Gavairon Jordan (jgavairo), Le-Pierres Loic
 # ft_transcendence
 
 Real-time web platform mixing mini-games (Pong, Tower), private chat, friends management, rankings and profiles, with authentication (Email + Google OAuth2), served behind an HTTPS Nginx reverse proxy.
-
-![Home](assets/screens/home.png)
-![Private chat](assets/screens/chat.png)
-![Pong gameplay](assets/screens/pong.gif)
-![Tower gameplay](assets/screens/tower.gif)
-![Store](assets/screens/store.png)
-![Profile](assets/screens/profile.png)
 
 ## Demo
 - Local URL: `https://localhost:8443`
@@ -190,6 +185,9 @@ Each section below is clickable to jump directly to it.
 - News / Store / Library
 - Avatar upload, profile, bio
 - HTTPS via Nginx (self-signed certificates in local dev)
+
+![Home](assets/screens/home.png)
+![Private chat](assets/screens/chat.png)
 
 ## Tech Stack
 - Server: Fastify 4 + Socket.IO 4, TypeScript
@@ -255,6 +253,9 @@ Note: the backend reads certificates from `/app/ssl/*.pem` (mounted from `docker
 - Socket.IO client imported via CDN importmap in `index.html`
 - Assets live under `assets/` (images, sprites, etc.)
 
+![Store](assets/screens/store.png)
+![Profile](assets/screens/profile.png)
+
 ## Backend (Fastify + Socket.IO)
 - Entry: `backend/src/server.ts`
 - Plugins: `@fastify/cors`, `@fastify/cookie`, `@fastify/multipart`, `@fastify/static`, `@fastify/oauth2`, `fastify-socket.io`
@@ -278,6 +279,9 @@ Main routes: see `backend/src/routes/*`.
 ## Included Games
 - Pong: matchmaking via namespace `/game`, utility endpoints like `room-exists`, etc.
 - Tower: solo or 1v1, `GAME_CONFIG.TICK_RATE` for server updates, saves history and rankings.
+
+![Pong gameplay](assets/screens/pong.gif)
+![Tower gameplay](assets/screens/tower.gif)
 
 ## Security
 - HTTPOnly cookies for JWT (secure in production)
