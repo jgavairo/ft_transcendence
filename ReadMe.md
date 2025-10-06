@@ -1,5 +1,7 @@
 # ft_transcendence
 
+Langue / Language: [FR](#ft_transcendence) | [EN](#ft_transcendence-1)
+
 Plateforme web temps-réel mêlant mini‑jeux (Pong, Tower), chat privé, gestion d’amis, classement et profils, avec authentification (Email + Google OAuth2), servie derrière un Nginx en HTTPS.
 
 ## Demo
