@@ -2,6 +2,12 @@
 
 Plateforme web temps-réel mêlant mini‑jeux (Pong, Tower), chat privé, gestion d’amis, classement et profils, avec authentification (Email + Google OAuth2), servie derrière un Nginx en HTTPS.
 
+![Accueil](assets/screens/home.png)
+![Chat privé](assets/screens/chat.gif)
+![Pong matchmaking](assets/screens/pong-matchmaking.gif)
+![Tower 1v1](assets/screens/tower-1v1.gif)
+![Upload avatar](assets/screens/profile-upload.png)
+
 ## Demo
 - URL locale: `https://localhost:8443`
 - En prod, le reverse proxy redirige vers `https://<hostname>.42lyon.fr:8443`
