@@ -143,3 +143,151 @@ Routes principales: voir `backend/src/routes/*`.
 
 ## Crédits
 Projet 42 ft_transcendence. Équipe: Gavairon Jordan (jgavairo), Le-Pierres Loic (lle-pier) et Bolea Axel (abolea)
+
+---
+
+# ft_transcendence
+
+Real-time web platform mixing mini-games (Pong, Tower), private chat, friends management, rankings and profiles, with authentication (Email + Google OAuth2), served behind an HTTPS Nginx reverse proxy.
+
+![Home](assets/screens/home.png)
+![Private chat](assets/screens/chat.gif)
+![Pong matchmaking](assets/screens/pong-matchmaking.gif)
+![Tower 1v1](assets/screens/tower-1v1.gif)
+![Avatar upload](assets/screens/profile-upload.png)
+
+## Demo
+- Local URL: `https://localhost:8443`
+- In production, the reverse proxy redirects to `https://<hostname>.42lyon.fr:8443`
+
+## Table of Contents
+- Overview
+- Tech Stack
+- Architecture
+- Getting Started
+- Environment Variables
+- Useful Scripts
+- Frontend (static)
+- Backend (Fastify + Socket.IO)
+- Database
+- Included Games
+- Security
+- Deployment
+- FAQ
+- Credits
+
+## Overview
+- Email/password authentication + Google OAuth2
+- Real-time private chat (Socket.IO)
+- Friends, invites, block list, online presence
+- Games: Pong (matchmaking), Tower (1v1 and solo), rankings
+- News / Store / Library
+- Avatar upload, profile, bio
+- HTTPS via Nginx (self-signed certificates in local dev)
+
+## Tech Stack
+- Server: Fastify 4 + Socket.IO 4, TypeScript
+- Auth: JWT in HTTPOnly cookie, Google OAuth2
+- DB: SQLite (files persisted via Docker volumes)
+- Front: static HTML/CSS/JS + ES modules (scripts in `scripts/`), Socket.IO client
+- Reverse proxy: Nginx (TLS, proxies /api and /socket.io)
+- Containerization: Docker, `docker-compose`
+- Tooling: TypeScript, Tailwind (deps present), sharp/konva (assets), Makefile
+
+## Architecture
+- Nginx reverse proxy (HTTPS 8443) → Fastify backend (port 3000, internal HTTPS)
+- Static assets: `public/`, `styles/`, `scripts/`, `assets/` served by Nginx
+- Uploads served by Fastify at `/uploads/*`
+- Socket.IO namespaces: `/game`, `/chat`, `/notification`, `/tower`
+- Main REST routes: `/api/auth`, `/api/user`, `/api/profile`, `/api/friends`, `/api/chat`, `/api/games`, `/api/news`, `/api/stats`
+
+Diagram note: see `presentation/usecases.html` for a visual architecture and use‑cases.
+
+## Getting Started
+
+Prerequisites:
+- Docker + Docker Compose
+- Make (optional but recommended)
+
+Quick start:
+```bash
+make up
+# generates self-signed certs and starts nginx + backend + volumes
+```
+
+Stop / cleanup:
+```bash
+make stop
+make down
+make clean   # remove volumes + certs
+make restart # regenerate certs and restart
+```
+
+Access:
+- `https://localhost:8443` (accept the self‑signed certificate warning)
+
+## Environment Variables
+`.env` file (loaded by `docker-compose.yml` for the backend service):
+- `HOSTNAME` (e.g., `localhost` or a subdomain without TLD for 42lyon redirect)
+- `JWT_SECRET` (required)
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- Any SMTP config if using nodemailer (if enabled)
+
+Note: the backend reads certificates from `/app/ssl/*.pem` (mounted from `docker/nginx/ssl`).
+
+## Useful Scripts
+- `make up|down|stop|clean|restart`
+- Backend (in `backend/`):
+  - `npm run dev` (ts-node `src/server.ts`)
+  - `tsc` to compile into `dist/` (Dockerfile does this during build)
+
+## Frontend (static)
+- Entry point: `public/index.html`
+- Styles: `styles/*.css`
+- Scripts: `scripts/main.ts/js`, pages (`scripts/pages/*`), managers/helpers, games (`scripts/games/*`)
+- Socket.IO client imported via CDN importmap in `index.html`
+- Assets live under `assets/` (images, sprites, etc.)
+
+## Backend (Fastify + Socket.IO)
+- Entry: `backend/src/server.ts`
+- Plugins: `@fastify/cors`, `@fastify/cookie`, `@fastify/multipart`, `@fastify/static`, `@fastify/oauth2`, `fastify-socket.io`
+- Internal HTTPS: key/cert in `/app/ssl` (via volume)
+- Google Auth: `/api/auth/google` → callback `https://${HOSTNAME}:8443/api/auth/google/callback`
+- Sockets:
+  - `/chat`: private messages, broadcast, mapping `userId/username → socketId`
+  - `/notification`: register by `username` for event pushes
+  - `/game`: Pong matchmaking
+  - `/tower`: matchmaking, solo, server game loop, history persistence and rankings
+- Uploads: `@fastify/static` exposes `/uploads/` (avatars, ...)
+
+Main routes: see `backend/src/routes/*`.
+
+## Database
+- SQLite, schema: `backend/src/database/schema.sql`
+  - `users`, `messages`, `games`, `news`, `game_user_rankings`, `match_history`, `game_player`
+- Data folder persisted via Docker volume `ft_transcendence_db`
+- Uploads persisted via volume `ft_transcendence_uploads`
+
+## Included Games
+- Pong: matchmaking via namespace `/game`, utility endpoints like `room-exists`, etc.
+- Tower: solo or 1v1, `GAME_CONFIG.TICK_RATE` for server updates, saves history and rankings.
+
+## Security
+- HTTPOnly cookies for JWT (secure in production)
+- Permissive CORS in dev (origin: true)
+- Nginx forces HTTPS (80→8443), websockets proxied, self-signed SSL in local
+- In production, use valid certificates and set `secure=true`
+
+## Deployment
+- Build with `docker-compose up --build` (or `make up`)
+- Nginx serves `public/`, `styles/`, `scripts/`, `assets/`; reverse proxies `/api` and `/socket.io` to `backend:3000`
+- Provide correct `HOSTNAME` and certificates under `docker/nginx/ssl`
+
+## FAQ
+- Certificate error: self-signed in local → accept the exception
+- Google OAuth2 not redirecting: check `HOSTNAME`, client/secret and authorized callback
+- Missing profile images: verify `uploads_data` volume and permissions
+
+## Credits
+42 ft_transcendence project. Team: Gavairon Jordan (jgavairo), Le-Pierres Loic (lle-pier) and Bolea Axel (abolea)
